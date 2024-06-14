@@ -415,7 +415,7 @@ class HarvestRecordCreate(forms.ModelForm):
             'placeholder': '0.00',
             'maxlength': '12'
         })
-    )
+    ) 
 
     class Meta:
         model = initHarvestRecord

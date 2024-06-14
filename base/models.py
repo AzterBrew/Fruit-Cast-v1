@@ -113,7 +113,7 @@ class UserInformation(models.Model):
     address_details = models.CharField(max_length=255)
     barangay_id = models.ForeignKey(BarangayName,on_delete=models.CASCADE)
     municipality_id = models.ForeignKey(MunicipalityName,on_delete=models.CASCADE)
-    religion = models.CharField(max_length=255)
+    religion = models.CharField(max_length=255,blank=True, default="", null=True)
     civil_status = models.CharField(max_length=50)
     rsbsa_ref_number = models.CharField(max_length=22, unique=True, null=True, blank=True, verbose_name="RSBSA Reference Number")
     hasfarmland = models.BooleanField(default=False) #default na false, will be setup in the acc setup

@@ -293,7 +293,7 @@
             const municipalityId = this.value;
             barangaySelect.innerHTML = '';
             barangaySelect.disabled = true;
-
+ 
             if (municipalityId) {
                 fetch(`/get-barangays/${municipalityId}/`)
                     .then(response => response.json())
