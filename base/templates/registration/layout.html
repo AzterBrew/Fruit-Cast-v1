@@ -11,19 +11,13 @@
             Django App
         {% endblock %}
     </title>
-    <link rel="stylesheet" href="{%static 'css/style.css'%}">
+    <link rel="stylesheet" href="/static/css/style.css">
     <script src="{% static 'js/main.js' %}" defer> </script>
 </head>
 <body>
     <nav>
         <a href="/">home</a> |
         <a href="/about">about</a> |
-        <a href="/signup">Register</a> |
-        <form action="{% url 'base:logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Logout</button>
-        </form>
-        
 
     </nav>
     <main>

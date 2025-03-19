@@ -1,4 +1,12 @@
-<form action="" method="POST">
-  {% csrf_token %} {{form}}
-  <button type="Submit">Submit</button>
-</form>
+{% extends "registration/layout.html" %} 
+{% block title %} Register {% endblock title %} 
+
+{%block content %}
+<div>
+  <h1>Please REGISTER</h1>
+  <form action="" method="POST">
+    {% csrf_token %} {{form}}
+    <button type="Submit">Submit</button>
+  </form>
+</div>
+{% endblock content %}

@@ -6,21 +6,23 @@
 
 body {
     min-height: 100vh;
-    background-color: black;
-    color: whitesmoke;
+    background-color: #f6facd;
+    color: #27371a;
     font-size: 3rem;
     display: flex;
     flex-flow: column;
 }
 
 /* testing */
-/* div { 
-    background-color: whitesmoke;
-} */
+div { 
+    border-color: rgb(48, 6, 6);
+    /* height: 50%;
+    width: 70%; */
+}
 
 nav {
     padding: 1rem;
-    background-color: #44B78B;
+    background-color: #416e3f;
     color: white;
     font-size: 2.5rem;
 }
@@ -38,7 +40,7 @@ p {
 
 a {
     text-decoration: none;
-    color: #81dbb8;
+    color: #f6facd;
 }
 
 a:hover {

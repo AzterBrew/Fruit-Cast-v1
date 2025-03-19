@@ -1,4 +1,21 @@
-<form action="" method="POST">
-  {% csrf_token %} {{form}}
-  <button type="Submit">Submit</button>
-</form>
+{% extends "registration/layout.html" %}
+
+{% block title %}
+    Login
+{% endblock title %}
+
+{% block content %}
+<div>
+    <h1>Please Log In</h1>
+    <form action="" method="POST">
+        {% csrf_token %} {{form}}
+        <button type="Submit">Submit</button>
+      </form>
+
+</div>
+{% endblock content %}
+
+
+
+
+
