@@ -22,5 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls), 
     path('', views.Homepage),
     path('about/',views.About),
+    path('', include(('base.urls','base'), namespace='base')),  # Corrected
     # path('login/', include('loginpage.urls'))
 ]
