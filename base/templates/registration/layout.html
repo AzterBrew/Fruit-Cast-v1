@@ -8,16 +8,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
         {% block title %}
-            Django App
+            Fruit Cast
         {% endblock %}
     </title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="{% static 'js/main.js' %}" defer> </script>
 </head>
 <body>
-    <nav>
-        <a href="/">home</a> |
-        <a href="/about">about</a> |
+    <nav class="nav">
+        <div class="title">
+            <a href="/" >Fruit Cast</a>
+            <br>
+        </div>
+        <a class="nav" href="/">Home</a> |
+        <a class="nav" href="/about">About Us</a> |        
 
     </nav>
     <main>

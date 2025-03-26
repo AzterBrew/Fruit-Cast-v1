@@ -11,7 +11,7 @@
             Fruit Cast
         {% endblock %}
     </title>
-    <link rel="stylesheet" href="{%static 'css/style.css'%}">
+    <link rel="stylesheet" href="/static/css/style.css">
     <script src="{% static 'js/main.js' %}" defer> </script>
 </head>
 <body>
@@ -21,10 +21,11 @@
             <br>
         </div>
         <a class="nav" href="/">Home</a> |
-        <a class="nav" href="/about">About Us</a> |
-        <a class="nav" href="/signup">Register</a> |                
-        <a class="nav" href="{% url 'base:login' %}">Login</a> |                
-
+        <a class="nav" href="/about">About Us</a> |        
+        <form action="{% url 'base:logout' %}" method="post" class="nav" id="formlogout">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
     </nav>
     <main>
         {% block content %}

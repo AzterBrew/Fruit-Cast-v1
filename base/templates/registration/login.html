@@ -5,14 +5,23 @@
 {% endblock title %}
 
 {% block content %}
-<div>
-    <h1>Please Log In</h1>
-    <form action="" method="POST">
-        {% csrf_token %} {{form}}
-        <button type="Submit">Submit</button>
-      </form>
+<div class="container1">
+    <div class="logindiv">
+        <h1>Please Log In</h1>
+        <br>
+        <form action="" method="POST">
+            {% csrf_token %} {{form}}
+        <div class="center-div-text">
 
+            <button type="Submit">Submit</button>
+        </form>
+        <br>
+        <br>
+            <a href="/signup" >Register a new Account</a>
+        </div>
+    </div>
 </div>
+
 {% endblock content %}
 
 

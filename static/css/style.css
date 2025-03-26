@@ -8,7 +8,7 @@ body {
     min-height: 100vh;
     background-color: #f6facd;
     color: #27371a;
-    font-size: 3rem;
+    font-size: 2rem;
     display: flex;
     flex-flow: column;
 }
@@ -20,11 +20,76 @@ div {
     width: 70%; */
 }
 
+#formlogout {
+    text-align: right;
+}
+
+#formlogout button {
+    height: 4em;
+    border: none;
+    background: none;
+    text-decoration: none;
+    color: #f6facd;
+}
+
+.nav a{
+    display: inline-flex;
+    font-size: 2.5rem;
+    
+}
+
+.nav a {
+    color: #f6facd;
+
+}
+
+.title {
+    text-align: center;
+    width: 100%;
+}
+
+.title a {
+    font-size: 4rem !important; 
+}
+
+.logindiv {
+    font-size: 1em;
+
+}
+
+.logindiv h1{
+    font-size: 1.5em;
+}
+
+.logindiv a {
+    color: #27371a;
+    font-size: .5em;
+    padding: 2%;
+    border-radius: 15%;
+    border-style: solid;
+    border-width: 2px;
+}
+
+.center-div-text {
+    text-align: center;
+}
+
+.container1 {
+    background-color:#faf8f3;
+    width: 50vw;
+    height: 50vh;
+    padding: 4vmin;
+    align-items: center;
+    border-radius: 5%;
+    border-color: #27371a;
+    border-style: solid;
+    border-width: 2px;
+}
+
 nav {
     padding: 1rem;
     background-color: #416e3f;
-    color: white;
-    font-size: 2.5rem;
+    /* color: white; */
 }
 
 main {
@@ -40,7 +105,6 @@ p {
 
 a {
     text-decoration: none;
-    color: #f6facd;
 }
 
 a:hover {
