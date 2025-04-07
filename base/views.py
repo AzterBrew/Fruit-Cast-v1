@@ -5,18 +5,13 @@ from django.http import HttpResponse
 from django.forms import inlineformset_factory
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from .forms import CustomUserCreationForm  # make sure this is imported
 
-# Create your views here.
 from .models import *
-# from .forms import OrderForm
-# from .filters import OrderFilter
 
-@login_required
-# def homeguest(request):
-#     return render(request, 'home.html', {})
 
-# def homeuser(request):
-#     return render(request,'loggedin/home.html', {})
+# @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
+
 
 def home(request):
     print("🔥 DEBUG: Home view called!")  # This should print when you visit "/"
@@ -28,12 +23,16 @@ def home(request):
         return render(request, 'home.html', {})
 
 def accinfo(request):
+    print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
+    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
     if request.user.is_authenticated: 
         return render(request, 'loggedin/account_info.html', {})
     else :
         return render(request, 'home.html', {})        
 
 def about(request):
+    print("🔥 DEBUG: about view called!")  # This should print when you visit "/"
+    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
     if request.user.is_authenticated: 
         return render(request, 'loggedin/about.html', {})
     else :
@@ -51,10 +50,10 @@ def login_success(request):
     # Redirect to home *manually*
 
 def registerauth(request):
-    form = UserCreationForm()
+    form = CustomUserCreationForm()
     
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('base:login')
@@ -73,7 +72,7 @@ def loginauth(request):
             login(request, user)
             return redirect('base:home')
         else :
-            messages.info(request, 'user or pass incrrect')
+            messages.info(request, 'user or pass incorrect')
     
     context = {}
     return render(request, 'login.html',context)

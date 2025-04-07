@@ -8,7 +8,7 @@ body {
     min-height: 100vh;
     background-color: #f6facd;
     color: #27371a;
-    font-size: 2rem;
+    /* font-size: 2rem; */
     display: flex;
     flex-flow: column;
 }
@@ -85,7 +85,7 @@ div {
 .container1 {
     background-color:#faf8f3;
     width: 50vmax;
-    height: 50vh;
+    min-height: 50vh;
     padding: 10vmin;
     align-items: center;
     border-radius: 5%;
@@ -94,6 +94,12 @@ div {
     border-width: 2px;
     /* line-height: 5vmin; */
 }
+
+.form-error {
+    color: red;
+    font-size: 0.9em;
+  }
+  
 
 nav {
     padding: 1rem;
