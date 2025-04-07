@@ -17,11 +17,12 @@
 <body>
     <nav class="nav">
         <div class="title">
-            <a href="/" >Fruit Cast</a>
+            <a href="base:home" >Fruit Cast</a>
             <br>
         </div>
-        <a class="nav" href="/">Home</a> |
-        <a class="nav" href="/about">About Us</a> |        
+        <a class="nav" href="{% url 'base:home' %}">Home</a> |
+        <a class="nav" href="{% url 'base:about' %}">About Us</a> |        
+        <a class="nav" href="{% url 'base:accinfo' %}">Account</a> |        
         <form action="{% url 'base:logout' %}" method="post" class="nav" id="formlogout">
             {% csrf_token %}
             <button type="submit">Logout</button>

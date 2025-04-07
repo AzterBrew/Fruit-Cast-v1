@@ -20,8 +20,8 @@
             <a href="/" >Fruit Cast</a>
             <br>
         </div>
-        <a class="nav" href="/">Home</a> |
-        <a class="nav" href="/about">About Us</a> |
+        <a class="nav" href="{% url 'base:home' %}">Home</a> |
+        <a class="nav" href="{% url 'base:about' %}">About Us</a> |
         <a class="nav" href="/signup">Register</a> |                
         <a class="nav" href="{% url 'base:login' %}">Login</a> |                
 
