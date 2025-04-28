@@ -6,11 +6,12 @@
 
 body {
     min-height: 100vh;
-    background-color: #f6facd;
+    background-color: #f7fff2;
     color: #27371a;
     /* font-size: 2rem; */
     display: flex;
     flex-flow: column;
+    font-family: 'Montserrat', sans-serif;
 }
 
 /* testing */
@@ -32,6 +33,7 @@ div {
     color: #f6facd;
 }
 
+
 .nav a{
     display: inline-flex;
     font-size: 2vmax;
@@ -42,18 +44,103 @@ div {
     color: #f6facd;
 }
 
-.nav button {
-    
+.nav button:hover{
+    background-color: #293323 !important;    
 }
 
-.title {
-    text-align: center;
-    width: 100%;
+.navbar {
+    border-bottom: 2px solid #9ea999;
+    box-shadow: 0 0.5vmax 2vmax #e9ffe0;
+    position: fixed;
+    height: 5vmax;
+    background-color: #f7fff2;
+    z-index: 1;
+    min-width: 100vw;
 }
 
-.title a {
-    font-size: 4rem !important; 
+.btn-transparent {
+    background-color: transparent;
+    border: none;
+    color: #546749; /* or any color you want, like Bootstrap's primary */
+    font-size: 2rem; /* optional: make the "=" symbol bigger */
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s, color 0.3s;
 }
+
+.btn-transparent:hover {
+    background-color: #546749; /* light blue hover */
+    color: #293323; /* darker blue on hover */
+}
+
+.home-container {
+    display: flex;
+    margin: 1rem 3rem 5rem 3rem;
+    width: 90vmax;
+    max-width: 95%;
+    align-items: center;
+}
+
+.home-container div {
+    padding: 1rem;
+
+}
+
+.home-left-container, .home-left-container p {
+    min-width: 40%;
+    padding: 1rem;
+    text-align: justify;
+}
+
+.home-right-container img  {
+    width: 55vmax;
+    min-width: 40vmax;
+    max-width: 50vmax;
+    border: #27371a;
+    padding: 1rem;
+    border-radius: 20%;
+}
+
+.login-container {
+    display: flex;
+    min-width: 99vmax;
+    align-items: center;
+    /* background-color: #546749; */
+    background-image: linear-gradient(to bottom left, #546749, #f7fff2);
+    z-index: 0;
+    min-height: 100vh;
+}
+.login-left-container {
+    margin: 5%;
+    padding: 1rem;
+    color: #f7fff2;
+    min-width: 40%;
+}
+
+.login-left-container p {
+    text-align: justify;
+}
+
+.login-left-container h1 {
+    text-align: left;
+}
+
+.login-left-container p, .login-left-container h1 {
+    text-shadow: #293323 1px 0 15px;
+}
+
+.login-right-container {
+    width: 55vmax;
+    min-height: 100vh;
+    background-color: #f7fff2;
+    align-items: center;
+    padding-top: 40vh;
+}
+
+.login-right-container div {
+    padding: 1vmin;
+}
+
+
 
 .logindiv {
     font-size: 3vmin;
@@ -81,6 +168,22 @@ div {
 .center-div-text {
     text-align: center;
 }
+
+
+.offcanvas-p {
+    font-size: 13px;
+}
+
+.title {
+    text-align: center;
+    width: 100%;
+}
+
+.title a {
+    font-size: 4rem !important; 
+}
+
+
 
 .container1 {
     background-color:#faf8f3;

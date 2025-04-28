@@ -1,8 +1,13 @@
 {% extends "registration/layout.html" %} 
 {% block title %} Fruit Cast | Register {% endblock title %} 
 
+
+{% block navbar %}
+    {% include "registration/navbar.html" %}
+{% endblock navbar %}
+
 {%block content %}
-<div class="container1">
+<div class="container1 center-div-text">
   <h1>REGISTER</h1>
     <br>
     <form action="" method="POST">
@@ -21,6 +26,10 @@
     
     <button type="Submit">Submit</button>
   </form>
+  <br>
+  <p>or</p>
+  <a href="/accounts/login">Log In</a>
+
 
 </div>
 {% endblock content %}

@@ -4,6 +4,10 @@
 Fruit Cast | Home
 {% endblock title %}
 
+{% block navbar %}
+    {% include "loggedin/navbar.html" %}
+{% endblock navbar %}
+
 {% block content %}
     <h1>Hello po. This is home</h1>
     <h1>USER LOGGED IN</h1>

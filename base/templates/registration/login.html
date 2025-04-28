@@ -1,10 +1,26 @@
 {% extends "registration/layout.html" %} 
+
 {% block title %} Fruit Cast | Login 
 {% endblock title %} 
+
+
+{% block navbar %}
+    {% include "registration/navbar.html" %}
+{% endblock navbar %}
+
 {% block content %}
-<div class="container1">
-  <div class="logindiv center-div-text">
-    <h1>Please Log In</h1>
+<div class="login-container">
+  <div class="login-left-container">
+    <h1><b>Fruit Cast</b></h1>
+    <p>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+    </p>
+    <p>
+      Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+    </p>
+  </div>
+  <div class="login-right-container center-div-text">
+    <h1>Log In</h1>
     <br />
     <div>
         <form action="" method="POST">
@@ -16,10 +32,11 @@
     <div>
         <button type="Submit">Submit</button>
     </div>
-      
     </form>
-    <br />
+    <p>or</p>
     <a href="/signup">Register a new Account</a>
+    <br>
+    <p>icucustomize ko pa toh</p>
   </div>
 </div>
 
