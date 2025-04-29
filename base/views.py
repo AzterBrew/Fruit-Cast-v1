@@ -69,23 +69,77 @@ def registerauth(request):
     context = {'form': form}
     return render(request, 'registration/signup.html', context)
     
-def loginauth(request):
-    if request.method=="POST":
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+# def loginauth(request):
+#     if request.method=="POST":
+#         username = request.POST.get('username')
+#         password = request.POST.get('password')
         
-        user = authenticate(request, username=username, password=password)
+#         user = authenticate(request, username=username, password=password)
         
-        if user is not None:
-            login(request, user)
-            return redirect('base:home')
-        else :
-            messages.info(request, 'user or pass incorrect')
+#         if user is not None:
+#             login(request, user)
+#             return redirect('base:home')
+#         else :
+#             messages.error(request, 'user or pass incorrect')
     
-    context = {}
-    return render(request, 'login.html',context)
+#     context = {}
+#     return render(request, 'login.html',context)
+ 
+def custom_login(request):
+    if request.method == 'POST':
+        contact = request.POST['email_or_contact']
+        password = request.POST['password']
+
+        print("🔥 Login processing...")  # Debugging log
+        print("🔥 DEBUG: POST Data ->", request.POST)
+
+        # Check if the input is a numeric phone number or an email
+        try:
+            if contact.isdigit():  # If it's a number, use PhoneAuthBackend
+                user = authenticate(request, username=contact, password=password)  
+            else:  # Otherwise, use EmailAuthBackend
+                user = authenticate(request, username=contact, password=password)  
+
+            if user is not None:
+                login(request, user)
+                # messages.success(request, 'You are now logged in!') 
+                print("🔥 Logged IN...")  # Debugging log
+                
+                return redirect('base:home')
+            else:
+                messages.error(request, 'Invalid email/phone or password.')  
+                print("🔥 Login failed...")  # Debugging log
+                
+        except ValueError:
+            messages.error(request, "Invalid input for phone number.")
+
+        return render(request, 'registration/login.html')
+
+    return render(request, 'registration/login.html')
     
-    
+# def custom_login(request):
+#     if request.method == 'POST':
+#         contact = request.POST['email_or_contact']
+#         password = request.POST['password']
+#         if contact.isdigit():
+#             user = authenticate(request, username=contact, password=password)  # Phone login
+#         else:
+#             user = authenticate(request, username=contact, password=password)  # Email login
+
+#         print("🔥 Login processing...")  # Debugging log
+#         print("🔥 DEBUG: POST Data ->", request.POST)
+#         if user is not None:
+#             login(request, user)
+#             messages.success(request, 'You are now logged in!') 
+#             print("🔥 Logged IN...")  # Debugging log
+                       
+#             return redirect('base:home')
+#         else:
+#             messages.error(request, 'Invalid email/phone or password.')  
+#             print("🔥 Login failed...")  # Debugging log
+                      
+#             return render(request, 'registration/login.html')
+#     return render(request, 'registration/login.html')    
 
 
 # def authView(request):

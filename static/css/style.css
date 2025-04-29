@@ -143,17 +143,18 @@ div {
 
 
 .logindiv {
-    font-size: 3vmin;
+    font-size: 1rem;
 }
 
 .logindiv label {
+    /* text-align: left; */
     font-size: 3vmin;
-    height: 5%;
+    height: 1rem;
     padding-bottom: 5%;
 }
 
 .logindiv input {
-    width: 50%;
+    width: 60%;
 }
 
 .logindiv a {

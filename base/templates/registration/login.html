@@ -23,20 +23,39 @@
     <h1>Log In</h1>
     <br />
     <div>
-        <form action="" method="POST">
-            {% csrf_token %} {{form}}
+        <form action="\login\" method="POST">
+            {% csrf_token %}
+          <div>
+            <label for="email_or_contact">Email or Phone Number : </label> <br>
+            <input type="text" name="email_or_contact" placeholder="Email or Phone Number">
+          </div>
+          <div>
+            <label for="password">Password : </label><br>
+            <input type="password" name="password">
+          </div>
+          <input type="hidden" name="test_debug" value="submitted">
     </div>
+    {% comment %} 
+    email : ark@gmail.com
+    pass : arkarkark
+    {% endcomment %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert 
+          {% if message.tags %} alert-{{ message.tags }} {% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
     <div>
+        <button type="submit">Log In</button>
+        </form>
 
     </div>
-    <div>
-        <button type="Submit">Submit</button>
-    </div>
-    </form>
     <p>or</p>
     <a href="/signup">Register a new Account</a>
     <br>
-    <p>icucustomize ko pa toh</p>
+    <p>icucustomize ko pa toh [change to Forgot Password]</p>
   </div>
 </div>
 

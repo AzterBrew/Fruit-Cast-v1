@@ -133,3 +133,9 @@ LOGIN_URL = '/accounts/login/'
 # LOGIN_REDIRECT_URL = "/"
 LOGIN_REDIRECT_URL = "/accounts/login/success/"
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # default
+    'base.authentication.EmailAuthBackend',
+    'base.authentication.PhoneAuthBackend',
+]

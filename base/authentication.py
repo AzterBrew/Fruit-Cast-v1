@@ -1,0 +1,54 @@
+from django.contrib.auth.models import User
+from .models import ExtendedUser
+
+class EmailAuthBackend:
+    def authenticate(self, request, username=None, password=None):
+        user = User.objects.filter(email=username).first()  # Avoids multiple matches
+        if user and user.check_password(password):
+            return user
+        return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+        
+# class PhoneAuthBackend:
+#     def authenticate(self, request, username=None, password=None):
+#         try:
+#             extended = ExtendedUser.objects.get(phone_number=username)
+#             user = extended.user
+#             if user.check_password(password):
+#                 return user
+#         except ExtendedUser.DoesNotExist:
+#             return None
+
+#     def get_user(self, user_id):
+#         try:
+#             return User.objects.get(pk=user_id)
+#         except User.DoesNotExist:
+#             return None
+
+class PhoneAuthBackend:
+    def authenticate(self, request, username=None, password=None):
+        try:
+            # Ensure username is a valid number before querying
+            if not username.isdigit():
+                return None
+            
+            extended = ExtendedUser.objects.filter(phone_number=username).first()  # Avoids multiple matches
+            if extended:
+                user = extended.user
+                if user.check_password(password):
+                    return user
+        except ExtendedUser.DoesNotExist:
+            return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+        
+
