@@ -30,6 +30,14 @@ def accinfo(request):
     else :
         return render(request, 'home.html', {})        
 
+def forecast(request):
+    print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
+    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    if request.user.is_authenticated: 
+        return render(request, 'loggedin/forecast.html', {})
+    else :
+        return render(request, 'home.html', {})  
+
 def about(request):
     print("🔥 DEBUG: about view called!")  # This should print when you visit "/"
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
