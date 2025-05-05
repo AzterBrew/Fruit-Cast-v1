@@ -5,9 +5,12 @@ from django.http import HttpResponse
 from django.forms import inlineformset_factory
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from .forms import CustomUserCreationForm  # make sure this is imported
+from datetime import date
+
+#from .forms import CustomUserCreationForm  # make sure this is imported
 
 from .models import *
+from .forms import UserContactAndAccountForm, CustomUserInformationForm
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -57,17 +60,105 @@ def login_success(request):
     # return redirect("base:home")  
     # Redirect to home *manually*
 
-def registerauth(request):
-    form = CustomUserCreationForm()
+# old register function
+
+# def registerauth(request):
+#     form = CustomUserCreationForm()
     
+#     if request.method == "POST":
+#         form = CustomUserCreationForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('base:login')
+    
+#     context = {'form': form}
+#     return render(request, 'registration/signup.html', context)
+
+def register_step1(request):
     if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+        form = CustomUserInformationForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('base:login')
+            # userinfo = form.save(commit=False)  # Don't save yet
+            # userinfo.save()  # Save the first step of user info
+            # request.session['userinfo_id'] = userinfo.id  # Store userinfo id in session
+            # return redirect('register_step2')
+            # request.session['step1_data'] = form.cleaned_data  # 🔐 Save input to session
+            
+
+        # Cleaned version of form data, with date fields converted to string
+            step1_data = form.cleaned_data.copy()
+
+            # Convert date objects to strings manually (you can also loop over fields to detect types, but this is safer & explicit)
+            if isinstance(step1_data.get("birthdate"), date):
+                step1_data["birthdate"] = step1_data["birthdate"].isoformat()
+
+            request.session['step1_data'] = step1_data
+            
+            return redirect('base:register_step2')
+    else:
+        form = CustomUserInformationForm(initial=request.session.get('step1_data'))
+
+    return render(request, 'registration/register_step1.html', {'form': form})
+
+def register_step2(request):
+    # if request.method == "POST":
+    #     userinfo_id = request.session.get('userinfo_id')
+    #     userinfo = UserInformation.objects.get(id=userinfo_id)
+
+    #     form = UserContactAndAccountForm(request.POST)
+    #     if form.is_valid():
+    #         user = form.save(commit=False)
+    #         userinfo.user_email = form.cleaned_data['user_email']
+    #         userinfo.contact_number = form.cleaned_data['contact_number']
+    #         userinfo.save()  # Save the additional user info
+
+    #         # Create Account Information
+    #         account_info = AccountsInformation.objects.create(
+    #             userinfo_id=userinfo,
+    #             account_register_date=form.cleaned_data['password1'],  # For example, password1 used here just for demonstration
+    #             account_isverified=False,  # Set to False until verified by admin
+    #         )
+
+    #         # Create user in auth_user table
+    #         auth_user = models.User.objects.create_user(username=userinfo.user_email, password=form.cleaned_data['password1'])
+    #         login(request, auth_user)  # Log the user in
+            
+    #         return redirect('success')  # Redirect to success or homepage after registration
+    # else:
+    #     form = UserContactAndAccountForm()
+
+    # return render(request, 'registration/register_step2.html', {'form': form})
     
-    context = {'form': form}
-    return render(request, 'registration/signup.html', context)
+    if 'step1_data' not in request.session:
+        return redirect('base:register_step1')  # magredirect sa unang page so users wouldnt skip p1
+
+    if request.method == "POST":
+        form = UserContactAndAccountForm(request.POST)
+        if form.is_valid():
+            auth_user = AuthUser.objects.create_user(
+                email=form.cleaned_data['user_email'],
+                password=form.cleaned_data['password1']
+            )
+
+            # Merge and save UserInformation
+            step1_data = request.session['step1_data']
+            userinfo = UserInformation.objects.create(
+                auth_user=auth_user,
+                contact_number=form.cleaned_data['contact_number'],
+                user_email=form.cleaned_data['user_email'],
+                **step1_data  # merges all step 1 fields
+            )
+
+            del request.session['step1_data']  # 💣 clean up session
+            return redirect('base:login')  # or wherever
+
+    else:
+        form = UserContactAndAccountForm()
+
+    return render(request, 'registration/register_step2.html', {'form': form})
+
+
+
     
 # def loginauth(request):
 #     if request.method=="POST":
