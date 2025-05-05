@@ -23,6 +23,7 @@ urlpatterns = [
     # path('login/', include('loginpage.urls'))
     path('accountinfo/', accinfo, name="accinfo"),
     path('forecast/', forecast, name="forecast"),
-    path('aboutus/', about, name="about")
+    path('aboutus/', about, name="about"),
+    path('newrecord/', newrecord, name="newrecord")
 ]
  
