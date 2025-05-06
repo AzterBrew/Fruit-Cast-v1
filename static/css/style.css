@@ -50,9 +50,9 @@ div {
 
 .navbar {
     border-bottom: 2px solid #9ea999;
-    box-shadow: 0 0.5vmax 2vmax #e9ffe0;
+    box-shadow: 0 0.1vmax .5vmax #b9cbb3;
     position: fixed;
-    height: 5vmax;
+    height: 10vh;
     background-color: #f7fff2;
     z-index: 1;
     min-width: 100vw;
@@ -130,10 +130,14 @@ div {
 
 .login-right-container {
     width: 55vmax;
-    min-height: 100vh;
+    min-height: 90vh;
     background-color: #f7fff2;
     align-items: center;
-    padding-top: 25vh;
+    padding-top: 15vh;
+    /* text-align: center; */
+    margin-top: 10vh;
+    padding: 10vh 5vh 10vh 10vh;
+    line-height: 2vmin;
 }
 
 .login-right-container div {
@@ -187,16 +191,15 @@ div {
 
 
 .container1 {
-    background-color:#faf8f3;
+    background-color:#fffefc;
     width: 50vmax;
     min-height: 50vh;
-    padding: 10vmin;
-    align-items: center;
-    border-radius: 5%;
-    border-color: #27371a;
-    border-style: solid;
-    border-width: 2px;
-    /* line-height: 5vmin; */
+    padding-top: 7vmin;
+    padding: 7vmin;
+    box-shadow: 0 0.2vmax .5vmax #69894e;
+    margin-top: 12vh;
+    margin-bottom: 5vh;
+    line-height: 2vmin;
 }
 
 .form-error {
@@ -217,10 +220,10 @@ main {
     place-content: center;
 }
 
-h1,
+/* h1,
 p {
     text-align: center;
-}
+} */
 
 a {
     text-decoration: none;

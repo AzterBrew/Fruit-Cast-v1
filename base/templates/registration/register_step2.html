@@ -46,40 +46,28 @@
   <div class="login-right-container center-div-text">
     <h1 class="text-xl font-bold mb-4">Complete Registration</h1>
     <br />
-    <div>
-        {% comment %} <form action="" method="POST">
-            {% csrf_token %}
-            {% for field in form %}
-              <div class="form-group">
-                {{ field.label_tag }}
+ 
+    <form method="POST">
+      {% csrf_token %}
+      {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label">{{ field.label_tag }}</label>
                 {{ field }}
-          
                 {% if field.errors %}
-                  <p class="form-error">{{ field.errors|striptags }}</p>
+                    <div class="text-danger small">{{ field.errors }}</div>
                 {% endif %}
-              </div>
-            <br>
-          {% endfor %}
-          <input type="hidden" name="test_debug" value="submitted"> {% endcomment %}
-          <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Complete Registration</button>
-        </form>
-
-    </div>
-    {% comment %} 
-    email : ark@gmail.com
-    pass : arkarkark
-    {% endcomment %}    
-    <div>
-
-    </div>
-    <p>or</p>
-    <a href="/register/step1" class="text-blue-600 underline">← Back</a>
-    <br>
-  </div>
-</div>
+            </div>
+        {% endfor %}
+        <div class="center-div-text">
+          <hr>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <br>
+          <br>
+          <p>or</p>
+          <a href="/register/step1" class="btn btn-secondary">Back</a>
+        </div>
+        
+    </form>
 
 
 {% endblock content %}

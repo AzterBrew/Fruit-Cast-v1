@@ -11,7 +11,7 @@ from django.utils import timezone
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from .models import *
-from .forms import UserContactAndAccountForm, CustomUserInformationForm
+from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -22,42 +22,68 @@ def home(request):
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
 
     if request.user.is_authenticated:
-        try:
-            userinfo = UserInformation.objects.get(auth_user=request.user)
-            account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
-
-            context = {
-                'first_name': userinfo.firstname,
-                'account_id': account_info.account_id
-            }
+        account_id = request.session.get('account_id')
+        userinfo_id = request.session.get('userinfo_id')
+        
+        if userinfo_id and account_id:
             
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
+        
+            context = {
+                'user_firstname' : userinfo.firstname,
+            }            
             return render(request, 'loggedin/home.html', context)
-        except (UserInformation.DoesNotExist, AccountsInformation.DoesNotExist):
-            return render(request, 'home.html', {})            
+        
+        else:
+            print("⚠️ account_id missing in session!")
+            return redirect('base:home')         
     else:        
         return render(request, 'home.html', {})
-
-def accinfo(request):
-    print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
-        return render(request, 'loggedin/account_info.html', {})
-    else :
-        return render(request, 'home.html', {})        
+     
 
 def forecast(request):
     print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
     if request.user.is_authenticated: 
-        return render(request, 'loggedin/forecast.html', {})
+        account_id = request.session.get('account_id')
+        userinfo_id = request.session.get('userinfo_id')
+        
+        if userinfo_id and account_id:
+            
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
+        
+            context = {
+                'user_firstname' : userinfo.firstname,
+            }            
+            return render(request, 'loggedin/forecast.html', context)
+        
+        else:
+            print("⚠️ account_id missing in session!")
+            return redirect('base:home')                
+            
     else :
         return render(request, 'home.html', {})  
+
 
 def newrecord(request):
     print("🔥 DEBUG: newrecord view called!")  # This should print when you visit "/"
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
     if request.user.is_authenticated: 
-        return render(request, 'loggedin/createrecord.html', {})
+        account_id = request.session.get('account_id')
+        userinfo_id = request.session.get('userinfo_id')
+        
+        if userinfo_id and account_id:
+            
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
+        
+            context = {
+                'user_firstname' : userinfo.firstname,
+            }            
+            return render(request, 'loggedin/transaction/transaction.html', context)
+        
+        else:
+            print("⚠️ account_id missing in session!")
+            return redirect('base:home')   
     else :
         return render(request, 'home.html', {}) 
 
@@ -69,6 +95,73 @@ def about(request):
         return render(request, 'loggedin/about.html', {})
     else :
         return render(request, 'about.html', {})  
+
+
+def editacc(request):
+    print("🔥 DEBUG: editacc view called!")  # This should print when you visit "/"
+    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    if request.user.is_authenticated: 
+        userinfo_id = request.session.get('userinfo_id')
+        userinfo = UserInformation.objects.get(pk=userinfo_id)
+        
+        context = {
+                'user_firstname' : userinfo.firstname,
+            } 
+        
+        if request.method == "POST":
+            form = EditUserInformation(request.POST,instance=userinfo)
+            if form.is_valid():
+                updated_info = form.save(commit=False)
+                updated_info.auth_user = request.user
+                updated_info.save()
+                
+                request.user.email = updated_info.user_email
+                request.user.save()
+                
+                return redirect('base:accinfo')                
+        
+        else:
+            form = EditUserInformation(instance=userinfo)
+
+        return render(request, 'loggedin/account_edit.html', {'form': form})
+    else :
+        return render(request, 'home.html', {})  
+
+
+def accinfo(request):
+    print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
+    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    if request.user.is_authenticated: 
+        account_id = request.session.get('account_id')
+        userinfo_id = request.session.get('userinfo_id')
+        
+        if userinfo_id and account_id:
+            
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
+        
+            context = {
+                'user_firstname' : userinfo.firstname,
+                'user_middlename' : userinfo.middlename,
+                'user_lastname' : userinfo.lastname,
+                'user_nameext' : userinfo.nameextension,
+                'user_sex' : userinfo.sex,
+                'user_dob' : userinfo.birthdate,
+                'user_emperson' : userinfo.emergency_contact_person,
+                'user_emcontact' : userinfo.emergency_contact_number,
+                'user_fulladdress' : userinfo.full_Address,
+                'user_barangay' : userinfo.barangay,
+                'user_municipality' : userinfo.municipality,
+                'user_contactno' : userinfo.contact_number,
+                'user_email' : userinfo.user_email
+            }            
+            return render(request, 'loggedin/account_info.html', context)
+        
+        else:
+            print("⚠️ account_id missing in session!")
+            return redirect('base:home') 
+    else :
+        return render(request, 'home.html', {})   
+    
 
 def login_success(request):
     print("🔥 Login successful! Redirecting...")  # Debugging log
@@ -82,21 +175,25 @@ def login_success(request):
     # Redirect to home *manually*
     
 def register_step1(request):
-    if request.method == "POST":
-        form = CustomUserInformationForm(request.POST)
-        if form.is_valid():
-            step1_data = form.cleaned_data.copy()
+    if request.user.is_authenticated: 
+        return render(request, 'loggedin/home.html', {})
 
-            if isinstance(step1_data.get("birthdate"), date):
-                step1_data["birthdate"] = step1_data["birthdate"].isoformat()
-
-            request.session['step1_data'] = step1_data
-            
-            return redirect('base:register_step2')
     else:
-        form = CustomUserInformationForm(initial=request.session.get('step1_data'))
+        if request.method == "POST":
+            form = CustomUserInformationForm(request.POST)
+            if form.is_valid():
+                step1_data = form.cleaned_data.copy()
 
-    return render(request, 'registration/register_step1.html', {'form': form})
+                if isinstance(step1_data.get("birthdate"), date):
+                    step1_data["birthdate"] = step1_data["birthdate"].isoformat()
+
+                request.session['step1_data'] = step1_data
+                
+                return redirect('base:register_step2')
+        else:
+            form = CustomUserInformationForm(initial=request.session.get('step1_data'))
+
+        return render(request, 'registration/register_step1.html', {'form': form})
 
 
 def register_step2(request):
@@ -143,6 +240,7 @@ def register_step2(request):
 
  
 def custom_login(request):
+    
     if request.method == 'POST':
         contact = request.POST['email_or_contact']
         password = request.POST['password']
@@ -161,6 +259,7 @@ def custom_login(request):
                 login(request, user)
                 
                 try:
+                    user_info = UserInformation.objects.get(auth_user=request.user)
                     account_info = AccountsInformation.objects.get(userinfo_id__auth_user=user)
                     account_status = account_info.account_status_id
                     
@@ -168,7 +267,9 @@ def custom_login(request):
                         account_id=account_info, 
                         account_status_id=account_status)
                     
-                    # messages.success(request, 'You are now logged in!') 
+                    request.session['account_id'] = account_info.account_id
+                    request.session['userinfo_id'] = user_info.userinfo_id
+                     
                     print("🔥 Logged IN...logged to userloginlog")  # Debugging log
                 
                 except AccountsInformation.DoesNotExist:

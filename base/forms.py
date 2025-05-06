@@ -37,44 +37,82 @@ MUNICIPALITY_CHOICES = [
     ('Orani', 'Orani'),
     ('Orion', 'Orion'),
     ('Pilar', 'Pilar'),
-    ('Samal', 'Samal')
+    ('Samal', 'Samal'),
+    ('Others', 'Outside Bataan')
 ]
 
 class CustomUserInformationForm(forms.ModelForm):
     
     sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
-    
-    birthdate = forms.DateField(label="Date of Birth",widget=forms.DateInput(attrs={'type': 'date'}))
-    
-    nameextension = forms.CharField(label="Name Extension",widget=forms.TextInput(attrs={'placeholder' : 'Leave blank if not applicable'}))
-    municipality = forms.ChoiceField(choices=MUNICIPALITY_CHOICES, widget=forms.Select)
+    nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if N/A'}))
+
+    # nameextension = forms.CharField(label="Name Extension",widget=forms.TextInput(attrs={'placeholder' : 'Leave blank if not applicable'}))
+    municipality = forms.ChoiceField(choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
     
     class Meta:
         model = UserInformation
         fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality"]
         labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality"}
+        widgets = {
+            'firstname': forms.TextInput(attrs={'class': 'form-control'}),
+            'lastname': forms.TextInput(attrs={'class': 'form-control'}),
+            'middlename': forms.TextInput(attrs={'class': 'form-control'}),
+            'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'barangay': forms.TextInput(attrs={'class': 'form-control'}),
+        }
 
 
 class UserContactAndAccountForm(forms.ModelForm):
-    phone_regex = RegexValidator(
+    phone_regex = RegexValidator(  #regular expression
         regex=r'^\+?1?\d{9,15}$', 
         message="Phone number must be entered in the format: '+639XXXXXXXXX'.")
-    contact_number = forms.CharField(validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX'}))
     
-    emergency_contact_number = forms.CharField(label="Emergency Contact Person's Contact No.",widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX'}))
+    contact_number = forms.CharField(validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
+    emergency_contact_number = forms.CharField(label="Emergency Contact Person's Contact No.",widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
     
     password1 = forms.CharField(
         label="Password",
-        widget=forms.PasswordInput
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
     password2 = forms.CharField(
         label="Confirm Password",
-        widget=forms.PasswordInput
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
-
 
     class Meta:
         model = UserInformation
         fields = ["full_Address", "emergency_contact_person", "emergency_contact_number", "user_email","contact_number" ]
         labels = {"full_Address" : "Full Address", "emergency_contact_person" : "Emergency Contact Person", "emergency_contact_number" : "Emergency Contact Person's Contact No.", "user_email" : "Email Address", "contact_number" : "Contact Number" }
+        widgets = {
+            'full_Address': forms.Textarea(attrs={'class': 'form-control', 'rows' : 2}),
+            'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control'}),
+            'user_email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
 
+class EditUserInformation(forms.ModelForm):
+
+    sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
+    municipality = forms.ChoiceField(choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
+    nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if N/A'}))
+    phone_regex = RegexValidator(
+        regex=r'^\+?1?\d{9,15}$', 
+        message="Phone number must be entered in the format: '+639XXXXXXXXX'.")
+        
+    class Meta:
+        model = UserInformation
+        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality","full_Address", "emergency_contact_person", "emergency_contact_number", "user_email","contact_number"]
+        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality", "full_Address" : "Full Address", "emergency_contact_person" : "Emergency Contact Person", "emergency_contact_number" : "Emergency Contact Person's Contact No.", "user_email" : "Email Address", "contact_number" : "Contact Number"}    
+        widgets = {
+            'firstname': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
+            'lastname': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
+            'middlename': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
+            'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'barangay': forms.TextInput(attrs={'class': 'form-control'}),
+            'full_Address': forms.TextInput(attrs={'class': 'form-control'}),
+            'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control'}),
+            'emergency_contact_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'user_email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control'})
+        }
