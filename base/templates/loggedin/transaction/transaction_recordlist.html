@@ -7,7 +7,8 @@
 {% block content %}
 <div class="container">
     <div class="record-cart">
-        <h4>Current Transaction</h4>
+        <h2>Current Transaction</h4>
+        <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
         {% if pending_records %}
             <table class="table table-sm table-bordered">
                 <thead>
@@ -19,6 +20,12 @@
                         <th>Unit</th>
                         <th>Location</th>
                         <th>Remarks</th>
+                        <th>
+                            Edit
+                        </th>
+                        <th>
+                            Remove
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -31,10 +38,23 @@
                         <td>{{ record.unit }}</td>
                         <td>{{ record.harvest_location }}</td>
                         <td>{{ record.remarks }}</td>
+                        <td>
+                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a>
+                        </td>
+                        <td>
+                            <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            <a href="{% url 'base:newrecord' %}?view=harvest&from=transaction" class="btn btn-warning btn-sm">Add Record</a>
+            {% comment %} yung '&from' indicates na tracked na galing transaction page {% endcomment %}
+            <br>
+            <br>
             <form method="POST" action="{% url 'base:finalize_transaction' %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success btn-sm">Submit All Records</button>

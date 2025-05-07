@@ -6,8 +6,8 @@ Fruit Cast | Creating Harvest Record
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Create New Harvest Record</h2>
-
+    <h2>Create New Harvest Record</h2>
+    <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
     <form method="POST" novalidate onsubmit="return confirmSave();">
         {% csrf_token %}
         
@@ -25,7 +25,13 @@ Fruit Cast | Creating Harvest Record
 
         <div class="mt-4">
             <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
-            <a href="{% url 'base:home' %}" class="btn btn-secondary">Cancel</a>
+            {% if from_transaction %}
+                <a href="{% url 'base:newrecord' %}?view=transaction_list" class="btn btn-secondary">Back to Transaction</a>
+            {%elif from_transactionedit %}
+                <a href="{% url 'base:newrecord' %}?view=transaction_list" class="btn btn-secondary">Cancel Edit</a>
+            {% else %}
+                <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-secondary">Cancel</a>
+            {% endif %}
         </div>
     </form>
 </div>

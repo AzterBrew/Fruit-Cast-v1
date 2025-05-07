@@ -30,6 +30,7 @@ urlpatterns = [
     # path('newrecord/plant', plantrecord, name="plantrecord"),
     path('newrecord/harvest/finalize', finalize_transaction, name="finalize_transaction"),
     path('newrecord/harvest/review', transaction_recordlist, name="transaction_recordlist"),
-    # path('newrecord/choose', transaction_default, name="transaction_default")
+    path('record/remove/<int:index>/', views.remove_pending_record, name='remove_pending_record'), #index ng pending record since saved as array lang sha, not in the db
+    path('record/edit/<int:index>/', views.edit_pending_record, name='edit_pending_record'),
 ]
  

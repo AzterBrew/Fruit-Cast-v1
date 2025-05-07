@@ -105,14 +105,16 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                     request.session['pending_harvest_records'] = pending_records
                     request.session.modified = True
 
-                    # Redirect to review page
                     return redirect(f"{reverse('base:newrecord')}?view=transaction_list")  # Create this URL/view
 
+            from_transaction = request.GET.get("from") == "transaction"
+            
             context = {
                 'user_firstname': userinfo.firstname,
                 'view_to_show': view_to_show,
                 'form': form,
                 'pending_records': request.session.get('pending_harvest_records',[]),
+                'from_transaction' : from_transaction,
             }
             return render(request, 'loggedin/transaction/transaction.html', context)
         else:
@@ -174,6 +176,60 @@ def finalize_transaction(request):
     # Clear session
     del request.session['pending_harvest_records']
     return redirect(f"{reverse('base:newrecord')}?view=choose")  # Or a success page
+
+
+@require_POST
+def remove_pending_record(request, index):
+    if not request.user.is_authenticated:
+        return redirect('base:home')
+
+    pending_records = request.session.get('pending_harvest_records', [])
+    if 0 <= index < len(pending_records):
+        del pending_records[index]
+        request.session['pending_harvest_records'] = pending_records
+        request.session.modified = True
+
+    return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+
+
+def edit_pending_record(request, index):
+    if not request.user.is_authenticated:
+        return redirect('base:home')
+
+    pending_records = request.session.get('pending_harvest_records', [])
+    if index < 0 or index >= len(pending_records):
+        return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+
+    record_data = pending_records[index]
+
+    # Convert stored ISO dates/strings back to usable values
+    form = HarvestRecordCreate(initial=record_data)
+
+    if request.method == "POST":
+        form = HarvestRecordCreate(request.POST)
+        if form.is_valid():
+            updated_data = form.cleaned_data.copy()
+            # Convert again
+            for key, value in updated_data.items():
+                if isinstance(value, date):
+                    updated_data[key] = value.isoformat()
+                if isinstance(value, Decimal):
+                    updated_data[key] = float(value)
+            pending_records[index] = updated_data
+            request.session['pending_harvest_records'] = pending_records
+            request.session.modified = True
+            return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+        
+        
+    from_transactionedit = request.GET.get("from") == "transactionedit"
+    # Pass the same context you use in `newrecord`
+    context = {
+        'form': form,
+        'view_to_show': 'harvest',
+        'pending_records': pending_records,
+        'from_transactionedit' : from_transactionedit,
+    }
+    return render(request, 'loggedin/transaction/transaction.html', context)
 
 
 
