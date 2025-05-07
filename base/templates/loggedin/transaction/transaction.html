@@ -9,8 +9,47 @@ Fruit Cast | Create New Record
 {% endblock navbar %}
 
 {% block content %}
-    <h1>Hello po, {{user_firstname}}. This is transaction</h1>
-    <h1>USER LOGGED IN</h1>
+<div class="transaction-view d-flex flex-column flex-md-row"> {%comment%} other parts ng class is bootstrap to make it responsive(flex-column flex-md-row) {%endcomment%}
+    <div class="transaction-side">
+        <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 25vmax;"> 
+            <p class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">                 
+                <span class="fs-4">Transaction</span> 
+            </p> 
+            <hr> 
+            <ul class="nav nav-pills flex-column mb-auto"> 
+                <li> 
+                    <a href="?view=harvest" class="nav-link link-body-emphasis"> 
+                        New Harvest Record
+                    </a> 
+                </li> 
+                <li> 
+                    <a href="?view=plant" class="nav-link link-body-emphasis">                         
+                        New Plant Record
+                    </a> 
+                </li> 
+                <li> 
+                    <a href="#" class="nav-link link-body-emphasis">                         
+                        Your Transaction History
+                    </a> 
+                </li> 
+            </ul> 
+            <hr>     
+        </div>
+    </div>
+
+    <div class="flex-grow-1 p-3 chosen-transaction py-4">
+
+        {% if view_to_show == "harvest" %}
+          {% include "loggedin/transaction/harvest_record.html" %}
+        {% elif view_to_show == "plant" %}
+          {% include "loggedin/transaction/plant_record.html" %}
+        {% else %}
+          <p>Choose a transaction type in the sidebar</p>
+        {% endif %}
+
+    </div>
+
+</div>
     
     
 {% endblock content %}

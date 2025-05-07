@@ -41,6 +41,12 @@ MUNICIPALITY_CHOICES = [
     ('Others', 'Outside Bataan')
 ]
 
+UNIT_CHOICES = [
+    ('kilogram','kilogram (kg)'),
+    ('gram','gram (g)'),
+    ('Metric Ton','Metric Ton (t)')
+]
+
 class CustomUserInformationForm(forms.ModelForm):
     
     sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
@@ -93,7 +99,7 @@ class UserContactAndAccountForm(forms.ModelForm):
 class EditUserInformation(forms.ModelForm):
 
     sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
-    municipality = forms.ChoiceField(choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
+    municipality = forms.ChoiceField(choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class': 'form-control form-select'}))
     nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if N/A'}))
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$', 
@@ -110,9 +116,31 @@ class EditUserInformation(forms.ModelForm):
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'barangay': forms.TextInput(attrs={'class': 'form-control'}),
-            'full_Address': forms.TextInput(attrs={'class': 'form-control'}),
+            'full_Address': forms.Textarea(attrs={'class': 'form-control', 'rows' : 2}),
             'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control'}),
             'emergency_contact_number': forms.TextInput(attrs={'class': 'form-control'}),
             'user_email': forms.EmailInput(attrs={'class': 'form-control'}),
             'contact_number': forms.TextInput(attrs={'class': 'form-control'})
         }
+
+
+class HarvestRecordCreate (forms.ModelForm):
+    
+    # HELLOOO I ACTUALLY FORGOT TO ADD THE WEIGHT PER UNIT SO NEED KO MAG REMIGRATE
+    
+    harvest_location = forms.ChoiceField(label="Location of Harvest",choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class':'form-control form-select'}))    
+    unit = forms.ChoiceField(label="Unit of Measurement",choices=UNIT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
+    
+    class Meta:
+        model = HarvestRecord
+        fields = ["harvest_date", "harvest_location", "commodity_type", "commodity_spec", "total_weight", "unit", "remarks"]
+        labels = {"harvest_date" : "Harvest Date", "commodity_type" : "Commodity Type", "commodity_spec" : "Commodity Specification", "total_weight" : "Total Weight of Commodity", "remarks" : "Remarks / Additional Notes"}
+        widgets = {
+            'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'commodity_type' : forms.TextInput(attrs={'class':'form-control'}),
+            'commodity_spec' : forms.TextInput(attrs={'class':'form-control'}),
+            'total_weight' : forms.TextInput(attrs={'class':'form-control'}),
+            'remarks' : forms.Textarea(attrs={'class':'form-control', 'rows' : 2})
+            
+        }
+        

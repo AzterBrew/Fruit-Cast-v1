@@ -25,6 +25,8 @@ urlpatterns = [
     path('accountinfo/edit', editacc, name="editacc"),
     path('forecast/', forecast, name="forecast"),
     path('aboutus/', about, name="about"),
-    path('newrecord/', newrecord, name="newrecord")
+    path('newrecord/', newrecord, name="newrecord"),
+    # path('newrecord/harvest', harvestrecord, name="harvestrecord"),
+    path('newrecord/plant', plantrecord, name="plantrecord")
 ]
  

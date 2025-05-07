@@ -11,7 +11,7 @@ from django.utils import timezone
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from .models import *
-from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation
+from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -66,6 +66,104 @@ def forecast(request):
 
 
 def newrecord(request):
+    print("🔥 DEBUG: newrecord view called!")  
+    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    
+    if request.user.is_authenticated: 
+        account_id = request.session.get('account_id')
+        userinfo_id = request.session.get('userinfo_id')
+        
+        if userinfo_id and account_id:
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
+            accountinfo = AccountsInformation.objects.get(pk=account_id)
+            view_to_show = request.GET.get("view", "") #for showing another page within another page ()yung transaction and harves/plant
+
+            form = None
+            if view_to_show == "harvest":
+                form = HarvestRecordCreate(request.POST or None)
+                
+                if request.method == "POST" and form.is_valid():
+                    transaction = Transaction.objects.create(
+                        account_id=accountinfo,
+                        transaction_type="Harvest",
+                        notes=form.cleaned_data.get("remarks","")
+                    ) 
+                    
+                    harvest = form.save(commit=False)
+                    harvest.transaction_id = transaction
+                    harvest.user_info = userinfo
+                    harvest.save()
+                    
+                    return redirect('base:home')  
+
+            context = {
+                'user_firstname': userinfo.firstname,
+                'view_to_show': view_to_show,
+                'form': form,
+            }
+            return render(request, 'loggedin/transaction/transaction.html', context)
+        else:
+            print("⚠️ account_id missing in session!")
+            return redirect('base:home')
+    else:
+        return render(request, 'home.html', {})
+
+# def newrecord(request):     #e2 po for transaction / creating new records  ACTUALLY OLD VER
+#     print("🔥 DEBUG: newrecord view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+#     if request.user.is_authenticated: 
+#         account_id = request.session.get('account_id')
+#         userinfo_id = request.session.get('userinfo_id')
+        
+#         if userinfo_id and account_id:            
+#             userinfo = UserInformation.objects.get(pk=userinfo_id)
+            
+#             view_to_show = request.GET.get("view", "") # for transaction na page, displaying other pages with include kineme
+        
+#             context = {
+#                 'user_firstname' : userinfo.firstname,
+#                 'view_to_show' : view_to_show,
+#             }            
+            
+#             return render(request, 'loggedin/transaction/transaction.html', context)
+        
+#         else:
+#             print("⚠️ account_id missing in session!")
+#             return redirect('base:home')   
+#     else :
+#         return render(request, 'home.html', {}) 
+
+
+# def harvestrecord(request):    OLD VERSION (nimove over to newrecord() kase i just included the harvestrecord.html within the transaciton.html, not redirected to the page, so this function isnt really happening)
+#     print("🔥 DEBUG: newrecord harvest view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+#     if request.user.is_authenticated: 
+#         account_id = request.session.get('account_id')
+#         userinfo_id = request.session.get('userinfo_id')
+        
+#         if userinfo_id and account_id:
+#             userinfo = UserInformation.objects.get(pk=userinfo_id)
+#             form = HarvestRecordCreate(request.POST or None)
+
+#             if request.method == "POST" and form.is_valid():
+#                 form.instance.user_info = userinfo  # Set FK if needed
+#                 form.save()
+#                 return redirect('some_success_url')  # TODO: change this
+            
+#             context = {
+#                 'user_firstname': userinfo.firstname,
+#                 'form': form
+#             }
+
+#             return render(request, 'loggedin/transaction/harvest_record.html', context)
+#         else:
+#             print("⚠️ account_id or userinfo_id missing in session!")
+#             return redirect('base:home')   
+#     else :
+#         return render(request, 'home.html', {}) 
+
+
+def plantrecord(request):
     print("🔥 DEBUG: newrecord view called!")  # This should print when you visit "/"
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
     if request.user.is_authenticated: 
@@ -79,7 +177,7 @@ def newrecord(request):
             context = {
                 'user_firstname' : userinfo.firstname,
             }            
-            return render(request, 'loggedin/transaction/transaction.html', context)
+            return render(request, 'loggedin/transaction/plant_record.html', context)
         
         else:
             print("⚠️ account_id missing in session!")

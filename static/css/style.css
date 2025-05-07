@@ -54,7 +54,7 @@ div {
     position: fixed;
     height: 10vh;
     background-color: #f7fff2;
-    z-index: 1;
+    z-index: 3;
     min-width: 100vw;
 }
 
@@ -207,6 +207,25 @@ div {
     font-size: 0.9em;
   }
   
+.transaction-view{
+    /* display: inline-block; */
+    background-color: #fffefc;
+    min-height: 80vh;
+    min-width: 90vw;
+    margin-top: 12vh;
+}
+
+.transaction-side {
+    max-width: 50vw;
+    background-color: #fffefc;
+    box-shadow: 0 0.1vmax .5vmax #b9cbb3;
+    z-index: 1;
+}
+
+.chosen-transaction {
+    max-width: 50vw;
+}
+
 
 nav {
     padding: 1rem;
