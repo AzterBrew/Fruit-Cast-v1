@@ -27,6 +27,9 @@ urlpatterns = [
     path('aboutus/', about, name="about"),
     path('newrecord/', newrecord, name="newrecord"),
     # path('newrecord/harvest', harvestrecord, name="harvestrecord"),
-    path('newrecord/plant', plantrecord, name="plantrecord")
+    # path('newrecord/plant', plantrecord, name="plantrecord"),
+    path('newrecord/harvest/finalize', finalize_transaction, name="finalize_transaction"),
+    path('newrecord/harvest/review', transaction_recordlist, name="transaction_recordlist"),
+    # path('newrecord/choose', transaction_default, name="transaction_default")
 ]
  

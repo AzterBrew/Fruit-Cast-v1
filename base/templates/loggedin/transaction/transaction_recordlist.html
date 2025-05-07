@@ -1,0 +1,48 @@
+{% comment %} {% extends "loggedin/layout.html" %} {% endcomment %}
+
+{% block title %}
+{% comment %} Fruit Cast | Harvest Record Transaction {% endcomment %}
+{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <div class="record-cart">
+        <h4>Current Transaction</h4>
+        {% if pending_records %}
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Commodity</th>
+                        <th>Spec</th>
+                        <th>Weight</th>
+                        <th>Unit</th>
+                        <th>Location</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in pending_records %}
+                    <tr>
+                        <td>{{ record.harvest_date }}</td>
+                        <td>{{ record.commodity_type }}</td>
+                        <td>{{ record.commodity_spec }}</td>
+                        <td>{{ record.total_weight }}</td>
+                        <td>{{ record.unit }}</td>
+                        <td>{{ record.harvest_location }}</td>
+                        <td>{{ record.remarks }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <form method="POST" action="{% url 'base:finalize_transaction' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">Submit All Records</button>
+            </form>
+        {% else %}
+            <p>No records yet.</p>
+        {% endif %}
+    </div>
+    
+</div>
+{% endblock content %}

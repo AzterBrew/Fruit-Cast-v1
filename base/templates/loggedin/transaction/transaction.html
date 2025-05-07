@@ -12,8 +12,10 @@ Fruit Cast | Create New Record
 <div class="transaction-view d-flex flex-column flex-md-row"> {%comment%} other parts ng class is bootstrap to make it responsive(flex-column flex-md-row) {%endcomment%}
     <div class="transaction-side">
         <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 25vmax;"> 
-            <p class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">                 
-                <span class="fs-4">Transaction</span> 
+            <p class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none"> 
+                <a href="?view=choose">               
+                    <span class="fs-4">Transaction</span> 
+                </a> 
             </p> 
             <hr> 
             <ul class="nav nav-pills flex-column mb-auto"> 
@@ -28,7 +30,7 @@ Fruit Cast | Create New Record
                     </a> 
                 </li> 
                 <li> 
-                    <a href="#" class="nav-link link-body-emphasis">                         
+                    <a href="?view=transaction_list" class="nav-link link-body-emphasis">                         
                         Your Transaction History
                     </a> 
                 </li> 
@@ -43,6 +45,11 @@ Fruit Cast | Create New Record
           {% include "loggedin/transaction/harvest_record.html" %}
         {% elif view_to_show == "plant" %}
           {% include "loggedin/transaction/plant_record.html" %}
+        {% elif view_to_show == "transaction_list" %}
+          {% include "loggedin/transaction/transaction_recordlist.html" %}
+        {% elif view_to_show == "choose" %}
+          {% include "loggedin/transaction/transaction_default.html" %}
+        
         {% else %}
           <p>Choose a transaction type in the sidebar</p>
         {% endif %}
