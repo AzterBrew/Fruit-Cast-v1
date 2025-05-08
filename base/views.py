@@ -10,11 +10,12 @@ from decimal import Decimal
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.urls import reverse
+from django.http import HttpResponseForbidden
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from .models import *
-from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate
+from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -82,15 +83,30 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
             view_to_show = request.GET.get("view", "") #for showing another page within another page ()yung transaction and harves/plant
 
             form = None
+            # transactions = None
+            records = []
+            selected_transaction = None
+            from_transaction = request.GET.get("from") == "transaction"
+            
+            context = {
+                'user_firstname': userinfo.firstname,
+                'view_to_show': view_to_show,
+                'form': form,
+                'pending_records': request.session.get('pending_harvest_records',[]),
+                'from_transaction' : from_transaction,
+            }
+            
+            
             if view_to_show == "harvest":
                 form = HarvestRecordCreate(request.POST or None)
+                context['form'] = form
                 
                 if request.method == "POST" and form.is_valid():
                     # Get the current list from session or empty list
-                    pending_records = request.session.get('pending_harvest_records', [])
-                    
-                    # Serialize form data
+                    pending_records = request.session.get('pending_harvest_records', [])                    
                     record_data = form.cleaned_data.copy()
+                    record_data['record_type'] = 'harvest'
+                    print(f"succesfully added {record_data['record_type']}")
                     
                     for key, value in record_data.items():
                         if isinstance(value,date):
@@ -104,18 +120,59 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                     # Save back to session
                     request.session['pending_harvest_records'] = pending_records
                     request.session.modified = True
+                    print(f"about to redirect to list {record_data['record_type']}")
+                    
+                    # request.session['current_record_type'] = 'harvest'
+                    # return redirect(f"{reverse('base:transaction_recordlist')}?record_type=harvest")
+                    return redirect(f"{reverse('base:newrecord')}?view=transaction_list")  
+                
+            elif view_to_show == "plant":
+                form = PlantRecordCreate(request.POST or None)
+                context['form'] = form
+                
+                if request.method == "POST" and form.is_valid():
+                    pending_records = request.session.get('pending_plant_records', [])
+                    record_data = form.cleaned_data.copy()
+                    record_data['record_type'] = 'plant'
+                    
+                    for key, value in record_data.items():
+                        if isinstance(value, date):
+                            record_data[key] = value.isoformat()
+                        if isinstance(value, Decimal):
+                            record_data[key] = float(value)
 
-                    return redirect(f"{reverse('base:newrecord')}?view=transaction_list")  # Create this URL/view
+                    pending_records.append(record_data)
+                    request.session['pending_plant_records'] = pending_records
+                    request.session.modified = True
 
-            from_transaction = request.GET.get("from") == "transaction"
+                    return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+
             
-            context = {
-                'user_firstname': userinfo.firstname,
-                'view_to_show': view_to_show,
-                'form': form,
-                'pending_records': request.session.get('pending_harvest_records',[]),
-                'from_transaction' : from_transaction,
-            }
+            elif view_to_show == "transaction_history":
+                transactions = Transaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+                context['transactions'] = transactions
+                
+                return render(request, 'loggedin/transaction/transaction.html', context)
+
+            elif view_to_show == "transaction_recordhistory":
+                transaction_id = request.GET.get("id")
+                
+                try:
+                    selected_transaction = Transaction.objects.get(pk=transaction_id)
+                except Transaction.DoesNotExist:
+                    selected_transaction = None
+                    
+                records = []
+                
+                if selected_transaction:
+                    if selected_transaction.transaction_type.lower()=="harvest":
+                        records = HarvestRecord.objects.filter(transaction_id=selected_transaction)
+                    elif selected_transaction.transaction_type.lower()=="plant":
+                        records = PlantRecord.objects.filter(transaction_id=selected_transaction)
+                
+                context['records'] = records
+                context['selected_transaction'] = selected_transaction            
+            
             return render(request, 'loggedin/transaction/transaction.html', context)
         else:
             print("⚠️ account_id missing in session!")
@@ -128,108 +185,332 @@ def transaction_recordlist(request):
     if not request.user.is_authenticated:
         return redirect('base:home')
 
-    pending_records = request.session.get('pending_harvest_records', [])
+    # Get the correct records from the session (harvest or plant)
+    record_type = request.GET.get("record_type") or request.session.get("current_record_type","harvest")
+    print(f"record type is {record_type}")
+
+    if record_type == "plant":
+        pending_records = request.session.get('pending_plant_records', [])
+    else:
+        pending_records = request.session.get('pending_harvest_records', [])
+
     userinfo_id = request.session.get('userinfo_id')
     userinfo = UserInformation.objects.get(pk=userinfo_id)
 
     context = {
         'pending_records': pending_records,
         'user_firstname': userinfo.firstname,
+        'record_type': record_type, 
     }
 
     return render(request, 'loggedin/transaction/transaction_recordlist.html', context)
 
 
+
+# def transaction_recordlist(request):
+#     if not request.user.is_authenticated:
+#         return redirect('base:home')
+
+#     pending_records = request.session.get('pending_harvest_records', [])
+#     userinfo_id = request.session.get('userinfo_id')
+#     userinfo = UserInformation.objects.get(pk=userinfo_id)
+
+#     context = {
+#         'pending_records': pending_records,
+#         'user_firstname': userinfo.firstname,
+#     }
+
+#     return render(request, 'loggedin/transaction/transaction_recordlist.html', context)
+
+
 @require_POST
 def finalize_transaction(request):
+    print(f"Pending records: {request.session.get('pending_harvest_records', [])}")
+
     if not request.user.is_authenticated:
         return redirect('base:home')
+
+    if request.session.get('pending_plant_records'):
+        record_type = 'plant'
+    elif request.session.get('pending_harvest_records'):
+        record_type = 'harvest'
+    else:
+        print("❌ No pending records found!")
+        return redirect('base:transaction_recordlist')
+    
+    print(f"Record Type: {record_type}")
+    if record_type not in ['harvest', 'plant']:
+        # print(f"not in harvest or plant {record_type}")        
+        # print(f"Not in ['harvest', 'plant']: {record_type}") 
+        return redirect('base:transaction_recordlist')  # Fallback
 
     account_id = request.session.get('account_id')
     userinfo_id = request.session.get('userinfo_id')
     accountinfo = AccountsInformation.objects.get(pk=account_id)
     userinfo = UserInformation.objects.get(pk=userinfo_id)
-    
-    records = request.session.get('pending_harvest_records', [])
+
+    session_key = f'pending_{record_type}_records'
+    records = request.session.get(session_key, [])
 
     if not records:
-        return redirect('base:transaction_recordlist')  # Nothing to save
+        print("No records found in session")
+        return redirect('base:transaction_recordlist')
 
     transaction = Transaction.objects.create(
         account_id=accountinfo,
-        transaction_type="Harvest",
-        notes="Submitted via transaction cart"
+        transaction_type=record_type.capitalize(),
+        notes="Submitted via transaction cart",
+        item_status_id=ItemStatus.objects.get(item_status_id=3)
     )
 
     for data in records:
-        HarvestRecord.objects.create(
-            transaction_id=transaction,
-            harvest_date=data['harvest_date'],
-            commodity_type=data['commodity_type'],
-            commodity_spec=data['commodity_spec'],
-            total_weight=data['total_weight'],
-            unit=data['unit'],
-            harvest_location=data['harvest_location'],
-            remarks=data.get('remarks', '')
-        )
+        if record_type == 'harvest':
+            HarvestRecord.objects.create(
+                transaction_id=transaction,
+                harvest_date=data['harvest_date'],
+                commodity_type=data['commodity_type'],
+                commodity_spec=data['commodity_spec'],
+                total_weight=data['total_weight'],
+                unit=data['unit'],
+                weight_per_unit=data['weight_per_unit'],
+                harvest_location=data['harvest_location'],
+                remarks=data.get('remarks', '')
+            )
+        elif record_type == 'plant':
+            PlantRecord.objects.create(
+                transaction_id=transaction,
+                plant_date=data['plant_date'],
+                commodity_type=data['commodity_type'],
+                commodity_spec=data['commodity_spec'],
+                expected_harvest_date=data['expected_harvest_date'],
+                plant_location=data['plant_location'],
+                min_expected_harvest=data['min_expected_harvest'],
+                max_expected_harvest=data['max_expected_harvest'],
+                land_area=data['land_area'],
+                remarks=data.get('remarks', '')
+            )
 
-    # Clear session
-    del request.session['pending_harvest_records']
-    return redirect(f"{reverse('base:newrecord')}?view=choose")  # Or a success page
+    print("Transaction finalized, records saved")
 
+    del request.session[session_key]
+    return redirect(f"{reverse('base:newrecord')}?view=choose")
+
+
+# @require_POST
+# def finalize_transaction(request):   OLD
+#     if not request.user.is_authenticated:
+#         return redirect('base:home')
+
+#     account_id = request.session.get('account_id')
+#     userinfo_id = request.session.get('userinfo_id')
+#     accountinfo = AccountsInformation.objects.get(pk=account_id)
+#     userinfo = UserInformation.objects.get(pk=userinfo_id)
+    
+#     records = request.session.get('pending_harvest_records', [])
+
+#     if not records:
+#         return redirect('base:transaction_recordlist')  # Nothing to save
+
+#     transaction = Transaction.objects.create(
+#         account_id=accountinfo,
+#         transaction_type="Harvest",
+#         notes="Submitted via transaction cart",
+#         item_status_id=ItemStatus.objects.get(item_status_id=3) #value is Pending sa itemstatus table
+#     )
+
+#     for data in records:
+#         HarvestRecord.objects.create(
+#             transaction_id=transaction,
+#             harvest_date=data['harvest_date'],
+#             commodity_type=data['commodity_type'],
+#             commodity_spec=data['commodity_spec'],
+#             total_weight=data['total_weight'],
+#             unit=data['unit'],
+#             weight_per_unit=data['weight_per_unit'],
+#             harvest_location=data['harvest_location'],
+#             remarks=data.get('remarks', '')
+#         )
+
+#     # Clear session
+#     del request.session['pending_harvest_records']
+#     return redirect(f"{reverse('base:newrecord')}?view=choose")  # Or a success page
 
 @require_POST
 def remove_pending_record(request, index):
     if not request.user.is_authenticated:
         return redirect('base:home')
 
-    pending_records = request.session.get('pending_harvest_records', [])
+    record_type = request.POST.get("record_type", "harvest")  # fallback
+    session_key = f'pending_{record_type}_records'
+
+    pending_records = request.session.get(session_key, [])
     if 0 <= index < len(pending_records):
         del pending_records[index]
-        request.session['pending_harvest_records'] = pending_records
+        request.session[session_key] = pending_records
         request.session.modified = True
 
     return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+
+
+
+# @require_POST OLD
+# def remove_pending_record(request, index):
+#     if not request.user.is_authenticated:
+#         return redirect('base:home')
+
+#     pending_records = request.session.get('pending_harvest_records', [])
+#     if 0 <= index < len(pending_records):
+#         del pending_records[index]
+#         request.session['pending_harvest_records'] = pending_records
+#         request.session.modified = True
+
+#     return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
 
 
 def edit_pending_record(request, index):
     if not request.user.is_authenticated:
         return redirect('base:home')
 
-    pending_records = request.session.get('pending_harvest_records', [])
+    # 👉 Determine whether it's a plant or harvest record
+    record_type = request.GET.get("record_type", "harvest")  # default to harvest
+
+    if record_type == "plant":
+        session_key = 'pending_plant_records'
+        form_class = PlantRecordCreate
+        view_to_show = 'plant'
+    else:
+        session_key = 'pending_harvest_records'
+        form_class = HarvestRecordCreate
+        view_to_show = 'harvest'
+
+    # 👉 Access the correct pending records list
+    pending_records = request.session.get(session_key, [])
+
     if index < 0 or index >= len(pending_records):
         return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
 
     record_data = pending_records[index]
-
-    # Convert stored ISO dates/strings back to usable values
-    form = HarvestRecordCreate(initial=record_data)
+    form = form_class(initial=record_data)
 
     if request.method == "POST":
-        form = HarvestRecordCreate(request.POST)
+        form = form_class(request.POST)
         if form.is_valid():
             updated_data = form.cleaned_data.copy()
-            # Convert again
             for key, value in updated_data.items():
                 if isinstance(value, date):
                     updated_data[key] = value.isoformat()
                 if isinstance(value, Decimal):
                     updated_data[key] = float(value)
             pending_records[index] = updated_data
-            request.session['pending_harvest_records'] = pending_records
+            request.session[session_key] = pending_records
             request.session.modified = True
             return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
-        
-        
+
     from_transactionedit = request.GET.get("from") == "transactionedit"
-    # Pass the same context you use in `newrecord`
+
     context = {
         'form': form,
-        'view_to_show': 'harvest',
+        'view_to_show': view_to_show,
         'pending_records': pending_records,
-        'from_transactionedit' : from_transactionedit,
+        'from_transactionedit': from_transactionedit,
     }
+
     return render(request, 'loggedin/transaction/transaction.html', context)
+
+
+
+# def edit_pending_record(request, index):      OLD
+#     if not request.user.is_authenticated:
+#         return redirect('base:home')
+
+#     pending_records = request.session.get('pending_harvest_records', [])
+#     if index < 0 or index >= len(pending_records):
+#         return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+
+#     record_data = pending_records[index]
+
+#     # Convert stored ISO dates/strings back to usable values
+#     form = HarvestRecordCreate(initial=record_data)
+
+#     if request.method == "POST":
+#         form = HarvestRecordCreate(request.POST)
+#         if form.is_valid():
+#             updated_data = form.cleaned_data.copy()
+#             # Convert again
+#             for key, value in updated_data.items():
+#                 if isinstance(value, date):
+#                     updated_data[key] = value.isoformat()
+#                 if isinstance(value, Decimal):
+#                     updated_data[key] = float(value)
+#             pending_records[index] = updated_data
+#             request.session['pending_harvest_records'] = pending_records
+#             request.session.modified = True
+#             return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+        
+        
+#     from_transactionedit = request.GET.get("from") == "transactionedit"
+#     # Pass the same context you use in `newrecord`
+#     context = {
+#         'form': form,
+#         'view_to_show': 'harvest',
+#         'pending_records': pending_records,
+#         'from_transactionedit' : from_transactionedit,
+#     }
+#     return render(request, 'loggedin/transaction/transaction.html', context)
+
+
+def transaction_history(request):
+    if not request.user.is_authenticated:
+        return redirect('base:home')
+
+    try:
+        # print("account is testing rn:", userinfo_id)        
+        userinfo_id = request.session.get('userinfo_id')
+        accountinfo = AccountsInformation.objects.get(userinfo_id=userinfo_id)
+    except AccountsInformation.DoesNotExist:
+        print("❌ AccountInfo not found for userinfo_id:", userinfo_id)
+        return render(request, 'loggedin/transaction/transaction_history.html', {
+            'transactions': [],
+            'user_firstname': 'Unknown',
+        })
+
+    transactions = Transaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+
+    print(f"✅ Found {transactions.count()} transactions for account {accountinfo.account_id}")
+
+    return render(request, 'loggedin/transaction/transaction_history.html', {
+        'transactions': transactions,
+        'user_firstname': accountinfo.userinfo_id.firstname,
+    })
+
+def transaction_recordhistory(request, transaction_id):
+    if not request.user.is_authenticated:
+        return redirect('base:home')
+
+    try:
+        transaction = Transaction.objects.get(transaction_id=transaction_id)
+    except Transaction.DoesNotExist:
+        return HttpResponse("Transaction not found", status=404)
+
+    # Make sure this is the user’s transaction
+    session_account_id = request.session.get('account_id')
+    if session_account_id != transaction.account_id.pk:
+        return HttpResponseForbidden("Unauthorized access to this transaction.")
+
+    # Get the related records based on transaction type
+    if transaction.transaction_type.lower() == "harvest":
+        records = HarvestRecord.objects.filter(transaction_id=transaction)
+    elif transaction.transaction_type.lower() == "plant":
+        records = PlantRecord.objects.filter(transaction_id=transaction)
+    else:
+        records = []
+
+    return render(request, 'loggedin/transaction/transaction_recordhistory.html', {
+        'transaction': transaction,
+        'records': records,
+    })
+
+
 
 
 
@@ -415,17 +696,20 @@ def accinfo(request):
                 'user_dob' : userinfo.birthdate,
                 'user_emperson' : userinfo.emergency_contact_person,
                 'user_emcontact' : userinfo.emergency_contact_number,
-                'user_fulladdress' : userinfo.full_Address,
+                'user_address_details' : userinfo.address_details,
                 'user_barangay' : userinfo.barangay,
                 'user_municipality' : userinfo.municipality,
                 'user_contactno' : userinfo.contact_number,
-                'user_email' : userinfo.user_email
+                'user_email' : userinfo.user_email,
+                'user_religion' : userinfo.religion,
+                'user_civil_status' : userinfo.civil_status,
+                'user_rsbsa_ref_number' : userinfo.rsbsa_ref_number,
             }            
             return render(request, 'loggedin/account_info.html', context)
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home') 
+            return redirect('base:home') #dapat redirect si user sa guest home
     else :
         return render(request, 'home.html', {})   
     
@@ -482,18 +766,20 @@ def register_step2(request):
                 auth_user=auth_user,
                 contact_number=form.cleaned_data['contact_number'],
                 user_email=form.cleaned_data['user_email'],
-                full_Address=form.cleaned_data['full_Address'],
+                civil_status=form.cleaned_data['civil_status'],
+                religion=form.cleaned_data['religion'],
+                rsbsa_ref_number=form.cleaned_data['rsbsa_ref_number'],
                 emergency_contact_person=form.cleaned_data['emergency_contact_person'],
                 emergency_contact_number=form.cleaned_data['emergency_contact_number'],
                 **step1_data  # merges all step 1 fields
             )
             account_type_instance = AccountType.objects.get(account_type_id=1)
-            account_status_instance = AccountStatus.objects.get(accstatus_id=1)
+            item_status_instance = ItemStatus.objects.get(item_status_id=1)
 
             AccountsInformation.objects.create(
                 userinfo_id = userinfo,
                 account_type_id = account_type_instance,
-                account_status_id = account_status_instance,
+                item_status_id = item_status_instance,
                 account_register_date = timezone.now()
             )
 
@@ -528,11 +814,11 @@ def custom_login(request):
                 try:
                     user_info = UserInformation.objects.get(auth_user=request.user)
                     account_info = AccountsInformation.objects.get(userinfo_id__auth_user=user)
-                    account_status = account_info.account_status_id
+                    item_status = account_info.item_status_id
                     
                     UserLoginLog.objects.create(
                         account_id=account_info, 
-                        account_status_id=account_status)
+                        item_status_id=item_status)
                     
                     request.session['account_id'] = account_info.account_id
                     request.session['userinfo_id'] = user_info.userinfo_id

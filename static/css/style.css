@@ -131,11 +131,11 @@ div {
 .login-right-container {
     width: 55vmax;
     min-height: 90vh;
-    background-color: #f7fff2;
+    /* background-color: #f7fff2; */
     align-items: center;
     padding-top: 15vh;
     /* text-align: center; */
-    margin-top: 10vh;
+    /* margin-top: 10vh; */
     padding: 10vh 5vh 10vh 10vh;
     line-height: 2vmin;
 }

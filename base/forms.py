@@ -48,6 +48,15 @@ UNIT_CHOICES = [
     ('Metric Ton','Metric Ton (t)')
 ]
 
+CIVSTAT_CHOICES = [
+    ('Single','Single'),
+    ('Married','Married'),
+    ('Separated','Separated'),
+    ('Widowed','Widowed'),
+    ('Divorced','Divorced'),
+    ('Other','Other'),
+]
+
 class CustomUserInformationForm(forms.ModelForm):
     
     sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
@@ -58,8 +67,8 @@ class CustomUserInformationForm(forms.ModelForm):
     
     class Meta:
         model = UserInformation
-        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality"]
-        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality"}
+        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality", "address_details"]
+        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality", "address_details" : "Purok, Street Name, Building, House No."}
         widgets = {
             'firstname': forms.TextInput(attrs={'class': 'form-control'}),
             'lastname': forms.TextInput(attrs={'class': 'form-control'}),
@@ -67,6 +76,7 @@ class CustomUserInformationForm(forms.ModelForm):
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'barangay': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows' : 2}),
         }
 
 
@@ -77,6 +87,7 @@ class UserContactAndAccountForm(forms.ModelForm):
     
     contact_number = forms.CharField(validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
     emergency_contact_number = forms.CharField(label="Emergency Contact Person's Contact No.",widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
+    civil_status = forms.ChoiceField(label="Civil Status", choices=CIVSTAT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
     
     password1 = forms.CharField(
         label="Password",
@@ -89,10 +100,12 @@ class UserContactAndAccountForm(forms.ModelForm):
 
     class Meta:
         model = UserInformation
-        fields = ["full_Address", "emergency_contact_person", "emergency_contact_number", "user_email","contact_number" ]
-        labels = {"full_Address" : "Full Address", "emergency_contact_person" : "Emergency Contact Person", "emergency_contact_number" : "Emergency Contact Person's Contact No.", "user_email" : "Email Address", "contact_number" : "Contact Number" }
+        fields = ["religion", "civil_status", "rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "contact_number", "user_email"]
+        labels = {"religion":"Religion",  "emergency_contact_person" : "Emergency Contact Person", "emergency_contact_number" : "Emergency Contact Person's Contact No.", "user_email" : "Email Address", "contact_number" : "Contact Number" }
         widgets = {
-            'full_Address': forms.Textarea(attrs={'class': 'form-control', 'rows' : 2}),
+            'religion': forms.TextInput(attrs={'class': 'form-control'}),
+            'civil_status': forms.TextInput(attrs={'class': 'form-control'}),
+            'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if N/A'}),
             'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control'}),
             'user_email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
@@ -102,14 +115,15 @@ class EditUserInformation(forms.ModelForm):
     sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
     municipality = forms.ChoiceField(choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class': 'form-control form-select'}))
     nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if N/A'}))
+    civil_status = forms.ChoiceField(label="Civil Status",choices=CIVSTAT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$', 
         message="Phone number must be entered in the format: '+639XXXXXXXXX'.")
         
     class Meta:
         model = UserInformation
-        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality","full_Address", "emergency_contact_person", "emergency_contact_number", "user_email","contact_number"]
-        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality", "full_Address" : "Full Address", "emergency_contact_person" : "Emergency Contact Person", "emergency_contact_number" : "Emergency Contact Person's Contact No.", "user_email" : "Email Address", "contact_number" : "Contact Number"}    
+        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality","address_details", "religion", "civil_status", "rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "user_email","contact_number"]
+        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality", "address_details" : "Purok, Street Name, Building, House No.", "religion":"Religion",  "emergency_contact_person" : "Emergency Contact Person", "emergency_contact_number" : "Emergency Contact Person's Contact No.", "user_email" : "Email Address", "contact_number" : "Contact Number"}    
         widgets = {
             'firstname': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
             'lastname': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
@@ -117,7 +131,10 @@ class EditUserInformation(forms.ModelForm):
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'barangay': forms.TextInput(attrs={'class': 'form-control'}),
-            'full_Address': forms.Textarea(attrs={'class': 'form-control', 'rows' : 2}),
+            'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows' : 2}),
+            'religion': forms.TextInput(attrs={'class': 'form-control'}),
+            'civil_status': forms.TextInput(attrs={'class': 'form-control'}),
+            'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if N/A'}),
             'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control'}),
             'emergency_contact_number': forms.TextInput(attrs={'class': 'form-control'}),
             'user_email': forms.EmailInput(attrs={'class': 'form-control'}),
@@ -131,11 +148,12 @@ class HarvestRecordCreate (forms.ModelForm):
     
     harvest_location = forms.ChoiceField(label="Location of Harvest",choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class':'form-control form-select'}))    
     unit = forms.ChoiceField(label="Unit of Measurement",choices=UNIT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
-    total_weight = forms.DecimalField(localize=True, label="Total Weight of Commodity",widget=forms.NumberInput(attrs={'class':'form-control', 'min':'0','step':'0.01'}))
+    total_weight = forms.DecimalField(localize=True, label="Total Weight of Commodity",widget=forms.NumberInput(attrs={'class':'form-control', 'min':'0','step':'0.1'}))
+    weight_per_unit = forms.DecimalField(localize=True, label="Weight per Unit",widget=forms.NumberInput(attrs={'class':'form-control', 'min':'0','step':'0.1'}))
     
     class Meta:
         model = HarvestRecord
-        fields = ["harvest_date", "harvest_location", "commodity_type", "commodity_spec", "total_weight", "unit", "remarks"]
+        fields = ["harvest_date", "harvest_location", "commodity_type", "commodity_spec", "total_weight", "unit", "weight_per_unit","remarks"]
         labels = {"harvest_date" : "Harvest Date", "commodity_type" : "Commodity Type", "commodity_spec" : "Commodity Specification", "remarks" : "Remarks / Additional Notes"}
         widgets = {
             'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
@@ -144,4 +162,23 @@ class HarvestRecordCreate (forms.ModelForm):
             'remarks' : forms.Textarea(attrs={'class':'form-control', 'rows' : 2})
             
         }
+
+class PlantRecordCreate(forms.ModelForm):
+    plant_location = forms.ChoiceField(label="Planting Location", choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
+
+    class Meta:
+        model = PlantRecord
+        fields = ["plant_date", "expected_harvest_date","commodity_type", "commodity_spec","min_expected_harvest", "max_expected_harvest", "plant_location","land_area", "remarks"]
+        labels = {"plant_date": "Date Planted","commodity_type": "Commodity Type","commodity_spec": "Commodity Specification","expected_harvest_date": "Expected Harvest Date","min_expected_harvest": "Min Expected Harvest (kg)","max_expected_harvest": "Max Expected Harvest (kg)","land_area": "Land Area (hectares)","remarks": "Remarks / Additional Notes"}
+        widgets = {
+            'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'expected_harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'commodity_type': forms.TextInput(attrs={'class': 'form-control'}),
+            'commodity_spec': forms.TextInput(attrs={'class': 'form-control'}),
+            'min_expected_harvest': forms.NumberInput(attrs={'class': 'form-control'}),
+            'max_expected_harvest': forms.NumberInput(attrs={'class': 'form-control'}),
+            'land_area': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
         

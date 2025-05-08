@@ -39,7 +39,8 @@
                         <td>{{ record.harvest_location }}</td>
                         <td>{{ record.remarks }}</td>
                         <td>
-                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a>
+                            {% comment %} <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a> {% endcomment %}
+                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?record_type={{ record_type }}" class="btn btn-warning">Edit</a>
                         </td>
                         <td>
                             <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
@@ -57,6 +58,8 @@
             <br>
             <form method="POST" action="{% url 'base:finalize_transaction' %}">
                 {% csrf_token %}
+                {% comment %} ADD NOTES {% endcomment %}
+                <input type="hidden" name="record_type" value="{{ record_type }}">
                 <button type="submit" class="btn btn-success btn-sm">Submit All Records</button>
             </form>
         {% else %}

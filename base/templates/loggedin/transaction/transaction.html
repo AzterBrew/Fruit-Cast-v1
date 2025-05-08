@@ -30,8 +30,13 @@ Fruit Cast | Create New Record
                     </a> 
                 </li> 
                 <li> 
-                    <a href="?view=transaction_list" class="nav-link link-body-emphasis">                         
+                    <a href="?view=transaction_history" class="nav-link link-body-emphasis">                         
                         Your Transaction History
+                    </a> 
+                </li> 
+                <li> 
+                    <a href="?view=transaction_list" class="nav-link link-body-emphasis">                         
+                        Record List [for dev purposes]
                     </a> 
                 </li> 
             </ul> 
@@ -47,9 +52,12 @@ Fruit Cast | Create New Record
           {% include "loggedin/transaction/plant_record.html" %}
         {% elif view_to_show == "transaction_list" %}
           {% include "loggedin/transaction/transaction_recordlist.html" %}
+        {% elif view_to_show == "transaction_history" %}
+          {% include "loggedin/transaction/transaction_history.html" %}
+        {% elif view_to_show == "transaction_recordhistory" %}
+          {% include "loggedin/transaction/transaction_recordhistory.html" %}
         {% elif view_to_show == "choose" %}
           {% include "loggedin/transaction/transaction_default.html" %}
-        
         {% else %}
           <p>Choose a transaction type in the sidebar</p>
         {% endif %}

@@ -1,0 +1,64 @@
+{% extends "loggedin/layout.html" %}
+
+{% block title %}
+Fruit Cast | Transaction History
+{% endblock title %}
+
+
+{% block content %}
+{% if records %}
+
+<div class="container">
+    <div class="record-cart">
+        <h2>Transaction History : Records</h2>
+        <p class="mb-4">Below is your list of submitted transactions. These are already finalized and stored in the system.</p>
+
+        {% if selected_transaction %}
+        <h4>Transaction #{{ selected_transaction.transaction_id }} - {{ selected_transaction.transaction_type|capfirst }}</h4>
+    
+        {% if records %}
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        {% if selected_transaction.transaction_type|lower == "harvest" %}
+                            <th>Harvest Date</th>
+                            <th>Commodity Type</th>
+                            <th>Weight</th>
+                            <th>Unit</th>
+                            <th>Remarks</th>
+                        {% else %}
+                            <th>Date</th><th>Seed</th><th>Area</th><th>Location</th><th>Notes</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                        <tr>
+                            {% if selected_transaction.transaction_type|lower == "harvest" %}
+                                <td>{{ record.harvest_date|date:"Y-m-d" }}</td>
+                                <td>{{ record.commodity_type }}</td>
+                                <td>{{ record.total_weight }}</td>
+                                <td>{{ record.unit }}</td>
+                                <td>{{ record.remarks }}</td>
+                            {% else %}
+                                <td>{{ record.planting_date }}</td>
+                                <td>{{ record.seed_type }}</td>
+                                <td>{{ record.area_planted }}</td>
+                                <td>{{ record.location }}</td>
+                                <td>{{ record.notes }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No records found for this transaction.</p>
+        {% endif %}
+    {% else %}
+        <p>Invalid or missing transaction ID.</p>
+    {% endif %}
+{% else %}
+    <p>No records found for this transaction.</p>
+{% endif %}
+
+{% endblock content %}

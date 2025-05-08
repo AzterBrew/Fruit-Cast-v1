@@ -60,26 +60,30 @@ class AccountType(models.Model):
     account_type_id = models.BigAutoField(primary_key=True)
     account_type = models.CharField(max_length=50)
     
-class AccountStatus(models.Model):
-    accstatus_id = models.BigAutoField(primary_key=True)
-    account_status = models.CharField(max_length=50)    
+class ItemStatus(models.Model):
+    item_status_id = models.BigAutoField(primary_key=True)
+    item_status = models.CharField(max_length=50)    
 
 class UserInformation(models.Model):
     auth_user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)    
     userinfo_id = models.BigAutoField(primary_key=True)
     lastname = models.CharField(max_length=255)
     firstname = models.CharField(max_length=255)
-    middlename = models.CharField(max_length=255)
-    nameextension = models.CharField(max_length=10)
+    middlename = models.CharField(max_length=255, blank=True, default="")
+    nameextension = models.CharField(max_length=10, blank=True, default="")
     sex = models.CharField(max_length=50)
     contact_number = models.CharField(max_length=15)
     user_email = models.EmailField(max_length=254)
     birthdate = models.DateField()
     emergency_contact_person = models.CharField(max_length=255)
     emergency_contact_number = models.CharField(max_length=15)
-    full_Address = models.CharField(max_length=255, default="-")
-    barangay = models.CharField(max_length=255, default="-")
-    municipality = models.CharField(max_length=255, default="-")
+    address_details = models.CharField(max_length=255)
+    barangay = models.CharField(max_length=255)
+    municipality = models.CharField(max_length=255)
+    religion = models.CharField(max_length=255)
+    civil_status = models.CharField(max_length=50)
+    rsbsa_ref_number = models.CharField(max_length=22, unique=True, null=True, blank=True, verbose_name="RSBSA Reference Number")
+    
 
 class AdminInformation(models.Model):
     admin_id = models.BigAutoField(primary_key=True)
@@ -91,7 +95,7 @@ class AccountsInformation(models.Model):
     account_id = models.BigAutoField(primary_key=True)
     userinfo_id = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
     account_type_id = models.ForeignKey(AccountType, on_delete=models.CASCADE)
-    account_status_id = models.ForeignKey(AccountStatus, on_delete=models.CASCADE)
+    item_status_id = models.ForeignKey(ItemStatus, on_delete=models.CASCADE)
     account_register_date = models.DateTimeField()
     account_verified_date = models.DateTimeField(null=True, blank=True)
     account_isverified = models.BooleanField(default=False) #default na false since di verified agad
@@ -101,13 +105,17 @@ class UserLoginLog(models.Model):
     userlogin_id = models.BigAutoField(primary_key=True)
     account_id = models.ForeignKey(AccountsInformation,  on_delete=models.CASCADE)
     login_date = models.DateTimeField(auto_now_add=True)
-    account_status_id = models.ForeignKey(AccountStatus, on_delete=models.CASCADE) #to check if kwan logged in user already has verified account
+    item_status_id = models.ForeignKey(ItemStatus, on_delete=models.CASCADE) #to check if kwan logged in user already has verified account
 
 class Transaction(models.Model):
     transaction_id = models.BigAutoField(primary_key=True)
     account_id = models.ForeignKey(AccountsInformation, on_delete=models.CASCADE)
     transaction_date = models.DateTimeField(auto_now=True)
     transaction_type = models.CharField(max_length=255) #this is if harvest o plant type
+    item_status_id = models.ForeignKey(ItemStatus, on_delete=models.CASCADE, related_name="transaction_status")
+    tr_verified_date = models.DateTimeField(null=True, blank=True)
+    tr_isverified = models.BooleanField(default=False) #default na false since di verified agad
+    tr_verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
     notes = models.TextField()
 
 class HarvestRecord(models.Model):
@@ -118,6 +126,7 @@ class HarvestRecord(models.Model):
     commodity_spec = models.CharField(max_length=255, blank=True)
     total_weight = models.DecimalField(max_digits=10,decimal_places=2)
     unit = models.CharField(max_length=50)
+    weight_per_unit = models.DecimalField(max_digits=10,decimal_places=2)
     harvest_location = models.CharField(max_length=255)
     remarks = models.TextField(blank=True)
 

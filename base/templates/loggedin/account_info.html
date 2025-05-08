@@ -28,13 +28,30 @@ Fruit Cast | Account Information
                 Last Name : {{user_lastname}}
             </p>
             <p>
-                Name Extension : {{user_nameext}}
+                {% if not user_nameext %}
+                    Name Extension : N/A
+                {% else %}
+                    Name Extension : {{ user_nameext }}
+                {% endif %}
             </p>
             <p>
                 Sex : {{user_sex}}
             </p>
             <p>
                 Date of Birth : {{user_dob}}
+            </p>   
+            <p>
+                Civil Status : {{user_civil_status}}
+            </p>   
+            <p>
+                Religion : {{user_religion}}
+            </p>   
+            <p>
+                {%if not user_rsbsa_ref_number%}
+                    RSBSA Number : Data not Provided
+                {% else%}
+                    RSBSA Number : {{user_rsbsa_ref_number}}
+                {% endif%}
             </p>        
         </div>
         <div class="list-group-item">
@@ -51,7 +68,7 @@ Fruit Cast | Account Information
             <h4>Address Information</h4>
             <br>
             <p>
-                Full Address : {{user_fulladdress}}
+                Purok, Street Name, Building, House No. : {{user_address_details}}
             </p>
             <p>
                 Municipality : {{user_municipality}}
