@@ -202,6 +202,18 @@ div {
     line-height: 2vmin;
 }
 
+.container2 {
+    background-color:#fffefc;
+    width: 70vw;
+    min-height: 50vh;
+    padding-top: 7vmin;
+    padding: 7vmin;
+    box-shadow: 0 0.2vmax .5vmax #69894e;
+    margin-top: 12vh;
+    margin-bottom: 5vh;
+    line-height: 2vmin;
+}
+
 .form-error {
     color: red;
     font-size: 0.9em;

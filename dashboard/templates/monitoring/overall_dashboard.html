@@ -9,55 +9,157 @@ Fruit Cast | Monitor
 {% endblock navbar %}
 
 {% block content %}
-<h2>Harvest by Commodity</h2>
-<canvas id="commodityChart" width="400" height="200"></canvas>
+<div class="container2">
 
-<h2>Harvest by Location</h2>
-<canvas id="locationChart" width="400" height="200"></canvas>
+    <div class="container mt-4">
 
+    <!-- Summary Cards -->
+    <h1 class="">Monitor</h1>
+    <h3 class="text-center">Harvest Record Summary</h1>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-bg-success mb-3 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Harvest Records</h5>
+                    <p class="card-text display-6">{{ total_harvests }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-warning mb-3 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Weight Overall(kg)</h5>
+                    <p class="card-text display-6">{{ total_weight }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-info mb-3 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Municipality with the Highest Weight Average Harvest</h5>
+                    <p class="card-text display-6">{{ total_commodities }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-dark mb-3 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Commodity with the Highest Weight Average Harvest</h5>
+                    <p class="card-text display-6">{{ upcoming_harvests }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="yearFilter" class="form-label">Year</label>
+            <select class="form-select" name="year" id="yearFilter">
+                <option value="">All Years</option>
+                {% for year in year_options %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="monthFilter" class="form-label">Month</label>
+            <select class="form-select" name="month" id="monthFilter">
+                <option value="">All Months</option>
+                {% for month in month_options %}
+                    <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>{{ month.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="municipalityFilter" class="form-label">Municipality</label>
+            <select class="form-select" name="municipality" id="municipalityFilter">
+                <option value="">All</option>
+                {% for mun in municipality_options %}
+                    <option value="{{ mun }}" {% if mun == selected_municipality %}selected{% endif %}>{{ mun }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 text-end">
+            <button class="btn btn-primary mt-2" type="submit">Apply Filters</button>
+        </div>
+    </form>
+
+    <!-- Charts -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <h5>Average Weight per Unit (kg) by Commodity</h5>
+            <canvas id="avgWeightChart" width="400" height="200"></canvas>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <h5>Harvest by Location</h5>
+            <canvas id="locationChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Plantings -->
+    <div class="card mt-5 shadow-sm">
+        <div class="card-header bg-success text-white">
+            Recent Verified Plant Records
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-hover align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Commodity</th>
+                        <th>Location</th>
+                        <th>Expected Harvest</th>
+                        <th>Est. Weight (kg)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in recent_plantings %}
+                        <tr>
+                            <td>{{ record.plant_date }}</td>
+                            <td>{{ record.commodity_type }}</td>
+                            <td>{{ record.plant_location }}</td>
+                            <td>{{ record.expected_harvest_date }}</td>
+                            <td>{{ record.estimated_weight_kg }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">No recent plant records.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Scripts -->
 <script>
-const commodityCtx = document.getElementById('commodityChart').getContext('2d');
-new Chart(commodityCtx, {
-    type: 'bar',
-    data: {
-        labels: {{ commodity_labels|safe }},
-        datasets: [{
-            label: 'Records per Commodity',
-            data: {{ commodity_values|safe }},
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-    }
-});
-
-const locationCtx = document.getElementById('locationChart').getContext('2d');
-new Chart(locationCtx, {
-    type: 'doughnut',
-    data: {
-        labels: {{ location_labels|safe }},
-        datasets: [{
-            label: 'Records per Location',
-            data: {{ location_values|safe }},
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',
-                'rgba(255, 205, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)',
-                'rgba(153, 102, 255, 0.6)'
-            ],
-            borderColor: 'rgba(255, 255, 255, 1)',
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true
-    }
-});
+    const commodityLabels = {{ commodity_labels|safe }};
+    const commodityValues = {{ commodity_values|safe }};
+    const commodityAvgWeight = {{ commodity_avg_weight|safe }};
 </script>
+
+</div>
 
 {% endblock %}
 
+
+{% comment %} 
+HARVEST
+ Monthly Harvest Trend (Line Chart
+ Top Harvest Locations (Bar/Horizontal Chart)
+ Total Harvest Summary (Cards)
+
+PLANT
+ Estimated Future Harvests (Line or Bar Chart)
+ Recent Plantings Table
+ 
+FILTER & INTERACTION TOOLS
+ Dynamic Filters with AJAX (Optional for Later)
+
+INSIGHTS / ALERTS (Optional, Advanced)
+ Low Planting Warning
+ Harvest Delay Detection
+
+ {% endcomment %}

@@ -28,15 +28,17 @@ def home(request):
 
     if request.user.is_authenticated:
         account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
+        userinfo_id = request.session.get('userinfo_id')        
         
         if userinfo_id and account_id:
             
             userinfo = UserInformation.objects.get(pk=userinfo_id)
-        
+            accinfo = AccountsInformation.objects.get(account_id=account_id)
+            print(accinfo.account_type_id.account_type_id)
             context = {
                 'user_firstname' : userinfo.firstname,
-            }            
+                'user_role_id' : accinfo.account_type_id.account_type_id
+            }
             return render(request, 'loggedin/home.html', context)
         
         else:

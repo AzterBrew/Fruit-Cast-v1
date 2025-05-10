@@ -12,10 +12,13 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
+from django.db.models import Sum, Avg
+from django.http import JsonResponse
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from base.models import *
+from dashboard.models import *
 from base.forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate
 
 # Create your views here.
@@ -75,29 +78,56 @@ def monitor(request):
         userinfo_id = request.session.get('userinfo_id')
         
         if userinfo_id and account_id:
-            
+            context = {
+                
+            }
 
             # Example data: commodity_type counts
             # Dataset 1: by commodity type
-            commodity_data = {}
-            for record in HarvestRecord.objects.all():
-                key = record.commodity_type
-                commodity_data[key] = commodity_data.get(key, 0) + 1
+            
+            # harvest_by_commodity = (
+            #     VerifiedHarvestRecord.objects
+            #     .values('commodity_type')
+            #     .annotate(
+            #         total_weight=Sum('total_weight_kg'),
+            #         avg_weight_per_unit=Avg('weight_per_unit_kg')
+            #     )
+            # )
 
-            # Dataset 2: by location
-            location_data = {}
-            for record in HarvestRecord.objects.all():
-                key = record.harvest_location
-                location_data[key] = location_data.get(key, 0) + 1
+            # commodity_labels = []
+            # commodity_values = []
+            # commodity_avg_weight = []
 
-            context = {
-                'commodity_labels': list(commodity_data.keys()),
-                'commodity_values': list(commodity_data.values()),
-                'location_labels': list(location_data.keys()),
-                'location_values': list(location_data.values()),
-            }
+            # for entry in harvest_by_commodity:
+            #     commodity_labels.append(entry['commodity_type'])
+            #     commodity_values.append(float(entry['total_weight']))
+            #     commodity_avg_weight.append(float(entry['avg_weight_per_unit'] or 0))
+
+            # # Harvest by Location (for doughnut chart)
+            # harvest_by_location = (
+            #     VerifiedHarvestRecord.objects
+            #     .values('harvest_location')
+            #     .annotate(total=Sum('total_weight_kg'))
+            # )
+
+            # location_labels = [entry['harvest_location'] for entry in harvest_by_location]
+            # location_values = [float(entry['total']) for entry in harvest_by_location]
+
+            # context = {
+            #     'commodity_labels': commodity_labels,
+            #     'commodity_values': commodity_values,
+            #     'commodity_avg_weight': commodity_avg_weight,
+            #     'location_labels': location_labels,
+            #     'location_values': location_values,
+            # }
+            
+            
+            # for x in recordentry:
+            #     for y in commodity_list:
+            #         finalrep[y]=get
           
-            return render(request, 'monitoring/overall_dashboard.html', context)
+            # return render(request, 'monitoring/overall_dashboard.html', context)
+            return render(request, 'monitoring/overall_dashboard.html')
         
         else:
             print("⚠️ account_id missing in session!")
@@ -121,3 +151,15 @@ def monitor(request):
 #         'values': list(data.values()),
 #     }
 #     return render(request, 'loggedin/dashboard.html', context)
+
+def commoditytype_collect(request) : #pang kuha ng distinct commodity type sa verified_harvest at plant record
+    recordentry = VerifiedHarvestRecord.objects.all()
+    finalrep= {}
+            
+    def get_commodity_type(recordentry) :
+        return recordentry.commodity_type
+            
+    commodity_list = list(set(map(get_commodity_type,recordentry))) #gets the commodity type in every record in harvestrecord and then list it out (no repetitions because of set function)
+    print("attempt sa query ")
+          
+    print(commodity_list)
