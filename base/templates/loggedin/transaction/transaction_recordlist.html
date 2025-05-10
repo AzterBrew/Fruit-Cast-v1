@@ -13,13 +13,25 @@
             <table class="table table-sm table-bordered">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Commodity</th>
-                        <th>Spec</th>
-                        <th>Weight</th>
-                        <th>Unit</th>
-                        <th>Location</th>
-                        <th>Remarks</th>
+                        {% if record_type == "harvest" %}
+                            <th>Date</th>
+                            <th>Commodity</th>
+                            <th>Spec</th>
+                            <th>Weight</th>
+                            <th>Unit</th>
+                            <th>Location</th>
+                            <th>Remarks</th>
+                        {% else %}
+                            <th>Plant Date</th>
+                            <th>Commodity Type</th>
+                            <th>Commodity Specification</th>
+                            <th>Expected Harvest Date</th>
+                            <th>Plant Location (by hectare)</th>
+                            <th>Minimum Expected Harvest</th>
+                            <th>Maximum Expected Harvest</th>
+                            <th>Land Area</th>
+                            <th>Remarks</th>
+                        {% endif %}
                         <th>
                             Edit
                         </th>
@@ -31,23 +43,48 @@
                 <tbody>
                     {% for record in pending_records %}
                     <tr>
-                        <td>{{ record.harvest_date }}</td>
-                        <td>{{ record.commodity_type }}</td>
-                        <td>{{ record.commodity_spec }}</td>
-                        <td>{{ record.total_weight }}</td>
-                        <td>{{ record.unit }}</td>
-                        <td>{{ record.harvest_location }}</td>
-                        <td>{{ record.remarks }}</td>
-                        <td>
+                        {% if record_type == "harvest" %}
+                            <td>{{ record.harvest_date }}</td>
+                            <td>{{ record.commodity_type }}</td>
+                            <td>{{ record.commodity_spec }}</td>
+                            <td>{{ record.total_weight }}</td>
+                            <td>{{ record.unit }}</td>
+                            <td>{{ record.harvest_location }}</td>
+                            <td>{{ record.remarks }}</td>
+                            <td>
                             {% comment %} <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a> {% endcomment %}
-                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?record_type={{ record_type }}" class="btn btn-warning">Edit</a>
-                        </td>
-                        <td>
+                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?record_type={{ record_type }}&from=transactionedit" class="btn btn-warning">Edit</a>
+                            </td>
+                            <td>
                             <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
                                 {% csrf_token %}
+                                <input type="hidden" name="record_type" value="{{ record_type }}">
                                 <button type="submit" class="btn btn-danger btn-sm">Remove</button>
                             </form>
-                        </td>
+                            </td>
+                        {% else %}
+                            <td>{{ record.plant_date }}</td>
+                            <td>{{ record.commodity_type }}</td>
+                            <td>{{ record.commodity_spec }}</td>
+                            <td>{{ record.expected_harvest_date }}</td>
+                            <td>{{ record.plant_location }}</td>
+                            <td>{{ record.min_expected_harvest }}</td>
+                            <td>{{ record.max_expected_harvest }}</td>
+                            <td>{{ record.land_area }}</td>
+                            <td>{{ record.remarks }}</td>
+                            <td>
+                            {% comment %} <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a> {% endcomment %}
+                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?record_type={{ record_type }}&from=transactionedit" class="btn btn-warning">Edit</a>
+                            </td>
+                            <td>
+                            <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="record_type" value="{{ record_type }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                            </form>
+                            </td>
+                        {% endif %}
+
                     </tr>
                     {% endfor %}
                 </tbody>

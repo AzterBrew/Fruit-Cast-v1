@@ -24,4 +24,5 @@ urlpatterns = [
     path('about/',views.About),
     path('', include(('base.urls','base'), namespace='base')),  # Corrected
     # path('login/', include('loginpage.urls'))
+    path('dashboard/', include(('dashboard.urls', 'dashboard'), namespace='dashboard')),
 ]

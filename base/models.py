@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 # Create your models here.
@@ -89,7 +90,7 @@ class AdminInformation(models.Model):
     admin_id = models.BigAutoField(primary_key=True)
     userinfo_id = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
     role = models.CharField(max_length=255)
-    first_added = models.DateTimeField()
+    first_added = models.DateTimeField(default=timezone.now)
     
 class AccountsInformation(models.Model):
     account_id = models.BigAutoField(primary_key=True)
@@ -110,7 +111,8 @@ class UserLoginLog(models.Model):
 class Transaction(models.Model):
     transaction_id = models.BigAutoField(primary_key=True)
     account_id = models.ForeignKey(AccountsInformation, on_delete=models.CASCADE)
-    transaction_date = models.DateTimeField(auto_now=True)
+    transaction_date = models.DateTimeField(default=timezone.now)
+    # transaction_date = models.DateTimeField(auto_now=True)
     transaction_type = models.CharField(max_length=255) #this is if harvest o plant type
     item_status_id = models.ForeignKey(ItemStatus, on_delete=models.CASCADE, related_name="transaction_status")
     tr_verified_date = models.DateTimeField(null=True, blank=True)
@@ -142,7 +144,8 @@ class PlantRecord(models.Model):
     max_expected_harvest = models.IntegerField()
     land_area = models.FloatField()
     remarks = models.TextField(blank=True)
-    
+
+
 
 # BTW CHange the account_register_date in the Accounts table as NULL
 

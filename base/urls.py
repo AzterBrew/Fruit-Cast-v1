@@ -24,12 +24,13 @@ urlpatterns = [
     path('accountinfo/', accinfo, name="accinfo"),
     path('accountinfo/edit', editacc, name="editacc"),
     path('forecast/', forecast, name="forecast"),
+    path('monitor/', monitor, name="monitor"),
     path('aboutus/', about, name="about"),
     path('newrecord/', newrecord, name="newrecord"),
     # path('newrecord/harvest', harvestrecord, name="harvestrecord"),
     # path('newrecord/plant', plantrecord, name="plantrecord"),
     path('newrecord/harvest/finalize', finalize_transaction, name="finalize_transaction"),
-    path('newrecord/harvest/review', transaction_recordlist, name="transaction_recordlist"),
+    # path('newrecord/harvest/review', transaction_recordlist, name="transaction_recordlist"),
     
     
     path('record/remove/<int:index>/', views.remove_pending_record, name='remove_pending_record'), #index ng pending record since saved as array lang sha, not in the db

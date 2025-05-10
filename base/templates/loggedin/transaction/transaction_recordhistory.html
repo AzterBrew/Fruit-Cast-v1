@@ -17,17 +17,27 @@ Fruit Cast | Transaction History
         <h4>Transaction #{{ selected_transaction.transaction_id }} - {{ selected_transaction.transaction_type|capfirst }}</h4>
     
         {% if records %}
-            <table class="table table-bordered table-sm">
-                <thead>
+            <table class="table table-bordered table-sm ">
+                <thead class="thead-success">
                     <tr>
                         {% if selected_transaction.transaction_type|lower == "harvest" %}
                             <th>Harvest Date</th>
                             <th>Commodity Type</th>
-                            <th>Weight</th>
-                            <th>Unit</th>
+                            <th>Commodity Specification</th>
+                            <th>Total Weight</th>
+                            <th>Weight per Unit</th>
+                            <th>Harvest Location</th>
                             <th>Remarks</th>
                         {% else %}
-                            <th>Date</th><th>Seed</th><th>Area</th><th>Location</th><th>Notes</th>
+                            <th>Plant Date</th>
+                            <th>Commodity Type</th>
+                            <th>Commodity Specification</th>
+                            <th>Expected Harvest Date</th>
+                            <th>Plant Location</th>
+                            <th>Minimum Expected Harvest</th>
+                            <th>Maximum Expected Harvest</th>
+                            <th>Land Area</th>
+                            <th>Remarks</th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -37,14 +47,20 @@ Fruit Cast | Transaction History
                             {% if selected_transaction.transaction_type|lower == "harvest" %}
                                 <td>{{ record.harvest_date|date:"Y-m-d" }}</td>
                                 <td>{{ record.commodity_type }}</td>
-                                <td>{{ record.total_weight }}</td>
-                                <td>{{ record.unit }}</td>
+                                <td>{{ record.commodity_spec }}</td>
+                                <td>{{ record.total_weight }} {{ record.unit }}</td>
+                                <td>{{ record.weight_per_unit }}</td>
+                                <td>{{ record.harvest_location }}</td>
                                 <td>{{ record.remarks }}</td>
                             {% else %}
-                                <td>{{ record.planting_date }}</td>
-                                <td>{{ record.seed_type }}</td>
-                                <td>{{ record.area_planted }}</td>
-                                <td>{{ record.location }}</td>
+                                <td>{{ record.plant_date }}</td>
+                                <td>{{ record.commodity_type }}</td>
+                                <td>{{ record.commodity_spec }}</td>
+                                <td>{{ record.expected_harvest_date }}</td>
+                                <td>{{ record.plant_location }}</td>
+                                <td>{{ record.min_expected_harvest }}</td>
+                                <td>{{ record.max_expected_harvest }}</td>
+                                <td>{{ record.land_area }}</td>
                                 <td>{{ record.notes }}</td>
                             {% endif %}
                         </tr>

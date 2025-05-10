@@ -1,0 +1,63 @@
+{% extends "monitoring/layout.html" %}
+
+{% block title %}
+Fruit Cast | Monitor
+{% endblock title %}
+
+{% block navbar %}
+    {% include "loggedin/navbar.html" %}
+{% endblock navbar %}
+
+{% block content %}
+<h2>Harvest by Commodity</h2>
+<canvas id="commodityChart" width="400" height="200"></canvas>
+
+<h2>Harvest by Location</h2>
+<canvas id="locationChart" width="400" height="200"></canvas>
+
+<script>
+const commodityCtx = document.getElementById('commodityChart').getContext('2d');
+new Chart(commodityCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ commodity_labels|safe }},
+        datasets: [{
+            label: 'Records per Commodity',
+            data: {{ commodity_values|safe }},
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+const locationCtx = document.getElementById('locationChart').getContext('2d');
+new Chart(locationCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ location_labels|safe }},
+        datasets: [{
+            label: 'Records per Location',
+            data: {{ location_values|safe }},
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(255, 205, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)'
+            ],
+            borderColor: 'rgba(255, 255, 255, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+</script>
+
+{% endblock %}
+

@@ -43,9 +43,10 @@ MUNICIPALITY_CHOICES = [
 ]
 
 UNIT_CHOICES = [
-    ('kilogram','kilogram (kg)'),
-    ('gram','gram (g)'),
-    ('Metric Ton','Metric Ton (t)')
+    ('kg','kilogram (kg)'),
+    ('g','gram (g)'),
+    ('ton','Metric Ton (t)'),
+    ('lbs', 'Pounds (lbs)'),
 ]
 
 CIVSTAT_CHOICES = [
