@@ -9,138 +9,61 @@ Fruit Cast | Monitor
 {% endblock navbar %}
 
 {% block content %}
-<div class="container2">
+<div class="container2 p-6">
 
     <div class="container mt-4">
 
     <!-- Summary Cards -->
-    <h1 class="">Monitor</h1>
-    <h3 class="text-center">Harvest Record Summary</h1>
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-bg-success mb-3 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total Harvest Records</h5>
-                    <p class="card-text display-6">{{ total_harvests }}</p>
-                </div>
-            </div>
+        <h1 class="">Monitor</h1>
+        <h3 class="text-center">Harvest Record Summary</h1>
+        <div>
+            <ul class="flex border-b list-group list-inline">
+                <li class="mr-1 my-3">
+                    <a class="bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 font-semibold list-group-item list-group-item-action" href="#harvest" onclick="showTab('harvest')">Harvest Data</a>
+                </li>
+                <li class="mr-1"my-3>
+                    <a class="bg-white inline-block border-l border-t border-r rounded-t my-10 py-2 px-4 font-semibold list-group-item list-group-item-action" href="#plant" onclick="showTab('plant')">Plant Data</a>
+                </li>
+            </ul>
         </div>
-        <div class="col-md-3">
-            <div class="card text-bg-warning mb-3 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total Weight Overall(kg)</h5>
-                    <p class="card-text display-6">{{ total_weight }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-bg-info mb-3 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Municipality with the Highest Weight Average Harvest</h5>
-                    <p class="card-text display-6">{{ total_commodities }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-bg-dark mb-3 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Commodity with the Highest Weight Average Harvest</h5>
-                    <p class="card-text display-6">{{ upcoming_harvests }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Filters -->
-    <form method="get" class="row g-3 mb-4">
-        <div class="col-md-4">
-            <label for="yearFilter" class="form-label">Year</label>
-            <select class="form-select" name="year" id="yearFilter">
-                <option value="">All Years</option>
-                {% for year in year_options %}
-                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
-                {% endfor %}
-            </select>
+        <div id="harvest" class="tab-content">
+            <h2 class="text-xl mt-4 font-semibold text-center">Harvest Data</h2>
+            <h4 class="">Monthly Total Harvested Weight</h4>
+            <canvas id="harvestMonthlyChart" height="100"></canvas>
+            <h4 class="">Monthly Total Harvested Weight</h4>
+            <canvas id="harvestWeightChart" height="50vh" class="mt-4"></canvas>
+            <canvas id="harvestLocationChart" height="100" class="mt-4"></canvas>
         </div>
-        <div class="col-md-4">
-            <label for="monthFilter" class="form-label">Month</label>
-            <select class="form-select" name="month" id="monthFilter">
-                <option value="">All Months</option>
-                {% for month in month_options %}
-                    <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>{{ month.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="municipalityFilter" class="form-label">Municipality</label>
-            <select class="form-select" name="municipality" id="municipalityFilter">
-                <option value="">All</option>
-                {% for mun in municipality_options %}
-                    <option value="{{ mun }}" {% if mun == selected_municipality %}selected{% endif %}>{{ mun }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-12 text-end">
-            <button class="btn btn-primary mt-2" type="submit">Apply Filters</button>
-        </div>
-    </form>
 
-    <!-- Charts -->
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <h5>Average Weight per Unit (kg) by Commodity</h5>
-            <canvas id="avgWeightChart" width="400" height="200"></canvas>
-        </div>
-        <div class="col-lg-6 mb-4">
-            <h5>Harvest by Location</h5>
-            <canvas id="locationChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Recent Plantings -->
-    <div class="card mt-5 shadow-sm">
-        <div class="card-header bg-success text-white">
-            Recent Verified Plant Records
-        </div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-hover align-middle text-center">
-                <thead class="table-light">
-                    <tr>
-                        <th>Date</th>
-                        <th>Commodity</th>
-                        <th>Location</th>
-                        <th>Expected Harvest</th>
-                        <th>Est. Weight (kg)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in recent_plantings %}
-                        <tr>
-                            <td>{{ record.plant_date }}</td>
-                            <td>{{ record.commodity_type }}</td>
-                            <td>{{ record.plant_location }}</td>
-                            <td>{{ record.expected_harvest_date }}</td>
-                            <td>{{ record.estimated_weight_kg }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="5">No recent plant records.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div id="plant" class="tab-content hidden">
+            <h2 class="text-xl mt-4 font-semibold">Plant Data</h2>
+            <canvas id="plantCommodityChart" height="100"></canvas>
+            <canvas id="plantLandAreaChart" height="100" class="mt-4"></canvas>
+            <canvas id="plantLocationChart" height="100" class="mt-4"></canvas>
         </div>
     </div>
 </div>
 
 <!-- Chart Scripts -->
+ 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    const commodityLabels = {{ commodity_labels|safe }};
-    const commodityValues = {{ commodity_values|safe }};
-    const commodityAvgWeight = {{ commodity_avg_weight|safe }};
+    const harvest_months = {{ chart_data.monthly_harvest.labels|safe }};
+    const harvest_weights_by_month = {{ chart_data.monthly_harvest.values|safe }};
+    const harvest_commodities = {{ chart_data.harvest_commodity.labels|safe }};
+    const harvest_weights_by_commodity = {{ chart_data.harvest_commodity.values|safe }};
+    const harvest_locations = {{ chart_data.harvest_location.labels|safe }};
+    const harvest_weights_by_location = {{ chart_data.harvest_location.values|safe }};
+    const plant_commodities = {{ chart_data.plant_commodity.labels|safe }};
+    const plant_units_by_commodity = {{ chart_data.plant_commodity.values|safe }};
+    const plant_lande_area_commodities = {{ chart_data.avg_land_area.labels|safe }};
+    const plant_land_area_by_commodity = {{ chart_data.avg_land_area.values|safe }};
+    const plant_locations = {{ chart_data.plant_by_location.labels|safe }};
+    const plant_count_by_location = {{ chart_data.plant_by_location.values|safe }};
 </script>
 
-</div>
 
 {% endblock %}
 

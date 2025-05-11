@@ -14,6 +14,9 @@ from django.urls import reverse
 from django.http import HttpResponseForbidden
 from django.db.models import Sum, Avg
 from django.http import JsonResponse
+import pandas as pd
+from collections import defaultdict
+import random
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
@@ -68,7 +71,14 @@ def forecast(request):
             
     else :
         return render(request, 'home.html', {})  
-    
+
+
+
+COLORS = [
+    'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)',
+    'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)',
+    'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'
+]
     
 def monitor(request):
     print("🔥 DEBUG: monitor view called!")  # This should print when you visit "/"
@@ -78,56 +88,104 @@ def monitor(request):
         userinfo_id = request.session.get('userinfo_id')
         
         if userinfo_id and account_id:
-            context = {
+
+            harvest_df = pd.DataFrame(list(VerifiedHarvestRecord.objects.values()))
+            plant_df = pd.DataFrame(list(VerifiedPlantRecord.objects.values()))
+
+            chart_data = defaultdict(dict)
+
+            if not harvest_df.empty:
+                harvest_df['harvest_date'] = pd.to_datetime(harvest_df['harvest_date'])
+                harvest_df['month'] = harvest_df['harvest_date'].dt.strftime('%B')
+
+                # Harvest weight per commodity
+                hc = harvest_df.groupby('commodity_type')['total_weight_kg'].sum()
+                harvest__weights_bycomm_json = [float(weight) for weight in hc.values.tolist()]
                 
-            }
+                chart_data['harvest_commodity'] = {
+                    'labels': hc.index.tolist(),
+                    'values': harvest__weights_bycomm_json
+                }
 
-            # Example data: commodity_type counts
-            # Dataset 1: by commodity type
-            
-            # harvest_by_commodity = (
-            #     VerifiedHarvestRecord.objects
-            #     .values('commodity_type')
-            #     .annotate(
-            #         total_weight=Sum('total_weight_kg'),
-            #         avg_weight_per_unit=Avg('weight_per_unit_kg')
-            #     )
-            # )
+                # Monthly harvest trends
+                mh = harvest_df.groupby('month')['total_weight_kg'].sum()
+                harvest_weights_json = [float(weight) for weight in mh.values.tolist()]  #converting from decimal to float since di kwan sa javascript
+                
+                chart_data['monthly_harvest'] = {
+                    'labels': mh.index.tolist(),
+                    'values': harvest_weights_json
+                }
 
-            # commodity_labels = []
-            # commodity_values = []
-            # commodity_avg_weight = []
+                # Average weight per unit by commodity
+                avgw = harvest_df.groupby('commodity_type')['weight_per_unit_kg'].mean()
+                harvest_avg_weights_json = [float(weight) for weight in avgw.values.tolist()]
+                
+                chart_data['avg_weight'] = {
+                    'labels': avgw.index.tolist(),
+                    'values': harvest_avg_weights_json
+                }
 
-            # for entry in harvest_by_commodity:
-            #     commodity_labels.append(entry['commodity_type'])
-            #     commodity_values.append(float(entry['total_weight']))
-            #     commodity_avg_weight.append(float(entry['avg_weight_per_unit'] or 0))
+                # Harvest count per location
+                # locs = harvest_df['harvest_location'].value_counts()
+                # chart_data['harvest_location'] = {
+                #     'labels': locs.index.tolist(),
+                #     'values': locs.values.tolist(),
+                #     'colors': random.choices(COLORS, k=len(locs))
+                # }
+                
+                locs = harvest_df.groupby('harvest_location')['total_weight_kg'].sum()
+                harvest_weight_byloc_json = [float(weight) for weight in locs.values.tolist()]
+                chart_data['harvest_location'] = {
+                    'labels': locs.index.tolist(),
+                    'values': harvest_weight_byloc_json,
+                    'colors': random.choices(COLORS, k=len(locs))
+                }
 
-            # # Harvest by Location (for doughnut chart)
-            # harvest_by_location = (
-            #     VerifiedHarvestRecord.objects
-            #     .values('harvest_location')
-            #     .annotate(total=Sum('total_weight_kg'))
-            # )
+            if not plant_df.empty:
+                plant_df['plant_date'] = pd.to_datetime(plant_df['plant_date'])
+                plant_df['month'] = plant_df['plant_date'].dt.strftime('%B')
 
-            # location_labels = [entry['harvest_location'] for entry in harvest_by_location]
-            # location_values = [float(entry['total']) for entry in harvest_by_location]
+                # Count per commodity
+                pc = plant_df['commodity_type'].value_counts()
+                chart_data['plant_commodity'] = {
+                    'labels': pc.index.tolist(),
+                    'values': pc.values.tolist()
+                }
 
-            # context = {
-            #     'commodity_labels': commodity_labels,
-            #     'commodity_values': commodity_values,
-            #     'commodity_avg_weight': commodity_avg_weight,
-            #     'location_labels': location_labels,
-            #     'location_values': location_values,
-            # }
-            
-            
-            # for x in recordentry:
-            #     for y in commodity_list:
-            #         finalrep[y]=get
-          
-            # return render(request, 'monitoring/overall_dashboard.html', context)
-            return render(request, 'monitoring/overall_dashboard.html')
+                # Estimated weight per commodity
+                ew = plant_df.groupby('commodity_type')['estimated_weight_kg'].sum()
+                chart_data['estimated_weight'] = {
+                    'labels': ew.index.tolist(),
+                    'values': ew.values.tolist()
+                }
+
+                # Avg land area per commodity
+                la = plant_df.groupby('commodity_type')['land_area'].mean()
+                chart_data['avg_land_area'] = {
+                    'labels': la.index.tolist(),
+                    'values': la.values.tolist()
+                }
+
+                # Plantings per month
+                pm = plant_df['month'].value_counts()
+                plant_weights_json = [float(weight) for weight in pm.values.tolist()]
+                
+                chart_data['monthly_plantings'] = {
+                    'labels': pm.index.tolist(),
+                    'values': plant_weights_json
+                }
+                
+                # plant count per location
+                pl = plant_df['plant_location'].value_counts()
+                chart_data['plant_by_location'] = {
+                    'labels' : pl.index.tolist(),
+                    'values': pl.values.tolist()
+                    
+                }
+                
+                print(chart_data['harvest_location'])
+
+            return render(request, 'monitoring/overall_dashboard.html', {'chart_data': chart_data})
         
         else:
             print("⚠️ account_id missing in session!")
