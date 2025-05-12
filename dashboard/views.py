@@ -15,8 +15,10 @@ from django.http import HttpResponseForbidden
 from django.db.models import Sum, Avg
 from django.http import JsonResponse
 import pandas as pd
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import random
+from django.db.models.functions import TruncMonth, ExtractYear, ExtractMonth
+import calendar
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
@@ -86,10 +88,77 @@ def monitor(request):
     if request.user.is_authenticated: 
         account_id = request.session.get('account_id')
         userinfo_id = request.session.get('userinfo_id')
+        userinfo = UserInformation.objects.get(pk=userinfo_id)
         
         if userinfo_id and account_id:
+            
+            # FOR FILTER
+            
+            
+            selected_month = request.GET.get('month')  # expected format: '2025-04'                
+            harvest_records = VerifiedHarvestRecord.objects.all()            
+            selected_year = request.GET.get('year')
+            
+            # if selected_year:
+            #     harvest_records = harvest_records.filter(harvest_date__year=selected_year)
+            #     print(harvest_records)
+            
+            available_months = []
+            if selected_year:
+                months = (
+                    VerifiedHarvestRecord.objects
+                    .filter(harvest_date__year=selected_year)
+                    .annotate(month=ExtractMonth('harvest_date'))
+                    .values_list('month', flat=True)
+                    .distinct()
+                    .order_by('month')
+                )
+                available_months = [(f"{selected_year}-{str(month).zfill(2)}", calendar.month_name[month]) for month in months]
+                
+                
+            years = (VerifiedHarvestRecord.objects
+                .annotate(year=ExtractYear('harvest_date'))  # or your date field
+                .values_list('year', flat=True)
+                .distinct()
+                .order_by('year')
+                )
+            
+            if selected_month:
+                # Parse and filter to the selected month
+                try:
+                    year, month = map(int, selected_month.split('-'))
+                    harvest_records = harvest_records.filter(harvest_date__year=year, harvest_date__month=month)
+                except:
+                    pass  
+                
+            if selected_year:
+                harvest_records = harvest_records.filter(harvest_date__year=selected_year)
 
-            harvest_df = pd.DataFrame(list(VerifiedHarvestRecord.objects.values()))
+            if selected_month:
+                try:
+                    year, month = map(int, selected_month.split('-'))
+                    harvest_records = harvest_records.filter(harvest_date__year=year, harvest_date__month=month)
+                except:
+                    pass  
+            
+            
+            print(harvest_records)
+
+            # Group and sum by month
+            harvest_data = (
+                harvest_records
+                .annotate(month=TruncMonth('harvest_date'))
+                .values('month')
+                .annotate(total_weight=Sum('total_weight_kg'))
+                .order_by('month')
+            )
+
+            # Prepare labels and values FOR Chart.js
+            
+            labels = [data['month'].strftime('%B %Y') for data in harvest_data]
+            weights = [float(data['total_weight']) for data in harvest_data]
+
+            harvest_df = pd.DataFrame(list(harvest_records.values()))
             plant_df = pd.DataFrame(list(VerifiedPlantRecord.objects.values()))
 
             chart_data = defaultdict(dict)
@@ -107,7 +176,7 @@ def monitor(request):
                     'values': harvest__weights_bycomm_json
                 }
 
-                # Monthly harvest trends
+                # Monthl    y harvest trends
                 mh = harvest_df.groupby('month')['total_weight_kg'].sum()
                 harvest_weights_json = [float(weight) for weight in mh.values.tolist()]  #converting from decimal to float since di kwan sa javascript
                 
@@ -184,8 +253,20 @@ def monitor(request):
                 }
                 
                 print(chart_data['harvest_location'])
+                
+            context = {
+                'user_firstname' : userinfo.firstname,
+                'chart_data': chart_data,
+                'harvest_labels': labels,
+                'harvest_weights': weights,
+                'selected_month': selected_month or '',
+                'years': years,
+                'selected_year': selected_year,
+                'available_months': available_months,
 
-            return render(request, 'monitoring/overall_dashboard.html', {'chart_data': chart_data})
+            }
+
+            return render(request, 'monitoring/overall_dashboard.html', context)
         
         else:
             print("⚠️ account_id missing in session!")

@@ -4,13 +4,18 @@ function showTab(tab) {
     document.getElementById(tab).classList.remove("hidden");
 }
 
+
+const labels = harvest_labels;
+const data = harvest_weights;
+const ctx = document.getElementById('harvestMonthlyChart').getContext('2d'); //FOR FILTERS
+
 const barOptions = {
     responsive: true,
     plugins: { legend: { display: false } },
     scales: { y: { beginAtZero: true } }
 };
 
-new Chart(document.getElementById("harvestMonthlyChart"), {
+const harvestMonthlyChart = new Chart(document.getElementById("harvestMonthlyChart"), {
     type: "line",
     data: {
         labels: harvest_months,
@@ -87,3 +92,40 @@ new Chart(document.getElementById("plantLocationChart"), {
     },
     options: barOptions
 });
+
+function harvestMonthlyChart_filter(input_id) {
+    const filterdatavalues = input_id;
+
+    // const filterData = harvestMonthlyChart.data.datasets[0].data.filter(value => value === 2023);
+    // const filterLabel = [];// harvestMonthlyChart.data.labels[]
+
+    // let i = 0;
+    // for (i; i < filterData.length; i++){
+    //     const resultindex = harvestMonthlyChart.data.datasets[0].data.indexOf(filterData[i]);
+    //     const filterlabelvalues = harvestMonthlyChart.data.labels[resultindex];
+    //     filterLabel.push(filterlabelvalues);        
+    // }
+
+    // harvestMonthlyChart.data.datasets[0].data = filterData;
+    // harvestMonthlyChart.data.labels = filterLabel;
+
+    // harvestMonthlyChart.update();
+
+    // console.log(filterdatavalues);
+    window.location.href = "?year=" + filterdatavalues;
+}
+
+// function applyMonthFilter() {
+//   const month = document.getElementById("monthDropdown").value;
+//   const year = document.getElementById("yearDropdown").value;
+//   let url = "?";
+
+//   if (year) {
+//     url += "year=" + year + "&";
+//   }
+//   if (month) {
+//     url += "month=" + month;
+//   }
+
+//   window.location.href = url;
+// }

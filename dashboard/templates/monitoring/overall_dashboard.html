@@ -29,15 +29,30 @@ Fruit Cast | Monitor
 
         <div id="harvest" class="tab-content">
             <h2 class="text-xl mt-4 font-semibold text-center">Harvest Data</h2>
-            <h4 class="">Monthly Total Harvested Weight</h4>
+
+            <h4 class="">Total Harvested Weight by Month</h4>
+            <select class="form-select w-25 col-md-3 mb-3" type="year" id="harvestMonthlyChart_yeardata" name="year">
+                <option value="">Overall</option>
+            {% for year in years %}
+                <option value="{{ year }}" {% if year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year }}</option>
+                {{ year }}
+                </option>
+            {% endfor %}
+            </select>
+            <button class="btn btn-success col-md-3 mb-3" onclick="harvestMonthlyChart_filter(document.getElementById('harvestMonthlyChart_yeardata').value)">Filter Chart</button>
+
             <canvas id="harvestMonthlyChart" height="100"></canvas>
-            <h4 class="">Monthly Total Harvested Weight</h4>
+
+
+            <h4 class="">Total Harvested Weight by Commodity</h4>
             <canvas id="harvestWeightChart" height="50vh" class="mt-4"></canvas>
+            <h4 class="">Total Harvested Weight by Municipality</h4>
             <canvas id="harvestLocationChart" height="100" class="mt-4"></canvas>
         </div>
 
         <div id="plant" class="tab-content hidden">
-            <h2 class="text-xl mt-4 font-semibold">Plant Data</h2>
+            <h2 class="text-xl mt-4 font-semibold text-center">Plant Data</h2>
+            <h4 class="">Monthly Total Harvested Weight</h4>
             <canvas id="plantCommodityChart" height="100"></canvas>
             <canvas id="plantLandAreaChart" height="100" class="mt-4"></canvas>
             <canvas id="plantLocationChart" height="100" class="mt-4"></canvas>
@@ -62,6 +77,11 @@ Fruit Cast | Monitor
     const plant_land_area_by_commodity = {{ chart_data.avg_land_area.values|safe }};
     const plant_locations = {{ chart_data.plant_by_location.labels|safe }};
     const plant_count_by_location = {{ chart_data.plant_by_location.values|safe }};
+
+    const harvest_labels = {{ harvest_labels|safe }};
+    const harvest_weights = {{ harvest_weights|safe }}; 
+
+ 
 </script>
 
 
