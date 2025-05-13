@@ -85,6 +85,14 @@ class ForecastResult(models.Model):
         return f"{self.commodity_type} forecast in {self.municipality.name} for {self.forecast_month} {self.forecast_year}"
 
 
+class Notification(models.Model):
+    account_id = models.ForeignKey('base.AccountsInformation', on_delete=models.CASCADE)  # Link to AccountsInformation
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.account_info.userinfo_id.firstname} {self.account_info.userinfo_id.lastname} at {self.created_at}"
 
 
 # plans for commodity type model: if the input type by users that are not in the commodity type table, 

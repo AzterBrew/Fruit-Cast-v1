@@ -23,12 +23,39 @@ from prophet import Prophet
 from datetime import datetime
 import json
 from shapely.geometry import shape
+from dashboard.utils import generate_notifications, get_current_month
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from base.models import *
 from dashboard.models import *
 from dashboard.forms import CommodityTypeForm
+
+def notifications(request):
+    account_id = request.session.get('account_id')
+    crops = []
+
+    if account_id:
+        plant_records = VerifiedPlantRecord.objects.filter(
+            prev_record__transaction_id__account_id=account_id
+        ).values_list('commodity_type', flat=True).distinct()
+        
+        crops = [crop for crop in plant_records if crop]  # Remove nulls or blanks if needed
+
+    notifications = generate_notifications(crops)
+
+    return render(request, 'notifications.html', {
+        'notifications': notifications,
+    })
+
+def create_verification_notification(user, record_type):
+    message = f"Your {record_type} record has been verified!"
+    Notification.objects.create(user=user, message=message)
+
+def notifications_view(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'notifications.html', {'notifications': notifications})
+
 
 # Create your views here.
 # def home(request):
@@ -471,17 +498,31 @@ def monitor(request):
         return render(request, 'home.html', {})  
 
 
-def commoditytype_collect(request) : #pang kuha ng distinct commodity type sa verified_harvest at plant record
-    recordentry = VerifiedHarvestRecord.objects.all()
-    finalrep= {}
-            
-    def get_commodity_type(recordentry) :
-        return recordentry.commodity_type
-            
-    commodity_list = list(set(map(get_commodity_type,recordentry))) #gets the commodity type in every record in harvestrecord and then list it out (no repetitions because of set function)
-    print("attempt sa query ")
-          
-    print(commodity_list)
+def commoditytype_collect(request):
+    harvest_entries = VerifiedHarvestRecord.objects.all()
+    plant_entries = VerifiedPlantRecord.objects.all()
+
+    # Create a set for distinct commodity types
+    commodity_list = set()
+
+    # Collect commodity types from both harvest and plant records
+    commodity_list.update(VerifiedHarvestRecord.objects.values_list('commodity_type', flat=True))
+    commodity_list.update(VerifiedPlantRecord.objects.values_list('commodity_type', flat=True))
+
+    # Now let's associate the commodity types with their respective seasons
+    commodity_seasons = {}
+
+    for commodity in commodity_list:
+        # Get the related months for each commodity (from the CommodityType model)
+        commodity_type_instance = CommodityType.objects.filter(name=commodity).first()
+        if commodity_type_instance:
+            commodity_seasons[commodity] = [month.name for month in commodity_type_instance.seasonal_months.all()]
+
+    print("Commodity Seasons:", commodity_seasons)
+    return commodity_seasons
+
+
+
 
 def add_commodity(request):
     if request.method == 'POST':

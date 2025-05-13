@@ -14,9 +14,19 @@ Fruit Cast | Home
 
     <div class="container mt-4">
 
-    <h1>Fruit Cast</h1>
-    <h2>Hi, {{user_firstname}}!</h2>
-    <h2>Check out the current forecast of Bataan's fruit supply for the next year: </h2>
+    <h1 class="text-center">Welcome to Fruit Cast, {{user_firstname}}</h1>
+    <br>
+    </br>
+    <div class="text-center">
+        <h3>Check out the current forecast of Bataan's fruit supply for the next year</h3>
+        <a class="btn btn-success" href="{% url 'dashboard:forecast' %}"><b>Forecast</b><span class="sr-only"></span></a>
+        <br>
+        </br>
+        <h3>See the current status of the recorded fruits's supply in Bataan based on our data </h3>
+        <a class="btn btn-success" href="{% url 'dashboard:monitor' %}"><b>Monitor</b><span class="sr-only"></span></a>
+
+    </div>
+
 
     </div>
 </div>

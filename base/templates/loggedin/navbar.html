@@ -1,11 +1,14 @@
+{%load static%}
+
 {% block navbar %}
+
 {% comment %} NAVBAR SECTION {% endcomment %}
 <nav class="navbar navbar-expand-lg navbar-light">
 
     <a class="btn btn-tarnsparent ms-5" data-bs-toggle="offcanvas" href="#offcanvasguest" role="button" aria-controls="offcanvasExample">
         =
       </a>
-    <a class="navbar-brand ms-3" href="{% url 'base:home' %}">Fruit Cast LOGO</a>
+    <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 50px;">
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -28,7 +31,7 @@
 
       <ul class="navbar-nav ms-auto me-5">
         <li class="nav-item">
-          <a class="nav-link" href="#"><b>Notification</b><span class="sr-only"></span></a>        
+          <a class="nav-link" href="{% url 'dashboard:notifications' %}"><b>Notification</b><span class="sr-only"></span></a>        
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'base:accinfo' %}"><b>Account</b><span class="sr-only"></span></a>        
@@ -51,11 +54,12 @@
 
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
     <div class="offcanvas-header">
-      <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast LOGO | {{user_firstname}}</h5>
+      <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast | {{user_firstname}}</h5>
       <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-header">      
-        <h5 class="offcanvas-title" id="offcanvasExampleLabel"><b>Fruit Cast Menu</b></h5>
+        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto"style="max-height: 20vh; align-content : center;">
+
     </div>
     <div class="offcanvas-body">  
         <div class="list-group">
