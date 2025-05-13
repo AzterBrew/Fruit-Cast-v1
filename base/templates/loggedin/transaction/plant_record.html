@@ -5,6 +5,7 @@ Fruit Cast | Creating Plant Record
 {% endblock title %}
 
 {% block content %}
+
 <div class="container">
     <h2>Create New Plant Record</h2>
     <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
@@ -23,6 +24,12 @@ Fruit Cast | Creating Plant Record
             {% endfor %}
         </div>
         <input type="hidden" name="record_type" value="plant">  
+        <div class="mt-4">
+            <label for="map">Select Location:</label>
+            <div id="map" style="height: 400px; max-height: 500px"></div>
+            <input type="hidden" id="latitude" name="latitude">
+            <input type="hidden" id="longitude" name="longitude">
+        </div>
 
         <div class="mt-4">
             <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
@@ -36,4 +43,32 @@ Fruit Cast | Creating Plant Record
         </div>
     </form>
 </div>
+
+<script>
+    var map = L.map('map').setView([14.6781, 120.5395], 10); // center at Bataan
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marker;
+
+    map.on('click', function(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+
+        // Update hidden fields
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+    });
+    
+    
+</script>
+
 {% endblock content %}

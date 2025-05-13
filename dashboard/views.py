@@ -19,36 +19,37 @@ from collections import defaultdict, OrderedDict
 import random
 from django.db.models.functions import TruncMonth, ExtractYear, ExtractMonth
 import calendar
+from prophet import Prophet
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from base.models import *
 from dashboard.models import *
-from base.forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate
+from dashboard.forms import CommodityTypeForm
 
 # Create your views here.
-def home(request):
-    print("🔥 DEBUG: Home view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+# def home(request):
+#     print("🔥 DEBUG: Home view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
 
-    if request.user.is_authenticated:
-        account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
+#     if request.user.is_authenticated:
+#         account_id = request.session.get('account_id')
+#         userinfo_id = request.session.get('userinfo_id')
         
-        if userinfo_id and account_id:
+#         if userinfo_id and account_id:
             
-            userinfo = UserInformation.objects.get(pk=userinfo_id)
+#             userinfo = UserInformation.objects.get(pk=userinfo_id)
         
-            context = {
-                'user_firstname' : userinfo.firstname,
-            }            
-            return render(request, 'loggedin/home.html', context)
+#             context = {
+#                 'user_firstname' : userinfo.firstname,
+#             }            
+#             return render(request, 'loggedin/home.html', context)
         
-        else:
-            print("⚠️ account_id missing in session!")
-            return redirect('base:home')         
-    else:        
-        return render(request, 'home.html', {})
+#         else:
+#             print("⚠️ account_id missing in session!")
+#             return redirect('base:home')         
+#     else:        
+#         return render(request, 'home.html', {})
      
 
 def forecast(request):
@@ -61,9 +62,38 @@ def forecast(request):
         if userinfo_id and account_id:
             
             userinfo = UserInformation.objects.get(pk=userinfo_id)
+            
+            qs = VerifiedHarvestRecord.objects.all().values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg')
+
+            df = pd.DataFrame.from_records(qs)
+
+            # Safety check for empty df
+            forecast_data = None
+            if not df.empty:
+                df['ds'] = pd.to_datetime(df['harvest_date'])
+                df['y'] = df['total_weight_kg'] / df['weight_per_unit_kg']  # unit count
+
+                # Optional: group by month for smoother trends
+                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                df['ds'] = df['ds'].dt.to_timestamp()
+
+                # Forecasting using Prophet
+                model = Prophet()
+                model.fit(df)
+
+                future = model.make_future_dataframe(periods=6, freq='M')  # forecast 6 future months
+                forecast = model.predict(future)
+
+                # Only extract what's needed for Chart.js (or your frontend)
+                forecast_data = {
+                    'labels': forecast['ds'].dt.strftime('%B %Y').tolist(),
+                    'forecasted_count': forecast['yhat'].round().tolist()
+                }
+                print('success ')
         
             context = {
                 'user_firstname' : userinfo.firstname,
+                'forecast_data': forecast_data,
             }            
             return render(request, 'forecasting/forecast.html', context)
         
@@ -275,21 +305,6 @@ def monitor(request):
     else :
         return render(request, 'home.html', {})  
 
-# def dashboard_view(request):
-#     last_7_days = now().date() - timedelta(days=7)
-#     recent_records = HarvestRecord.objects.filter(harvest_date__gte=last_7_days)
-
-#     # Example data: commodity_type counts
-#     data = {}
-#     for record in recent_records:
-#         key = record.commodity_type
-#         data[key] = data.get(key, 0) + 1
-
-#     context = {
-#         'labels': list(data.keys()),
-#         'values': list(data.values()),
-#     }
-#     return render(request, 'loggedin/dashboard.html', context)
 
 def commoditytype_collect(request) : #pang kuha ng distinct commodity type sa verified_harvest at plant record
     recordentry = VerifiedHarvestRecord.objects.all()
@@ -302,3 +317,16 @@ def commoditytype_collect(request) : #pang kuha ng distinct commodity type sa ve
     print("attempt sa query ")
           
     print(commodity_list)
+
+def add_commodity(request):
+    if request.method == 'POST':
+        form = CommodityTypeForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('base:home')     # or anywhere else
+    else:
+        form = CommodityTypeForm()
+    
+    return render(request, 'forecasting/commodity_add.html', {'form': form})
+
+    

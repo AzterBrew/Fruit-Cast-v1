@@ -9,9 +9,58 @@ Fruit Cast | Forecast
 {% endblock navbar %}
 
 {% block content %}
+
+<div class="container2 p-6">
+
+    <div class="container mt-4">
+
     <h1>Forecast</h1>
-    <h1>USER LOGGED IN</h1>
-    
-    
+        
+    {% if forecast_data %}
+        <canvas id="forecastChart" height="100"></canvas>
+        <script>
+            const labels = {{ forecast_data.labels|safe }};
+            const forecastedData = {{ forecast_data.forecasted_count|safe }};
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+
+            const forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Forecasted Unit Count',
+                        data: forecastedData,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Unit Count'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Forecasted Month'
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    {% else %}
+        <p>No forecast data available.</p>
+    {% endif %}
+    </div>
+</div>
 {% endblock content %}
 

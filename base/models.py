@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-
+from dashboard.models import * 
 # Create your models here.
 # class ExtendedUser(models.Model):
 #     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -106,7 +106,6 @@ class UserLoginLog(models.Model):
     userlogin_id = models.BigAutoField(primary_key=True)
     account_id = models.ForeignKey(AccountsInformation,  on_delete=models.CASCADE)
     login_date = models.DateTimeField(auto_now_add=True)
-    item_status_id = models.ForeignKey(ItemStatus, on_delete=models.CASCADE) #to check if kwan logged in user already has verified account
 
 class Transaction(models.Model):
     transaction_id = models.BigAutoField(primary_key=True)
@@ -118,13 +117,13 @@ class Transaction(models.Model):
     tr_verified_date = models.DateTimeField(null=True, blank=True)
     tr_isverified = models.BooleanField(default=False) #default na false since di verified agad
     tr_verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
-    notes = models.TextField()
 
 class HarvestRecord(models.Model):
     harvest_id = models.BigAutoField(primary_key=True)
     transaction_id = models.ForeignKey(Transaction, on_delete=models.CASCADE)
     harvest_date = models.DateField()
-    commodity_type = models.CharField(max_length=255)
+    commodity_type = models.CharField(null=True,max_length=255)
+    # commodity_type = models.ForeignKey('dashboard.CommodityType', on_delete=models.CASCADE, null=True)
     commodity_spec = models.CharField(max_length=255, blank=True)
     total_weight = models.DecimalField(max_digits=10,decimal_places=2)
     unit = models.CharField(max_length=50)
@@ -144,6 +143,8 @@ class PlantRecord(models.Model):
     max_expected_harvest = models.IntegerField()
     land_area = models.FloatField()
     remarks = models.TextField(blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
 
 

@@ -56,7 +56,8 @@ class VerifiedPlantRecord(models.Model):
     date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
     prev_record = models.ForeignKey('base.PlantRecord', on_delete=models.SET_NULL, null=True, blank=True)
-
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 # average_harvest_units = (min_expected_harvest + max_expected_harvest) / 2
 # estimated_weight_kg = average_harvest_units * avg_weight_per_unit_kg [avg weight per unit will be on the commodity type table]
 
@@ -64,6 +65,22 @@ class VerifiedPlantRecord(models.Model):
         return f"{self.commodity_type} ({self.estimated_weight_kg} kg est.) on {self.plant_date}"
 
 
+
+class ForecastResult(models.Model):
+    municipality = models.CharField(max_length=100)
+    commodity_type = models.CharField(max_length=100)
+    forecast_month = models.CharField(max_length=50)  # e.g. "Dry", "Wet", or even a specific month/quarter
+    forecast_year = models.IntegerField()
+    forecasted_amount = models.FloatField()  # in kg, tons, etc.
+
+    generated_at = models.DateTimeField(auto_now_add=True)
+    source_data_last_updated = models.DateTimeField()  # timestamp of the latest harvest data used
+
+    class Meta:
+        unique_together = ('municipality', 'commodity_type', 'forecast_month', 'forecast_year')
+
+    def __str__(self):
+        return f"{self.commodity_type} forecast in {self.municipality.name} for {self.forecast_month} {self.forecast_year}"
 
 
 

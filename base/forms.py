@@ -180,6 +180,8 @@ class PlantRecordCreate(forms.ModelForm):
             'max_expected_harvest': forms.NumberInput(attrs={'class': 'form-control'}),
             'land_area': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'latitude': forms.HiddenInput(),
+            'longitude': forms.HiddenInput(),
         }
 
         

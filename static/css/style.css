@@ -102,18 +102,26 @@ div {
 
 .login-container {
     display: flex;
-    min-width: 99vmax;
-    align-items: center;
+    min-width: 98vmax;
+    /* align-items: center; */
     /* background-color: #546749; */
-    background-image: linear-gradient(to bottom left, #546749, #f7fff2);
+    /* background-image: linear-gradient(to bottom left, #546749, #f7fff2); */
+    background-image: url("../images/background.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
     z-index: 0;
+    /* height: 100vh; */
     min-height: 100vh;
 }
 .login-left-container {
     margin: 5%;
     padding: 1rem;
     color: #f7fff2;
+    margin-top: 15%;
     min-width: 40%;
+    max-width: 50%;
+    min-height: 40vh;
 }
 
 .login-left-container p {

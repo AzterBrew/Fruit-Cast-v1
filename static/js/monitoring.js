@@ -129,3 +129,37 @@ function harvestMonthlyChart_filter(input_id) {
 
 //   window.location.href = url;
 // }
+
+    const forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Forecasted Unit Count',
+                data: forecastedData,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Unit Count'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Forecasted Month'
+                    }
+                }
+            }
+        }
+    });

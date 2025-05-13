@@ -1,0 +1,20 @@
+{% extends "forecasting/layout.html" %}
+
+{% block title %}
+Fruit Cast | Forecast
+{% endblock title %}
+
+{% block navbar %}
+    {% include "loggedin/navbar.html" %}
+{% endblock navbar %}
+
+{% block content %}
+
+<h1>Add New Commodity</h1>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save</button>
+</form>
+
+{% endblock content %}

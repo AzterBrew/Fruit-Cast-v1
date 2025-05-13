@@ -89,7 +89,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <a href="{% url 'base:newrecord' %}?view=harvest&from=transaction" class="btn btn-warning btn-sm">Add Record</a>
+            <a href="{% url 'base:newrecord' %}?view={{ record_type }}&from=transaction" class="btn btn-warning btn-sm">Add Record</a>
             {% comment %} yung '&from' indicates na tracked na galing transaction page {% endcomment %}
             <br>
             <br>
@@ -97,7 +97,7 @@
                 {% csrf_token %}
                 {% comment %} ADD NOTES {% endcomment %}
                 <input type="hidden" name="record_type" value="{{ record_type }}">
-                <button type="submit" class="btn btn-success btn-sm">Submit All Records</button>
+                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to proceed?')">Submit All Records</button>
             </form>
         {% else %}
             <p>No records yet.</p>

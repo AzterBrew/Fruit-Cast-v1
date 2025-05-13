@@ -8,9 +8,9 @@ from .views import *
 app_name = 'dashboard'
 
 urlpatterns = [
-    path('', home, name='home'),
+    # path('', home, name='home'),
     path('forecast/', forecast, name="forecast"),
     path('monitor/', monitor, name="monitor"),
-
+    path('commodities/add', add_commodity, name="addcommodity"),
 ]
  
