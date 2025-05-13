@@ -68,7 +68,7 @@ class CustomUserInformationForm(forms.ModelForm):
     
     class Meta:
         model = UserInformation
-        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality", "address_details"]
+        fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality", "address_details"]
         labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality", "address_details" : "Purok, Street Name, Building, House No."}
         widgets = {
             'firstname': forms.TextInput(attrs={'class': 'form-control'}),
