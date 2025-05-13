@@ -275,7 +275,7 @@ def monitor(request):
                 }
                 
                 # plant count per location
-                pl = plant_df['plant_location'].value_counts()
+                pl = plant_df['plant_municipality'].value_counts()
                 chart_data['plant_by_location'] = {
                     'labels' : pl.index.tolist(),
                     'values': pl.values.tolist()

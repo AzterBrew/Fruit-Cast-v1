@@ -31,7 +31,8 @@ class VerifiedHarvestRecord(models.Model):
     commodity_spec = models.CharField(max_length=255, blank=True, null=True)
     total_weight_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
     weight_per_unit_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
-    harvest_location = models.CharField(max_length=255)
+    harvest_municipality = models.CharField(null=True,blank=True,max_length=255)
+    harvest_barangay = models.CharField(null=True,blank=True,max_length=255)
     remarks = models.TextField(blank=True, null=True)
     date_verified = models.DateTimeField(default=timezone.now)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
@@ -47,7 +48,8 @@ class VerifiedPlantRecord(models.Model):
     commodity_spec = models.CharField(max_length=255, blank=True, null=True)
     expected_harvest_date = models.DateField(null=True, blank=True)
     estimated_weight_kg = models.DecimalField(max_digits=10,decimal_places=2, null=True, blank=True)
-    plant_location = models.CharField(max_length=255)
+    plant_municipality = models.CharField(null=True,blank=True,max_length=255)
+    plant_barangay = models.CharField(null=True,blank=True,max_length=255)
     min_expected_harvest = models.IntegerField()
     max_expected_harvest = models.IntegerField()
     average_harvest_units = models.DecimalField(max_digits=10,decimal_places=2)    #count toh, not weight
@@ -56,8 +58,8 @@ class VerifiedPlantRecord(models.Model):
     date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
     prev_record = models.ForeignKey('base.PlantRecord', on_delete=models.SET_NULL, null=True, blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
+    # latitude = models.FloatField(null=True, blank=True)
+    # longitude = models.FloatField(null=True, blank=True)
 # average_harvest_units = (min_expected_harvest + max_expected_harvest) / 2
 # estimated_weight_kg = average_harvest_units * avg_weight_per_unit_kg [avg weight per unit will be on the commodity type table]
 

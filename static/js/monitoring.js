@@ -83,7 +83,7 @@ new Chart(document.getElementById("plantLandAreaChart"), {
 new Chart(document.getElementById("plantLocationChart"), {
     type: "doughnut",
     data: {
-        labels: plant_locations,
+        labels: plant_municipality,
         datasets: [{
             label: "Plant Count per Location",
             backgroundColor: "#fb7185",
@@ -143,7 +143,7 @@ function harvestMonthlyChart_filter(input_id) {
                 tension: 0.3,
                 fill: true,
             }]
-        },
+        }, 
         options: {
             responsive: true,
             scales: {

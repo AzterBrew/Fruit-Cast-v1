@@ -1,4 +1,5 @@
 {% extends "loggedin/layout.html" %}
+{%load static%}
 
 {% block title %}
 Fruit Cast | Creating Plant Record
@@ -26,7 +27,7 @@ Fruit Cast | Creating Plant Record
         <input type="hidden" name="record_type" value="plant">  
         <div class="mt-4">
             <label for="map">Select Location:</label>
-            <div id="map" style="height: 55vh; max-height: 70vh; max-width:60vw"></div>
+            <div id="map" style="height: 55vh; max-height: 50vh; max-width:55vw;"></div>
             {% comment %} <input type="hidden" id="latitude" name="latitude">
             <input type="hidden" id="longitude" name="longitude"> {% endcomment %}
             <input type="hidden" id="selected_location" name="selected_location">
@@ -55,25 +56,40 @@ Fruit Cast | Creating Plant Record
     }).addTo(map);
 
     // Load GeoJSON (this is just a placeholder URL; change to your static path or Django endpoint)
-    fetch("{% static 'your_geojson_folder/bataan_municipalities.geojson' %}")
-        .then(response => response.json())
-        .then(geojsonData => {
-            L.geoJSON(geojsonData, {
-                style: {
-                    color: "#3388ff",
-                    weight: 2,
-                    fillOpacity: 0.3
-                },
+    let selectedLayer = null;
+
+    fetch("{% static 'geojson/Barangays.json' %}")
+    .then(response => response.json())
+    .then(geojsonData => {
+        const geojson = L.geoJSON(geojsonData, {
+            style: {
+                color: "#3388ff",
+                weight: 1,
+                fillOpacity: 0.3
+            },
                 onEachFeature: function (feature, layer) {
                     layer.on('click', function () {
-                        // Highlight selected
-                        layer.setStyle({ fillOpacity: 0.7, color: "#ff7800" });
+                        if (selectedLayer) {
+                            geojson.resetStyle(selectedLayer);
+                        }
 
-                        // Store selected location name
-                        document.getElementById('selected_location').value = feature.properties.NAME_2; // or whatever property contains the name
+                        selectedLayer = layer;
+
+                        layer.setStyle({ fillOpacity: 0.5, color: "#ff7800" });
+
+                        document.getElementById('selected_location').value = feature.properties.NAME_3;
                     });
 
-                    layer.bindTooltip(feature.properties.NAME_2, { sticky: true }); // Optional: show name
+                    /**layer.bindTooltip(barangayName, {
+                    
+                });**/
+
+                    layer.bindTooltip(feature.properties.NAME_3, { 
+                        sticky: true,
+                        //permanent: true,
+                        direction: "center",
+                        className: "barangay-label"
+                     }); // Optional: show name
                 }
             }).addTo(map);
         });

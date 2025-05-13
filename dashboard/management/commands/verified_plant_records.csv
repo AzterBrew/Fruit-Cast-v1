@@ -1,4 +1,4 @@
-id,plant_date,commodity_type,commodity_spec,expected_harvest_date,estimated_weight_kg,min_expected_harvest,max_expected_harvest,average_harvest_units,land_area,plant_location,remarks,date_verified,verified_by,prev_record
+id,plant_date,commodity_type,commodity_spec,expected_harvest_date,estimated_weight_kg,min_expected_harvest,max_expected_harvest,average_harvest_units,land_area,plant_municipality,remarks,date_verified,verified_by,prev_record
 1,2023-10-30,Papaya,Solo,2024-01-28,,164,253,250.2,942.89,Dinalupihan,,2023-11-02 00:00:00,,
 2,2023-07-15,Mango,Carabao,2023-10-13,,152,267,104.75,871.37,Balanga City,,2023-07-20 00:00:00,,
 3,2023-01-20,Banana,Saba,2023-04-20,,261,396,98.55,595.03,Dinalupihan,,2023-01-25 00:00:00,,

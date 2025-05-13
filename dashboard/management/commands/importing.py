@@ -51,7 +51,7 @@ class Command(BaseCommand):
                         commodity_spec=row['commodity_spec'] or None,
                         expected_harvest_date=row['expected_harvest_date'],
                         estimated_weight_kg=row['estimated_weight_kg'] or None,
-                        plant_location=row['plant_location'],
+                        plant_municipality=row['plant_municipality'],
                         min_expected_harvest=row['min_expected_harvest'],
                         max_expected_harvest=row['max_expected_harvest'],
                         average_harvest_units=row['average_harvest_units'],

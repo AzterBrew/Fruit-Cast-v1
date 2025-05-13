@@ -342,7 +342,7 @@ def finalize_transaction(request):
                 commodity_type=data['commodity_type'],
                 commodity_spec=data['commodity_spec'],
                 expected_harvest_date=data['expected_harvest_date'],
-                plant_location=data['plant_location'],
+                plant_municipality=data['plant_municipality'],
                 min_expected_harvest=data['min_expected_harvest'],
                 max_expected_harvest=data['max_expected_harvest'],
                 land_area=data['land_area'],
@@ -686,7 +686,7 @@ def custom_login(request):
                 try:
                     user_info = UserInformation.objects.get(auth_user=request.user)
                     account_info = AccountsInformation.objects.get(userinfo_id__auth_user=user)
-                    item_status = account_info.item_status_id
+                    
                     
                     UserLoginLog.objects.create(
                         account_id=account_info, 

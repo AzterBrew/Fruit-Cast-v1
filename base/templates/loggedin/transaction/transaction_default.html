@@ -6,9 +6,22 @@ Fruit Cast | Choose Transaction
 
 
 {% block content %}
-    <h1>Hello po, {{user_firstname}}.</h1>
-    <h1>Choose a Transaction</h1>
-    
+    <br>
+    </br>
+    <div class="text-center">
+        <h1>Hi, {{user_firstname}}.</h1>
+        <h1>Choose a Transaction</h1>
+    </div>
+    <br>
+    </br>
+    <div class="text-center">
+        <a href="?view=plant" class="btn btn-success text-light link-body-emphasis">                         
+            New Plant Record
+        </a> 
+        <a href="?view=harvest" class="btn btn-success text-light link-body-emphasis"> 
+            New Harvest Record
+        </a>         
+    </div>
     
 {% endblock content %}
 

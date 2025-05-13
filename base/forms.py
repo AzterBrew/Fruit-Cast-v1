@@ -165,11 +165,11 @@ class HarvestRecordCreate (forms.ModelForm):
         }
 
 class PlantRecordCreate(forms.ModelForm):
-    plant_location = forms.ChoiceField(label="Planting Location", choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
+    plant_municipality = forms.ChoiceField(label="Planting Location", choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
 
     class Meta:
         model = PlantRecord
-        fields = ["plant_date", "expected_harvest_date","commodity_type", "commodity_spec","min_expected_harvest", "max_expected_harvest", "plant_location","land_area", "remarks"]
+        fields = ["plant_date", "expected_harvest_date","commodity_type", "commodity_spec","min_expected_harvest", "max_expected_harvest", "plant_municipality","land_area", "remarks"]
         labels = {"plant_date": "Date Planted","commodity_type": "Commodity Type","commodity_spec": "Commodity Specification","expected_harvest_date": "Expected Harvest Date","min_expected_harvest": "Min Expected Harvest (kg)","max_expected_harvest": "Max Expected Harvest (kg)","land_area": "Land Area (hectares)","remarks": "Remarks / Additional Notes"}
         widgets = {
             'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),

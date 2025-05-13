@@ -1,4 +1,4 @@
-id,plant_date,commodity_type,commodity_spec,expected_harvest_date,estimated_weight_kg,plant_location,min_expected_harvest,max_expected_harvest,average_harvest_units,land_area,remarks,date_verified,verified_by,prev_record
+id,plant_date,commodity_type,commodity_spec,expected_harvest_date,estimated_weight_kg,plant_municipality,min_expected_harvest,max_expected_harvest,average_harvest_units,land_area,remarks,date_verified,verified_by,prev_record
 1,2024-07-25,Guava,Guava Spec 1,2024-10-06,496.76,Orani,276,471,373.5,595.34,,2024-07-27,,
 2,2025-03-09,Durian,Durian Spec 3,2025-07-25,614.29,Morong,270,291,280.5,258.81,,2025-03-15,,
 3,2024-11-21,Calamansi,Calamansi Spec 3,2025-02-22,1290.35,Dinalupihan,402,583,492.5,294.09,,2024-11-27,,
