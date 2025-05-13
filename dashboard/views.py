@@ -123,11 +123,16 @@ def forecast(request):
                     for i, row in forecast.iterrows():
                         month = row['ds'].month
                         if peak_start <= month <= peak_end:
-                            forecast.at[i, 'adjusted_yhat'] = forecast.at[i, 'yhat'] * 1.5  # Adjust with factor of 1.5
+                            forecast.at[i, 'adjusted_yhat'] = forecast.at[i, 'yhat'] * 1.5  #  1.5 yung multiplier
+
+                labels = forecast['ds'].dt.strftime('%B %Y').tolist()
+                values = forecast['adjusted_yhat'].round().tolist()
+                combined_forecast = list(zip(labels, values))  
 
                 forecast_data = {
-                    'labels': forecast['ds'].dt.strftime('%B %Y').tolist(),
-                    'forecasted_count': forecast['adjusted_yhat'].round().tolist()
+                    'labels': labels,
+                    'forecasted_count': values,
+                    'combined': combined_forecast  # Add zipped list here
                 }
                 
             # 2D MAPPING STUFF
