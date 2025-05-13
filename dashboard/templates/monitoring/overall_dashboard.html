@@ -10,6 +10,122 @@ Fruit Cast | Monitor
 
 {% block content %}
 <div class="container2 p-6">
+    <div class="container mt-4">
+        <h1>Monitor</h1>
+        <h3 class="text-center">Harvest Record Summary</h3>
+
+        <!-- Tabs -->
+        <ul class="flex border-b list-group list-inline">
+            <li class="mr-1 my-3">
+                <a class="bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 font-semibold list-group-item list-group-item-action" href="#harvest" onclick="showTab('harvest')">Harvest Data</a>
+            </li>
+            <li class="mr-1 my-3">
+                <a class="bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 font-semibold list-group-item list-group-item-action" href="#plant" onclick="showTab('plant')">Plant Data</a>
+            </li>
+        </ul>
+
+        <!-- HARVEST -->
+        <div id="harvest" class="tab-content">
+            <h2 class="text-xl mt-4 font-semibold text-center">Harvest Data</h2>
+
+            <form method="get">
+                <div class="mb-3">
+                    <label for="harvestMonthlyChart_yeardata">Filter by Year:</label>
+                    <select class="form-select w-25 col-md-3" id="harvestMonthlyChart_yeardata" name="year">
+                        <option value="">Overall</option>
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-success col-md-3 mt-2">Filter</button>
+                </div>
+            </form>
+
+            <h4>Total Harvested Weight by Month</h4>
+            {% if chart_data.monthly_harvest %}
+                <canvas id="harvestMonthlyChart" height="100"></canvas>
+            {% else %}
+                <p>No monthly harvest data available.</p>
+            {% endif %}
+
+            <h4 class="mt-4">Total Harvested Weight by Commodity</h4>
+            {% if chart_data.harvest_commodity %}
+                <canvas id="harvestWeightChart" height="100"></canvas>
+            {% else %}
+                <p>No commodity harvest data available.</p>
+            {% endif %}
+
+            <h4 class="mt-4">Total Harvested Weight by Municipality</h4>
+            {% if chart_data.harvest_municipality %}
+                <canvas id="harvestLocationChart" height="100"></canvas>
+            {% else %}
+                <p>No harvest location data available.</p>
+            {% endif %}
+        </div>
+
+        <!-- PLANT -->
+        <div id="plant" class="tab-content hidden">
+            <h2 class="text-xl mt-4 font-semibold text-center">Plant Data</h2>
+
+            <h4>Number of Plantings per Commodity</h4>
+            {% if chart_data.plant_commodity %}
+                <canvas id="plantCommodityChart" height="100"></canvas>
+            {% else %}
+                <p>No plant commodity data available.</p>
+            {% endif %}
+
+            <h4 class="mt-4">Estimated Harvest Weight per Commodity</h4>
+            {% if chart_data.estimated_weight.values %}
+                <canvas id="plantEstimatedWeightChart" height="100"></canvas>
+            {% else %}
+                <p>No estimated weight data available.</p>
+            {% endif %}
+
+            <h4 class="mt-4">Average Land Area per Commodity</h4>
+            {% if chart_data.avg_land_area.values %}
+                <canvas id="plantLandAreaChart" height="100"></canvas>
+            {% else %}
+                <p>No land area data available.</p>
+            {% endif %}
+
+            <h4 class="mt-4">Number of Plantings per Municipality</h4>
+            {% if chart_data.plant_by_location.values %}
+                <canvas id="plantLocationChart" height="100"></canvas>
+            {% else %}
+                <p>No location data available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js and Dynamic Data Injection -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // HARVEST CHARTS
+    const harvest_months = {{ chart_data.monthly_harvest.labels|safe }};
+    const harvest_weights_by_month = {{ chart_data.monthly_harvest.values|safe }};
+
+    const harvest_commodities = {{ chart_data.harvest_commodity.labels|safe }};
+    const harvest_weights_by_commodity = {{ chart_data.harvest_commodity.values|safe }};
+
+    const harvest_municipality = {{ chart_data.harvest_municipality.labels|safe }};
+    const harvest_weights_by_location = {{ chart_data.harvest_municipality.values|safe }};
+
+    // PLANT CHARTS
+    const plant_commodities = {{ chart_data.plant_commodity.labels|safe }};
+    const plant_units_by_commodity = {{ chart_data.plant_commodity.values|safe }};
+
+    const plant_estimated_labels = {{ chart_data.estimated_weight.labels|safe }};
+    const plant_estimated_values = {{ chart_data.estimated_weight.values|safe }};
+
+    const plant_land_area_labels = {{ chart_data.avg_land_area.labels|safe }};
+    const plant_land_area_values = {{ chart_data.avg_land_area.values|safe }};
+
+    const plant_location_labels = {{ chart_data.plant_by_location.labels|safe }};
+    const plant_location_values = {{ chart_data.plant_by_location.values|safe }};
+</script>
+
+{% comment %} <div class="container2 p-6">
 
     <div class="container mt-4">
 
@@ -100,8 +216,9 @@ Fruit Cast | Monitor
     const harvest_weights_by_month = {{ chart_data.monthly_harvest.values|safe }};
     const harvest_commodities = {{ chart_data.harvest_commodity.labels|safe }};
     const harvest_weights_by_commodity = {{ chart_data.harvest_commodity.values|safe }};
-    const harvest_locations = {{ chart_data.harvest_location.labels|safe }};
-    const harvest_weights_by_location = {{ chart_data.harvest_location.values|safe }};
+    const harvest_municipality = {{ chart_data.harvest_municipality.labels|safe }};
+    const harvest_barangay = {{ chart_data.harvest_barangay.labels|safe }};
+    const harvest_weights_by_location = {{ chart_data.harvest_municipality.values|safe }};
     const plant_commodities = {{ chart_data.plant_commodity.labels|safe }};
     const plant_units_by_commodity = {{ chart_data.plant_commodity.values|safe }};
     const plant_lande_area_commodities = {{ chart_data.avg_land_area.labels|safe }};
@@ -113,7 +230,7 @@ Fruit Cast | Monitor
     const harvest_weights = {{ harvest_weights|safe }}; 
 
  
-</script>
+</script> {% endcomment %}
 
 
 {% endblock %}

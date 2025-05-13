@@ -92,7 +92,7 @@ def monitor(request):
             # Dataset 2: by location
             location_data = {}
             for record in HarvestRecord.objects.all():
-                key = record.harvest_location
+                key = record.harvest_municipality
                 location_data[key] = location_data.get(key, 0) + 1
 
             context = {
@@ -316,7 +316,8 @@ def finalize_transaction(request):
                 total_weight=data['total_weight'],
                 unit=data['unit'],
                 weight_per_unit=data['weight_per_unit'],
-                harvest_location=data['harvest_location'],
+                harvest_municipality=data['harvest_municipality'],
+                harvest_barangay=data['harvest_barangay'],
                 remarks=data.get('remarks', '')
             )
             #  this is for verified harvests

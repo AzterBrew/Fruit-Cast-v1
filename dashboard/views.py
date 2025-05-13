@@ -20,6 +20,9 @@ import random
 from django.db.models.functions import TruncMonth, ExtractYear, ExtractMonth
 import calendar
 from prophet import Prophet
+from datetime import datetime
+import json
+from shapely.geometry import shape
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
@@ -51,58 +54,214 @@ from dashboard.forms import CommodityTypeForm
 #     else:        
 #         return render(request, 'home.html', {})
      
+fruit_seasons = {
+    "Mango": ("March", "June"),
+    "Banana": ("All Year", "All Year"),
+    "Papaya": ("All Year", "All Year"),
+    "Pineapple": ("March", "June"),
+    "Lanzones": ("September", "November"),
+    "Rambutan": ("August", "October"),
+    "Guava": ("August", "October"),
+    "Durian": ("August", "October"),
+    "Mangosteen": ("July", "September"),
+    "Calamansi": ("August", "October"),
+    "Watermelon": ("March", "July"),
+    "Avocado": ("July", "September"),
+    "Pomelo": ("August", "October"),
+}
 
 def forecast(request):
     print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
+    
+    if request.user.is_authenticated:
         account_id = request.session.get('account_id')
         userinfo_id = request.session.get('userinfo_id')
-        
+
         if userinfo_id and account_id:
-            
             userinfo = UserInformation.objects.get(pk=userinfo_id)
-            
-            qs = VerifiedHarvestRecord.objects.all().values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg')
 
-            df = pd.DataFrame.from_records(qs)
+            selected_commodity = request.GET.get('commodity_type')
+            qs = VerifiedHarvestRecord.objects.all()
+            commodity_types = qs.values_list('commodity_type', flat=True).distinct()
 
-            # Safety check for empty df
+            if selected_commodity:
+                qs = qs.filter(commodity_type=selected_commodity)
+            else:
+                selected_commodity = commodity_types.first() if commodity_types else None
+                if selected_commodity:
+                    qs = qs.filter(commodity_type=selected_commodity)
+
+            qs = qs.values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg', 'commodity_type', 'harvest_barangay', 'harvest_municipality')
+
             forecast_data = None
-            if not df.empty:
+            if qs.exists():
+                df = pd.DataFrame.from_records(qs)
                 df['ds'] = pd.to_datetime(df['harvest_date'])
-                df['y'] = df['total_weight_kg'] / df['weight_per_unit_kg']  # unit count
+                df['y'] = df['total_weight_kg'] / df['weight_per_unit_kg']
 
-                # Optional: group by month for smoother trends
                 df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
                 df['ds'] = df['ds'].dt.to_timestamp()
 
-                # Forecasting using Prophet
                 model = Prophet()
                 model.fit(df)
 
-                future = model.make_future_dataframe(periods=6, freq='M')  # forecast 6 future months
+                future = model.make_future_dataframe(periods=12, freq='M')  # Forecast 12 months
                 forecast = model.predict(future)
 
-                # Only extract what's needed for Chart.js (or your frontend)
+                # Adjust forecast based on peak season
+                # For simplicity, we assume the boost factor is 1.5 for peak months
+                peak_months = fruit_seasons.get(selected_commodity)
+                if peak_months and peak_months != ("All Year", "All Year"):
+                    peak_start, peak_end = peak_months
+                    peak_start = datetime.strptime(peak_start, '%B').month
+                    peak_end = datetime.strptime(peak_end, '%B').month
+
+                    forecast['adjusted_yhat'] = forecast['yhat']
+
+                    # Boost forecast for the peak months
+                    for i, row in forecast.iterrows():
+                        month = row['ds'].month
+                        if peak_start <= month <= peak_end:
+                            forecast.at[i, 'adjusted_yhat'] = forecast.at[i, 'yhat'] * 1.5  # Adjust with factor of 1.5
+
                 forecast_data = {
                     'labels': forecast['ds'].dt.strftime('%B %Y').tolist(),
-                    'forecasted_count': forecast['yhat'].round().tolist()
+                    'forecasted_count': forecast['adjusted_yhat'].round().tolist()
                 }
-                print('success ')
-        
+                
+            # 2D MAPPING STUFF
+            
+            with open('static/geojson/Barangays.json', 'r') as f:
+                geojson_data = json.load(f)
+            
+            
+            map_data = []
+
+            for feature in geojson_data['features']:
+                # Get the geometry (polygon)
+                geom = shape(feature['geometry'])
+                # Calculate the centroid of the polygon
+                centroid = geom.centroid
+                latitude = centroid.y
+                longitude = centroid.x
+
+                # Extract relevant properties (barangay, municipality)
+                barangay = feature['properties']['NAME_3']
+                municipality = feature['properties']['NAME_2']
+                province = feature['properties']['PROVINCE']
+
+                # Add the centroid coordinates to the map_data list
+                map_data.append({
+                    'latitude': latitude,
+                    'longitude': longitude,
+                    'barangay': barangay,
+                    'municipality': municipality,
+                    'province': province,
+                    'forecasted_amount': 0
+                })
+
+            # Now we update the map_data with forecast information
+            if qs.exists():
+                df = pd.DataFrame.from_records(qs)
+                df['ds'] = pd.to_datetime(df['harvest_date'])
+                df['y'] = df['total_weight_kg'].apply(float) / df['weight_per_unit_kg'].apply(float)
+
+                df['month'] = df['ds'].dt.month
+                df['year'] = df['ds'].dt.year
+                df = df.groupby(['month', 'year', 'commodity_type', 'harvest_barangay', 'harvest_municipality'])['y'].sum().reset_index()
+
+                # Optionally filter by selected month and commodity_type
+                if selected_commodity:
+                    df = df[df['commodity_type'] == selected_commodity]
+
+                # Create map data entries with forecasted amounts
+                for index, forecast_row in df.iterrows():
+                    barangay = forecast_row['harvest_barangay']
+                    forecasted_amount = forecast_row['y']  # Or your forecast logic
+                    # Find the matching barangay in the map data
+                    for item in map_data:
+                        if item['barangay'] == barangay:
+                            item['forecasted_amount'] = forecasted_amount
+                            break 
+
             context = {
-                'user_firstname' : userinfo.firstname,
+                'user_firstname': userinfo.firstname,
                 'forecast_data': forecast_data,
-            }            
+                'commodity_types': commodity_types,
+                'selected_commodity': selected_commodity,
+                'map_data': map_data,  
+            }
+            
             return render(request, 'forecasting/forecast.html', context)
-        
+
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')                
+            return redirect('base:home')
+
+    else:
+        return render(request, 'home.html', {})
+
+
+# def forecast(request):        LAST LATEST VER
+#     print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+#     if request.user.is_authenticated: 
+#         account_id = request.session.get('account_id')
+#         userinfo_id = request.session.get('userinfo_id')
+        
+#         if userinfo_id and account_id:
             
-    else :
-        return render(request, 'home.html', {})  
+#             userinfo = UserInformation.objects.get(pk=userinfo_id)
+            
+#             selected_commodity = request.GET.get('commodity_type')
+#             qs = VerifiedHarvestRecord.objects.all()
+#             commodity_types = qs.values_list('commodity_type', flat=True).distinct()
+
+#             if selected_commodity:
+#                 qs = qs.filter(commodity_type=selected_commodity)
+#             else:
+#                 selected_commodity = commodity_types.first() if commodity_types else None
+#                 if selected_commodity:
+#                     qs = qs.filter(commodity_type=selected_commodity)
+
+#             qs = qs.values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg')
+
+#             forecast_data = None
+#             if qs.exists():
+#                 df = pd.DataFrame.from_records(qs)
+#                 df['ds'] = pd.to_datetime(df['harvest_date'])
+#                 df['y'] = df['total_weight_kg'] / df['weight_per_unit_kg']
+
+#                 df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+#                 df['ds'] = df['ds'].dt.to_timestamp()
+
+#                 model = Prophet()
+#                 model.fit(df)
+
+#                 future = model.make_future_dataframe(periods=12, freq='M')  # Forecast 12 months
+#                 forecast = model.predict(future)
+
+#                 forecast_data = {
+#                     'labels': forecast['ds'].dt.strftime('%B %Y').tolist(),
+#                     'forecasted_count': forecast['yhat'].round().tolist()
+#                 }
+
+#             context = {
+#                 'user_firstname': userinfo.firstname,
+#                 'forecast_data': forecast_data,
+#                 'commodity_types': commodity_types,
+#                 'selected_commodity': selected_commodity,
+#             }
+            
+#             return render(request, 'forecasting/forecast.html', context)
+        
+#         else:
+#             print("⚠️ account_id missing in session!")
+#             return redirect('base:home')                
+            
+#     else :
+#         return render(request, 'home.html', {})  
 
 
 
@@ -232,9 +391,9 @@ def monitor(request):
                 #     'colors': random.choices(COLORS, k=len(locs))
                 # }
                 
-                locs = harvest_df.groupby('harvest_location')['total_weight_kg'].sum()
+                locs = harvest_df.groupby('harvest_municipality')['total_weight_kg'].sum()
                 harvest_weight_byloc_json = [float(weight) for weight in locs.values.tolist()]
-                chart_data['harvest_location'] = {
+                chart_data['harvest_municipality'] = {
                     'labels': locs.index.tolist(),
                     'values': harvest_weight_byloc_json,
                     'colors': random.choices(COLORS, k=len(locs))
@@ -253,9 +412,10 @@ def monitor(request):
 
                 # Estimated weight per commodity
                 ew = plant_df.groupby('commodity_type')['estimated_weight_kg'].sum()
+                estimated_weight_json = [float(weight) for weight in ew.values.tolist()]
                 chart_data['estimated_weight'] = {
                     'labels': ew.index.tolist(),
-                    'values': ew.values.tolist()
+                    'values': estimated_weight_json
                 }
 
                 # Avg land area per commodity
@@ -282,7 +442,7 @@ def monitor(request):
                     
                 }
                 
-                print(chart_data['harvest_location'])
+                print(chart_data['harvest_municipality'])
                 
             context = {
                 'user_firstname' : userinfo.firstname,
@@ -329,4 +489,56 @@ def add_commodity(request):
     
     return render(request, 'forecasting/commodity_add.html', {'form': form})
 
-    
+
+# def forecast(request):
+#     print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+#     if request.user.is_authenticated: 
+#         account_id = request.session.get('account_id')
+#         userinfo_id = request.session.get('userinfo_id')
+        
+#         if userinfo_id and account_id:
+            
+#             userinfo = UserInformation.objects.get(pk=userinfo_id)
+            
+#             qs = VerifiedHarvestRecord.objects.all().values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg')
+
+#             df = pd.DataFrame.from_records(qs)
+
+#             # Safety check for empty df
+#             forecast_data = None
+#             if not df.empty:
+#                 df['ds'] = pd.to_datetime(df['harvest_date'])
+#                 df['y'] = df['total_weight_kg'] / df['weight_per_unit_kg']  # unit count
+
+#                 # Optional: group by month for smoother trends
+#                 df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+#                 df['ds'] = df['ds'].dt.to_timestamp()
+
+#                 # Forecasting using Prophet
+#                 model = Prophet()
+#                 model.fit(df)
+
+#                 future = model.make_future_dataframe(periods=6, freq='M')  # forecast 6 future months
+#                 forecast = model.predict(future)
+
+#                 # Only extract what's needed for Chart.js (or your frontend)
+#                 forecast_data = {
+#                     'labels': forecast['ds'].dt.strftime('%B %Y').tolist(),
+#                     'forecasted_count': forecast['yhat'].round().tolist()
+#                 }
+#                 print('success ')
+        
+#             context = {
+#                 'user_firstname' : userinfo.firstname,
+#                 'forecast_data': forecast_data,
+#             }            
+            
+#             return render(request, 'forecasting/forecast.html', context)
+        
+#         else:
+#             print("⚠️ account_id missing in session!")
+#             return redirect('base:home')                
+            
+#     else :
+#         return render(request, 'home.html', {})  

@@ -19,14 +19,16 @@
                             <th>Spec</th>
                             <th>Weight</th>
                             <th>Unit</th>
-                            <th>Location</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
                             <th>Remarks</th>
                         {% else %}
                             <th>Plant Date</th>
                             <th>Commodity Type</th>
                             <th>Commodity Specification</th>
                             <th>Expected Harvest Date</th>
-                            <th>Plant Location (by hectare)</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
                             <th>Minimum Expected Harvest</th>
                             <th>Maximum Expected Harvest</th>
                             <th>Land Area</th>
@@ -49,7 +51,8 @@
                             <td>{{ record.commodity_spec }}</td>
                             <td>{{ record.total_weight }}</td>
                             <td>{{ record.unit }}</td>
-                            <td>{{ record.harvest_location }}</td>
+                            <td>{{ record.harvest_municipality }}</td>
+                            <td>{{ record.harvest_barangay }}</td>
                             <td>{{ record.remarks }}</td>
                             <td>
                             {% comment %} <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a> {% endcomment %}
@@ -68,6 +71,7 @@
                             <td>{{ record.commodity_spec }}</td>
                             <td>{{ record.expected_harvest_date }}</td>
                             <td>{{ record.plant_municipality }}</td>
+                            <td>{{ record.plant_barangay }}</td>
                             <td>{{ record.min_expected_harvest }}</td>
                             <td>{{ record.max_expected_harvest }}</td>
                             <td>{{ record.land_area }}</td>

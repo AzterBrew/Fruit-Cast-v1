@@ -26,7 +26,7 @@ class Command(BaseCommand):
                         commodity_spec=row['commodity_spec'] or None,
                         total_weight_kg=row['total_weight_kg'],
                         weight_per_unit_kg=row['weight_per_unit_kg'],
-                        harvest_location=row['harvest_location'],
+                        harvest_municipality=row['harvest_municipality'],
                         remarks=row['remarks'] or None,
                         date_verified=datetime.strptime(row['date_verified'], "%Y-%m-%d %H:%M:%S") if row['date_verified'] else timezone.now(),
                         verified_by=row['verified_by'] or None,

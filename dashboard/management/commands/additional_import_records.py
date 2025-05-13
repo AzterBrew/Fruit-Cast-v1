@@ -8,20 +8,23 @@ class Command(BaseCommand):
     help = "Generates and inserts additional random harvest and plant records into the database"
 
     def handle(self, *args, **kwargs):
-        commodity_types = ["Mango", "Banana", "Papaya", "Pineapple", "Lanzones", "Rambutan", "Guava", "Durian", "Mangosteen", "Calamansi"]
+        commodity_types = ["Pineapple", "Lanzones", "Rambutan", "Guava", "Durian", "Mangosteen", "Calamansi", "Watermelon","Avocado", "Pomelo"]
         
         # Seasonal data for common Philippine fruits
         fruit_seasons = {
-            "Mango": ("March", "June"),
-            "Banana": ("All Year", "All Year"),
-            "Papaya": ("All Year", "All Year"),
+            # "Mango": ("March", "June"),
+            # "Banana": ("All Year", "All Year"),
+            # "Papaya": ("All Year", "All Year"),
             "Pineapple": ("March", "June"),
             "Lanzones": ("September", "November"),
             "Rambutan": ("August", "October"),
             "Guava": ("August", "October"),
             "Durian": ("August", "October"),
             "Mangosteen": ("July", "September"),
-            "Calamansi": ("August", "October")
+            "Calamansi": ("August", "October"),
+            "Watermelon": ("March", "July"),
+            "Avocado": ("July", "September"),
+            "Pomelo": ("August", "October"),
         }
         
         MUNICIPALITY_BARANGAY_MAP = {

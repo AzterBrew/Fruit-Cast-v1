@@ -75,7 +75,7 @@ class ForecastResult(models.Model):
     forecast_year = models.IntegerField()
     forecasted_amount = models.FloatField()  # in kg, tons, etc.
 
-    generated_at = models.DateTimeField(auto_now_add=True)
+    generated_at = models.DateTimeField(default=timezone.now)
     source_data_last_updated = models.DateTimeField()  # timestamp of the latest harvest data used
 
     class Meta:

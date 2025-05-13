@@ -143,7 +143,7 @@ class PlantRecord(models.Model):
     plant_barangay = models.CharField(null=True,blank=True,max_length=255)
     min_expected_harvest = models.IntegerField()
     max_expected_harvest = models.IntegerField()
-    land_area = models.FloatField()
+    land_area = models.FloatField(null=True,blank=True)
     remarks = models.TextField(blank=True)
     # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

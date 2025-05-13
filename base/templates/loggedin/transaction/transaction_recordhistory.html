@@ -26,14 +26,16 @@ Fruit Cast | Transaction History
                             <th>Commodity Specification</th>
                             <th>Total Weight</th>
                             <th>Weight per Unit</th>
-                            <th>Harvest Location</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
                             <th>Remarks</th>
                         {% else %}
                             <th>Plant Date</th>
                             <th>Commodity Type</th>
                             <th>Commodity Specification</th>
                             <th>Expected Harvest Date</th>
-                            <th>Plant Location</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
                             <th>Minimum Expected Harvest</th>
                             <th>Maximum Expected Harvest</th>
                             <th>Land Area</th>
@@ -50,7 +52,8 @@ Fruit Cast | Transaction History
                                 <td>{{ record.commodity_spec }}</td>
                                 <td>{{ record.total_weight }} {{ record.unit }}</td>
                                 <td>{{ record.weight_per_unit }} {{ record.unit }}</td>
-                                <td>{{ record.harvest_location }}</td>
+                                <td>{{ record.harvest_municipality }}</td>
+                                <td>{{ record.harvest_barangay }}</td>
                                 <td>{{ record.remarks }}</td>
                             {% else %}
                                 <td>{{ record.plant_date }}</td>
@@ -58,6 +61,7 @@ Fruit Cast | Transaction History
                                 <td>{{ record.commodity_spec }}</td>
                                 <td>{{ record.expected_harvest_date }}</td>
                                 <td>{{ record.plant_municipality }}</td>
+                                <td>{{ record.plant_barangay }}</td>
                                 <td>{{ record.min_expected_harvest }}</td>
                                 <td>{{ record.max_expected_harvest }}</td>
                                 <td>{{ record.land_area }}</td>

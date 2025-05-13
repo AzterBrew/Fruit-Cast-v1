@@ -147,14 +147,14 @@ class HarvestRecordCreate (forms.ModelForm):
     
     # HELLOOO I ACTUALLY FORGOT TO ADD THE WEIGHT PER UNIT SO NEED KO MAG REMIGRATE
     
-    harvest_location = forms.ChoiceField(label="Location of Harvest",choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class':'form-control form-select'}))    
+    harvest_municipality = forms.ChoiceField(label="Location of Harvest",choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class':'form-control form-select'}))    
     unit = forms.ChoiceField(label="Unit of Measurement",choices=UNIT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
     total_weight = forms.DecimalField(localize=True, label="Total Weight of Commodity",widget=forms.NumberInput(attrs={'class':'form-control', 'min':'0','step':'0.1'}))
     weight_per_unit = forms.DecimalField(localize=True, label="Weight per Unit",widget=forms.NumberInput(attrs={'class':'form-control', 'min':'0','step':'0.1'}))
     
     class Meta:
         model = HarvestRecord
-        fields = ["harvest_date", "harvest_location", "commodity_type", "commodity_spec", "total_weight", "unit", "weight_per_unit","remarks"]
+        fields = ["harvest_date", "harvest_municipality", "commodity_type", "commodity_spec", "total_weight", "unit", "weight_per_unit","remarks"]
         labels = {"harvest_date" : "Harvest Date", "commodity_type" : "Commodity Type", "commodity_spec" : "Commodity Specification", "remarks" : "Remarks / Additional Notes"}
         widgets = {
             'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),

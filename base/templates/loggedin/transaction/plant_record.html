@@ -26,7 +26,7 @@ Fruit Cast | Creating Plant Record
         </div>
         <input type="hidden" name="record_type" value="plant">  
         <div class="mt-4">
-            <label for="map">Select Location:</label>
+            <label for="map">Select Barangay:</label>
             <div id="map" style="height: 55vh; max-height: 50vh; max-width:55vw;"></div>
             {% comment %} <input type="hidden" id="latitude" name="latitude">
             <input type="hidden" id="longitude" name="longitude"> {% endcomment %}
@@ -68,31 +68,40 @@ Fruit Cast | Creating Plant Record
                 fillOpacity: 0.3
             },
                 onEachFeature: function (feature, layer) {
-                    layer.on('click', function () {
-                        if (selectedLayer) {
-                            geojson.resetStyle(selectedLayer);
-                        }
+                var barangayName = feature.properties.NAME_3;
+                var municipalityName = feature.properties.NAME_2;
+                var provinceName = feature.properties.PROVINCE;
 
-                        selectedLayer = layer;
+                // Find forecast data for the barangay
+                var forecastedData = mapData.find(item => 
+                    item.harvest_barangay === barangayName && item.harvest_municipality === municipalityName);
 
-                        layer.setStyle({ fillOpacity: 0.5, color: "#ff7800" });
+                var forecastedAmount = forecastedData ? forecastedData.forecasted_amount : 0;
 
-                        document.getElementById('selected_location').value = feature.properties.NAME_3;
-                    });
+                layer.bindPopup(
+                    `<b>${barangayName}</b><br>` +
+                    `Municipality: ${municipalityName}<br>` +
+                    `Province: ${provinceName}<br>` +
+                    `Forecasted Amount: ${forecastedAmount.toFixed(2)} kg`
+                );
+            }
+        }).addTo(map);
+    })
+    .catch(error => {
+        console.error('Error loading GeoJSON:', error);
+    });
 
-                    /**layer.bindTooltip(barangayName, {
-                    
-                });**/
+    // Add markers from mapData
+    var mapData = {{ map_data|safe }}; // Ensure this is passed correctly in the context
 
-                    layer.bindTooltip(feature.properties.NAME_3, { 
-                        sticky: true,
-                        //permanent: true,
-                        direction: "center",
-                        className: "barangay-label"
-                     }); // Optional: show name
-                }
-            }).addTo(map);
-        });
+    mapData.forEach(function(item) {
+        if (item.latitude && item.longitude) { // Only add markers if valid coordinates
+            var marker = L.marker([item.latitude, item.longitude]).addTo(map);
+            marker.bindPopup('<b>' + item.harvest_barangay + '</b><br>' + item.harvest_municipality + '<br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
+        } else {
+            console.warn('Invalid coordinates for marker:', item);
+        }
+    });
 </script>
 {% comment %} <script>
     var map = L.map('map').setView([14.6781, 120.5395], 10); // center at Bataan
