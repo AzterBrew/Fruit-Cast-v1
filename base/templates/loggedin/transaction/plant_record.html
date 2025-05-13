@@ -26,9 +26,11 @@ Fruit Cast | Creating Plant Record
         <input type="hidden" name="record_type" value="plant">  
         <div class="mt-4">
             <label for="map">Select Location:</label>
-            <div id="map" style="height: 400px; max-height: 500px"></div>
-            <input type="hidden" id="latitude" name="latitude">
-            <input type="hidden" id="longitude" name="longitude">
+            <div id="map" style="height: 55vh; max-height: 70vh; max-width:60vw"></div>
+            {% comment %} <input type="hidden" id="latitude" name="latitude">
+            <input type="hidden" id="longitude" name="longitude"> {% endcomment %}
+            <input type="hidden" id="selected_location" name="selected_location">
+
         </div>
 
         <div class="mt-4">
@@ -43,8 +45,40 @@ Fruit Cast | Creating Plant Record
         </div>
     </form>
 </div>
-
 <script>
+    // Initialize the map
+    var map = L.map('map').setView([14.678, 120.536], 10); // Centered on Bataan
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Load GeoJSON (this is just a placeholder URL; change to your static path or Django endpoint)
+    fetch("{% static 'your_geojson_folder/bataan_municipalities.geojson' %}")
+        .then(response => response.json())
+        .then(geojsonData => {
+            L.geoJSON(geojsonData, {
+                style: {
+                    color: "#3388ff",
+                    weight: 2,
+                    fillOpacity: 0.3
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.on('click', function () {
+                        // Highlight selected
+                        layer.setStyle({ fillOpacity: 0.7, color: "#ff7800" });
+
+                        // Store selected location name
+                        document.getElementById('selected_location').value = feature.properties.NAME_2; // or whatever property contains the name
+                    });
+
+                    layer.bindTooltip(feature.properties.NAME_2, { sticky: true }); // Optional: show name
+                }
+            }).addTo(map);
+        });
+</script>
+{% comment %} <script>
     var map = L.map('map').setView([14.6781, 120.5395], 10); // center at Bataan
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -69,6 +103,6 @@ Fruit Cast | Creating Plant Record
     });
     
     
-</script>
+</script> {% endcomment %}
 
 {% endblock content %}

@@ -7,7 +7,7 @@ Fruit Cast | Transaction History
 
 {% block content %}
 {% if records %}
-
+ 
 <div class="container">
     <div class="record-cart">
         <h2>Transaction History : Records</h2>
@@ -49,7 +49,7 @@ Fruit Cast | Transaction History
                                 <td>{{ record.commodity_type }}</td>
                                 <td>{{ record.commodity_spec }}</td>
                                 <td>{{ record.total_weight }} {{ record.unit }}</td>
-                                <td>{{ record.weight_per_unit }}</td>
+                                <td>{{ record.weight_per_unit }} {{ record.unit }}</td>
                                 <td>{{ record.harvest_location }}</td>
                                 <td>{{ record.remarks }}</td>
                             {% else %}

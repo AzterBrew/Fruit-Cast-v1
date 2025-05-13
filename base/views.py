@@ -302,7 +302,6 @@ def finalize_transaction(request):
     transaction = Transaction.objects.create(
         account_id=accountinfo,
         transaction_type=record_type.capitalize(),
-        notes="Submitted via transaction cart",
         item_status_id=ItemStatus.objects.get(item_status_id=3)
     )
 
@@ -646,7 +645,7 @@ def register_step2(request):
                 emergency_contact_number=form.cleaned_data['emergency_contact_number'],
                 **step1_data  # merges all step 1 fields
             )
-            account_type_instance = AccountType.objects.get(account_type_id=1)
+            account_type_instance = AccountType.objects.get(account_type_id=3)
             item_status_instance = ItemStatus.objects.get(item_status_id=1)
 
             AccountsInformation.objects.create(
@@ -691,7 +690,7 @@ def custom_login(request):
                     
                     UserLoginLog.objects.create(
                         account_id=account_info, 
-                        item_status_id=item_status)
+                        )
                     
                     request.session['account_id'] = account_info.account_id
                     request.session['userinfo_id'] = user_info.userinfo_id
