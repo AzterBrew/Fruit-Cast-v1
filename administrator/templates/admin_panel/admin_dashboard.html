@@ -1,0 +1,46 @@
+{% extends "admin_login/layout.html" %}
+
+{% block title %}
+Fruit Cast | Home
+{% endblock title %}
+
+{% block navbar %}
+    {% include "admin_panel/navbar.html" %}
+{% endblock navbar %}
+
+{% block content %}
+
+<div class="container2 p-6">
+
+    <div class="container mt-4">
+
+    <h1 class="text-center">Welcome to Fruit Cast {{user_firstname}}</h1>
+    <br>
+    </br>
+    <div class="text-center">
+        <div class="list-group">
+            {% comment %} <a href="#" class="list-group-item list-group-item-action">Report History</a>
+            <a href="#" class="list-group-item list-group-item-action">Account Details</a> {% endcomment %}
+            <a href="{% url 'administrator:verify_accounts' %}" class="list-group-item list-group-item-action">Home</a>
+            {% comment %} <a href="{% url 'dashboard:forecast' %}" class="list-group-item list-group-item-action">Forecast</a>
+            <a href="{% url 'dashboard:monitor' %}" class="list-group-item list-group-item-action">Monitor</a>
+            <a href="{% url 'base:newrecord' %}?view=transaction_history" class="list-group-item list-group-item-action">Record History</a>
+            <a href="#" class="list-group-item list-group-item-action">Fruit Plant Suggestion</a>
+            <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a> {% endcomment %}
+            {% comment %} <a href="{% url 'dashboard:addcommodity' %}" class="list-group-item list-group-item-action">Add Commodity</a> {% endcomment %}
+            <!-- Collapsible Section -->
+            {% comment %} {% if user_role_id == 3 %}
+              <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">Admin Panel</a>
+
+            {% endif %} {% endcomment %}
+            
+        </div>
+
+    </div>
+
+
+    </div>
+</div>
+    
+{% endblock content %}
+

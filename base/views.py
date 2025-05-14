@@ -189,6 +189,10 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                 form = PlantRecordCreate(request.POST or None)
                 context['form'] = form
                 
+                plant_data = VerifiedPlantRecord.objects.all()
+                map_data = []
+                
+                
                 if request.method == "POST" and form.is_valid():
                     pending_records = request.session.get('pending_plant_records', [])
                     record_data = form.cleaned_data.copy()
@@ -204,6 +208,8 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                     request.session['pending_plant_records'] = pending_records
                     request.session['current_record_type'] = record_data['record_type']
                     request.session.modified = True
+                    
+                    
 
                     return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
                 
@@ -646,8 +652,8 @@ def register_step2(request):
                 emergency_contact_number=form.cleaned_data['emergency_contact_number'],
                 **step1_data  # merges all step 1 fields
             )
-            account_type_instance = AccountType.objects.get(account_type_id=3)
-            item_status_instance = ItemStatus.objects.get(item_status_id=1)
+            account_type_instance = AccountType.objects.get(account_type_id=1)
+            item_status_instance = ItemStatus.objects.get(item_status_id=3)
 
             AccountsInformation.objects.create(
                 userinfo_id = userinfo,

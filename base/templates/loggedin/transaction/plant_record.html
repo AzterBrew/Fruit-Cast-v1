@@ -31,7 +31,7 @@ Fruit Cast | Creating Plant Record
             {% comment %} <input type="hidden" id="latitude" name="latitude">
             <input type="hidden" id="longitude" name="longitude"> {% endcomment %}
             <input type="hidden" id="selected_location" name="selected_location">
-
+            
         </div>
 
         <div class="mt-4">
@@ -47,16 +47,20 @@ Fruit Cast | Creating Plant Record
     </form>
 </div>
 <script>
+    
     // Initialize the map
-    var map = L.map('map').setView([14.678, 120.536], 10); // Centered on Bataan
-
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    var map = L.map('map').setView([14.678, 120.536], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
     // Load GeoJSON (this is just a placeholder URL; change to your static path or Django endpoint)
     let selectedLayer = null;
+    var mapData = {{ map_data|safe }}; // Ensure this is passed correctly in the context
 
     fetch("{% static 'geojson/Barangays.json' %}")
     .then(response => response.json())
@@ -92,7 +96,6 @@ Fruit Cast | Creating Plant Record
     });
 
     // Add markers from mapData
-    var mapData = {{ map_data|safe }}; // Ensure this is passed correctly in the context
 
     mapData.forEach(function(item) {
         if (item.latitude && item.longitude) { // Only add markers if valid coordinates

@@ -1,0 +1,57 @@
+{% extends 'admin_login/layout.html' %}
+
+
+{% block navbar %}
+    {% include "admin_panel/navbar.html" %}
+{% endblock navbar %}
+
+{% block content %}
+<div class="container2 p-6">
+
+    <div class="container mt-4">
+        <h2 class="text-xl font-bold mb-4">All Registered Accounts</h2>
+
+        {% if allAccounts %}
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Sex</th>
+                <th>Email</th>
+                <th>Contact</th>
+                <th>Barangay</th>
+                <th>Municipality</th>
+                <th>Account Type</th>
+                <th>Registered Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for account in allAccounts %}
+            <tr>
+                <td>{{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename }} {{ account.userinfo_id.lastname }} {{ account.userinfo_id.nameextension }}</td>
+                <td>{{ account.userinfo_id.sex }}</td>
+                <td>{{ account.userinfo_id.user_email }}</td>
+                <td>{{ account.userinfo_id.contact_number }}</td>
+                <td>{{ account.userinfo_id.barangay }}</td>
+                <td>{{ account.userinfo_id.municipality }}</td>
+                <td>{{ account.account_type_id.account_type }}</td>
+                <td>{{ account.account_register_date|date:"M d, Y" }}</td>
+                <td>{{ account.item_status_id.item_status }}</td>
+                <td>
+                    <form method="POST" action="{% url 'verify_account_action' account.account_id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-success btn-sm" onclick="return confirm('Verify this account?')">Verify</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No pending accounts found.</p>
+    {% endif %}
+    </div>
+</div>
+{% endblock %}
