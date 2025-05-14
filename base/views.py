@@ -12,7 +12,7 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
-
+import json
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from .models import *
@@ -189,14 +189,18 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                 form = PlantRecordCreate(request.POST or None)
                 context['form'] = form
                 
+                with open('static/geojson/Barangays.json', 'r') as f:
+                    barangay_data = json.load(f)
+                
                 plant_data = VerifiedPlantRecord.objects.all()
-                map_data = []
                 
                 
                 if request.method == "POST" and form.is_valid():
                     pending_records = request.session.get('pending_plant_records', [])
                     record_data = form.cleaned_data.copy()
+                    record_data['plant_barangay'] = request.POST.get('plant_barangay')
                     record_data['record_type'] = 'plant'
+                    
                     
                     for key, value in record_data.items():
                         if isinstance(value, date):
@@ -207,11 +211,13 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                     pending_records.append(record_data)
                     request.session['pending_plant_records'] = pending_records
                     request.session['current_record_type'] = record_data['record_type']
+                    
                     request.session.modified = True
-                    
-                    
+                    context = {
+                        'map_data': json.dumps(barangay_data),
+                    }
 
-                    return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+                    return redirect(f"{reverse('base:newrecord')}?view=transaction_list", context)
                 
             elif view_to_show == "transaction_list":
                 record_type = request.GET.get("record_type") or request.session.get("current_record_type", "harvest")
