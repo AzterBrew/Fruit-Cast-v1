@@ -59,6 +59,7 @@ Fruit Cast | Creating Plant Record
             }).addTo(map);
 
     // Load GeoJSON (this is just a placeholder URL; change to your static path or Django endpoint)
+    {% comment %} FROM HERE
     let selectedLayer = null;
     var mapData = {{ map_data|safe }}; // Ensure this is passed correctly in the context
 
@@ -88,6 +89,42 @@ Fruit Cast | Creating Plant Record
                     `Province: ${provinceName}<br>` +
                     `Forecasted Amount: ${forecastedAmount.toFixed(2)} kg`
                 );
+                TO HERE {% endcomment %}
+    
+    let selectedLayer = null;
+
+    fetch("{% static 'geojson/Barangays.json' %}")
+    .then(response => response.json())
+    .then(geojsonData => {
+        const geojson = L.geoJSON(geojsonData, {
+            style: {
+                color: "#3388ff",
+                weight: 1,
+                fillOpacity: 0.3
+            },
+                onEachFeature: function (feature, layer) {
+                    layer.on('click', function () {
+                        if (selectedLayer) {
+                            geojson.resetStyle(selectedLayer);
+                        }
+
+                        selectedLayer = layer;
+
+                        layer.setStyle({ fillOpacity: 0.5, color: "#ff7800" });
+
+                        document.getElementById('selected_location').value = feature.properties.NAME_3;
+                    });
+
+                    /**layer.bindTooltip(barangayName, {
+                    
+                });**/
+
+                    layer.bindTooltip(feature.properties.NAME_3, { 
+                        sticky: true,
+                        //permanent: true,
+                        direction: "center",
+                        className: "barangay-label"
+                     }); // Optional: show name    
             }
         }).addTo(map);
     })
