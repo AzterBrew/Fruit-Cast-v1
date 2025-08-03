@@ -229,7 +229,7 @@ def forecast(request):
 
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')
+            return redirect('home')
 
     else:
         return render(request, 'home.html', {})
@@ -492,7 +492,7 @@ def monitor(request):
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')                
+            return redirect('home')                
             
     else :
         return render(request, 'home.html', {})  

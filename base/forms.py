@@ -27,6 +27,7 @@ SEX_CHOICES = [
 ]
 
 MUNICIPALITY_CHOICES = [
+    ('','Select Municipality'),
     ('Abucay', 'Abucay'),
     ('Bagac', 'Bagac'),
     ('Balanga', 'Balanga'),
@@ -60,16 +61,16 @@ CIVSTAT_CHOICES = [
 
 class CustomUserInformationForm(forms.ModelForm):
     
-    sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
+    sex = forms.ChoiceField(label="Sex *",choices=SEX_CHOICES, widget=forms.RadioSelect)
     nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if N/A'}))
 
     # nameextension = forms.CharField(label="Name Extension",widget=forms.TextInput(attrs={'placeholder' : 'Leave blank if not applicable'}))
-    municipality = forms.ChoiceField(choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
+    municipality = forms.ChoiceField(label="Municipality *",choices=MUNICIPALITY_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
     
     class Meta:
         model = UserInformation
         fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay", "municipality", "address_details"]
-        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename" : "Middle Name", "nameextension" : "Name Extension", "sex" : "Sex", "birthdate" : "Date of Birth", "barangay": "Barangay", "municipality" : "Municipality", "address_details" : "Purok, Street Name, Building, House No."}
+        labels = {"lastname": "Last Name *", "firstname": "First Name *", "middlename" : "Middle Name *", "nameextension" : "Name Extension", "sex" : "Sex *", "birthdate" : "Date of Birth *", "barangay": "Barangay *", "municipality" : "Municipality *", "address_details" : "Purok, Street Name, Building, House No. *"}
         widgets = {
             'firstname': forms.TextInput(attrs={'class': 'form-control'}),
             'lastname': forms.TextInput(attrs={'class': 'form-control'}),
@@ -78,6 +79,7 @@ class CustomUserInformationForm(forms.ModelForm):
             'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'barangay': forms.TextInput(attrs={'class': 'form-control'}),
             'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows' : 2}),
+            
         }
 
 
@@ -86,23 +88,23 @@ class UserContactAndAccountForm(forms.ModelForm):
         regex=r'^\+?1?\d{9,15}$', 
         message="Phone number must be entered in the format: '+639XXXXXXXXX'.")
     
-    contact_number = forms.CharField(validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
-    emergency_contact_number = forms.CharField(label="Emergency Contact Person's Contact No.",widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
-    civil_status = forms.ChoiceField(label="Civil Status", choices=CIVSTAT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
+    contact_number = forms.CharField(label="Contact No. *", validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
+    emergency_contact_number = forms.CharField(label="Emergency Contact Person's Contact No. *",widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
+    civil_status = forms.ChoiceField(label="Civil Status *", choices=CIVSTAT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
     
     password1 = forms.CharField(
-        label="Password",
+        label="Password *",
         widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
     password2 = forms.CharField(
-        label="Confirm Password",
+        label="Confirm Password *",
         widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
 
     class Meta:
         model = UserInformation
         fields = ["religion", "civil_status", "rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "contact_number", "user_email"]
-        labels = {"religion":"Religion",  "emergency_contact_person" : "Emergency Contact Person", "emergency_contact_number" : "Emergency Contact Person's Contact No.", "user_email" : "Email Address", "contact_number" : "Contact Number" }
+        labels = {"religion":"Religion *",  "emergency_contact_person" : "Emergency Contact Person *", "emergency_contact_number" : "Emergency Contact Person's Contact No. *", "user_email" : "Email Address *", "contact_number" : "Contact Number *" }
         widgets = {
             'religion': forms.TextInput(attrs={'class': 'form-control'}),
             'civil_status': forms.TextInput(attrs={'class': 'form-control'}),
@@ -151,6 +153,8 @@ class HarvestRecordCreate (forms.ModelForm):
     unit = forms.ChoiceField(label="Unit of Measurement",choices=UNIT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
     total_weight = forms.DecimalField(localize=True, label="Total Weight of Commodity",widget=forms.NumberInput(attrs={'class':'form-control', 'min':'0','step':'0.1'}))
     weight_per_unit = forms.DecimalField(localize=True, label="Weight per Unit",widget=forms.NumberInput(attrs={'class':'form-control', 'min':'0','step':'0.1'}))
+    
+    harvest_barangay = forms.ChoiceField(label="Select Barangay", choices=[('','Select a Municipality First')],widget=forms.Select(attrs={'class':'form-control form-select'}))
     
     class Meta:
         model = HarvestRecord

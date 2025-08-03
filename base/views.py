@@ -43,7 +43,7 @@ def home(request):
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')         
+            return redirect('home')         
     else:        
         return render(request, 'home.html', {})
      
@@ -66,7 +66,7 @@ def forecast(request):
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')                
+            return redirect('home')                
             
     else :
         return render(request, 'home.html', {})  
@@ -106,7 +106,7 @@ def monitor(request):
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')                
+            return redirect('home')                
             
     else :
         return render(request, 'home.html', {})  
@@ -160,10 +160,17 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                 form = HarvestRecordCreate(request.POST or None)
                 context['form'] = form
                 
+                with open('static/geojson/Barangays.json', 'r') as f:
+                    barangay_data = json.load(f)
+                
+                harvest_data = VerifiedHarvestRecord.objects.all()
+                
+                
                 if request.method == "POST" and form.is_valid():
                     # Get the current list from session or empty list
                     pending_records = request.session.get('pending_harvest_records', [])                    
                     record_data = form.cleaned_data.copy()
+                    record_data['harvest_barangay'] = request.POST.get('harvest_barangay')
                     record_data['record_type'] = 'harvest'
                     print(f"succesfully added {record_data['record_type']}")
                     
@@ -193,7 +200,6 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                     barangay_data = json.load(f)
                 
                 plant_data = VerifiedPlantRecord.objects.all()
-                
                 
                 if request.method == "POST" and form.is_valid():
                     pending_records = request.session.get('pending_plant_records', [])
@@ -261,7 +267,7 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
             return render(request, 'loggedin/transaction/transaction.html', context)
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')
+            return redirect('home')
     else:
         return render(request, 'home.html', {})
 
@@ -516,7 +522,7 @@ def plantrecord(request):
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home')   
+            return redirect('home')   
     else :
         return render(request, 'home.html', {}) 
 
@@ -594,7 +600,7 @@ def accinfo(request):
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('base:home') #dapat redirect si user sa guest home
+            return redirect('home') #dapat redirect si user sa guest home
     else :
         return render(request, 'home.html', {})   
     

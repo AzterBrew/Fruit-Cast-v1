@@ -20,7 +20,7 @@ class CommodityType(models.Model):
     seasonal_months = models.ManyToManyField(Month, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.name    
 
 # sa admin panel, I should have checkboxes
 

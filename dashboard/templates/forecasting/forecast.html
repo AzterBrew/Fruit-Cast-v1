@@ -37,6 +37,7 @@ Fruit Cast | Forecast
                 </form>
                 <canvas id="forecastChart" height="100"></canvas>
 
+                {% comment %} THESIS2 {% endcomment %}
                 {% comment %} <script>
                     const labels = {{ forecast_data.labels|safe }};
                     const forecastedData = {{ forecast_data.forecasted_count|safe }};
@@ -108,8 +109,11 @@ Fruit Cast | Forecast
         </div>
     
   <!-- Include chart.js and map.js -->
+   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  {% comment %} THESIS1 {% endcomment %}
   <script>
     // Initialize forecast chart
     var forecastChart = new Chart(document.getElementById('forecastChart'), {
@@ -190,17 +194,116 @@ Fruit Cast | Forecast
     });
 
     var mapData = {{ map_data|safe }}; // Ensure this is passed in the context
-
-        mapData.forEach(function(item) {
+      {% comment %} MARKERS IN MAP {% endcomment %}
+        {% comment %} mapData.forEach(function(item) {
             if (item.latitude && item.longitude) { // Only add markers if the coordinates are valid
                 var marker = L.marker([item.latitude, item.longitude]).addTo(map);
                 marker.bindPopup('<b>' + item.harvest_barangay + '</b><br>' + item.harvest_municipality + '<br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
             } else {
                 console.warn('Invalid coordinates for marker:', item);
             }
-        });
+        }); {% endcomment %}
 
   </script>
+
+  {% comment %} THESIS2 {% endcomment %}
+  {% comment %} <script>
+    let geojsonLayer;
+
+function getColor(value) {
+  return value > 1000 ? '#800026' :
+         value > 500  ? '#BD0026' :
+         value > 200  ? '#E31A1C' :
+         value > 100  ? '#FC4E2A' :
+         value > 50   ? '#FD8D3C' :
+         value > 20   ? '#FEB24C' :
+         value > 0    ? '#FED976' :
+                        '#FFEDA0';
+}
+
+function getForecastValue(barangay, municipality) {
+  for (let i = 0; i < mapData.length; i++) {
+    if (mapData[i].harvest_barangay === barangay &&
+        mapData[i].harvest_municipality === municipality) {
+      return mapData[i].forecasted_amount;
+    }
+  }
+  return 0;
+}
+
+fetch("{% static 'geojson/Barangays.json' %}")
+  .then(response => response.json())
+  .then(geoData => {
+    geojsonLayer = L.geoJSON(geoData, {
+      style: function (feature) {
+        const barangay = feature.properties.NAME_3;
+        const municipality = feature.properties.NAME_2;
+        const forecastAmount = getForecastValue(barangay, municipality);
+
+        return {
+          fillColor: getColor(forecastAmount),
+          weight: 1,
+          opacity: 1,
+          color: 'white',
+          dashArray: '3',
+          fillOpacity: 0.7
+        };
+      },
+      onEachFeature: function (feature, layer) {
+        const barangay = feature.properties.NAME_3;
+        const municipality = feature.properties.NAME_2;
+        const forecastAmount = getForecastValue(barangay, municipality);
+
+        layer.bindPopup(`
+          <strong>${barangay}, ${municipality}</strong><br>
+          Forecasted: ${forecastAmount.toFixed(2)} kg
+        `);
+
+        layer.on({
+          mouseover: function (e) {
+            var layer = e.target;
+            layer.setStyle({
+              weight: 2,
+              color: '#666',
+              fillOpacity: 0.9
+            });
+          },
+          mouseout: function (e) {
+            geojsonLayer.resetStyle(e.target);
+          }
+        });
+      }
+    }).addTo(map);
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+        var map = L.map('map').setView([14.678, 120.536], 10); // Center around Bataan
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Forecasted barangay data from Django context
+        var mapData = {{ map_data|safe }};
+
+        mapData.forEach(function (item) {
+            var marker = L.circleMarker([item.latitude, item.longitude], {
+                radius: 8,
+                fillColor: "#007bff",
+                color: "#0056b3",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+
+            marker.bindPopup(
+                "<b>" + item.barangay + ", " + item.municipality + "</b><br>" +
+                "Forecasted amount: " + item.forecasted_amount.toFixed(2) + " units"
+            );
+        });
+    });
+  </script> {% endcomment %}
   {% else %}
         <p>No forecast data available.</p>
     {% endif %}

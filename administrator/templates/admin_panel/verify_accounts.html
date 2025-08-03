@@ -17,14 +17,17 @@
             <tr>
                 <th>First Name</th>
                 <th>Last Name</th>
+                <th>Middle Name</th>
                 <th>Email</th>
+                <th>Contact Number</th>
+                <th>Municipality</th>
                 <th>Status</th>
                 {% comment %} <th>Barangay</th>
                 <th>Municipality</th>
                 <th>Account Type</th>
                 <th>Registered Date</th> {% endcomment %}
-                <th>Status</th>
-                <th>Action</th>
+                <th>Verified By</th>
+                <td> Action </td>
             </tr>
         </thead>
         <tbody>
@@ -32,14 +35,28 @@
             <tr>
                 <td>{{ account.userinfo_id.firstname }}</td>
                 <td>{{ account.userinfo_id.lastname }}</td>
-                <td>{{ account.account_type_id.account_type }}</td>
+                <td>{{ account.userinfo_id.middlename }}</td>
+                <td>{{ account.userinfo_id.user_email }}</td>
+                <td>{{ account.userinfo_id.contact_number }}</td>
+                <td>{{ account.userinfo_id.municipality }}</td>
                 <td>{{ account.item_status_id.item_status }}</td>
-                {% comment %} <td>
-                <form method="POST" action="{% url 'administrator:verify_account_action' account.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success">Verify</button>
-                </form>
-                </td> {% endcomment %}
+                <td>{{ account.account_verified_by_id.userinfo_id.user_email }}</td>
+                <td>
+                    <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
+                        <input type="hidden" name="record_type" value="{{ record_type }}">
+        
+        <!-- Select input for Item Status -->
+        <select name="item_status" class="form-control">
+            {% for status in item_statuses %}
+                <option value="{{ status.item_status_id }}" {% if status.item_status_id == account.item_status_id.item_status_id %}selected{% endif %}>
+                    {{ status.item_status }}
+                </option>
+            {% endfor %}
+        </select>
+        
+        <button type="submit" class="btn btn-success btn-sm">Update</button>
+                            </form>
+                            </td>
             </tr>
             {% empty %}
             <tr><td colspan="5">No accounts pending verification.</td></tr>
