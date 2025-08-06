@@ -6,107 +6,41 @@
 
 {% block content %}
 <div class="container">
-    <div class="record-cart">
-        <h2>Current Transaction</h4>
-        <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
-        {% if pending_records %}
-            <table class="table table-sm table-bordered">
-                <thead>
-                    <tr>
-                        {% if record_type == "harvest" %}
-                            <th>Date</th>
-                            <th>Commodity</th>
-                            <th>Spec</th>
-                            <th>Weight</th>
-                            <th>Unit</th>
-                            <th>Municipality</th>
-                            <th>Barangay</th>
-                            <th>Remarks</th>
-                        {% else %}
-                            <th>Plant Date</th>
-                            <th>Commodity Type</th>
-                            <th>Commodity Specification</th>
-                            <th>Expected Harvest Date</th>
-                            <th>Municipality</th>
-                            <th>Barangay</th>
-                            <th>Minimum Expected Harvest</th>
-                            <th>Maximum Expected Harvest</th>
-                            <th>Land Area</th>
-                            <th>Remarks</th>
-                        {% endif %}
-                        <th>
-                            Edit
-                        </th>
-                        <th>
-                            Remove
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in pending_records %}
-                    <tr>
-                        {% if record_type == "harvest" %}
-                            <td>{{ record.harvest_date }}</td>
-                            <td>{{ record.commodity_type }}</td>
-                            <td>{{ record.commodity_spec }}</td>
-                            <td>{{ record.total_weight }}</td>
-                            <td>{{ record.unit }}</td>
-                            <td>{{ record.harvest_municipality }}</td>
-                            <td>{{ record.harvest_barangay }}</td>
-                            <td>{{ record.remarks }}</td>
-                            <td>
-                            {% comment %} <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a> {% endcomment %}
-                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?record_type={{ record_type }}&from=transactionedit" class="btn btn-warning">Edit</a>
-                            </td>
-                            <td>
-                            <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="record_type" value="{{ record_type }}">
-                                <button type="submit" class="btn btn-danger btn-sm">Remove</button>
-                            </form>
-                            </td>
-                        {% else %}
-                            <td>{{ record.plant_date }}</td>
-                            <td>{{ record.commodity_type }}</td>
-                            <td>{{ record.commodity_spec }}</td>
-                            <td>{{ record.expected_harvest_date }}</td>
-                            <td>{{ record.plant_municipality }}</td>
-                            <td>{{ record.plant_barangay }}</td>
-                            <td>{{ record.min_expected_harvest }}</td>
-                            <td>{{ record.max_expected_harvest }}</td>
-                            <td>{{ record.land_area }}</td>
-                            <td>{{ record.remarks }}</td>
-                            <td>
-                            {% comment %} <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?view=harvest&from=transactionedit" class="btn btn-success btn-sm">Edit</a> {% endcomment %}
-                            <a href="{% url 'base:edit_pending_record' forloop.counter0 %}?record_type={{ record_type }}&from=transactionedit" class="btn btn-warning">Edit</a>
-                            </td>
-                            <td>
-                            <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="record_type" value="{{ record_type }}">
-                                <button type="submit" class="btn btn-danger btn-sm">Remove</button>
-                            </form>
-                            </td>
-                        {% endif %}
-
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <a href="{% url 'base:newrecord' %}?view={{ record_type }}&from=transaction" class="btn btn-warning btn-sm">Add Record</a>
-            {% comment %} yung '&from' indicates na tracked na galing transaction page {% endcomment %}
-            <br>
-            <br>
-            <form method="POST" action="{% url 'base:finalize_transaction' %}">
-                {% csrf_token %}
-                {% comment %} ADD NOTES {% endcomment %}
-                <input type="hidden" name="record_type" value="{{ record_type }}">
-                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to proceed?')">Submit All Records</button>
-            </form>
-        {% else %}
-            <p>No records yet.</p>
-        {% endif %}
-    </div>
+    <h2>Transaction Details</h2>
+    <p>Transaction ID: {{ transaction.transaction_id }}</p>
     
+    <p>Location: {{ transaction.get_location_display }}</p>
+    <hr>
+    {% if plant_record %}
+        <h4>Plant Record</h4>
+        <!-- Display plant record fields -->
+        <ul>
+            <li>Date Planted: {{ plant_record.plant_date }}</li>
+            <li>Commodity: {{ plant_record.commodity_id }}</li>
+            <li>Custom: {{ plant_record.commodity_custom }}</li>
+        </ul>
+    {% endif %}
+    {% if harvest_record %}
+        <h4>Harvest Record</h4>
+        <!-- Display harvest record fields -->
+        <ul>
+            <li>Date Harvested: {{ harvest_record.harvest_date }}</li>
+            <li>Commodity: {{ harvest_record.commodity_id }}</li>
+            {% if harvest_record.commodity_id == 1 %}
+            <li>Custom: {{ harvest_record.commodity_custom }}</li>            
+            {% else %}
+            <li>Custom: {{ harvest_record.commodity_custom }}</li>
+            {% endif %}
+            <li>Custom: {{ harvest_record.commodity_custom }}</li>
+            <li>Total Weight: {{ harvest_record.total_weight }} {{ harvest_record.unit.unit_abrv }}</li>
+            <li>Average Individual Weight: {{ harvest_record.weight_per_unit }} {{ harvest_record.unit.unit_abrv }}</li>
+        </ul>
+    {% else %}
+        {% if plant_record %}
+            <a href="{% url 'base:solo_harvest_record_for_plant' transaction.transaction_id %}" class="btn btn-success">
+                Create the harvest record for this plant record
+            </a>
+        {% endif %}
+    {% endif %}
 </div>
 {% endblock content %}

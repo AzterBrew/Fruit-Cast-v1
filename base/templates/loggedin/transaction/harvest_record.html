@@ -6,11 +6,24 @@ Fruit Cast | Creating Harvest Record
 {% endblock title %}
 
 {% block content %}
-
-    <div class="container">
     <h2>Create New Harvest Record</h2>
+    <br>
+    <div class="row align-items-center">
+        <div class="col-md-6" style="text-align: right;">
+            <p>Only about to creat a new plant record?</p>
+        </div>
+        <div class="col-md-6" style="text-align: left;">
+            <a href="{% url 'base:plant_record' %}" class="btn btn-success text-light link-body-emphasis"> 
+                Create a New Plant Record
+            </a>  
+        </div>
+    </div>
+    <br>
+    <hr>
+
     <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
-    <form method="POST" novalidate>
+    
+    <form method="POST" novalidate id="harvest-record-form">
         {% csrf_token %}
         <div class="row g-3">
             {% for field in form %}
@@ -40,11 +53,11 @@ Fruit Cast | Creating Harvest Record
             {% endif %}
             {% endfor %}
             <div class="col-md-6">
-                <label class="form-label" for="id_manual_municipality">Municipality *</label>
+                <label class="form-label" for="id_manual_municipality">Municipality</label>
                 {{ transaction_form.manual_municipality }}
             </div>
             <div class="col-md-6">
-                <label class="form-label" for="id_manual_barangay">Barangay *</label>
+                <label class="form-label" for="id_manual_barangay">Barangay</label>
                 <select name="manual_barangay" id="id_manual_barangay" class="form-select" disabled>
                     <option value="">Select a municipality first</option>
                 </select>
@@ -67,6 +80,17 @@ Fruit Cast | Creating Harvest Record
 </div>
 
 <script>
+// confirmation ng form
+    document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById("harvest-record-form");
+    form.addEventListener("submit", function (e) {
+        const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
+        if (!confirm(message)) {
+        e.preventDefault();
+        }
+    });
+    });
+
     // commodity type dropdown
     document.addEventListener('DOMContentLoaded', function() {
         const commoditySelect = document.getElementById('id_commodity_id');

@@ -139,15 +139,15 @@ class EditUserInformation(forms.ModelForm):
 
 
 class HarvestRecordCreate(forms.ModelForm):
-    unit = forms.ModelChoiceField(label="Unit of Measurement",queryset=UnitMeasurement.objects.all(),widget=forms.Select(attrs={'class': 'form-select'}))
-    total_weight = forms.DecimalField(localize=True,label="Total Weight of Commodity",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
-    weight_per_unit = forms.DecimalField(localize=True,label="Weight per unit",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
-    
-    
+    unit = forms.ModelChoiceField(label="Unit of Measurement *",queryset=UnitMeasurement.objects.all(),widget=forms.Select(attrs={'class': 'form-select'}))
+    total_weight = forms.DecimalField(localize=True,label="Total Weight of Commodity *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
+    weight_per_unit = forms.DecimalField(localize=True,label="Weight per unit *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
+
+
     class Meta:
         model = initHarvestRecord
         fields = ["harvest_date", "commodity_id", "commodity_custom", "total_weight", "unit", "weight_per_unit", "remarks"]
-        labels = {"harvest_date": "Harvest Date","commodity_id": "Commodity Type","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
+        labels = {"harvest_date": "Harvest Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
             'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
@@ -158,11 +158,9 @@ class HarvestRecordCreate(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user:
-            self.fields['farm_land'].queryset = FarmLand.objects.filter(userinfo_id__auth_user=user)
-
+        
 class RecordTransactionCreate(forms.ModelForm):
-    location_type = forms.ChoiceField(label="Pick a Location Type",choices=LOCATION_TYPE_CHOICES,widget=forms.RadioSelect(attrs={ 'style': 'margin-right: 5px;'}))
+    location_type = forms.ChoiceField(label="Pick a Location Type *",choices=LOCATION_TYPE_CHOICES,widget=forms.RadioSelect(attrs={ 'style': 'margin-right: 5px;'}))
     farm_land = forms.ModelChoiceField(queryset=FarmLand.objects.none(),required=False,label="Select FarmLand",widget=forms.Select(attrs={'class': 'form-select'}))
 
     manual_municipality = forms.ModelChoiceField(label="Manual: Municipality",queryset=MunicipalityName.objects.all(),required=False,widget=forms.Select(attrs={'class': 'form-select'}))
@@ -171,17 +169,12 @@ class RecordTransactionCreate(forms.ModelForm):
     class Meta:
         model = RecordTransaction
         fields = ["location_type", "farm_land", "manual_municipality", "manual_barangay"]
-        # widgets = {
-        #     'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-        #     'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
-        #     'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom'}),
-        #     'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-        # }
         
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user:
+        # Only set queryset if the field exists
+        if user and 'farm_land' in self.fields:
             self.fields['farm_land'].queryset = FarmLand.objects.filter(userinfo_id__auth_user=user)
 
 class PlantRecordCreate(forms.ModelForm):
@@ -211,6 +204,4 @@ class PlantRecordCreate(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user:
-            self.fields['farm_land'].queryset = FarmLand.objects.filter(userinfo_id__auth_user=user)
-        
+       

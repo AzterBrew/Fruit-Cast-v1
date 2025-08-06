@@ -8,8 +8,24 @@ Fruit Cast | Creating Plant Record
 {% block content %}
 
 <div class="container">
+    
     <h2>Create New Plant Record</h2>
+    <br>
+    <div class="row align-items-center">
+        <div class="col-md-6" style="text-align: right;">
+            <p><b>Only recording a harvest record that has no plant record?</b><p>
+        </div>
+        <div class="col-md-6" style="text-align: left;">
+            <a href="{% url 'base:solo_harvest_record' %}" class="btn btn-success text-light link-body-emphasis"> 
+                Create a Solo Harvest Record
+            </a>  
+        </div>
+    </div>
+    <br>
+    <hr>
+
     <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
+    
     <form method="POST" novalidate onsubmit="return confirmSave();">
         {% csrf_token %}
         

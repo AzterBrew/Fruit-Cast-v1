@@ -102,6 +102,7 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById("step2-form");
   form.addEventListener("submit", function (e) {
     const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
@@ -109,6 +110,7 @@
       e.preventDefault();
     }
   });
+});
 </script>
 
 
