@@ -1,0 +1,174 @@
+{% extends "loggedin/layout.html" %}
+{%load static%}
+
+{% block title %}
+Fruit Cast | Creating Harvest Record
+{% endblock title %}
+
+{% block content %}
+
+    <div class="container">
+    <br>
+    </br>
+    <div class="text-center">
+        <h1>Hi, {{user_firstname}}.</h1>
+        <h2>Farmlands you own in Bataan:</h2>
+    </div>
+    <br>
+    </br>
+    <div class="text-center">
+        <a href="?view=plant" class="btn btn-success text-light link-body-emphasis">                         
+            Farmland mo
+        </a> 
+        <a href="?view=harvest" class="btn btn-success text-light link-body-emphasis"> 
+            New Harvest Record
+        </a>         
+    </div>
+
+    <input type="hidden" name="record_type" value="harvest">  
+        <div class="mt-4">
+            <label for="map">Select Barangay:</label>
+            <div id="map" style="height: 55vh; max-height: 50vh; max-width:55vw;"></div>
+            <input type="hidden" id="latitude" name="latitude">
+            <input type="hidden" id="longitude" name="longitude">
+            <input type="hidden" id="harvest_barangay" name="harvest_barangay">
+            
+        </div>
+
+<script>
+
+    //map for barangay and municipality
+
+    
+    const barangayMap = {
+        "Abucay": ["Bangkal", "Calaylayan", "Capunitan", "Mabatang"],
+        "Balanga": ["Bagumbayan", "Cataning", "Cupang Proper", "San Jose"],
+        "Dinalupihan": ["Pagalanggang", "San Ramon", "Pinulot", "Payangan"]
+        // Add the rest as per your actual constants
+    };
+
+
+    // Initialize the map
+    var map = L.map('map').setView([14.678, 120.536], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+    // Load GeoJSON (this is just a placeholder URL; change to your static path or Django endpoint)
+    {% comment %} FROM HERE
+    let selectedLayer = null;
+    var mapData = {{ map_data|safe }}; // Ensure this is passed correctly in the context
+
+    fetch("{% static 'geojson/Barangays.json' %}")
+    .then(response => response.json())
+    .then(geojsonData => {
+        const geojson = L.geoJSON(geojsonData, {
+            style: {
+                color: "#3388ff",
+                weight: 1,
+                fillOpacity: 0.3
+            },
+                onEachFeature: function (feature, layer) {
+                var barangayName = feature.properties.NAME_3;
+                var municipalityName = feature.properties.NAME_2;
+                var provinceName = feature.properties.PROVINCE;
+
+                // Find forecast data for the barangay
+                var forecastedData = mapData.find(item => 
+                    item.harvest_barangay === barangayName && item.harvest_municipality === municipalityName);
+
+                var forecastedAmount = forecastedData ? forecastedData.forecasted_amount : 0;
+
+                layer.bindPopup(
+                    `<b>${barangayName}</b><br>` +
+                    `Municipality: ${municipalityName}<br>` +
+                    `Province: ${provinceName}<br>` +
+                    `Forecasted Amount: ${forecastedAmount.toFixed(2)} kg`
+                );
+                TO HERE {% endcomment %}
+    
+    let selectedLayer = null;
+
+    fetch("{% static 'geojson/Barangays.json' %}")
+    .then(response => response.json())
+    .then(geojsonData => {
+        const geojson = L.geoJSON(geojsonData, {
+            style: {
+                color: "#3388ff",
+                weight: 1,
+                fillOpacity: 0.3
+            },
+                onEachFeature: function (feature, layer) {
+                    layer.on('click', function () {
+                        if (selectedLayer) {
+                            geojson.resetStyle(selectedLayer);
+                        }
+
+                        selectedLayer = layer;
+
+                        layer.setStyle({ fillOpacity: 0.5, color: "#ff7800" });
+
+                        document.getElementById('harvest_barangay').value = feature.properties.NAME_3;
+                        console.log(feature.properties.NAME_3)
+                    });
+
+                    /**layer.bindTooltip(barangayName, {
+                    
+                });**/
+
+                    layer.bindTooltip(feature.properties.NAME_3, { 
+                        sticky: true,
+                        //permanent: true,
+                        direction: "center",
+                        className: "barangay-label"
+                     }); // Optional: show name    
+            }
+        }).addTo(map);
+    })
+    .catch(error => {
+        console.error('Error loading GeoJSON:', error);
+    });
+
+    // Add markers from mapData
+
+    mapData.forEach(function(item) {
+        if (item.latitude && item.longitude) { // Only add markers if valid coordinates
+            var marker = L.marker([item.latitude, item.longitude]).addTo(map);
+            marker.bindPopup('<b>' + item.harvest_barangay + '</b><br>' + item.harvest_municipality + '<br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
+        } else {
+            console.warn('Invalid coordinates for marker:', item);
+        }
+    });
+
+
+{% comment %} THESIS2 BARANGAY CHOICES {% endcomment %}
+    const municipalitySelect = document.getElementById("id_harvest_municipality");
+    const barangaySelect = document.getElementById("id_harvest_barangay");
+
+    municipalitySelect.addEventListener("change", function () {
+        const selectedMunicipality = this.value;
+
+        // Clear current options
+        barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
+
+        if (barangayMap[selectedMunicipality]) {
+            barangayMap[selectedMunicipality].forEach(function (barangay) {
+                const option = document.createElement("option");
+                option.value = barangay;
+                option.textContent = barangay;
+                barangaySelect.appendChild(option);
+            });
+        }
+    });
+
+
+
+</script>
+
+
+{% endblock content %}
+

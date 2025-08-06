@@ -1,4 +1,5 @@
 {% extends 'admin_login/layout.html' %}
+{% load sort_tags %}
 
 
 {% block navbar %}
@@ -9,62 +10,84 @@
 <div class="container2 p-6">
 
     <div class="container mt-4">
-        <h2 class="text-xl font-bold mb-4">Pending Account Verification  {{ account.account_id }}</h2>
+        <h2 class="text-xl font-bold mb-4">Farmer Accounts{{ account.account_id }}</h2>
 
+        <form method="get" class="mb-3">
+            <div>
+                <label for="status">Filter by Status:</label>
+                <select name="status" id="status" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    {% for status in status_choices %}
+                        <option value="{{ status.pk }}" {% if current_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="municipality">Filter by Municipality:</label>
+                <select name="municipality" id="municipality" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    {% for municipality in municipalities %}
+                        <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
+                            {{ municipality.municipality }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+        </form>
         {% if accounts %}
-    <table class="table table-bordered table-hover">
-        <thead>
-            <tr>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Middle Name</th>
-                <th>Email</th>
-                <th>Contact Number</th>
-                <th>Municipality</th>
-                <th>Status</th>
-                {% comment %} <th>Barangay</th>
-                <th>Municipality</th>
-                <th>Account Type</th>
-                <th>Registered Date</th> {% endcomment %}
-                <th>Verified By</th>
-                <td> Action </td>
-            </tr>
-        </thead>
-        <tbody>
-            {% for account in accounts %}
-            <tr>
-                <td>{{ account.userinfo_id.firstname }}</td>
-                <td>{{ account.userinfo_id.lastname }}</td>
-                <td>{{ account.userinfo_id.middlename }}</td>
-                <td>{{ account.userinfo_id.user_email }}</td>
-                <td>{{ account.userinfo_id.contact_number }}</td>
-                <td>{{ account.userinfo_id.municipality }}</td>
-                <td>{{ account.item_status_id.item_status }}</td>
-                <td>{{ account.account_verified_by_id.userinfo_id.user_email }}</td>
-                <td>
-                    <form method="POST" action="{% url 'base:remove_pending_record' forloop.counter0 %}">
-                        <input type="hidden" name="record_type" value="{{ record_type }}">
-        
-        <!-- Select input for Item Status -->
-        <select name="item_status" class="form-control">
-            {% for status in item_statuses %}
-                <option value="{{ status.item_status_id }}" {% if status.item_status_id == account.item_status_id.item_status_id %}selected{% endif %}>
-                    {{ status.item_status }}
-                </option>
-            {% endfor %}
-        </select>
-        
-        <button type="submit" class="btn btn-success btn-sm">Update</button>
-                            </form>
-                            </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5">No accounts pending verification.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>{% sort_header "date" "Date Registered" current_sort current_order current_status %}</th>
+                    <th>{% sort_header "name" "Full Name" current_sort current_order current_status %}</th>
+                    <th>Email</th>
+                    <th>Contact Number</th>
+                    <th>Municipality</th>
+                    <th>Status</th>
+                    {% comment %} <th>Barangay</th>
+                    <th>Municipality</th>
+                    <th>Account Type</th>
+                    <th>Registered Date</th> {% endcomment %}
+                    <th>Verified By</th>
+                    <td> Action </td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in accounts %}
+                <tr>
+                    <td>{{ account.account_register_date}}</td>
+                    <td>{{ account.userinfo_id.lastname }}, {{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename|slice:":1" }}.</td>
+                    <td>{{ account.userinfo_id.user_email }}</td>
+                    <td>{{ account.userinfo_id.contact_number }}</td>
+                    <td>{{ account.userinfo_id.municipality_id.municipality }}</td>
+                    {% comment %} SHOULD MAKE A CONDITION WHERE THE SHOWN FARMER ACCOUNTS ARE ONLY MATCHING WITH THEIR ASSIGNED MUNICIPALITY {% endcomment %}
+
+                    <td>{{ account.acc_status_id.acc_status }}</td>
+                    <td>{{ account.account_verified_by_id.userinfo_id.lastname }}</td>
+                    <td>
+                        <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}">
+                            {% csrf_token %}
+                                <select name="new_status" class="form-control form-control-sm">
+                                    {% for status in status_choices %}
+                                        <option value="{{ status.pk }}" {% if account.acc_status_id.pk == status.pk %}selected{% endif %}>
+                                            {{ status.acc_status }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                        </form>
+
+                    </td>
+                    <td>
+                                                    <button type="submit" class="btn btn-primary btn-sm mt-1">Update</button>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
-        <p>No pending accounts found.</p>
+        <p>No accounts found.</p>
     {% endif %}
     </div>
 </div>

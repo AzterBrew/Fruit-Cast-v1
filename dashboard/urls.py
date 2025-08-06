@@ -11,7 +11,7 @@ urlpatterns = [
     # path('', home, name='home'),
     path('forecast/', forecast, name="forecast"),
     path('monitor/', monitor, name="monitor"),
-    path('commodities/add', add_commodity, name="addcommodity"),
+    # path('commodities/add', add_commodity, name="addcommodity"),
     path('notifications/', notifications, name='notifications'),
 ]
  

@@ -14,9 +14,12 @@ from django.urls import reverse
 from django.http import HttpResponseForbidden
 import json
 #from .forms import CustomUserCreationForm  # make sure this is imported
+from django.http import JsonResponse
+from django.db import transaction
 
 from .models import *
-from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate
+from dashboard.models import *
+from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -43,7 +46,7 @@ def home(request):
         
         else:
             print("⚠️ account_id missing in session!")
-            return redirect('home')         
+            return redirect('base:home')         
     else:        
         return render(request, 'home.html', {})
      
@@ -85,13 +88,13 @@ def monitor(request):
             # Example data: commodity_type counts
             # Dataset 1: by commodity type
             commodity_data = {}
-            for record in HarvestRecord.objects.all():
+            for record in initHarvestRecord.objects.all():
                 key = record.commodity_type
                 commodity_data[key] = commodity_data.get(key, 0) + 1
 
             # Dataset 2: by location
             location_data = {}
-            for record in HarvestRecord.objects.all():
+            for record in initHarvestRecord.objects.all():
                 key = record.harvest_municipality
                 location_data[key] = location_data.get(key, 0) + 1
 
@@ -113,7 +116,7 @@ def monitor(request):
 
 def dashboard_view(request):
     last_7_days = now().date() - timedelta(days=7)
-    recent_records = HarvestRecord.objects.filter(harvest_date__gte=last_7_days)
+    recent_records = initHarvestRecord.objects.filter(harvest_date__gte=last_7_days)
 
     # Example data: commodity_type counts
     data = {}
@@ -142,6 +145,7 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
             view_to_show = request.GET.get("view", "") #for showing another page within another page ()yung transaction and harves/plant
 
             form = None
+            transaction_form = None
             # transactions = None
             records = []
             selected_transaction = None
@@ -151,6 +155,7 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                 'user_firstname': userinfo.firstname,
                 'view_to_show': view_to_show,
                 'form': form,
+                'transaction_form': transaction_form,
                 'pending_records': request.session.get('pending_harvest_records',[]),
                 'from_transaction' : from_transaction,
             }
@@ -158,9 +163,11 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
             
             if view_to_show == "harvest":
                 form = HarvestRecordCreate(request.POST or None)
+                transaction_form = RecordTransactionCreate(request.POST or None, user=request.user)
                 context['form'] = form
-                
-                with open('static/geojson/Barangays.json', 'r') as f:
+                context['transaction_form'] = transaction_form
+
+                with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
                     barangay_data = json.load(f)
                 
                 harvest_data = VerifiedHarvestRecord.objects.all()
@@ -239,27 +246,33 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                 context['pending_records'] = pending_records
             
             elif view_to_show == "transaction_history":
-                transactions = Transaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+                transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
                 context['transactions'] = transactions
                 
                 return render(request, 'loggedin/transaction/transaction.html', context)
 
+            elif view_to_show == "farmland_list":
+                transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+                context['transactions'] = transactions
+                
+                return render(request, 'loggedin/transaction/transaction.html', context)
+            
             elif view_to_show == "transaction_recordhistory":
                 transaction_id = request.GET.get("id")
                 print("tranrecordhistory")
                 
                 try:
-                    selected_transaction = Transaction.objects.get(pk=transaction_id)
-                except Transaction.DoesNotExist:
+                    selected_transaction = RecordTransaction.objects.get(pk=transaction_id)
+                except RecordTransaction.DoesNotExist:
                     selected_transaction = None
                     
                 records = []
                 
                 if selected_transaction:
                     if selected_transaction.transaction_type.lower()=="harvest":
-                        records = HarvestRecord.objects.filter(transaction_id=selected_transaction)
+                        records = initHarvestRecord.objects.filter(transaction_id=selected_transaction)
                     elif selected_transaction.transaction_type.lower()=="plant":
-                        records = PlantRecord.objects.filter(transaction_id=selected_transaction)
+                        records = initPlantRecord.objects.filter(transaction_id=selected_transaction)
                 
                 context['records'] = records
                 context['selected_transaction'] = selected_transaction            
@@ -317,16 +330,16 @@ def finalize_transaction(request):
         print("No records found in session")
         return redirect('base:transaction_recordlist')
 
-    transaction = Transaction.objects.create(
+    transaction = RecordTransaction.objects.create(
         account_id=accountinfo,
         transaction_type=record_type.capitalize(),
-        item_status_id=ItemStatus.objects.get(item_status_id=3)
+        item_status_id=AccountStatus.objects.get(acc_status_id=3)
     )
 
     for data in records:
         if record_type == 'harvest':
             
-            HarvestRecord.objects.create(
+            initHarvestRecord.objects.create(
                 transaction_id=transaction,
                 harvest_date=data['harvest_date'],
                 commodity_type=data['commodity_type'],
@@ -355,7 +368,7 @@ def finalize_transaction(request):
         #     )
         
         elif record_type == 'plant':
-            PlantRecord.objects.create(
+            initPlantRecord.objects.create(
                 transaction_id=transaction,
                 plant_date=data['plant_date'],
                 commodity_type=data['commodity_type'],
@@ -463,7 +476,7 @@ def transaction_history(request):
             'user_firstname': 'Unknown',
         })
 
-    transactions = Transaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+    transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
 
     print(f"✅ Found {transactions.count()} transactions for account {accountinfo.account_id}")
 
@@ -477,8 +490,8 @@ def transaction_recordhistory(request, transaction_id):
         return redirect('base:home')
 
     try:
-        transaction = Transaction.objects.get(transaction_id=transaction_id)
-    except Transaction.DoesNotExist:
+        transaction = RecordTransaction.objects.get(transaction_id=transaction_id)
+    except RecordTransaction.DoesNotExist:
         return HttpResponse("Transaction not found", status=404)
 
     # Make sure this is the user’s transaction
@@ -488,9 +501,9 @@ def transaction_recordhistory(request, transaction_id):
 
     # Get the related records based on transaction type
     if transaction.transaction_type.lower() == "harvest":
-        records = HarvestRecord.objects.filter(transaction_id=transaction)
+        records = initHarvestRecord.objects.filter(transaction_id=transaction)
     elif transaction.transaction_type.lower() == "plant":
-        records = PlantRecord.objects.filter(transaction_id=transaction)
+        records = initPlantRecord.objects.filter(transaction_id=transaction)
     else:
         records = []
 
@@ -525,6 +538,12 @@ def plantrecord(request):
             return redirect('home')   
     else :
         return render(request, 'home.html', {}) 
+
+
+def get_barangays(request):
+    municipality_id = request.GET.get('municipality_id')
+    barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('id', 'barangay_name')
+    return JsonResponse(list(barangays), safe=False)
 
 
 def about(request):
@@ -588,8 +607,8 @@ def accinfo(request):
                 'user_emperson' : userinfo.emergency_contact_person,
                 'user_emcontact' : userinfo.emergency_contact_number,
                 'user_address_details' : userinfo.address_details,
-                'user_barangay' : userinfo.barangay,
-                'user_municipality' : userinfo.municipality,
+                'user_barangay' : userinfo.barangay_id,
+                'user_municipality' : userinfo.municipality_id,
                 'user_contactno' : userinfo.contact_number,
                 'user_email' : userinfo.user_email,
                 'user_religion' : userinfo.religion,
@@ -615,6 +634,10 @@ def login_success(request):
         return render(request, 'home.html', {})
     # return redirect("base:home")  
     # Redirect to home *manually*
+
+def get_barangays(request, municipality_id):
+    barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('barangay_id', 'barangay')
+    return JsonResponse([{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays], safe=False)
     
 def register_step1(request):
     if request.user.is_authenticated: 
@@ -629,54 +652,81 @@ def register_step1(request):
                 if isinstance(step1_data.get("birthdate"), date):
                     step1_data["birthdate"] = step1_data["birthdate"].isoformat()
 
+                barangay_obj = step1_data.get("barangay_id")
+                municipality_obj = step1_data.get("municipality_id")
+
+                step1_data["barangay_id"] = barangay_obj.pk if barangay_obj else None
+                step1_data["municipality_id"] = municipality_obj.pk if municipality_obj else None
+
                 request.session['step1_data'] = step1_data
                 
                 return redirect('base:register_step2')
         else:
+            step1_data = request.session.get('step1_data')
+            if step1_data:
+                # Convert stored PKs back into objects
+                if step1_data.get("barangay_id"):
+                    step1_data["barangay_id"] = BarangayName.objects.get(pk=step1_data["barangay_id"])
+                if step1_data.get("municipality_id"):
+                    step1_data["municipality_id"] = MunicipalityName.objects.get(pk=step1_data["municipality_id"])
             form = CustomUserInformationForm(initial=request.session.get('step1_data'))
 
         return render(request, 'registration/register_step1.html', {'form': form})
 
 
 def register_step2(request):
-    
+    print("STEP 2 FORM HIT:", request.method)  # Debug
     if 'step1_data' not in request.session:
+        return redirect('base:register_step1')
         return redirect('base:register_step1')  # magredirect sa unang page so users wouldnt skip p1
-
+    
     if request.method == "POST":
         form = UserContactAndAccountForm(request.POST)
         if form.is_valid():
-            auth_user = AuthUser.objects.create_user(
-                email=form.cleaned_data['user_email'],
-                password=form.cleaned_data['password1']
-            )
+            try:
+                with transaction.atomic():  # Everything inside here must succeed or nothing will be saved
+                    auth_user = AuthUser.objects.create_user(
+                        email=form.cleaned_data['user_email'],
+                        password=form.cleaned_data['password1']
+                    )
 
-            # Merge and save UserInformation na table
-            step1_data = request.session['step1_data']
-            userinfo = UserInformation.objects.create(
-                auth_user=auth_user,
-                contact_number=form.cleaned_data['contact_number'],
-                user_email=form.cleaned_data['user_email'],
-                civil_status=form.cleaned_data['civil_status'],
-                religion=form.cleaned_data['religion'],
-                rsbsa_ref_number=form.cleaned_data['rsbsa_ref_number'],
-                emergency_contact_person=form.cleaned_data['emergency_contact_person'],
-                emergency_contact_number=form.cleaned_data['emergency_contact_number'],
-                **step1_data  # merges all step 1 fields
-            )
-            account_type_instance = AccountType.objects.get(account_type_id=1)
-            item_status_instance = ItemStatus.objects.get(item_status_id=3)
+                    # Merge and save UserInformation na table
+                    step1_data = request.session['step1_data']
+                    
+                    step1_data['barangay_id'] = BarangayName.objects.get(pk=step1_data['barangay_id'])
+                    step1_data['municipality_id'] = MunicipalityName.objects.get(pk=step1_data['municipality_id'])
+                    
+                    if 'birthdate' in step1_data:
+                        from datetime import date
+                        if isinstance(step1_data['birthdate'], str):
+                            step1_data['birthdate'] = date.fromisoformat(step1_data['birthdate'])
+                    
+                    userinfo = UserInformation.objects.create(
+                        auth_user=auth_user,
+                        contact_number=form.cleaned_data['contact_number'],
+                        user_email=form.cleaned_data['user_email'],
+                        civil_status=form.cleaned_data['civil_status'],
+                        religion=form.cleaned_data['religion'],
+                        rsbsa_ref_number=form.cleaned_data['rsbsa_ref_number'],
+                        emergency_contact_person=form.cleaned_data['emergency_contact_person'],
+                        emergency_contact_number=form.cleaned_data['emergency_contact_number'],
+                        **step1_data  # merges all step 1 fields
+                    )
+                    account_type_instance = AccountType.objects.get(account_type_id=1) #1 = agriculturist
+                    item_status_instance = AccountStatus.objects.get(acc_stat_id=3) # #3 = pending
 
-            AccountsInformation.objects.create(
-                userinfo_id = userinfo,
-                account_type_id = account_type_instance,
-                item_status_id = item_status_instance,
-                account_register_date = timezone.now()
-            )
+                    AccountsInformation.objects.create(
+                        userinfo_id = userinfo,
+                        account_type_id = account_type_instance,
+                        acc_status_id = item_status_instance,
+                        account_register_date = timezone.now()
+                    )
 
-            del request.session['step1_data']  # delete sesh
-            return redirect('base:login') 
-
+                    del request.session['step1_data']  # delete sesh
+                    return redirect('base:login') 
+            except Exception as e:
+                print("Exception:", str(e))  # <-- Add this to see the real issue
+                form.add_error(None, "Something went wrong during registration. Please try again.")
     else:
         form = UserContactAndAccountForm()
 

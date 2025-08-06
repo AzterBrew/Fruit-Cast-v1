@@ -49,7 +49,8 @@
       <div class="card p-4 shadow">
         <h1 class="text-center mb-4">Complete Registration</h1>
     
-        <form method="POST" novalidate onsubmit="return confirmSave();">
+        {% comment %} <form id="step2-form" method="POST" novalidate> {% endcomment %}
+        <form id="step2-form" method="POST" novalidate>
           {% csrf_token %}
     
           {% for field in form %}
@@ -82,7 +83,10 @@
               </div>
             {% endif %}
           {% endfor %}
-    
+          <div style="text-align: center;">
+            <p><b>Do NOT forget your email and password </b></p>
+            <p>This is what you will be using to log into your account</p>
+          </div>
           <div class="text-center mt-4">
             <hr />
             <button type="submit" class="btn btn-success">Complete Registration</button>
@@ -95,6 +99,17 @@
       </div>
     </div>
   </div>
+</div>
+
+<script>
+  const form = document.getElementById("step2-form");
+  form.addEventListener("submit", function (e) {
+    const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
+    if (!confirm(message)) {
+      e.preventDefault();
+    }
+  });
+</script>
 
 
 {% endblock content %}

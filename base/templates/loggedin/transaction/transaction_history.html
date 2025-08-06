@@ -32,7 +32,7 @@ Fruit Cast | Transaction History
                     <tr>
                         <td>{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
                         <td>{{ transaction.transaction_type|capfirst }}</td>
-                        <td>{{ transaction.item_status_id.item_status }}</td>
+                        <td>{{ transaction.acc_status_id.acc_status }}</td>
                         <td>
                             {% if transaction.tr_isverified %}
                                 <span class="badge bg-success">Yes</span>

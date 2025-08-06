@@ -298,3 +298,8 @@ a {
 a:hover {
     opacity: .85;
 }
+
+.visually-locked {
+  pointer-events: none;
+  background-color: #e9ecef;
+}

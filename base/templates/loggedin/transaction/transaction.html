@@ -34,6 +34,11 @@ Fruit Cast | Create New Record
                         Your Transaction History
                     </a> 
                 </li> 
+                <li> 
+                    <a href="?view=farmland_list" class="nav-link link-body-emphasis">                         
+                        Your Farm Land
+                    </a> 
+                </li> 
                 {% comment %} <li> 
                     <a href="?view=transaction_list" class="nav-link link-body-emphasis">                         
                         Record List [for dev purposes]
@@ -58,6 +63,8 @@ Fruit Cast | Create New Record
           {% include "loggedin/transaction/transaction_recordhistory.html" %}
         {% elif view_to_show == "choose" %}
           {% include "loggedin/transaction/transaction_default.html" %}
+        {% elif view_to_show == "farmland_list" %}
+          {% include "loggedin/farm_information.html" %}
         {% else %}
           <p>Choose a transaction type in the sidebar</p>
         {% endif %}

@@ -11,6 +11,7 @@ urlpatterns = [
     # path('', homeuser, name='homeuser'),
     # path('', homeguest, name='homeguest'),
     path('', home, name='home'),
+    path('get-barangays/<int:municipality_id>/', views.get_barangays, name='get_barangays'),
     path('register/step1/', views.register_step1, name='register_step1'),
     path('register/step2/', views.register_step2, name='register_step2'),
     # path('signup/', register_step1, name='registerauth'),
@@ -19,19 +20,18 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     # path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
     path('accounts/login/success/', views.login_success, name='login_success'),
-
     # path('login/', include('loginpage.urls'))
     path('accountinfo/', accinfo, name="accinfo"),
     path('accountinfo/edit', editacc, name="editacc"),
     path('forecast/', forecast, name="forecast"),
     path('monitor/', monitor, name="monitor"),
     path('aboutus/', about, name="about"),
-    path('newrecord/', newrecord, name="newrecord"),
+    path('farmerrecords/', newrecord, name="newrecord"),
     # path('newrecord/harvest', harvestrecord, name="harvestrecord"),
     # path('newrecord/plant', plantrecord, name="plantrecord"),
-    path('newrecord/harvest/finalize', finalize_transaction, name="finalize_transaction"),
+    path('farmerrecords/harvest/finalize', finalize_transaction, name="finalize_transaction"),
     # path('newrecord/harvest/review', transaction_recordlist, name="transaction_recordlist"),
-    
+    path('get-barangays/', views.get_barangays, name='get_barangays'),
     
     path('record/remove/<int:index>/', views.remove_pending_record, name='remove_pending_record'), #index ng pending record since saved as array lang sha, not in the db
     path('record/edit/<int:index>/', views.edit_pending_record, name='edit_pending_record'),

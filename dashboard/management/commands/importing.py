@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 import csv
 from dashboard.models import VerifiedHarvestRecord, VerifiedPlantRecord
-from base.models import AdminInformation, HarvestRecord
+from base.models import AdminInformation, initHarvestRecord
 from django.utils import timezone
 from datetime import datetime
 import os

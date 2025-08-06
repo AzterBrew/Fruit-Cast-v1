@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType
+from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseForbidden
@@ -9,6 +9,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from base.forms import EditUserInformation
 from django.utils import timezone
 from django.utils.timezone import now
+from .forms import AssignAdminAgriForm
+from django.db import transaction
+from django.core.mail import send_mail
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+
 
 def admin_login(request):
     if request.method == 'POST':
@@ -119,14 +125,19 @@ def verify_accounts(request):
     pending_accounts = AccountsInformation.objects.filter(acc_status_id=2).select_related('userinfo_id', 'account_type_id', 'acc_status_id')    
     print(pending_accounts)
     
+    
     status_filter = request.GET.get('status')
+    municipality_filter = request.GET.get('municipality')
     sort_by = request.GET.get('sort', 'account_register_date')  # Default sort by date
     order = request.GET.get('order', 'asc')  # 'asc' or 'desc'
 
-    accounts_query = AccountsInformation.objects.select_related('userinfo_id', 'account_type_id', 'acc_status_id')
+    accounts_query = AccountsInformation.objects.filter(account_type_id=1).select_related('userinfo_id', 'account_type_id', 'acc_status_id')
 
     if status_filter:
         accounts_query = accounts_query.filter(acc_status_id=status_filter)
+        
+    if municipality_filter:
+        accounts_query = accounts_query.filter(userinfo_id__municipality_id__municipality=municipality_filter)
 
     # Determine sort field and order
     if sort_by == 'name':
@@ -143,11 +154,14 @@ def verify_accounts(request):
 
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()
-    
+    municipalities = MunicipalityName.objects.all()
+
     return render(request, 'admin_panel/verify_accounts.html', {
         'accounts': all_accounts,
         'status_choices': status_choices,
+        'municipalities': municipalities,
         'current_status': status_filter,
+        'current_municipality': municipality_filter,
         'current_sort': sort_by,
         'current_order': order,
     })
@@ -187,6 +201,11 @@ def show_allaccounts(request):
 
     if account_type_filter:
         accounts_query = accounts_query.filter(account_type_id=account_type_filter)
+
+    municipality_filter = request.GET.get('municipality')
+
+    if municipality_filter:
+        accounts_query = accounts_query.filter(userinfo_id__municipality_id__municipality=municipality_filter)
         
     # Determine sort field and order
     if sort_by == 'name':
@@ -203,11 +222,14 @@ def show_allaccounts(request):
 
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()
+    municipalities = MunicipalityName.objects.all()
 
     return render(request, 'admin_panel/show_allaccounts.html', {
         'allAccounts': all_accounts,
         'account_types': AccountType.objects.exclude(account_type='Farmer'),
         'status_choices': status_choices,
+        'municipalities': municipalities,
+        'current_municipality': municipality_filter,
         'current_status': status_filter,
         'current_acctype': account_type_filter,
         'current_sort': sort_by,
@@ -235,6 +257,104 @@ def change_account_type(request, account_id):
     return redirect('administrator:show_allaccounts')  # or wherever the list view lives
 
 
+def assign_account(request):
+    user = request.user
+
+    if not user.is_superuser:
+        return HttpResponseForbidden("Only superusers may assign accounts.")
+
+    if request.method == 'POST':
+        form = AssignAdminAgriForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            first_name = form.cleaned_data['first_name']
+            middle_name = form.cleaned_data['middle_name']
+            last_name = form.cleaned_data['last_name']
+            sex = form.cleaned_data['sex']
+            account_type = form.cleaned_data['account_type']
+            municipality = form.cleaned_data.get('municipality')  # Required only for agriculturist
+
+            # Check if email already exists
+            if AuthUser.objects.filter(email=email).exists():
+                form.add_error('email', 'Email already exists in the system.')
+            else:
+                try:
+                    with transaction.atomic():
+                        # Generate a strong password
+                        generated_password = get_random_string(length=12)
+
+                        # This is for creating records, itesting ko muna emailing
+                        
+                        # Create AuthUser
+                        new_auth = AuthUser.objects.create_user(email=email, password=generated_password)
+
+                        # Create UserInformation
+                        userinfo = UserInformation.objects.create(
+                            auth_user=new_auth,
+                            lastname=last_name,
+                            firstname=first_name,
+                            middlename=middle_name,
+                            nameextension="",
+                            sex=sex,
+                            contact_number="",  # placeholder, can be updated later
+                            user_email=email,
+                            birthdate="2000-01-01",  # placeholder, adjust based on form
+                            emergency_contact_person="",
+                            emergency_contact_number="",
+                            address_details="",
+                            barangay_id=BarangayName.objects.first(),  # or make user pick
+                            municipality_id=municipality,
+                            religion="",
+                            civil_status="",
+                        )
+
+                        # Create AccountsInformation
+                        acct_type = AccountType.objects.get(account_type=account_type)
+                        acct_status = AccountStatus.objects.get(acc_status="Pending")
+                        account_info = AccountsInformation.objects.create(
+                            userinfo_id=userinfo,
+                            account_type_id=acct_type,
+                            acc_status_id=acct_status,
+                            account_register_date=timezone.now()
+                        )
+
+                        # Create AdminInformation (even for agriculturist)
+                        AdminInformation.objects.create(
+                            userinfo_id=userinfo,
+                            municipality_incharge=municipality
+                        )
+
+                        # Send email with credentials
+                        
+                        # EMAIL TESTING
+                        
+                        
+                        email_sent = send_mail(
+                            subject="Fruit Cast Admin Account Created",
+                            message=f"Hello {first_name},\n\nYour admin account has been created.\nEmail: {email}\nPassword: {generated_password}\n\nPlease log in and change your password.",
+                            from_email="eloisamariemsumbad@gmail.com",
+                            recipient_list=[email],
+                            fail_silently=False,
+                        )
+
+                        if email_sent:
+                            messages.success(request, f"Admin/Agriculturist account for {email} created successfully.")
+                            return redirect('administrator:assign_account')
+                        else:
+                            raise Exception("Failed to send email. Account creation aborted.")
+
+                except Exception as e:
+                    form.add_error(None, f"Something went wrong: {e}")
+    else:
+        form = AssignAdminAgriForm()
+
+    return render(request, 'admin_panel/assign_admin_agriculturist.html', {
+        'form': form
+    })
+
+    
+
+
 def accinfo(request):
     print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
@@ -252,7 +372,7 @@ def accinfo(request):
                 context = {
                     'user_firstname': userinfo.firstname,
                     # ...other fields...
-                    'user_role_id': account_info.account_type_id.account_type_id,
+                    'user_role_id': accinfo.account_type_id.account_type_id,
                 }
                 return render(request, 'loggedin/account_info.html', context)
             else:

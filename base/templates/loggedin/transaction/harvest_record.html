@@ -10,30 +10,48 @@ Fruit Cast | Creating Harvest Record
     <div class="container">
     <h2>Create New Harvest Record</h2>
     <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
-    <form method="POST" novalidate onsubmit="return confirmSave();">
+    <form method="POST" novalidate>
         {% csrf_token %}
-        
         <div class="row g-3">
             {% for field in form %}
                 <div class="col-md-6">
                     <label class="form-label">{{ field.label_tag }}</label>
-                    {{ field}}
+                    {{ field }}
                     {% if field.errors %}
                         <div class="text-danger small mt-1">{{ field.errors }}</div>
                     {% endif %}
                 </div>
             {% endfor %}
         </div>
-
-        <input type="hidden" name="record_type" value="harvest">  
-        <div class="mt-4">
-            <label for="map">Select Barangay:</label>
-            <div id="map" style="height: 55vh; max-height: 50vh; max-width:55vw;"></div>
-            <input type="hidden" id="latitude" name="latitude">
-            <input type="hidden" id="longitude" name="longitude">
-            <input type="hidden" id="harvest_barangay" name="harvest_barangay">
-            
+        <br>
+        <div>
+            <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="">link</a> before creating a harvest record.</p>
         </div>
+        <div class="row g-3">
+            {% for field in transaction_form %}
+            {% if field.name != "manual_barangay" and field.name != "manual_municipality" %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ field.label_tag }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% endfor %}
+            <div class="col-md-6">
+                <label class="form-label" for="id_manual_municipality">Municipality *</label>
+                {{ transaction_form.manual_municipality }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_manual_barangay">Barangay *</label>
+                <select name="manual_barangay" id="id_manual_barangay" class="form-select" disabled>
+                    <option value="">Select a municipality first</option>
+                </select>
+            </div>
+        </div>
+
+        
 
         <div class="mt-4">
             <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
@@ -49,130 +67,90 @@ Fruit Cast | Creating Harvest Record
 </div>
 
 <script>
-    
-    const barangayMap = {
-        "Abucay": ["Bangkal", "Calaylayan", "Capunitan", "Mabatang"],
-        "Balanga": ["Bagumbayan", "Cataning", "Cupang Proper", "San Jose"],
-        "Dinalupihan": ["Pagalanggang", "San Ramon", "Pinulot", "Payangan"]
-        // Add the rest as per your actual constants
-    };
+    // commodity type dropdown
+    document.addEventListener('DOMContentLoaded', function() {
+        const commoditySelect = document.getElementById('id_commodity_id');
+        const customInput = document.getElementById('id_commodity_custom');
 
-
-    // Initialize the map
-    var map = L.map('map').setView([14.678, 120.536], 10);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-
-    // Load GeoJSON (this is just a placeholder URL; change to your static path or Django endpoint)
-    {% comment %} FROM HERE
-    let selectedLayer = null;
-    var mapData = {{ map_data|safe }}; // Ensure this is passed correctly in the context
-
-    fetch("{% static 'geojson/Barangays.json' %}")
-    .then(response => response.json())
-    .then(geojsonData => {
-        const geojson = L.geoJSON(geojsonData, {
-            style: {
-                color: "#3388ff",
-                weight: 1,
-                fillOpacity: 0.3
-            },
-                onEachFeature: function (feature, layer) {
-                var barangayName = feature.properties.NAME_3;
-                var municipalityName = feature.properties.NAME_2;
-                var provinceName = feature.properties.PROVINCE;
-
-                // Find forecast data for the barangay
-                var forecastedData = mapData.find(item => 
-                    item.harvest_barangay === barangayName && item.harvest_municipality === municipalityName);
-
-                var forecastedAmount = forecastedData ? forecastedData.forecasted_amount : 0;
-
-                layer.bindPopup(
-                    `<b>${barangayName}</b><br>` +
-                    `Municipality: ${municipalityName}<br>` +
-                    `Province: ${provinceName}<br>` +
-                    `Forecasted Amount: ${forecastedAmount.toFixed(2)} kg`
-                );
-                TO HERE {% endcomment %}
-    
-    let selectedLayer = null;
-
-    fetch("{% static 'geojson/Barangays.json' %}")
-    .then(response => response.json())
-    .then(geojsonData => {
-        const geojson = L.geoJSON(geojsonData, {
-            style: {
-                color: "#3388ff",
-                weight: 1,
-                fillOpacity: 0.3
-            },
-                onEachFeature: function (feature, layer) {
-                    layer.on('click', function () {
-                        if (selectedLayer) {
-                            geojson.resetStyle(selectedLayer);
-                        }
-
-                        selectedLayer = layer;
-
-                        layer.setStyle({ fillOpacity: 0.5, color: "#ff7800" });
-
-                        document.getElementById('harvest_barangay').value = feature.properties.NAME_3;
-                        console.log(feature.properties.NAME_3)
-                    });
-
-                    /**layer.bindTooltip(barangayName, {
-                    
-                });**/
-
-                    layer.bindTooltip(feature.properties.NAME_3, { 
-                        sticky: true,
-                        //permanent: true,
-                        direction: "center",
-                        className: "barangay-label"
-                     }); // Optional: show name    
+        function toggleCustomInput() {
+            if (commoditySelect.value === "1") { // pk=1 for 'Not Listed'
+                customInput.disabled = false;
+                customInput.required = true;
+            } else {
+                customInput.disabled = true;
+                customInput.required = false;
+                customInput.value = '';
             }
-        }).addTo(map);
-    })
-    .catch(error => {
-        console.error('Error loading GeoJSON:', error);
-    });
-
-    // Add markers from mapData
-
-    mapData.forEach(function(item) {
-        if (item.latitude && item.longitude) { // Only add markers if valid coordinates
-            var marker = L.marker([item.latitude, item.longitude]).addTo(map);
-            marker.bindPopup('<b>' + item.harvest_barangay + '</b><br>' + item.harvest_municipality + '<br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
-        } else {
-            console.warn('Invalid coordinates for marker:', item);
         }
+
+        // Initial state
+        toggleCustomInput();
+
+        // Listen for changes
+        commoditySelect.addEventListener('change', toggleCustomInput);
     });
 
+    //location type dropdown
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get references to the location type radios and dropdowns
+        const locationTypeRadios = document.getElementsByName('location_type');
+        const farmLandSelect = document.getElementById('id_farm_land');
+        const municipalitySelect = document.getElementById('id_manual_municipality');
+        const barangaySelect = document.getElementById('id_manual_barangay');
 
-{% comment %} THESIS2 BARANGAY CHOICES {% endcomment %}
-    const municipalitySelect = document.getElementById("id_harvest_municipality");
-    const barangaySelect = document.getElementById("id_harvest_barangay");
-
-    municipalitySelect.addEventListener("change", function () {
-        const selectedMunicipality = this.value;
-
-        // Clear current options
-        barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
-
-        if (barangayMap[selectedMunicipality]) {
-            barangayMap[selectedMunicipality].forEach(function (barangay) {
-                const option = document.createElement("option");
-                option.value = barangay;
-                option.textContent = barangay;
-                barangaySelect.appendChild(option);
+        function toggleLocationFields() {
+            let selectedValue = '';
+            locationTypeRadios.forEach(radio => {
+                if (radio.checked) selectedValue = radio.value;
             });
+
+            if (selectedValue === 'farm_land') {
+                farmLandSelect.disabled = false;
+                municipalitySelect.disabled = true;
+                barangaySelect.disabled = true;
+            } else if (selectedValue === 'manual') {
+                farmLandSelect.disabled = true;
+                municipalitySelect.disabled = false;
+                barangaySelect.disabled = true;
+                municipalitySelect.addEventListener('change', function () {
+                    const municipalityId = this.value;
+                    barangaySelect.innerHTML = '';
+                    barangaySelect.disabled = true;
+
+                    if (municipalityId) {
+                    fetch(`/get-barangays/${municipalityId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                        if (data.length > 0) {
+                            barangaySelect.disabled = false;
+                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                            data.forEach(barangay => {
+                            const option = document.createElement('option');
+                            option.value = barangay.id;
+                            option.textContent = barangay.name;
+                            barangaySelect.appendChild(option);
+                            });
+                        }
+                        });
+                    } else {
+                    barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+                    }
+                });
+            } else {
+                // Default: enable all
+                farmLandSelect.disabled = true;
+                municipalitySelect.disabled = true;
+                barangaySelect.disabled = true;
+            }
         }
+
+        // Initial state
+        toggleLocationFields();
+
+        // Add event listeners to all location type radios
+        locationTypeRadios.forEach(radio => {
+            radio.addEventListener('change', toggleLocationFields);
+        });
     });
 
 </script>

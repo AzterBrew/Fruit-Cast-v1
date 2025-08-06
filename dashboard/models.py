@@ -6,60 +6,66 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from base.models import *
 
 
-class Month(models.Model):
-    name = models.CharField(max_length=20)  # e.g., "January"
-    number = models.IntegerField()  # 1 = Jan, 12 = Dec
+# class Month(models.Model):
+#     name = models.CharField(max_length=20)  # e.g., "January"
+#     number = models.IntegerField()  # 1 = Jan, 12 = Dec
 
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
-class CommodityType(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    average_weight_per_unit_kg = models.DecimalField(max_digits=10, decimal_places=3)
-    unit_name = models.CharField(max_length=100)
-    seasonal_months = models.ManyToManyField(Month, blank=True)
+# class CommodityType(models.Model):
+#     name = models.CharField(max_length=255, unique=True)
+#     average_weight_per_unit_kg = models.DecimalField(max_digits=10, decimal_places=3)
+#     unit_name = models.CharField(max_length=100)
+#     seasonal_months = models.ManyToManyField(Month, blank=True)
 
-    def __str__(self):
-        return self.name    
+#     def __str__(self):
+#         return self.name    
 
 # sa admin panel, I should have checkboxes
 
 class VerifiedHarvestRecord(models.Model):
     harvest_date = models.DateField()
-    commodity_type = models.CharField(max_length=255)
-    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
-    commodity_spec = models.CharField(max_length=255, blank=True, null=True)
+    commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
+    commodity_custom = models.CharField(max_length=255, blank=True, null=True)
+    
     total_weight_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
     weight_per_unit_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
-    harvest_municipality = models.CharField(null=True,blank=True,max_length=255)
-    harvest_barangay = models.CharField(null=True,blank=True,max_length=255)
+    @property
+    def estimated_unit_count(self):
+        if self.weight_per_unit_kg:
+            return self.total_weight_kg / self.weight_per_unit_kg
+        return None
+    
+    # harvest_municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
+    # harvest_barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
+
     remarks = models.TextField(blank=True, null=True)
     date_verified = models.DateTimeField(default=timezone.now)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
-    prev_record = models.ForeignKey('base.HarvestRecord', on_delete=models.SET_NULL, null=True, blank=True)
+    prev_record = models.ForeignKey('base.initHarvestRecord', on_delete=models.SET_NULL, null=True, blank=True)  #this connects to initial versoin thats also connected to the record table, which has hte location
     
     def __str__(self):
         return f"{self.commodity_type} ({self.total_weight_kg} kg) on {self.harvest_date}"
 
 class VerifiedPlantRecord(models.Model):
     plant_date = models.DateField()
-    commodity_type = models.CharField(max_length=255)
-    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)   REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
-    commodity_spec = models.CharField(max_length=255, blank=True, null=True)
-    expected_harvest_date = models.DateField(null=True, blank=True)
-    estimated_weight_kg = models.DecimalField(max_digits=10,decimal_places=2, null=True, blank=True)
-    plant_municipality = models.CharField(null=True,blank=True,max_length=255)
-    plant_barangay = models.CharField(null=True,blank=True,max_length=255)
+    commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
+    commodity_custom = models.CharField(max_length=255, blank=True, null=True)
+    
+    # plant_municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
+    # plant_barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
+    
     min_expected_harvest = models.IntegerField()
     max_expected_harvest = models.IntegerField()
     average_harvest_units = models.DecimalField(max_digits=10,decimal_places=2)    #count toh, not weight
-    land_area = models.FloatField()
+    estimated_weight_kg = models.DecimalField(max_digits=10,decimal_places=2, null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
+    
     date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
-    prev_record = models.ForeignKey('base.PlantRecord', on_delete=models.SET_NULL, null=True, blank=True)
-    # latitude = models.FloatField(null=True, blank=True)
-    # longitude = models.FloatField(null=True, blank=True)
+    prev_record = models.ForeignKey('base.initPlantRecord', on_delete=models.SET_NULL, null=True, blank=True)
+
 # average_harvest_units = (min_expected_harvest + max_expected_harvest) / 2
 # estimated_weight_kg = average_harvest_units * avg_weight_per_unit_kg [avg weight per unit will be on the commodity type table]
 
@@ -67,32 +73,72 @@ class VerifiedPlantRecord(models.Model):
         return f"{self.commodity_type} ({self.estimated_weight_kg} kg est.) on {self.plant_date}"
 
 
-
-class ForecastResult(models.Model):
-    municipality = models.CharField(max_length=100)
-    commodity_type = models.CharField(max_length=100)
-    forecast_month = models.CharField(max_length=50)  # e.g. "Dry", "Wet", or even a specific month/quarter
-    forecast_year = models.IntegerField()
-    forecasted_amount = models.FloatField()  # in kg, tons, etc.
-
-    generated_at = models.DateTimeField(default=timezone.now)
-    source_data_last_updated = models.DateTimeField()  # timestamp of the latest harvest data used
-
-    class Meta:
-        unique_together = ('municipality', 'commodity_type', 'forecast_month', 'forecast_year')
-
-    def __str__(self):
-        return f"{self.commodity_type} forecast in {self.municipality.name} for {self.forecast_month} {self.forecast_year}"
-
-
 class Notification(models.Model):
-    account_id = models.ForeignKey('base.AccountsInformation', on_delete=models.CASCADE)  # Link to AccountsInformation
+    account = models.ForeignKey('base.AccountsInformation', on_delete=models.CASCADE)
+    
     message = models.TextField()
     is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    # Optional but helpful
+    linked_plant_record = models.ForeignKey('base.initPlantRecord', on_delete=models.SET_NULL, null=True, blank=True, help_text="If notification is related to a specific plant record")
+
+    # If you want flexibility to link to other kinds of records in the future:
+    redirect_url = models.URLField(blank=True, null=True, help_text="Custom redirect URL")
 
     def __str__(self):
-        return f"Notification for {self.account_info.userinfo_id.firstname} {self.account_info.userinfo_id.lastname} at {self.created_at}"
+        return f"Notif for {self.account.userinfo_id.firstname} {self.account.userinfo_id.lastname} - {self.message[:30]}"
+
+class ForecastResult(models.Model):
+    forecast_id = models.BigAutoField(primary_key=True)
+
+    # Forecasted context
+    commodity = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)
+    forecast_month = models.IntegerField()  # 1-12
+    forecast_year = models.IntegerField()
+    
+    # Location
+    municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.CASCADE)
+    barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Values
+    forecasted_amount_kg = models.FloatField() #weight
+    forecasted_count_units = models.FloatField()  # optional, if you want both
+
+    # Metadata
+    seasonal_boost_applied = models.BooleanField(default=False)
+    generated_at = models.DateTimeField(auto_now_add=True)
+    source_data_last_updated = models.DateTimeField()
+    generated_by = models.ForeignKey('base.AdminInformation', on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('commodity', 'forecast_month', 'forecast_year', 'municipality', 'barangay')
+
+    def __str__(self):
+        return f"{self.commodity.name} - {self.forecast_month}/{self.forecast_year} in {self.barangay.name if self.barangay else self.municipality.name}"
+
+
+
+# only model left unchanged
+
+
+# class ForecastResult(models.Model):
+#     municipality = models.CharField(max_length=100)
+#     commodity_type = models.CharField(max_length=100)
+#     forecast_month = models.CharField(max_length=50)  # e.g. "Dry", "Wet", or even a specific month/quarter
+#     forecast_year = models.IntegerField()
+#     forecasted_amount = models.FloatField()  # in kg, tons, etc.
+
+#     generated_at = models.DateTimeField(default=timezone.now)
+#     source_data_last_updated = models.DateTimeField()  # timestamp of the latest harvest data used
+
+#     class Meta:
+#         unique_together = ('municipality', 'commodity_type', 'forecast_month', 'forecast_year')
+
+#     def __str__(self):
+#         return f"{self.commodity_type} forecast in {self.municipality.name} for {self.forecast_month} {self.forecast_year}"
+
+
 
 
 # plans for commodity type model: if the input type by users that are not in the commodity type table, 

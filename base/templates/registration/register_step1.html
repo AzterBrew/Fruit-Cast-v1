@@ -52,14 +52,30 @@
         <form method="POST" novalidate>
           {% csrf_token %}
           {% for field in form %}
-            <div class="mb-3">
-              <label class="form-label">{{ field.label_tag }}</label>
-              {{ field }}
-              {% if field.errors %}
-                <div class="text-danger small">{{ field.errors }}</div>
-              {% endif %}
-            </div>
+            {% if field.name != 'barangay_id' and  field.name != 'municipality_id'%}
+              <div class="mb-3">
+                <label class="form-label">{{ field.label_tag }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <div class="text-danger small">{{ field.errors }}</div>
+                {% endif %}
+              </div>
+            {% endif %}
           {% endfor %}
+
+          <!-- Municipality -->
+          <div class="mb-3">
+            <label class="form-label" for="id_municipality_id">Municipality *</label>
+            {{ form.municipality_id }}
+          </div>
+
+          <!-- Barangay (disabled initially) -->
+          <div class="mb-3">
+            <label class="form-label" for="id_barangay_id">Barangay *</label>
+            <select name="barangay_id" id="id_barangay_id" class="form-select" disabled>
+              <option value="">Select a municipality first</option>
+            </select>
+          </div>
     
           <div class="text-center mt-4">
             <hr />
@@ -72,6 +88,42 @@
         </form>
       </div>
     </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const municipalitySelect = document.getElementById('id_municipality_id');
+  const barangaySelect = document.getElementById('id_barangay_id');
+
+  municipalitySelect.addEventListener('change', function () {
+    const municipalityId = this.value;
+    barangaySelect.innerHTML = '';
+    barangaySelect.disabled = true;
+
+    if (municipalityId) {
+      fetch(`/get-barangays/${municipalityId}/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.length > 0) {
+            barangaySelect.disabled = false;
+            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+            data.forEach(barangay => {
+              const option = document.createElement('option');
+              option.value = barangay.id;
+              option.textContent = barangay.name;
+              barangaySelect.appendChild(option);
+            });
+          }
+        });
+    } else {
+      barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+    }
+  });
+});
+</script>
+
+
 
 
 {% endblock content %}

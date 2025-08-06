@@ -21,7 +21,7 @@
             <a class="nav-link" href="{% url 'administrator:admin_dashboard' %}"><b>Home</b> <span class="sr-only"></span></a>
         </li> 
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'administrator:verify_accounts' %}"><b>Verify Accounts</b><span class="sr-only"></span></a>
+          <a class="nav-link" href="{% url 'administrator:verify_accounts' %}"><b>Farmer Accounts</b><span class="sr-only"></span></a>
         </li>
         <li class="nav-item">
           {% comment %} <a class="nav-link" href="{% url 'administrator:show_allaccounts' %}"><b>See All Accounts</b><span class="sr-only"></span></a> {% endcomment %}
@@ -38,6 +38,9 @@
         </li>
         <li class="nav-item">
           {% comment %} <a class="nav-link" href="{% url 'base:accinfo' %}"><b>Account</b><span class="sr-only"></span></a>         {% endcomment %}
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'administrator:accinfo' %}"><b>Account</b><span class="sr-only"></span></a>        
         </li>
         <li class="nav-item">
 
@@ -71,8 +74,11 @@
         <br>
         <br>
         <div class="list-group">
-            <a href="{% url 'administrator:verify_accounts' %}" class="list-group-item list-group-item-action">Account Verification</a>
-            <a href="{% url 'administrator:show_allaccounts' %}" class="list-group-item list-group-item-action">All Accounts</a>
+            <a href="{% url 'administrator:verify_accounts' %}" class="list-group-item list-group-item-action">Farmer Accounts</a>
+            <a href="{% url 'administrator:show_allaccounts' %}" class="list-group-item list-group-item-action">Administrators and Agriculturists</a>
+            {% comment %} {% if authuser.issuperuser = True%} it should show the button or link Manage Privilege {% endcomment %}
+            
+            <a href="{% url 'administrator:assign_account' %}" class="list-group-item list-group-item-action">Manage Privilege</a>
 
             {% comment %} <a href="#" class="list-group-item list-group-item-action">Report History</a>
             <a href="#" class="list-group-item list-group-item-action">Account Details</a> {% endcomment %}
@@ -84,7 +90,7 @@
             <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a> {% endcomment %}
             {% comment %} <a href="{% url 'dashboard:addcommodity' %}" class="list-group-item list-group-item-action">Add Commodity</a> {% endcomment %}
             <!-- Collapsible Section -->
-            {% if user_role_id == 3 %}
+            {% if user_role_id == 3 or user_role_id == 2 %}
               <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">Admin Panel</a>
 
             {% endif %}

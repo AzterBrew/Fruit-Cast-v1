@@ -1,6 +1,9 @@
 {% extends 'admin_login/layout.html' %}
-
-
+{% load sort_tags %}
+{% comment %} 
+superuser : blue26gatorade
+pass : blueblueblue
+{% endcomment %}
 {% block navbar %}
     {% include "admin_panel/navbar.html" %}
 {% endblock navbar %}
@@ -9,48 +12,115 @@
 <div class="container2 p-6">
 
     <div class="container mt-4">
-        <h2 class="text-xl font-bold mb-4">All Registered Accounts</h2>
+        <h2 class="text-xl font-bold mb-4">Administrators and Agriculturists</h2>
 
+        <form method="get" class="mb-3">
+            <div>
+                <label for="status">Filter by Status:</label>
+                <select name="status" id="status" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    {% for status in status_choices %}
+                        <option value="{{ status.pk }}" {% if current_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
+                    {% endfor %}
+            </select>
+            </div>
+            <div>
+                <label for="acctype">Filter by Account Type:</label>
+                <select name="acctype" id="acctype" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    {% for acctype in account_types %}
+                        <option value="{{ acctype.pk }}" {% if current_acctype == acctype.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ acctype.account_type }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="municipality">Filter by Municipality:</label>
+                <select name="municipality" id="municipality" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    {% for municipality in municipalities %}
+                        <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
+                            {{ municipality.municipality }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
         {% if allAccounts %}
-    <table class="table table-bordered table-hover">
-        <thead>
-            <tr>
-                <th>Full Name</th>
-                <th>Sex</th>
-                <th>Email</th>
-                <th>Contact</th>
-                <th>Barangay</th>
-                <th>Municipality</th>
-                <th>Account Type</th>
-                <th>Registered Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for account in allAccounts %}
-            <tr>
-                <td>{{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename }} {{ account.userinfo_id.lastname }} {{ account.userinfo_id.nameextension }}</td>
-                <td>{{ account.userinfo_id.sex }}</td>
-                <td>{{ account.userinfo_id.user_email }}</td>
-                <td>{{ account.userinfo_id.contact_number }}</td>
-                <td>{{ account.userinfo_id.barangay }}</td>
-                <td>{{ account.userinfo_id.municipality }}</td>
-                <td>{{ account.account_type_id.account_type }}</td>
-                <td>{{ account.account_register_date|date:"M d, Y" }}</td>
-                <td>{{ account.item_status_id.item_status }}</td>
-                <td>
-                    <form method="POST" action="{% url 'verify_account_action' account.account_id %}">
-                        {% csrf_token %}
-                        <button class="btn btn-success btn-sm" onclick="return confirm('Verify this account?')">Verify</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>{% sort_header "name" "Full Name" current_sort current_order current_status %}</th>
+                    <th>Sex</th>
+                    <th>Email</th>
+                    <th>Municipality In-Charge</th>    
+                    <th>Account Type</th>
+                    <th>{% sort_header "date" "Date Assigned" current_sort current_order current_status %}</th>
+                    <th>Status</th>
+                    <td> Change Status? </td>
+                    <td> Update </td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in allAccounts %}
+                <tr>
+                    <td>{{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename }} {{ account.userinfo_id.lastname }} {{ account.userinfo_id.nameextension }}</td>
+                    <td>{{ account.userinfo_id.sex }}</td>
+                    <td>{{ account.userinfo_id.user_email }}</td>
+                    <td>{{ account.userinfo_id.municipality_id.municipality }}</td>
+                    <td>
+                        {% if account.account_type_id.account_type == "Agriculturist" %}
+                            <form method="POST" action="{% url 'administrator:change_account_type' account.account_id %}">
+                                {% csrf_token %}
+                                <select name="new_type" class="form-select form-select-sm mb-1">
+                                    {% for acct_type in account_types %}
+                                        <option value="{{ acct_type.pk }}" {% if acct_type.pk == account.account_type_id.pk %}selected{% endif %}>{{ acct_type.account_type }}</option>
+                                    {% endfor %}
+                                </select>
+                        {% else %}
+                            {{ account.account_type_id.account_type }}
+                        {% endif %}
+                    </td>
+                    <td>{{ account.account_register_date|date:"M d, Y" }}</td>
+                    <td>{{ account.acc_status_id.acc_status }}</td>
+                    <td>
+                        {% if account.account_type_id.account_type == "Agriculturist" %}
+                            <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}">
+                                {% csrf_token %}
+                                    <select name="new_status" class="form-control form-control-sm">
+                                        {% for status in status_choices %}
+                                            <option value="{{ status.pk }}" {% if account.acc_status_id.pk == status.pk %}selected{% endif %}>
+                                                {{ status.acc_status }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                        {% else %}
+                            <span class="text-muted">{{ account.acc_status_id.acc_status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% comment %} BTW this column is if the admin can update or not {% endcomment %}
+                        {% comment %} admin can only update : Agriculturist {% endcomment %}
+                        {% comment %} superuser can update : Agriculturist and Admin BUT NOT their own account {% endcomment %}
+                        {% if account.account_type_id.account_type == "Agriculturist" %} {% comment %}3 is agric in the table  {% endcomment %}
+                            <button type="submit" class="btn btn-primary btn-sm mt-1">Update</button>
+                            </form>
+                        {% elif account.account_type_id.account_type == "Administrator" or account.userinfo_id.auth_user.is_superuser%}
+                            {% comment %} <span class="text-muted">N/A</span> {% endcomment %}
+                            <button type="submit" class="btn btn-primary btn-sm mt-1" disabled>Update</button>
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
-        <p>No pending accounts found.</p>
+        <p>No accounts found.</p>
     {% endif %}
     </div>
 </div>

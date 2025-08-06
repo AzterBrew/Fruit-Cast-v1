@@ -29,7 +29,7 @@ from dashboard.utils import generate_notifications, get_current_month
 
 from base.models import *
 from dashboard.models import *
-from dashboard.forms import CommodityTypeForm
+# from dashboard.forms import CommodityTypeForm
 
 def notifications(request):
     account_id = request.session.get('account_id')
@@ -163,8 +163,9 @@ def forecast(request):
                 }
                 
             # 2D MAPPING STUFF
-            
-            with open('static/geojson/Barangays.json', 'r') as f:
+            # opening the geojson
+            # with open('static/geojson/Barangays.json', 'r') as f:
+            with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
                 geojson_data = json.load(f)
             
             
@@ -524,16 +525,17 @@ def commoditytype_collect(request):
 
 
 
-def add_commodity(request):
-    if request.method == 'POST':
-        form = CommodityTypeForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('base:home')     # or anywhere else
-    else:
-        form = CommodityTypeForm()
+# def add_commodity(request):
+    # THIS IS FOR ADDING COMMODITY TYPES BY ADMIN IN ADMIN PANEL, RETURN HERE PLS
+    # if request.method == 'POST':
+    #     form = CommodityTypeForm(request.POST)
+    #     if form.is_valid():
+    #         form.save()
+    #         return redirect('base:home')     # or anywhere else
+    # else:
+    #     form = CommodityTypeForm()
     
-    return render(request, 'forecasting/commodity_add.html', {'form': form})
+    # return render(request, 'forecasting/commodity_add.html', {'form': form})
 
 
 # def forecast(request):
