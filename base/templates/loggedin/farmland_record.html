@@ -1,0 +1,91 @@
+{% load static %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Add New Farmland</h2>
+
+    
+    <div class="mt-4 d-flex">
+        <h5>Recorded Farmlands you currently own in Bataan: [insert amt of farmlands recorded for user]</h5>
+        <a href="#" class="btn btn-success ms-auto">See your Recorded Farmlands</a>
+    </div>
+<hr>
+    <form method="POST" novalidate id="farmland-record-form">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">{{ form.farm_name.label_tag }}</label>
+                {{ form.farm_name }}
+                {% if form.farm_name.errors %}
+                    <div class="text-danger small mt-1">{{ form.farm_name.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.farm_size.label_tag }}</label>
+                {{ form.farm_size }}
+                {% if form.farm_size.errors %}
+                    <div class="text-danger small mt-1">{{ form.farm_size.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.farm_municipality.label_tag }}</label>
+                {{ form.farm_municipality }}
+                {% if form.farm_municipality.errors %}
+                    <div class="text-danger small mt-1">{{ form.farm_municipality.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.farm_barangay.label_tag }}</label>
+                {{ form.farm_barangay }}
+                {% if form.farm_barangay.errors %}
+                    <div class="text-danger small mt-1">{{ form.farm_barangay.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success me-2">Save Farmland</button>
+            <a href="{% url 'base:farmland_record' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const municipalitySelect = document.getElementById('id_farm_municipality');
+    const barangaySelect = document.getElementById('id_farm_barangay');
+
+    function updateBarangayOptions() {
+        const municipalityId = municipalitySelect.value;
+        barangaySelect.innerHTML = '';
+        barangaySelect.disabled = true;
+
+        if (municipalityId) {
+            fetch(`/get-barangays/${municipalityId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        barangaySelect.disabled = false;
+                        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                        data.forEach(barangay => {
+                            const option = document.createElement('option');
+                            option.value = barangay.id;
+                            option.textContent = barangay.name;
+                            barangaySelect.appendChild(option);
+                        });
+                    } else {
+                        barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
+                        barangaySelect.disabled = true;
+                    }
+                });
+        } else {
+            barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+            barangaySelect.disabled = true;
+        }
+    }
+
+    if (municipalitySelect && barangaySelect) {
+        municipalitySelect.addEventListener('change', updateBarangayOptions);
+        updateBarangayOptions(); // Initial state
+    }
+});
+</script>
+{% endblock content %}

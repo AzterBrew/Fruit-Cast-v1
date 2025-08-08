@@ -9,27 +9,41 @@ Fruit Cast | Home
 {% endblock navbar %}
 
 {% block content %}
-
-<div class="container2 p-6">
-
-    <div class="container mt-4">
-
-    <h1 class="text-center">Welcome to Fruit Cast, {{user_firstname}}</h1>
-    <br>
-    </br>
-    <div class="text-center">
-        <h3>Check out the current forecast of Bataan's fruit supply for the next year</h3>
-        <a class="btn btn-success" href="{% url 'dashboard:forecast' %}"><b>Forecast</b><span class="sr-only"></span></a>
-        <br>
-        </br>
-        <h3>See the current status of the recorded fruits's supply in Bataan based on our data </h3>
-        <a class="btn btn-success" href="{% url 'dashboard:monitor' %}"><b>Monitor</b><span class="sr-only"></span></a>
-
-    </div>
-
-
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">
+                <h1 class="mb-3 text-success fw-bold">Welcome to Fruit Cast, {{ user_firstname }}</h1>
+                <p class="lead mb-4">Your partner in forecasting and monitoring Bataan's fruit supply.</p>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                                <h3 class="card-title mb-3"><i class="bi bi-bar-chart-line text-success me-2"></i>Forecast</h3>
+                                <p class="card-text mb-3">Check out the current forecast of Bataan's fruit supply for the next year.</p>
+                                <a class="btn btn-success" href="{% url 'dashboard:forecast' %}"><b>Go to Forecast</b></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                                <h3 class="card-title mb-3"><i class="bi bi-graph-up-arrow text-success me-2"></i>Monitor</h3>
+                                <p class="card-text mb-3">See the current status of the recorded fruit supply in Bataan based on our data.</p>
+                                <a class="btn btn-success" href="{% url 'dashboard:monitor' %}"><b>Go to Monitor</b></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <div>
+                    <p class="mb-2">Ready to record your own fruit transactions?</p>
+                    <a class="btn btn-outline-success" href="{% url 'base:newrecord' %}?view=choose">
+                        <i class="bi bi-journal-plus me-2"></i>Start a New Record
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-    
 {% endblock content %}
-

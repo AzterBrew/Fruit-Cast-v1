@@ -14,46 +14,39 @@ from django.db import transaction
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.utils.crypto import get_random_string
+from .decorators import admin_or_agriculturist_required, superuser_required
 
 
 def admin_login(request):
     if request.method == 'POST':
+        
         email_or_contact = request.POST.get('email_or_contact')
         password = request.POST.get('password')
 
         # Authenticate with Django's auth_user
         user = authenticate(request, username=email_or_contact, password=password)
 
-        if user is not None:
-            # THESIS1
-            # # Allow superuser immediately
-            # if user.is_superuser:
-            #     login(request, user)
-            #     return redirect('administrator:dashboard')
-
-            # # Otherwise, try to validate via UserInformation + AdminInformation
-            # try:
-            #     user_info = UserInformation.objects.get(auth_user=user)
-
-            #     if AdminInformation.objects.filter(userinfo_id=user_info).exists():
-            #         login(request, user)
-            #         return redirect('administrator:dashboard')
-            #     else:
-            #         messages.error(request, "Unauthorized: This account is not an admin.")
-            # except UserInformation.DoesNotExist:
-            #     messages.error(request, "No user profile found for this account.")
-            
-            # THESIS2
+        if user is not None:    
             if user.is_superuser:
                 login(request, user)
+                # Set session variables for context processor
+                try:
+                    user_info = UserInformation.objects.get(auth_user=user)
+                    account_info = AccountsInformation.objects.get(userinfo_id=user_info)
+                    request.session['userinfo_id'] = user_info.pk
+                    request.session['account_id'] = account_info.pk
+                except (UserInformation.DoesNotExist, AccountsInformation.DoesNotExist):
+                    pass
                 return redirect('administrator:dashboard')
 
             try:
                 user_info = UserInformation.objects.get(auth_user=user)
                 account_info = AccountsInformation.objects.get(userinfo_id=user_info)
-
                 if account_info.account_type_id.account_type.lower() in ['administrator', 'agriculturist']:
                     login(request, user)
+                    # Set session variables for context processor
+                    request.session['userinfo_id'] = user_info.pk
+                    request.session['account_id'] = account_info.pk
                     return redirect('administrator:dashboard')
                 else:
                     messages.error(request, "Unauthorized: Your account does not have admin privileges.")
@@ -67,6 +60,7 @@ def admin_login(request):
 
 
 @login_required
+@admin_or_agriculturist_required
 def admin_dashboard(request):
     user = request.user
 
@@ -119,7 +113,8 @@ def update_account_status(request, account_id):
 
         account.save()
         return redirect('administrator:verify_accounts')
-    
+
+@admin_or_agriculturist_required    
 def verify_accounts(request):
     # this is the view for the verify accounts page which is the farmers list
     pending_accounts = AccountsInformation.objects.filter(acc_status_id=2).select_related('userinfo_id', 'account_type_id', 'acc_status_id')    
@@ -166,7 +161,7 @@ def verify_accounts(request):
         'current_order': order,
     })
 
-
+@admin_or_agriculturist_required
 def verify_account_action(request, account_id):
     if request.method == 'POST':
         account = get_object_or_404(AccountsInformation, pk=account_id)
@@ -181,11 +176,10 @@ def verify_account_action(request, account_id):
 
         return redirect('verify_accounts')
 
+@admin_or_agriculturist_required
 def show_allaccounts(request):
     user_info = request.user.userinformation
     account_info = AccountsInformation.objects.get(userinfo_id=user_info)
-    if account_info.account_type_id.account_type != 'Administrator':
-        return HttpResponseForbidden("You don't have access to this page.")
         
     status_filter = request.GET.get('status')
     sort_by = request.GET.get('sort', 'account_register_date')  # Default sort by date
@@ -240,8 +234,6 @@ def show_allaccounts(request):
 def change_account_type(request, account_id):
     user_info = request.user.userinformation
     account_info = AccountsInformation.objects.get(userinfo_id=user_info)
-    if account_info.account_type_id.account_type != 'Administrator':
-        return HttpResponseForbidden("You don't have permission to perform this action.")
 
     account = get_object_or_404(AccountsInformation, pk=account_id)
     new_type_id = request.POST.get('new_type')
@@ -256,7 +248,8 @@ def change_account_type(request, account_id):
 
     return redirect('administrator:show_allaccounts')  # or wherever the list view lives
 
-
+@admin_or_agriculturist_required
+@superuser_required
 def assign_account(request):
     user = request.user
 
@@ -372,7 +365,7 @@ def accinfo(request):
                 context = {
                     'user_firstname': userinfo.firstname,
                     # ...other fields...
-                    'user_role_id': accinfo.account_type_id.account_type_id,
+                    'user_role_id': account_info.account_type_id.account_type_id,
                 }
                 return render(request, 'loggedin/account_info.html', context)
             else:

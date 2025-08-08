@@ -1,0 +1,50 @@
+{% extends "loggedin/layout.html" %}
+
+{% block title %}
+Fruit Cast | Account Panel
+{% endblock title %}
+
+{% block navbar %}
+    {% include "loggedin/navbar.html" %}
+{% endblock navbar %}
+
+{% block content %}
+<div class="account-layout">
+    <nav class="account-sidebar">
+        <div class="sidebar-inner">
+            <div class="sidebar-title">
+                <span class="fs-4 text-success fw-bold">Account</span>
+            </div>
+            <ul class="nav flex-column mt-3">
+                <li class="nav-item mb-2">
+                    <a href="{% url 'base:account_info_panel' %}" class="nav-link link-dark">
+                        <i class="bi bi-person-circle me-2"></i> Account Information
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link link-dark">
+                        <i class="bi bi-tree me-2"></i> Owned Farmland Recorded
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link link-dark">
+                        <i class="bi bi-shield-lock me-2"></i> Security Settings
+                    </a>
+                </li>
+                {# Add more account-related links here #}
+            </ul>
+        </div>
+    </nav>
+    <main class="account-main">
+        <div class="account-content card shadow-sm rounded-4 p-4 mt-3">
+            {% if view_to_show == "info" %}
+                {% include "loggedin/account_info.html" %}
+            {% elif view_to_show == "security" %}
+                <p>Security settings go here.</p>
+            {% else %}
+                <p class="text-muted">Choose an account option in the sidebar.</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock content %}

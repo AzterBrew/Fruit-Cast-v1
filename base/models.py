@@ -148,6 +148,7 @@ class AdminUserManagement(models.Model):
     
 class FarmLand(models.Model):
     farminfo_id = models.BigAutoField(primary_key=True)
+    farmland_name = models.CharField(max_length=255, default="")
     userinfo_id = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
     municipality = models.ForeignKey(MunicipalityName, on_delete=models.CASCADE)
     barangay = models.ForeignKey(BarangayName,on_delete=models.CASCADE)
@@ -206,8 +207,8 @@ class RecordTransaction (models.Model):
     transaction_date = models.DateTimeField(default=timezone.now)
     date_verified = models.DateTimeField(null=True, blank=True)
 
-    plant_status = models.CharField(choices=STATUS_CHOICES, default='none', max_length=10)
-    harvest_status = models.CharField(choices=STATUS_CHOICES, default='none', max_length=10)
+    plant_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='plant_status_transactions')
+    harvest_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='harvest_status_transactions')
     # location stuff choosing
     location_type = models.CharField(choices=LOCATION_TYPE_CHOICES, max_length=20, default='manual')
     farm_land = models.ForeignKey(FarmLand, null=True, blank=True, on_delete=models.SET_NULL)
@@ -216,7 +217,7 @@ class RecordTransaction (models.Model):
     
     def get_location_display(self):
         if self.location_type == 'farm_land' and self.farm_land:
-            return str(self.farm_land)
+            return f"{self.farm_land.farmland_name} - {self.farm_land.municipality.municipality}, {self.farm_land.barangay.barangay}"
         elif self.manual_barangay and self.manual_municipality:
             return f"{self.manual_barangay}, {self.manual_municipality}"
         elif self.manual_municipality:

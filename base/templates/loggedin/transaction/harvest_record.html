@@ -1,105 +1,170 @@
-{% extends "loggedin/layout.html" %}
-{%load static%}
-
-{% block title %}
-Fruit Cast | Creating Harvest Record
-{% endblock title %}
+{% load static %}
 
 {% block content %}
-<div class="container">
-    <h2>Create New Harvest Record</h2>
-    <br>
-    <div class="row align-items-center">
-        <div class="col-md-6" style="text-align: right;">
-            <p><b>Only about to create a new plant record?</b></p>
+<div class="container p-4">
+    <h2 class="mb-4">Create New Harvest Record</h2>
+    {% if harvest_record %}
+        <div class="alert alert-info mt-4">
+            There is already an existing harvest record for this transaction.
         </div>
-        <div class="col-md-6" style="text-align: left;">
-            <a href="{% url 'base:plant_record' %}" class="btn btn-success text-light link-body-emphasis"> 
-                Create a New Plant Record
-            </a>  
-        </div>
-    </div>
-    <br>
-    <hr>
-
-    <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
+    {% else %}
     
+    {% comment %} <div class="row align-items-center"> {% endcomment %}
+    <div class="row mb-3">
+        {% if transaction %}
+            <div class="col-md-6">
+                    <h5>Planted Commodity:
+                        <b>
+                        {% if transaction.initplantrecord.commodity_id.pk == 1 %}
+                            {{ transaction.initplantrecord.commodity_custom }}
+                        {% else %}
+                            {{ transaction.initharvestrecord.commoditytype.name }}
+                        {% endif %}
+                        </b>
+                    </h5>
+                    <p class="text-muted">Date of Planting: <b>{{ transaction.initplantrecord.plant_date|date:"d/m/Y" }}</b></p>
+                </div>
+                <div class="col-md-6">
+                    {% if transaction.location_type == 'farm_land' %}
+                        <p class="text-muted">Your Farm for Planting: <b>{{ transaction.farmland.name }}</b></p>
+                        <p class="text-muted">Farm Location : <b>{{ transaction.farmland.municipality.municipality }}, {{ transaction.farmland.barangay.barangay }}</b></p>
+                    {% elif transaction.location_type == 'manual' %}
+                        <p class="text-muted">Location of Planting: <b>{{ transaction.manual_municipality.municipality }}, {{ transaction.manual_barangay.barangay }}</b></p>
+                    {% endif %}
+                    <p class="text-muted">Remarks: <b>{{ transaction.initplantrecord.remarks }}</b></p>
+                </div>
+            {% else %}
+                <div class="col-md-6 text-end">
+                    <p><b>Only about to create a new plant record?</b></p>
+                </div>
+                <div class="col-md-6 text-start">
+                    <a href="{% url 'base:plant_record' %}" class="btn btn-success">
+                        Create a New Plant Record
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    <hr>
+    <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
     <form method="POST" novalidate id="harvest-record-form">
         {% csrf_token %}
-        <div class="row g-3">
-            {% for field in form %}
-                <div class="col-md-6">
-                    <label class="form-label">{{ field.label_tag }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small mt-1">{{ field.errors }}</div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-        <br>
-        <div>
-            <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="">link</a> before creating a harvest record.</p>
-        </div>
-        <div class="row g-3">
-            {% for field in transaction_form %}
-            {% if field.name != "manual_barangay" and field.name != "manual_municipality" %}
-                <div class="col-md-6">
-                    <label class="form-label">{{ field.label_tag }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small mt-1">{{ field.errors }}</div>
-                    {% endif %}
-                </div>
-            {% endif %}
-            {% endfor %}
-            <div class="col-md-6">
-                <label class="form-label" for="id_manual_municipality">Municipality</label>
-                {{ transaction_form.manual_municipality }}
-            </div>
-            <div class="col-md-6">
-                <label class="form-label" for="id_manual_barangay">Barangay</label>
-                <select name="manual_barangay" id="id_manual_barangay" class="form-select" disabled>
-                    <option value="">Select a municipality first</option>
-                </select>
-            </div>
-        </div>
 
-        
+        <div class="row g-3">
 
-        <div class="mt-4">
-            <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
-            {% if from_transaction %}
-                <a href="{% url 'base:newrecord' %}?view=transaction_list" class="btn btn-secondary">Back to Transaction</a>
-            {%elif from_transactionedit %}
-                <a href="{% url 'base:newrecord' %}?view=transaction_list" class="btn btn-secondary">Cancel Edit</a>
-            {% else %}
-                <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-secondary">Cancel</a>
+        {% if transaction %}
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.harvest_date.id_for_label }}">{{ form.harvest_date.label }}</label>
+                        {{ form.harvest_date }}
+                        {% if form.harvest_date.errors %}
+                            <div class="text-danger small mt-1">{{ form.harvest_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <input type="hidden" name="commodity_id" value="{{ transaction.initplantrecord.commodity_id.pk }}">
+                    <input type="hidden" name="commodity_custom" value="{{ transaction.initplantrecord.commodity_custom }}">
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.total_weight.id_for_label }}">{{ form.total_weight.label }}</label>
+                        {{ form.total_weight }}
+                        {% if form.total_weight.errors %}
+                            <div class="text-danger small mt-1">{{ form.total_weight.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.unit.id_for_label }}">{{ form.unit.label }}</label>
+                        {{ form.unit }}
+                        {% if form.unit.errors %}
+                            <div class="text-danger small mt-1">{{ form.unit.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.weight_per_unit.id_for_label }}">{{ form.weight_per_unit.label }}</label>
+                        {{ form.weight_per_unit }}
+                        {% if form.weight_per_unit.errors %}
+                            <div class="text-danger small mt-1">{{ form.weight_per_unit.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.remarks.id_for_label }}">{{ form.remarks.label }}</label>
+                        {{ form.remarks }}
+                        {% if form.remarks.errors %}
+                            <div class="text-danger small mt-1">{{ form.remarks.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    {% for field in form %}
+                        <div class="col-md-6">
+                            <label class="form-label">{{ field.label_tag }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <br>
+        {% if not transaction %}
+            <div>
+                <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="">link</a> before creating a harvest record.</p>
+            </div>
+            <div class="row g-3">
+                {% for field in transaction_form %}
+                {% if field.name != "manual_barangay" and field.name != "manual_municipality" %}
+                    <div class="col-md-6">
+                        <label class="form-label">{{ field.label_tag }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% endfor %}
+                <div class="col-md-6">
+                    <label class="form-label" for="id_manual_municipality">Municipality</label>
+                    {{ transaction_form.manual_municipality }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="id_manual_barangay">Barangay</label>
+                    <select name="manual_barangay" id="id_manual_barangay" class="form-select" disabled>
+                        <option value="">Select a municipality first</option>
+                    </select>
+                </div>
+            </div>
             {% endif %}
-        </div>
-    </form>
-</div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
+                {% if from_transaction %}
+                    <a href="{% url 'base:transaction_recordlist' transaction.transaction_id%}" class="btn btn-secondary">Back to Transaction</a>
+                {% elif from_transactionedit %}
+                    <a href="{% url 'base:newrecord' %}?view=transaction_list" class="btn btn-secondary">Cancel Edit</a>
+                {% else %}
+                    <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-secondary">Cancel</a>
+                {% endif %}
+            </div>
+        </form>
+    {% endif %}
+
 </div>
 
 <script>
-// confirmation ng form
-    document.addEventListener('DOMContentLoaded', function() {
+
+document.addEventListener('DOMContentLoaded', function() {
+    // confirmation ng form
     const form = document.getElementById("harvest-record-form");
-    form.addEventListener("submit", function (e) {
-        const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
-        if (!confirm(message)) {
-        e.preventDefault();
-        }
-    });
-    });
+    if (form) {
+        form.addEventListener("submit", function (e) {
+            const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
+            if (!confirm(message)) {
+                e.preventDefault();
+            }
+        });
+    }
 
-    // commodity type dropdown
-    document.addEventListener('DOMContentLoaded', function() {
-        const commoditySelect = document.getElementById('id_commodity_id');
-        const customInput = document.getElementById('id_commodity_custom');
-
-        function toggleCustomInput() {
-            if (commoditySelect.value === "1") { // pk=1 for 'Not Listed'
+    // Commodity type dropdown logic
+    const commoditySelect = document.getElementById('id_commodity_id');
+    const customInput = document.getElementById('id_commodity_custom');
+    function toggleCustomInput() {
+        if (commoditySelect && customInput) {
+            if (commoditySelect.value === "1") {
                 customInput.disabled = false;
                 customInput.required = true;
             } else {
@@ -108,76 +173,74 @@ Fruit Cast | Creating Harvest Record
                 customInput.value = '';
             }
         }
-
-        // Initial state
+    }
+    if (commoditySelect) {
         toggleCustomInput();
-
-        // Listen for changes
         commoditySelect.addEventListener('change', toggleCustomInput);
+    }
+
+    // Location type dropdown logic
+    const locationTypeRadios = document.getElementsByName('location_type');
+    const farmLandSelect = document.getElementById('id_farm_land');
+    const municipalitySelect = document.getElementById('id_manual_municipality');
+    const barangaySelect = document.getElementById('id_manual_barangay');
+
+    function toggleLocationFields() {
+        let selectedValue = '';
+        locationTypeRadios.forEach(radio => {
+            if (radio.checked) selectedValue = radio.value;
+        });
+
+        if (selectedValue === 'farm_land') {
+            if (farmLandSelect) farmLandSelect.disabled = false;
+            if (municipalitySelect) municipalitySelect.disabled = true;
+            if (barangaySelect) barangaySelect.disabled = true;
+        } else if (selectedValue === 'manual') {
+            if (farmLandSelect) farmLandSelect.disabled = true;
+            if (municipalitySelect) municipalitySelect.disabled = false;
+            if (barangaySelect) barangaySelect.disabled = !municipalitySelect.value;
+        } else {
+            if (farmLandSelect) farmLandSelect.disabled = true;
+            if (municipalitySelect) municipalitySelect.disabled = true;
+            if (barangaySelect) barangaySelect.disabled = true;
+        }
+    }
+    toggleLocationFields();
+    locationTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleLocationFields);
     });
 
-    //location type dropdown
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get references to the location type radios and dropdowns
-        const locationTypeRadios = document.getElementsByName('location_type');
-        const farmLandSelect = document.getElementById('id_farm_land');
-        const municipalitySelect = document.getElementById('id_manual_municipality');
-        const barangaySelect = document.getElementById('id_manual_barangay');
+    // Municipality/Barangay logic
+    if (municipalitySelect && barangaySelect) {
+        municipalitySelect.addEventListener('change', function () {
+            const municipalityId = this.value;
+            barangaySelect.innerHTML = '';
+            barangaySelect.disabled = true;
 
-        function toggleLocationFields() {
-            let selectedValue = '';
-            locationTypeRadios.forEach(radio => {
-                if (radio.checked) selectedValue = radio.value;
-            });
-
-            if (selectedValue === 'farm_land') {
-                farmLandSelect.disabled = false;
-                municipalitySelect.disabled = true;
-                barangaySelect.disabled = true;
-            } else if (selectedValue === 'manual') {
-                farmLandSelect.disabled = true;
-                municipalitySelect.disabled = false;
-                barangaySelect.disabled = true;
-                municipalitySelect.addEventListener('change', function () {
-                    const municipalityId = this.value;
-                    barangaySelect.innerHTML = '';
-                    barangaySelect.disabled = true;
-
-                    if (municipalityId) {
-                    fetch(`/get-barangays/${municipalityId}/`)
-                        .then(response => response.json())
-                        .then(data => {
+            if (municipalityId) {
+                fetch(`/get-barangays/${municipalityId}/`)
+                    .then(response => response.json())
+                    .then(data => {
                         if (data.length > 0) {
                             barangaySelect.disabled = false;
                             barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
                             data.forEach(barangay => {
-                            const option = document.createElement('option');
-                            option.value = barangay.id;
-                            option.textContent = barangay.name;
-                            barangaySelect.appendChild(option);
+                                const option = document.createElement('option');
+                                option.value = barangay.id;
+                                option.textContent = barangay.name;
+                                barangaySelect.appendChild(option);
                             });
+                        } else {
+                            barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
+                            barangaySelect.disabled = true;
                         }
-                        });
-                    } else {
-                    barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
-                    }
-                });
+                    });
             } else {
-                // Default: enable all
-                farmLandSelect.disabled = true;
-                municipalitySelect.disabled = true;
+                barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
                 barangaySelect.disabled = true;
             }
-        }
-
-        // Initial state
-        toggleLocationFields();
-
-        // Add event listeners to all location type radios
-        locationTypeRadios.forEach(radio => {
-            radio.addEventListener('change', toggleLocationFields);
         });
-    });
-
+    }
+});
 </script>
 {% endblock content %}

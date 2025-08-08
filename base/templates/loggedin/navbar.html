@@ -3,51 +3,33 @@
 {% block navbar %}
 
 {% comment %} NAVBAR SECTION {% endcomment %}
-<nav class="navbar navbar-expand-lg navbar-light">
-
-    <a class="btn btn-tarnsparent ms-5" data-bs-toggle="offcanvas" href="#offcanvasguest" role="button" aria-controls="offcanvasExample">
-        =
-      </a>
-    <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 50px;">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-  
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <p style="margin-top: 2vmin"> | Welcome, {{user_firstname}}</p>
-
-      <ul class="navbar-nav ms-auto me-auto">
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'base:home' %}"><b>Home</b> <span class="sr-only"></span></a>
-        </li> 
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'dashboard:forecast' %}"><b>Forecast</b><span class="sr-only"></span></a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'dashboard:monitor' %}"><b>Monitor</b><span class="sr-only"></span></a>
-          </li>          
-        </li>
-      </ul>
-
-      <ul class="navbar-nav ms-auto me-5">
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'dashboard:notifications' %}"><b>Notification</b><span class="sr-only"></span></a>        
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'base:accinfo' %}"><b>Account</b><span class="sr-only"></span></a>        
-        </li>
-        <li class="nav-item">
-
-            {% comment %} <a class="nav-link" href="{% url 'base:logout' %}"><b>Logout</b></a> {% endcomment %}
-            <form action="{% url 'base:logout' %}" method="post" class="nav-btn">
-                {% csrf_token %}
-                <button type="submit" class="btn">Logout</button>
-            </form>
-        </li>
-        
-      </ul>
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+    <div class="container-fluid">
+        <!-- Offcanvas Toggle Button (always visible) -->
+        <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
+            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+        </button>
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
+            <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+            <span class="fw-bold text-success">Fruit Cast</span>
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="{% url 'base:home' %}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:forecast' %}">Forecast</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:monitor' %}">Monitor</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:notifications' %}">Notification</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'base:account_info_panel' %}">Account</a></li>
+                <li class="nav-item">
+                    <form action="{% url 'base:logout' %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link nav-link ms-2 me-3">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
     </div>
-  </nav>
+</nav>
 
 {% comment %} OFFCANVAS SECTION {% endcomment %}
 
@@ -61,7 +43,7 @@
         <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto"style="max-height: 20vh; align-content : center;">
 
     </div>
-    <div class="offcanvas-body">  
+    <div class="offcanvas-body d-flex flex-column h-100">  
         <div class="list-group">
           <a href="{% url 'base:solo_harvest_record' %}" class="list-group-item list-group-item-action w-75">Create New Record</a>        
         </div>
@@ -87,6 +69,7 @@
             
         </div>
         <br>
+        <div class="flex-grow-1"></div>
         <hr>
         <br>
     </div>

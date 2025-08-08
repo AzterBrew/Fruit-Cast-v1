@@ -1,12 +1,6 @@
-{% extends "loggedin/layout.html" %}
-
-{% block title %}
-Fruit Cast | Transaction History
-{% endblock title %}
-
 
 {% block content %}
-<div class="container">
+<div class="container p-4">
     <div class="record-cart">
         <h2>Your Transaction History</h2>
         <p class="mb-4">Below is your list of submitted transactions. Click a transaction to view its details.</p>
@@ -14,29 +8,46 @@ Fruit Cast | Transaction History
             <table class="table table-bordered table-hover">
                 <thead class="table-success">
                     <tr>
-                        <th>Transaction #</th>
-                        <th>Type</th>
+                        {% comment %} <th>Transaction #</th> {% endcomment %}
                         <th>Date Created</th>
-                        <th>Status</th>
+                        <th>Type</th>
+                        <th>Commodity Type</th>
+                        {% comment %} <th>Status</th> {% endcomment %}
                         <th>Location</th>
-                        <th>Actions</th>
+                        <th>View</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for transaction in transactions %}
                     <tr>
-                        <td>{{ transaction.transaction_id }}</td>
-                        <td>{{ transaction.transaction_type|capfirst }}</td>
+                        {% comment %} <td>{{ transaction.transaction_id }}</td> {% endcomment %}
                         <td>{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
                         <td>
-                            {% if transaction.transaction_type|lower == "plant" %}
-                                {{ transaction.plant_status|capfirst }}
-                            {% elif transaction.transaction_type|lower == "harvest" %}
-                                {{ transaction.harvest_status|capfirst }}
+                            {% if transaction.initplantrecord %} 
+                                Planting
+                                {% if transaction.initharvestrecord %}
+                                    , Harvest
+                                {% endif %}
+                            {% elif transaction.initharvestrecord %}
+                                Harvest
                             {% else %}
-                                {{ transaction.item_status_id.acc_status|capfirst }}
+                                None
                             {% endif %}
                         </td>
+
+
+                        {% comment %} <td>{{ transaction.pk }}</td> {% endcomment %}
+
+                        <td>
+                            {% if transaction.initplantrecord.commodity_id.pk == 1 or transaction.initharvestrecord.commodity_id.pk == 1 %}
+                                {{ transaction.initplantrecord.commodity_custom }}
+                            {% elif transaction.initplantrecord.commodity_id.pk >= 1 or transaction.initharvestrecord.commodity_id.pk >= 1 %}
+                                {{ transaction.initharvestrecord.commoditytype.name }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        {% comment %} <td>{{ transaction.harvest_status }}</td> {% endcomment %}
                         <td>{{ transaction.get_location_display }}</td>
                         <td>
                             <a href="{% url 'base:transaction_recordlist' transaction.transaction_id %}" class="btn btn-sm btn-outline-success">

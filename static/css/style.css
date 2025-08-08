@@ -79,7 +79,7 @@ div {
     box-shadow: 0 0.1vmax .5vmax #b9cbb3;
     position: fixed;
     height: 10vh;
-    background-color: #f7fff2;
+    background-color: #fffdfa;
     z-index: 3;
     min-width: 100vw;
 }
@@ -302,4 +302,123 @@ a:hover {
 .visually-locked {
   pointer-events: none;
   background-color: #e9ecef;
+}
+
+/* Fixed sidebar layout for transaction pages */
+.transaction-layout {
+    display: flex;
+    margin-top: 4vh;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.transaction-sidebar {
+    position: absolute;
+    /* top: 0; */
+    /* margin-top: 4vh; */
+    left: 0;
+    width: 17vw;
+    height: 80vh;
+    background: #fffdfa;
+    border-right: 1px solid #f8faf5;
+    z-index: 0;
+    box-shadow: 3px 0 8px rgba(0,0,1,.05);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.transaction-sidebar .nav-link {
+    font-size: 1.3rem; /* Adjust as needed (e.g., 1rem, 1.25rem, etc.) */
+}
+
+.sidebar-inner {
+    padding: 2rem 1rem;
+}
+
+.sidebar-title {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.transaction-main {
+    margin-left: 10vw; /* same as sidebar width */
+    width: 100%;
+    display: flex;
+    justify-content: left;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.transaction-content {
+    width: 100%;
+    min-width: 72vw;
+    max-width: 72vw;
+    /* min-height: 60vh; */
+    margin: 2rem auto;
+    background: #fffdfa;
+}
+
+@media (max-width: 991px) {
+    .transaction-sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        box-shadow: none;
+        border-right: none;
+    }
+    .transaction-main {
+        margin-left: 0;
+    }
+    .transaction-content {
+        margin: 1rem;
+        min-height: 60vh;
+    }
+}
+
+
+/* Account panel layout */
+.account-layout {
+    display: flex;
+    margin-top: 4vh;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.account-sidebar {
+    position: fixed;
+    left: 0;
+    width: 17vw;
+    height: 80vh;
+    background: #fffdfa;
+    border-right: 1px solid #f8faf5;
+    z-index: 0;
+    box-shadow: 3px 0 8px rgba(0,0,1,.05);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.account-sidebar .nav-link {
+    font-size: 1.2rem;
+}
+
+.account-main {
+    margin-left: 17vw;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.account-content {
+    width: 100%;
+    min-width: 72vw;
+    max-width: 72vw;
+    margin: 2rem auto;
+    background: #fffdfa;
+    border-radius: 1rem;
 }

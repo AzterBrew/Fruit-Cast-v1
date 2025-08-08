@@ -19,7 +19,7 @@ from django.db import transaction
 
 from .models import *
 from dashboard.models import *
-from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate
+from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -179,7 +179,7 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
                 
                 return render(request, 'loggedin/transaction/transaction.html', context)
 
-            elif view_to_show == "farmland_list":
+            elif view_to_show == "farmland_record":
                 transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
                 context['transactions'] = transactions
                 
@@ -220,15 +220,23 @@ def plant_record_view(request):
         return redirect('base:home')
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     accountinfo = AccountsInformation.objects.get(pk=account_id)
+    pending_status = AccountStatus.objects.get(acc_status__iexact="Pending")
 
     if request.method == "POST":
         plant_form = PlantRecordCreate(request.POST, user=request.user)
         transaction_form = RecordTransactionCreate(request.POST, user=request.user)
+        
+        municipality_id = request.POST.get('manual_municipality')
+        if municipality_id:
+            transaction_form.fields['manual_barangay'].queryset = BarangayName.objects.filter(municipality_id=municipality_id)
+        else:
+            transaction_form.fields['manual_barangay'].queryset = BarangayName.objects.none()
+        
         if plant_form.is_valid() and transaction_form.is_valid():
             # Create the transaction first
             transaction = transaction_form.save(commit=False)
             transaction.account_id = accountinfo
-            transaction.transaction_type = "Plant"
+            transaction.plant_status = pending_status
             transaction.item_status_id = AccountStatus.objects.get(acc_stat_id=3)  # Pending
 
             # Handle location fields
@@ -251,19 +259,10 @@ def plant_record_view(request):
 
             return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
         else:
-            plant_form = PlantRecordCreate(user=request.user)
-            transaction_form = RecordTransactionCreate(user=request.user)
             print("Transaction form errors:", transaction_form.errors)
             print("walang plant record na nasave")
             print("Plant form errors:", plant_form.errors)
-    else:
-        plant_form = PlantRecordCreate(user=request.user)
-        transaction_form = RecordTransactionCreate(user=request.user)
-        print("Transaction form errors:", transaction_form.errors)
-        print("walang plant record na nasave")
-        print("Plant form errors:", plant_form.errors)
-        
-        
+    else:       
         plant_form = PlantRecordCreate(user=request.user)
         transaction_form = RecordTransactionCreate(user=request.user)
 
@@ -285,15 +284,37 @@ def harvest_record_for_plant_view(request, transaction_id):
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     transaction = RecordTransaction.objects.get(pk=transaction_id)
 
+# this is the code for checking if yung transaction id is matched with your account id
+    if transaction.account_id.pk != account_id:
+        return HttpResponseForbidden("Unauthorized access to this transaction.")
+
+    try:
+        plant_record = initPlantRecord.objects.get(transaction=transaction)
+    except initPlantRecord.DoesNotExist:
+        plant_record = None
+
+    try:
+        harvest_record = initHarvestRecord.objects.get(transaction=transaction)
+    except initHarvestRecord.DoesNotExist:
+        harvest_record = None
+    # Pre-fill initial data from plant record
+    pending_status = AccountStatus.objects.get(acc_status__iexact="Pending")
+    
+    initial = {}
+    if plant_record:
+        initial['commodity_id'] = plant_record.commodity_id
+        initial['commodity_custom'] = plant_record.commodity_custom
+
     if request.method == "POST":
         harvest_form = HarvestRecordCreate(request.POST, user=request.user)
         if harvest_form.is_valid():
             harvest_record = harvest_form.save(commit=False)
             harvest_record.transaction = transaction
+            transaction.harvest_status = pending_status            
             harvest_record.save()
             return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
     else:
-        harvest_form = HarvestRecordCreate(user=request.user)
+        harvest_form = HarvestRecordCreate(initial=initial, user=request.user)
 
     context = {
         'user_firstname': userinfo.firstname,
@@ -301,6 +322,9 @@ def harvest_record_for_plant_view(request, transaction_id):
         'form': harvest_form,
         'transaction_form': None,  # Not needed here
         'transaction': transaction,
+        'plant_record': plant_record,
+        'harvest_record': harvest_record,
+        'from_transaction': True,  # So you can customize the template if needed
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 
@@ -313,6 +337,7 @@ def solo_harvest_record_view(request):
         return redirect('base:home')
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     accountinfo = AccountsInformation.objects.get(pk=account_id)
+    pending_status = AccountStatus.objects.get(acc_status__iexact="Pending")
 
     if request.method == "POST":
         harvest_form = HarvestRecordCreate(request.POST, user=request.user)
@@ -320,7 +345,7 @@ def solo_harvest_record_view(request):
         if harvest_form.is_valid() and transaction_form.is_valid():
             transaction = transaction_form.save(commit=False)
             transaction.account_id = accountinfo
-            transaction.transaction_type = "Harvest"
+            transaction.harvest_status = pending_status
             transaction.item_status_id = AccountStatus.objects.get(acc_stat_id=3)  # Pending
             
             if transaction.location_type == "manual":
@@ -380,19 +405,35 @@ def transaction_recordlist(request, transaction_id):
     return render(request, 'loggedin/transaction/transaction.html', context)
 
 @login_required
-def farmland_list_view(request):
+def farmland_record_view(request):
     account_id = request.session.get('account_id')
-    if not account_id:
+    userinfo_id = request.session.get('userinfo_id')
+    if not (account_id and userinfo_id):
         return redirect('base:home')
-    accountinfo = AccountsInformation.objects.get(pk=account_id)
-    transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+    userinfo = UserInformation.objects.get(pk=userinfo_id)
+
+    if request.method == "POST":
+        form = FarmlandRecordCreate(request.POST)
+        municipality_id = request.POST.get('farm_municipality')
+        if municipality_id:
+            form.fields['farm_barangay'].queryset = BarangayName.objects.filter(municipality_id=municipality_id)
+        else:
+            form.fields['farm_barangay'].queryset = BarangayName.objects.none()
+
+        if form.is_valid():
+            farmland = form.save(commit=False)
+            farmland.userinfo_id = userinfo
+            farmland.save()
+            return redirect('base:farmland_record')  # or wherever you want to redirect after save
+    else:
+        form = FarmlandRecordCreate()
+        form.fields['farm_barangay'].queryset = BarangayName.objects.none()
+
     context = {
-        'transactions': transactions,
-        'user_firstname': accountinfo.userinfo_id.firstname,
-        'view_to_show': 'farmland_list',  # So the base template knows what to include
+        'form': form,
+        'user_firstname': userinfo.firstname,
+        'view_to_show': 'farmland_record', 
     }
-    with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
-        barangay_data = json.load(f)
     return render(request, 'loggedin/transaction/transaction.html', context)
 
 
@@ -411,6 +452,31 @@ def transaction_history(request):
         'view_to_show': 'transaction_history',  # So transaction.html knows what to include
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
+
+@login_required
+def account_panel_view(request):
+    # You can add logic to switch views based on GET params or URLs
+    view_to_show = request.GET.get("view", "info")
+    context = {
+        'user_firstname': request.user.userinformation.firstname,
+        'user_middlename': request.user.userinformation.middlename,
+        'user_lastname': request.user.userinformation.lastname,
+        'user_nameext': request.user.userinformation.nameextension,
+        'user_sex': request.user.userinformation.sex,
+        'user_dob': request.user.userinformation.birthdate,
+        'user_civil_status': request.user.userinformation.civil_status,
+        'user_religion': request.user.userinformation.religion,
+        'user_rsbsa_ref_number': request.user.userinformation.rsbsa_ref_number,
+        'user_contactno': request.user.userinformation.contact_number,
+        'user_email': request.user.userinformation.user_email,
+        'user_address_details': request.user.userinformation.address_details,
+        'user_municipality': request.user.userinformation.municipality_id,
+        'user_barangay': request.user.userinformation.barangay_id,
+        'user_emperson': request.user.userinformation.emergency_contact_person,
+        'user_emcontact': request.user.userinformation.emergency_contact_number,
+        'view_to_show': view_to_show,
+    }
+    return render(request, 'loggedin/account_panel.html', context)
 
 
 UNIT_CONVERSION_TO_KG = {
@@ -645,33 +711,33 @@ def transaction_recordhistory(request, transaction_id):
 
 
 
-def plantrecord(request):
-    print("🔥 DEBUG: newrecord view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
-        account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
+# def plantrecord(request):
+#     print("🔥 DEBUG: newrecord view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+#     if request.user.is_authenticated: 
+#         account_id = request.session.get('account_id')
+#         userinfo_id = request.session.get('userinfo_id')
         
-        if userinfo_id and account_id:
+#         if userinfo_id and account_id:
             
-            userinfo = UserInformation.objects.get(pk=userinfo_id)
+#             userinfo = UserInformation.objects.get(pk=userinfo_id)
         
-            context = {
-                'user_firstname' : userinfo.firstname,
-            }            
-            return render(request, 'loggedin/transaction/plant_record.html', context)
+#             context = {
+#                 'user_firstname' : userinfo.firstname,
+#             }            
+#             return render(request, 'loggedin/transaction/plant_record.html', context)
         
-        else:
-            print("⚠️ account_id missing in session!")
-            return redirect('home')   
-    else :
-        return render(request, 'home.html', {}) 
+#         else:
+#             print("⚠️ account_id missing in session!")
+#             return redirect('home')   
+#     else :
+#         return render(request, 'home.html', {}) 
 
 
-def get_barangays(request):
-    municipality_id = request.GET.get('municipality_id')
-    barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('id', 'barangay_name')
-    return JsonResponse(list(barangays), safe=False)
+# def get_barangays(request):
+#     municipality_id = request.GET.get('municipality_id')
+#     barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('id', 'barangay_name')
+#     return JsonResponse(list(barangays), safe=False)
 
 
 def about(request):

@@ -1,30 +1,21 @@
-{% extends "loggedin/layout.html" %}
 {%load static%}
-
-{% block title %}
-Fruit Cast | Creating Plant Record
-{% endblock title %}
 
 {% block content %}
 
-<div class="container">
-    
-    <h2>Create New Plant Record</h2>
-    <br>
-    <div class="row align-items-center">
-        <div class="col-md-6" style="text-align: right;">
-            <p><b>Only recording a harvest record that has no plant record?</b><p>
+<div class="container p-4">
+    <h2 class="mb-4">Create New Plant Record</h2>
+    <div class="row mb-3">
+        <div class="col-md-6 text-end">
+            <p><b>Only recording a harvest record that has no plant record?</b></p>
         </div>
-        <div class="col-md-6" style="text-align: left;">
-            <a href="{% url 'base:solo_harvest_record' %}" class="btn btn-success text-light link-body-emphasis"> 
+        <div class="col-md-6 text-start">
+            <a href="{% url 'base:solo_harvest_record' %}" class="btn btn-success">
                 Create a Solo Harvest Record
-            </a>  
+            </a>
         </div>
     </div>
-    <br>
     <hr>
-
-    <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
+    <p class="mb-4">Note: Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record.</p>
     
     <form method="POST" novalidate id="plant-record-form">
         {% csrf_token %}
@@ -43,7 +34,7 @@ Fruit Cast | Creating Plant Record
         <div>
             <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="">link</a> before creating a harvest record.</p>
         </div>
-        <div class="row g-3">
+        <div class="row g-3 mt-3">
             {% for field in transaction_form %}
             {% if field.name != "manual_barangay" and field.name != "manual_municipality" %}
                 <div class="col-md-6">
@@ -82,6 +73,128 @@ Fruit Cast | Creating Plant Record
     </form>
 </div>
 <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+    // Confirmation on submit
+    const form = document.getElementById("plant-record-form");
+    if (form) {
+        form.addEventListener("submit", function (e) {
+            const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
+            if (!confirm(message)) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Commodity type dropdown logic
+    const commoditySelect = document.getElementById('id_commodity_id');
+    const customInput = document.getElementById('id_commodity_custom');
+    function toggleCustomInput() {
+        if (commoditySelect && customInput) {
+            if (commoditySelect.value === "1") {
+                customInput.disabled = false;
+                customInput.required = true;
+            } else {
+                customInput.disabled = true;
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+    }
+    if (commoditySelect) {
+        toggleCustomInput();
+        commoditySelect.addEventListener('change', toggleCustomInput);
+    }
+
+    // Location type dropdown logic
+    const locationTypeRadios = document.getElementsByName('location_type');
+    const farmLandSelect = document.getElementById('id_farm_land');
+    const municipalitySelect = document.getElementById('id_manual_municipality');
+    const barangaySelect = document.getElementById('id_manual_barangay');
+
+    function toggleLocationFields() {
+        let selectedValue = '';
+        locationTypeRadios.forEach(radio => {
+            if (radio.checked) selectedValue = radio.value;
+        });
+
+        if (selectedValue === 'farm_land') {
+            if (farmLandSelect) {
+                farmLandSelect.disabled = false;
+                farmLandSelect.required = true;
+            }
+            if (municipalitySelect) {
+                municipalitySelect.disabled = true;
+                municipalitySelect.required = false;
+            }
+            if (barangaySelect) barangaySelect.disabled = true;
+        } else if (selectedValue === 'manual') {
+            if (farmLandSelect) {
+                farmLandSelect.disabled = true;
+                farmLandSelect.required = false;
+            }
+            if (municipalitySelect) {
+                municipalitySelect.disabled = false;
+                municipalitySelect.required = true;
+            }
+            if (barangaySelect) {
+                barangaySelect.disabled = !municipalitySelect.value;
+                barangaySelect.required = municipalitySelect.value;
+            }
+        } else {
+            if (farmLandSelect) {
+                farmLandSelect.disabled = true;
+                farmLandSelect.required = false;
+            }
+            if (municipalitySelect) {
+                municipalitySelect.disabled = true;
+                municipalitySelect.required = false;
+            }
+            if (barangaySelect) {
+                barangaySelect.disabled = true;
+                barangaySelect.required = false;
+            }
+        }
+    }
+    toggleLocationFields();
+    locationTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleLocationFields);
+    });
+
+    // Municipality/Barangay logic
+    if (municipalitySelect && barangaySelect) {
+        municipalitySelect.addEventListener('change', function () {
+            const municipalityId = this.value;
+            barangaySelect.innerHTML = '';
+            barangaySelect.disabled = true;
+
+            if (municipalityId) {
+                fetch(`/get-barangays/${municipalityId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            barangaySelect.disabled = false;
+                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                            data.forEach(barangay => {
+                                const option = document.createElement('option');
+                                option.value = barangay.id;
+                                option.textContent = barangay.name;
+                                barangaySelect.appendChild(option);
+                            });
+                        } else {
+                            barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
+                            barangaySelect.disabled = true;
+                        }
+                    });
+            } else {
+                barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+                barangaySelect.disabled = true;
+            }
+        });
+    }
+});
+
+    {% comment %} INITIAL
     // confirmation ng form
     document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById("plant-record-form");
@@ -159,21 +272,21 @@ Fruit Cast | Creating Plant Record
                         }
                         });
                         .then(data => {
-                            if (data.length > 0) {
-                                barangaySelect.disabled = false;
-                                barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-                                // Place this code here:
-                                data.forEach(barangay => {
-                                    const option = document.createElement('option');
-                                    option.value = barangay.id; // This should be the PK
-                                    option.textContent = barangay.name;
-                                    barangaySelect.appendChild(option);
-                                });
-                            }
-                        });
-                        } else {
-                            barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
-                            barangaySelect.disabled = true;
+                        if (data.length > 0) {
+                            barangaySelect.disabled = false;
+                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                            // Place this code here:
+                            data.forEach(barangay => {
+                                const option = document.createElement('option');
+                                option.value = barangay.id; // This should be the PK
+                                option.textContent = barangay.name;
+                                barangaySelect.appendChild(option);
+                            });
+                        }
+                    });
+                    } else {
+                        barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
+                        barangaySelect.disabled = true;
                     } else {
                     barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
                     }
@@ -239,7 +352,7 @@ Fruit Cast | Creating Plant Record
                     `Province: ${provinceName}<br>` +
                     `Forecasted Amount: ${forecastedAmount.toFixed(2)} kg`
                 );
-                TO HERE {% endcomment %}
+                TO HERE 
     
     let selectedLayer = null;
 
@@ -292,7 +405,8 @@ Fruit Cast | Creating Plant Record
         } else {
             console.warn('Invalid coordinates for marker:', item);
         }
-    });
+    }); 
+    {% endcomment %}
 </script>
 {% comment %} <script>
     var map = L.map('map').setView([14.6781, 120.5395], 10); // center at Bataan

@@ -8,6 +8,8 @@
 {% block content %}
 <div class="container mt-5">
   <div class="card shadow p-4">
+    {% if user_role_id == 2 and user.is_superuser %}
+    {% comment %} restricting view to non admins {% endcomment %}
     <h2 class="text-center mb-4">Assign Account Role</h2>
 
     <form method="POST" action="{% url 'administrator:assign_account' %}">
@@ -75,7 +77,9 @@
             <button type="submit" class="btn btn-primary">Assign Account</button>
         </div>
     </form>
-
+    {%else%}
+            <p>You do not have permission to view this page. </p>
+    {% endif%}
   </div>
 </div>
 

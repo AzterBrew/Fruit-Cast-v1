@@ -12,41 +12,44 @@ pass : blueblueblue
 <div class="container2 p-6">
 
     <div class="container mt-4">
+        {% if user_role_id == 2 %}  
+        {% comment %} restricting view to non admins {% endcomment %}
+
         <h2 class="text-xl font-bold mb-4">Administrators and Agriculturists</h2>
 
         <form method="get" class="mb-3">
-            <div>
-                <label for="status">Filter by Status:</label>
-                <select name="status" id="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">All</option>
-                    {% for status in status_choices %}
-                        <option value="{{ status.pk }}" {% if current_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
-                    {% endfor %}
-            </select>
-            </div>
-            <br>
-            <div>
-                <label for="acctype">Filter by Account Type:</label>
-                <select name="acctype" id="acctype" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">All</option>
-                    {% for acctype in account_types %}
-                        <option value="{{ acctype.pk }}" {% if current_acctype == acctype.pk|stringformat:"s" %}selected{% endif %}>
-                            {{ acctype.account_type }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <br>
-            <div>
-                <label for="municipality">Filter by Municipality:</label>
-                <select name="municipality" id="municipality" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">All</option>
-                    {% for municipality in municipalities %}
-                        <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
-                            {{ municipality.municipality }}
-                        </option>
-                    {% endfor %}
-                </select>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label for="status" class="form-label mb-0">Filter by Status:</label>
+                    <select name="status" id="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        {% for status in status_choices %}
+                            <option value="{{ status.pk }}" {% if current_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="acctype" class="form-label mb-0">Filter by Account Type:</label>
+                    <select name="acctype" id="acctype" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        {% for acctype in account_types %}
+                            <option value="{{ acctype.pk }}" {% if current_acctype == acctype.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ acctype.account_type }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="municipality" class="form-label mb-0">Filter by Municipality:</label>
+                    <select name="municipality" id="municipality" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        {% for municipality in municipalities %}
+                            <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
+                                {{ municipality.municipality }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
         </form>
         {% if allAccounts %}
@@ -119,11 +122,15 @@ pass : blueblueblue
                     </td>
                 </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No accounts found.</p>
-    {% endif %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No accounts found.</p>
+        {% endif %}
+    {%else%}
+            <p>You do not have permission to view this page.</p>
+    {% endif%}
+
     </div>
 </div>
 {% endblock %}

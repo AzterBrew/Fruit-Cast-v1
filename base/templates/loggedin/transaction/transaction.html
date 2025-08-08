@@ -9,7 +9,65 @@ Fruit Cast | Create New Record
 {% endblock navbar %}
 
 {% block content %}
-<div class="transaction-view d-flex flex-column flex-md-row"> {%comment%} other parts ng class is bootstrap to make it responsive(flex-column flex-md-row) {%endcomment%}
+
+{% comment %} THESIS2 TRANSACTION BASE TEMPLATE {% endcomment %}
+
+<div class="transaction-layout">
+    <nav class="transaction-sidebar">
+        <div class="sidebar-inner">
+            <div class="sidebar-title">
+                <a href="?view=choose" class="text-decoration-none">
+                    <span class="fs-4 text-success fw-bold">Transaction</span>
+                </a>
+            </div>
+            <hr>
+            <ul class="nav flex-column mt-3">
+                <li class="nav-item mb-2">
+                    <a href="{% url 'base:plant_record' %}" class="nav-link link-dark">
+                        <i class="bi bi-plus-circle me-2"></i> New Plant Record
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="{% url 'base:transaction_history' %}" class="nav-link link-dark">
+                        <i class="bi bi-clock-history me-2"></i> Your Transaction History
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="{% url 'base:farmland_record' %}" class="nav-link link-dark">
+                        <i class="bi bi-tree me-2"></i> Your Farm Land
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <main class="transaction-main">
+        <div class="transaction-content card shadow-sm rounded-4 p-2 mt-3">
+            {% if view_to_show == "recordlist" %}
+                {% include "loggedin/transaction/transaction_recordlist.html" %}
+            {% elif view_to_show == "harvest" %}
+                {% include "loggedin/transaction/harvest_record.html" %}
+            {% elif view_to_show == "plant" %}
+                {% include "loggedin/transaction/plant_record.html" %}
+            {% elif view_to_show == "transaction_history" %}
+                {% include "loggedin/transaction/transaction_history.html" %}
+            {% elif view_to_show == "farmland_record" %}
+                {% include "loggedin/farmland_record.html" %}
+            {% else %}
+                <p class="text-muted">Choose a transaction type in the sidebar</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+
+
+
+
+
+{% comment %} THESIS 1 TRANSACTION TEMPLATE {% endcomment %}
+{%comment%} other parts ng class is bootstrap to make it responsive(flex-column flex-md-row) {%endcomment%}
+
+{% comment %} <div class="transaction-view d-flex flex-column flex-md-row"> 
     <div class="transaction-side">
         <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 25vmax;"> 
             <p class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none"> 
@@ -33,11 +91,7 @@ Fruit Cast | Create New Record
                         Your Farm Land
                     </a>
                 </li> 
-                {% comment %} <li> 
-                    <a href="?view=transaction_list" class="nav-link link-body-emphasis">                         
-                        Record List [for dev purposes]
-                    </a> 
-                </li>  {% endcomment %}
+    
             </ul> 
             <hr>     
         </div>
@@ -67,8 +121,10 @@ Fruit Cast | Create New Record
 
     </div>
 
-</div>
+</div> {% endcomment %}
     
-    
+
+
+
 {% endblock content %}
 

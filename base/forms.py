@@ -196,4 +196,20 @@ class PlantRecordCreate(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-       
+
+class FarmlandRecordCreate(forms.ModelForm):
+    farm_name = forms.CharField(label="Farm Name *", max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    farm_size = forms.DecimalField(label="Estimated Farm Size (in hectares)", localize=True, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}))
+    farm_municipality = forms.ModelChoiceField(label="Farm Municipality *", queryset=MunicipalityName.objects.all(), widget=forms.Select(attrs={'class': 'form-select'}))
+    farm_barangay = forms.ModelChoiceField(label="Farm Barangay *", queryset=BarangayName.objects.none(), widget=forms.Select(attrs={'class': 'form-select'}))
+
+    class Meta:
+        model = FarmLand
+        fields = ["farm_name", "farm_size", "farm_municipality", "farm_barangay"]
+        labels = {"farm_name": "Farm Name *", "farm_size": "Farm Size (in hectares) *", "farm_municipality": "Farm Municipality *", "farm_barangay": "Farm Barangay *"}
+        widgets = {
+            'farm_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'farm_size': forms.NumberInput(attrs={'class': 'form-control'}),
+            'farm_municipality': forms.Select(attrs={'class': 'form-select'}),
+            'farm_barangay': forms.Select(attrs={'class': 'form-select'}),
+        }
