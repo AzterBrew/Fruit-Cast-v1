@@ -17,16 +17,17 @@ pass : blueblueblue
         <form method="get" class="mb-3">
             <div>
                 <label for="status">Filter by Status:</label>
-                <select name="status" id="status" onchange="this.form.submit()">
+                <select name="status" id="status" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">All</option>
                     {% for status in status_choices %}
                         <option value="{{ status.pk }}" {% if current_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
                     {% endfor %}
             </select>
             </div>
+            <br>
             <div>
                 <label for="acctype">Filter by Account Type:</label>
-                <select name="acctype" id="acctype" onchange="this.form.submit()">
+                <select name="acctype" id="acctype" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">All</option>
                     {% for acctype in account_types %}
                         <option value="{{ acctype.pk }}" {% if current_acctype == acctype.pk|stringformat:"s" %}selected{% endif %}>
@@ -35,9 +36,10 @@ pass : blueblueblue
                     {% endfor %}
                 </select>
             </div>
+            <br>
             <div>
                 <label for="municipality">Filter by Municipality:</label>
-                <select name="municipality" id="municipality" onchange="this.form.submit()">
+                <select name="municipality" id="municipality" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">All</option>
                     {% for municipality in municipalities %}
                         <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
@@ -50,7 +52,7 @@ pass : blueblueblue
         {% if allAccounts %}
 
         <table class="table table-bordered table-hover">
-            <thead>
+            <thead class="table-success">
                 <tr>
                     <th>{% sort_header "name" "Full Name" current_sort current_order current_status %}</th>
                     <th>Sex</th>
@@ -59,8 +61,8 @@ pass : blueblueblue
                     <th>Account Type</th>
                     <th>{% sort_header "date" "Date Assigned" current_sort current_order current_status %}</th>
                     <th>Status</th>
-                    <td> Change Status? </td>
-                    <td> Update </td>
+                    <th> Change Status? </th>
+                    <th> Update </th>
                 </tr>
             </thead>
             <tbody>
@@ -89,7 +91,7 @@ pass : blueblueblue
                         {% if account.account_type_id.account_type == "Agriculturist" %}
                             <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}">
                                 {% csrf_token %}
-                                    <select name="new_status" class="form-control form-control-sm">
+                                    <select name="new_status" class="form-select form-select-sm">
                                         {% for status in status_choices %}
                                             <option value="{{ status.pk }}" {% if account.acc_status_id.pk == status.pk %}selected{% endif %}>
                                                 {{ status.acc_status }}

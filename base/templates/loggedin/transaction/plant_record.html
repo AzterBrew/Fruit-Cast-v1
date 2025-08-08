@@ -26,29 +26,48 @@ Fruit Cast | Creating Plant Record
 
     <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
     
-    <form method="POST" novalidate onsubmit="return confirmSave();">
+    <form method="POST" novalidate id="plant-record-form">
         {% csrf_token %}
-        
         <div class="row g-3">
             {% for field in form %}
                 <div class="col-md-6">
                     <label class="form-label">{{ field.label_tag }}</label>
-                    {{ field}}
+                    {{ field }}
                     {% if field.errors %}
                         <div class="text-danger small mt-1">{{ field.errors }}</div>
                     {% endif %}
                 </div>
             {% endfor %}
         </div>
-        <input type="hidden" name="record_type" value="plant">  
-        <div class="mt-4">
-            <label for="map">Select Barangay:</label>
-            <div id="map" style="height: 55vh; max-height: 50vh; max-width:55vw;"></div>
-            <input type="hidden" id="latitude" name="latitude">
-            <input type="hidden" id="longitude" name="longitude">
-            <input type="hidden" id="plant_barangay" name="plant_barangay">
-            
+        <br>
+        <div>
+            <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="">link</a> before creating a harvest record.</p>
         </div>
+        <div class="row g-3">
+            {% for field in transaction_form %}
+            {% if field.name != "manual_barangay" and field.name != "manual_municipality" %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ field.label_tag }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% endfor %}
+            <div class="col-md-6">
+                <label class="form-label" for="id_manual_municipality">Municipality</label>
+                {{ transaction_form.manual_municipality }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_manual_barangay">Barangay</label>
+                <select name="manual_barangay" id="id_manual_barangay" class="form-select" disabled>
+                    <option value="">Select a municipality first</option>
+                </select>
+            </div>
+        </div>
+
+        
 
         <div class="mt-4">
             <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
@@ -63,7 +82,122 @@ Fruit Cast | Creating Plant Record
     </form>
 </div>
 <script>
-    
+    // confirmation ng form
+    document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById("plant-record-form");
+    form.addEventListener("submit", function (e) {
+        const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
+        if (!confirm(message)) {
+        e.preventDefault();
+        }
+    });
+    });
+
+    // commodity type dropdown
+    document.addEventListener('DOMContentLoaded', function() {
+        const commoditySelect = document.getElementById('id_commodity_id');
+        const customInput = document.getElementById('id_commodity_custom');
+
+        function toggleCustomInput() {
+            if (commoditySelect.value === "1") { // pk=1 for 'Not Listed'
+                customInput.disabled = false;
+                customInput.required = true;
+            } else {
+                customInput.disabled = true;
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+
+        // Initial state
+        toggleCustomInput();
+
+        // Listen for changes
+        commoditySelect.addEventListener('change', toggleCustomInput);
+    });
+
+    //location type dropdown
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get references to the location type radios and dropdowns
+        const locationTypeRadios = document.getElementsByName('location_type');
+        const farmLandSelect = document.getElementById('id_farm_land');
+        const municipalitySelect = document.getElementById('id_manual_municipality');
+        const barangaySelect = document.getElementById('id_manual_barangay');
+
+        function toggleLocationFields() {
+            let selectedValue = '';
+            locationTypeRadios.forEach(radio => {
+                if (radio.checked) selectedValue = radio.value;
+            });
+
+            if (selectedValue === 'farm_land') {
+                farmLandSelect.disabled = false;
+                municipalitySelect.disabled = true;
+                barangaySelect.disabled = true;
+            } else if (selectedValue === 'manual') {
+                farmLandSelect.disabled = true;
+                municipalitySelect.disabled = false;
+                barangaySelect.disabled = true;
+                municipalitySelect.addEventListener('change', function () {
+                    const municipalityId = this.value;
+                    barangaySelect.innerHTML = '';
+                    barangaySelect.disabled = true;
+
+                    if (municipalityId) {
+                    fetch(`/get-barangays/${municipalityId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                        if (data.length > 0) {
+                            barangaySelect.disabled = false;
+                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                            data.forEach(barangay => {
+                            const option = document.createElement('option');
+                            option.value = barangay.id;
+                            option.textContent = barangay.name;
+                            barangaySelect.appendChild(option);
+                            });
+                        }
+                        });
+                        .then(data => {
+                            if (data.length > 0) {
+                                barangaySelect.disabled = false;
+                                barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                                // Place this code here:
+                                data.forEach(barangay => {
+                                    const option = document.createElement('option');
+                                    option.value = barangay.id; // This should be the PK
+                                    option.textContent = barangay.name;
+                                    barangaySelect.appendChild(option);
+                                });
+                            }
+                        });
+                        } else {
+                            barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
+                            barangaySelect.disabled = true;
+                    } else {
+                    barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+                    }
+                });
+            } else {
+                // Default: enable all
+                farmLandSelect.disabled = true;
+                municipalitySelect.disabled = true;
+                barangaySelect.disabled = true;
+            }
+        }
+        
+
+        // Initial state
+        toggleLocationFields();
+
+        // Add event listeners to all location type radios
+        locationTypeRadios.forEach(radio => {
+            radio.addEventListener('change', toggleLocationFields);
+        });
+    });
+
+
+
     // Initialize the map
     var map = L.map('map').setView([14.678, 120.536], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

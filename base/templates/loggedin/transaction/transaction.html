@@ -24,9 +24,9 @@ Fruit Cast | Create New Record
                         New Plant Record
                     </a> 
                 <li> 
-                    <a href="?view=transaction_history" class="nav-link link-body-emphasis">                         
+                    <a href="{% url 'base:transaction_history' %}" class="nav-link link-body-emphasis">
                         Your Transaction History
-                    </a> 
+                    </a>
                 </li> 
                 <li> 
                     <a href="{% url 'base:farmland_list' %}" class="nav-link link-body-emphasis">
@@ -47,6 +47,8 @@ Fruit Cast | Create New Record
 
         {% if view_to_show == "recordlist" %}
             {% include "loggedin/transaction/transaction_recordlist.html" %}
+        {% elif view_to_show == "harvest" %}
+          {% include "loggedin/transaction/harvest_record.html" %}
         {% elif view_to_show == "plant" %}
           {% include "loggedin/transaction/plant_record.html" %}
         {% elif view_to_show == "transaction_list" %}

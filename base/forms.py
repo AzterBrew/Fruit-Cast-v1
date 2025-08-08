@@ -178,28 +178,20 @@ class RecordTransactionCreate(forms.ModelForm):
             self.fields['farm_land'].queryset = FarmLand.objects.filter(userinfo_id__auth_user=user)
 
 class PlantRecordCreate(forms.ModelForm):
-    location_type = forms.ChoiceField(label="Location Type",choices=LOCATION_TYPE_CHOICES,widget=forms.RadioSelect(attrs={'class': 'form-check-input'}))
-    farm_land = forms.ModelChoiceField(queryset=FarmLand.objects.none(),required=False,label="Select FarmLand",widget=forms.Select(attrs={'class': 'form-select'}))
-
-    manual_municipality = forms.ChoiceField(label="Manual: Municipality",choices=MUNICIPALITY_CHOICES,required=False,widget=forms.Select(attrs={'class': 'form-select'}))
-    manual_barangay = forms.ChoiceField(label="Manual: Barangay",choices=[('', 'Select a Municipality First')],required=False,widget=forms.Select(attrs={'class': 'form-select'}))
-
-    unit = forms.ChoiceField(label="Unit of Measurement",choices=UNIT_CHOICES,widget=forms.Select(attrs={'class': 'form-select'}))
-    total_weight = forms.DecimalField(localize=True,label="Total Weight of Commodity",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
-    weight_per_unit = forms.DecimalField(localize=True,label="Weight per Unit",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
+    min_expected_harvest = forms.IntegerField(label="Min Expected Harvest (units)", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1'}))
+    max_expected_harvest = forms.IntegerField(label="Max Expected Harvest (units)", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1'}))
 
     class Meta:
         model = initPlantRecord
-        fields = ["plant_date", "commodity_id", "commodity_custom", "min_expected_harvest","max_expected_harvest", "remarks"]
-        labels = {"plant_date": "Date Planted","commodity_id": "Commodity Type","commodity_custom": "Commodity Specification (if not listed)","min_expected_harvest": "Min Expected Harvest (units)","max_expected_harvest": "Max Expected Harvest (units)","remarks": "Remarks / Additional Notes"}
+        fields = ["plant_date", "commodity_id", "commodity_custom", "min_expected_harvest", "max_expected_harvest", "remarks"]
+        labels = {"plant_date": "Plant Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
             'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'commodity_id': forms.Select(attrs={'class': 'form-control'}),
-            'commodity_custom': forms.TextInput(attrs={'class': 'form-control'}),
-            'min_expected_harvest': forms.NumberInput(attrs={'class': 'form-control'}),
-            'max_expected_harvest': forms.NumberInput(attrs={'class': 'form-control'}),
+            'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
+            'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
+
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)

@@ -8,62 +8,47 @@ Fruit Cast | Transaction History
 {% block content %}
 <div class="container">
     <div class="record-cart">
-        <h2>Transaction History</h2>
-        <p class="mb-4">Below is your list of submitted transactions. These are already finalized and stored in the system.</p>
-
+        <h2>Your Transaction History</h2>
+        <p class="mb-4">Below is your list of submitted transactions. Click a transaction to view its details.</p>
         {% if transactions %}
-            <table class="table table-sm table-bordered">
-                <thead>
+            <table class="table table-bordered table-hover">
+                <thead class="table-success">
                     <tr>
-                        <th>Date</th>
+                        <th>Transaction #</th>
                         <th>Type</th>
+                        <th>Date Created</th>
                         <th>Status</th>
-                        <th>Verified</th>
-                        <th>Verified Date</th>
-                        <th>Verified By</th>
-                        <th>Notes</th>
-                        <th>
-                            See Records
-                        </th>
+                        <th>Location</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for transaction in transactions %}
                     <tr>
-                        <td>{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
+                        <td>{{ transaction.transaction_id }}</td>
                         <td>{{ transaction.transaction_type|capfirst }}</td>
-                        <td>{{ transaction.acc_status_id.acc_status }}</td>
+                        <td>{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
                         <td>
-                            {% if transaction.tr_isverified %}
-                                <span class="badge bg-success">Yes</span>
+                            {% if transaction.transaction_type|lower == "plant" %}
+                                {{ transaction.plant_status|capfirst }}
+                            {% elif transaction.transaction_type|lower == "harvest" %}
+                                {{ transaction.harvest_status|capfirst }}
                             {% else %}
-                                <span class="badge bg-secondary">No</span>
+                                {{ transaction.item_status_id.acc_status|capfirst }}
                             {% endif %}
                         </td>
+                        <td>{{ transaction.get_location_display }}</td>
                         <td>
-                            {% if transaction.tr_verified_date %}
-                                {{ transaction.tr_verified_date|date:"Y-m-d H:i" }}
-                            {% else %}
-                                Not yet verified
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if transaction.tr_verified_by %}
-                                {{ transaction.tr_verified_by.firstname }} {{ transaction.tr_verified_by.lastname }}
-                            {% else %}
-                                Not yet verified
-                            {% endif %}
-                        </td>
-                        <td>{{ transaction.notes }}</td>
-                        <td>
-                            <a href="{% url 'base:newrecord' %}?view=transaction_recordhistory&id={{ transaction.transaction_id }}" class="btn btn-success btn-sm">View Records</a>
+                            <a href="{% url 'base:transaction_recordlist' transaction.transaction_id %}" class="btn btn-sm btn-outline-success">
+                                View Record
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         {% else %}
-            <p>No transaction history found.</p>
+            <p>No transactions found.</p>
         {% endif %}
     </div>
 </div>

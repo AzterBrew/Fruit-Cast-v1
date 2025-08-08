@@ -31,13 +31,12 @@
             {% else %}
             <li>Custom: {{ harvest_record.commodity_custom }}</li>
             {% endif %}
-            <li>Custom: {{ harvest_record.commodity_custom }}</li>
             <li>Total Weight: {{ harvest_record.total_weight }} {{ harvest_record.unit.unit_abrv }}</li>
             <li>Average Individual Weight: {{ harvest_record.weight_per_unit }} {{ harvest_record.unit.unit_abrv }}</li>
         </ul>
     {% else %}
         {% if plant_record %}
-            <a href="{% url 'base:solo_harvest_record_for_plant' transaction.transaction_id %}" class="btn btn-success">
+            <a href="{% url 'base:transaction_recordlist' transaction.transaction_id %}" class="btn btn-success">
                 Create the harvest record for this plant record
             </a>
         {% endif %}

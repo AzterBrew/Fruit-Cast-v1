@@ -221,15 +221,6 @@ def plant_record_view(request):
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     accountinfo = AccountsInformation.objects.get(pk=account_id)
 
-    form = PlantRecordCreate(request.POST or None)
-    transaction_form = RecordTransactionCreate(request.POST or None, user=request.user)
-    context = {
-        'user_firstname': userinfo.firstname,
-        'view_to_show': 'plant',
-        'form': form,
-        'transaction_form': transaction_form,
-    }
-
     if request.method == "POST":
         plant_form = PlantRecordCreate(request.POST, user=request.user)
         transaction_form = RecordTransactionCreate(request.POST, user=request.user)
@@ -239,15 +230,40 @@ def plant_record_view(request):
             transaction.account_id = accountinfo
             transaction.transaction_type = "Plant"
             transaction.item_status_id = AccountStatus.objects.get(acc_stat_id=3)  # Pending
+
+            # Handle location fields
+            if transaction.location_type == "manual":
+                transaction.manual_municipality = transaction_form.cleaned_data.get('manual_municipality')
+                transaction.manual_barangay = transaction_form.cleaned_data.get('manual_barangay')
+                transaction.farm_land = None
+            elif transaction.location_type == "farm_land":
+                transaction.farm_land = transaction_form.cleaned_data.get('farm_land')
+                transaction.manual_municipality = None
+                transaction.manual_barangay = None
+
             transaction.save()
 
             # Create the plant record linked to the transaction
             plant_record = plant_form.save(commit=False)
             plant_record.transaction = transaction
             plant_record.save()
+            print("may nasave pala")
 
             return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
+        else:
+            plant_form = PlantRecordCreate(user=request.user)
+            transaction_form = RecordTransactionCreate(user=request.user)
+            print("Transaction form errors:", transaction_form.errors)
+            print("walang plant record na nasave")
+            print("Plant form errors:", plant_form.errors)
     else:
+        plant_form = PlantRecordCreate(user=request.user)
+        transaction_form = RecordTransactionCreate(user=request.user)
+        print("Transaction form errors:", transaction_form.errors)
+        print("walang plant record na nasave")
+        print("Plant form errors:", plant_form.errors)
+        
+        
         plant_form = PlantRecordCreate(user=request.user)
         transaction_form = RecordTransactionCreate(user=request.user)
 
@@ -306,6 +322,12 @@ def solo_harvest_record_view(request):
             transaction.account_id = accountinfo
             transaction.transaction_type = "Harvest"
             transaction.item_status_id = AccountStatus.objects.get(acc_stat_id=3)  # Pending
+            
+            if transaction.location_type == "manual":
+                transaction.manual_municipality = transaction_form.cleaned_data.get('manual_municipality')
+                transaction.manual_barangay = transaction_form.cleaned_data.get('manual_barangay')
+            elif transaction.location_type == "farm_land":
+                transaction.farm_land_id = transaction_form.cleaned_data.get('farm_land')
             transaction.save()
 
             harvest_record = harvest_form.save(commit=False)
@@ -331,6 +353,10 @@ def solo_harvest_record_view(request):
 @login_required
 def transaction_recordlist(request, transaction_id):
     transaction = RecordTransaction.objects.get(pk=transaction_id)
+    session_account_id = request.session.get('account_id')
+    if session_account_id != transaction.account_id.pk:
+        return HttpResponseForbidden("Unauthorized access to this transaction.")
+    
     plant_record = None
     harvest_record = None
 
@@ -367,6 +393,23 @@ def farmland_list_view(request):
     }
     with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
         barangay_data = json.load(f)
+    return render(request, 'loggedin/transaction/transaction.html', context)
+
+
+@login_required
+def transaction_history(request):
+    account_id = request.session.get('account_id')
+    if not account_id:
+        return redirect('base:home')
+
+    accountinfo = AccountsInformation.objects.get(pk=account_id)
+    transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+
+    context = {
+        'transactions': transactions,
+        'user_firstname': accountinfo.userinfo_id.firstname,
+        'view_to_show': 'transaction_history',  # So transaction.html knows what to include
+    }
     return render(request, 'loggedin/transaction/transaction.html', context)
 
 
@@ -546,22 +589,22 @@ def edit_pending_record(request, index):
 
 
 
-def transaction_history(request):
-    if not request.user.is_authenticated:
-        return redirect('base:home')
+# def transaction_history(request):
+#     if not request.user.is_authenticated:
+#         return redirect('base:home')
 
-    try:
-        # print("account is testing rn:", userinfo_id)        
-        userinfo_id = request.session.get('userinfo_id')
-        accountinfo = AccountsInformation.objects.get(userinfo_id=userinfo_id)
-    except AccountsInformation.DoesNotExist:
-        print("❌ AccountInfo not found for userinfo_id:", userinfo_id)
-        return render(request, 'loggedin/transaction/transaction_history.html', {
-            'transactions': [],
-            'user_firstname': 'Unknown',
-        })
+#     try:
+#         # print("account is testing rn:", userinfo_id)        
+#         userinfo_id = request.session.get('userinfo_id')
+#         accountinfo = AccountsInformation.objects.get(userinfo_id=userinfo_id)
+#     except AccountsInformation.DoesNotExist:
+#         print("❌ AccountInfo not found for userinfo_id:", userinfo_id)
+#         return render(request, 'loggedin/transaction/transaction_history.html', {
+#             'transactions': [],
+#             'user_firstname': 'Unknown',
+#         })
 
-    transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+#     transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
 
     print(f"✅ Found {transactions.count()} transactions for account {accountinfo.account_id}")
 

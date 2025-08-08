@@ -6,11 +6,12 @@ Fruit Cast | Creating Harvest Record
 {% endblock title %}
 
 {% block content %}
+<div class="container">
     <h2>Create New Harvest Record</h2>
     <br>
     <div class="row align-items-center">
         <div class="col-md-6" style="text-align: right;">
-            <p>Only about to creat a new plant record?</p>
+            <p><b>Only about to create a new plant record?</b></p>
         </div>
         <div class="col-md-6" style="text-align: left;">
             <a href="{% url 'base:plant_record' %}" class="btn btn-success text-light link-body-emphasis"> 
@@ -77,6 +78,7 @@ Fruit Cast | Creating Harvest Record
             {% endif %}
         </div>
     </form>
+</div>
 </div>
 
 <script>

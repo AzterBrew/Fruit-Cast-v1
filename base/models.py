@@ -219,6 +219,8 @@ class RecordTransaction (models.Model):
             return str(self.farm_land)
         elif self.manual_barangay and self.manual_municipality:
             return f"{self.manual_barangay}, {self.manual_municipality}"
+        elif self.manual_municipality:
+            return f"{self.manual_municipality}"
         return "No location set"
     
 # tentative with these fields
