@@ -6,54 +6,80 @@
     
     <div class="mt-4 d-flex">
         <h5>Recorded Farmlands you currently own in Bataan: [insert amt of farmlands recorded for user]</h5>
-        <a href="#" class="btn btn-success ms-auto">See your Recorded Farmlands</a>
     </div>
 <hr>
     <form method="POST" novalidate id="farmland-record-form">
         {% csrf_token %}
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">{{ form.farm_name.label_tag }}</label>
-                {{ form.farm_name }}
-                {% if form.farm_name.errors %}
-                    <div class="text-danger small mt-1">{{ form.farm_name.errors }}</div>
+                <label class="form-label" >{{ form.farmland_name.label_tag }}</label>
+                {{ form.farmland_name }}
+                {% if form.farmland_name.errors %}
+                    <div class="text-danger small mt-1">{{ form.farmland_name.errors }}</div>
                 {% endif %}
             </div>
             <div class="col-md-6">
-                <label class="form-label">{{ form.farm_size.label_tag }}</label>
-                {{ form.farm_size }}
-                {% if form.farm_size.errors %}
-                    <div class="text-danger small mt-1">{{ form.farm_size.errors }}</div>
+                <label class="form-label" >{{ form.estimated_area.label_tag }}</label>
+                {{ form.estimated_area }}
+                {% if form.estimated_area.errors %}
+                    <div class="text-danger small mt-1">{{ form.estimated_area.errors }}</div>
                 {% endif %}
             </div>
             <div class="col-md-6">
-                <label class="form-label">{{ form.farm_municipality.label_tag }}</label>
-                {{ form.farm_municipality }}
-                {% if form.farm_municipality.errors %}
-                    <div class="text-danger small mt-1">{{ form.farm_municipality.errors }}</div>
+                <label class="form-label">{{ form.municipality.label_tag }}</label>
+                {{ form.municipality }}
+                {% if form.municipality.errors %}
+                    <div class="text-danger small mt-1">{{ form.municipality.errors }}</div>
                 {% endif %}
             </div>
             <div class="col-md-6">
-                <label class="form-label">{{ form.farm_barangay.label_tag }}</label>
-                {{ form.farm_barangay }}
-                {% if form.farm_barangay.errors %}
-                    <div class="text-danger small mt-1">{{ form.farm_barangay.errors }}</div>
+                <label class="form-label">{{ form.barangay.label_tag }}</label>
+                {{ form.barangay }}
+                {% if form.barangay.errors %}
+                    <div class="text-danger small mt-1">{{ form.barangay.errors }}</div>
                 {% endif %}
             </div>
         </div>
-        <div class="mt-4">
+        <div class="mt-4 d-flex">
             <button type="submit" class="btn btn-success me-2">Save Farmland</button>
-            <a href="{% url 'base:farmland_record' %}" class="btn btn-secondary">Cancel</a>
+
+            {% if farmland %}
+                <a href="{% url 'base:farmland_owned' %}" class="btn btn-secondary">Cancel</a>
+            {% else %}
+                <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-secondary">Cancel</a>
+            {% endif %}
+
+            {% if not farmland %}
+                <a href="{% url 'base:farmland_owned' %}" class="btn btn-success ms-auto">See your Recorded Farmlands</a>
+
+            {% endif %}
         </div>
+
     </form>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const municipalitySelect = document.getElementById('id_farm_municipality');
-    const barangaySelect = document.getElementById('id_farm_barangay');
 
-    function updateBarangayOptions() {
+document.addEventListener('DOMContentLoaded', function() {
+    // Confirming records
+    const form = document.getElementById("farmland-record-form");
+    if (form) {
+        form.addEventListener("submit", function (e) {
+            const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
+            if (!confirm(message)) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Municipality and barangay dynamic selection
+    const municipalitySelect = document.getElementById('id_municipality');
+    const barangaySelect = document.getElementById('id_barangay');
+
+    // Store the initial selected barangay (for edit mode)
+    let initialBarangay = barangaySelect ? barangaySelect.getAttribute('data-initial') || barangaySelect.value : null;
+
+    function updateBarangayOptions(keepSelected = false) {
         const municipalityId = municipalitySelect.value;
         barangaySelect.innerHTML = '';
         barangaySelect.disabled = true;
@@ -69,6 +95,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             const option = document.createElement('option');
                             option.value = barangay.id;
                             option.textContent = barangay.name;
+                            // If editing, select the correct barangay
+                            if (
+                                (keepSelected && barangay.id == initialBarangay) ||
+                                (!keepSelected && barangay.id == barangaySelect.value)
+                            ) {
+                                option.selected = true;
+                            }
                             barangaySelect.appendChild(option);
                         });
                     } else {
@@ -83,8 +116,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (municipalitySelect && barangaySelect) {
-        municipalitySelect.addEventListener('change', updateBarangayOptions);
-        updateBarangayOptions(); // Initial state
+        municipalitySelect.addEventListener('change', function() {
+            // On change, don't keep the old selection
+            updateBarangayOptions(false);
+        });
+        // On page load, keep the initial selection (for edit mode)
+        updateBarangayOptions(true);
     }
 });
 </script>

@@ -153,6 +153,12 @@ class FarmLand(models.Model):
     municipality = models.ForeignKey(MunicipalityName, on_delete=models.CASCADE)
     barangay = models.ForeignKey(BarangayName,on_delete=models.CASCADE)
     estimated_area = models.FloatField(null=True,blank=True)
+    
+    def __str__(self):
+        if self.estimated_area:
+            return f"{self.farmland_name} ({self.estimated_area} hectares)"
+        else :
+            return self.farmland_name
 
 
 class Month(models.Model):

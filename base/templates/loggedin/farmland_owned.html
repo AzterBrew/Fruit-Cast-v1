@@ -1,0 +1,42 @@
+{% block content %}
+<div class="container p-4">
+    <div class="record-cart">
+        <h2 class="mb-4 text-success fw-bold">Your Recorded Farmlands</h2>
+        {% if farmlands %}
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-success">
+                    <tr>
+                        <th>Name</th>
+                        <th>Municipality</th>
+                        <th>Barangay</th>
+                        <th>Estimated Area (hectares)</th>
+                        <th>Edit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for farm in farmlands %}
+                    <tr>
+                        <td>{{ farm.farmland_name }}</td>
+                        <td>{{ farm.municipality.municipality }}</td>
+                        <td>{{ farm.barangay.barangay }}</td>
+                        <td>{{ farm.estimated_area|default:"N/A" }}</td>
+                        <td>
+                            <a href="{% url 'base:farmland_edit' farm.farminfo_id %}" class="btn btn-secondary btn-sm">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div>
+                <a href="{% url 'base:farmland_record' %}" class="btn btn-success">
+                    Add New Farmland
+                </a>
+            </div>
+        {% else %}
+            <p>No farmlands recorded yet.</p>
+
+        </div>
+    </div>
+{% endif %}
+{% endblock content %}

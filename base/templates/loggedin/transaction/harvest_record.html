@@ -26,8 +26,8 @@
                 </div>
                 <div class="col-md-6">
                     {% if transaction.location_type == 'farm_land' %}
-                        <p class="text-muted">Your Farm for Planting: <b>{{ transaction.farmland.name }}</b></p>
-                        <p class="text-muted">Farm Location : <b>{{ transaction.farmland.municipality.municipality }}, {{ transaction.farmland.barangay.barangay }}</b></p>
+                        <p class="text-muted">Your Farm for Planting: <b>{{ transaction.farm_land.farmland_name }}</b></p>
+                        <p class="text-muted">Farm Location : <b>{{ transaction.farm_land.municipality.municipality }}, {{ transaction.farm_land.barangay.barangay }}</b></p>
                     {% elif transaction.location_type == 'manual' %}
                         <p class="text-muted">Location of Planting: <b>{{ transaction.manual_municipality.municipality }}, {{ transaction.manual_barangay.barangay }}</b></p>
                     {% endif %}
@@ -132,10 +132,8 @@
             {% endif %}
             <div class="mt-4">
                 <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
-                {% if from_transaction %}
-                    <a href="{% url 'base:transaction_recordlist' transaction.transaction_id%}" class="btn btn-secondary">Back to Transaction</a>
-                {% elif from_transactionedit %}
-                    <a href="{% url 'base:newrecord' %}?view=transaction_list" class="btn btn-secondary">Cancel Edit</a>
+                {% if transaction %}
+                    <a href="{% url 'base:transaction_recordlist' transaction.transaction_id%}" class="btn btn-secondary">Back to Transaction Record</a>
                 {% else %}
                     <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-secondary">Cancel</a>
                 {% endif %}

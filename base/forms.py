@@ -140,19 +140,19 @@ class EditUserInformation(forms.ModelForm):
 
 class HarvestRecordCreate(forms.ModelForm):
     unit = forms.ModelChoiceField(label="Unit of Measurement *",queryset=UnitMeasurement.objects.all(),widget=forms.Select(attrs={'class': 'form-select'}))
-    total_weight = forms.DecimalField(localize=True,label="Total Weight of Commodity *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
-    weight_per_unit = forms.DecimalField(localize=True,label="Weight per unit *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1'}))
+    total_weight = forms.DecimalField(localize=True,label="Total Weight of Commodity *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1', 'placeholder': '0.0'}))
+    weight_per_unit = forms.DecimalField(localize=True,label="Weight per unit *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1', 'placeholder': '0.0'}))
 
 
     class Meta:
         model = initHarvestRecord
-        fields = ["harvest_date", "commodity_id", "commodity_custom", "total_weight", "unit", "weight_per_unit", "remarks"]
+        fields = ["harvest_date", "commodity_id", "commodity_custom",  "unit", "total_weight", "weight_per_unit", "remarks"]
         labels = {"harvest_date": "Harvest Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
             'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
-            'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom'}),
-            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom', 'placeholder': 'If not listed, enter commodity here'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -160,8 +160,8 @@ class HarvestRecordCreate(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
 class RecordTransactionCreate(forms.ModelForm):
-    location_type = forms.ChoiceField(label="Pick a Location Type *",choices=LOCATION_TYPE_CHOICES,widget=forms.RadioSelect(attrs={ 'style': 'margin-right: 5px;'}))
-    farm_land = forms.ModelChoiceField(queryset=FarmLand.objects.none(),required=False,label="Select FarmLand",widget=forms.Select(attrs={'class': 'form-select'}))
+    location_type = forms.ChoiceField(label="Pick a Location Type *",choices=LOCATION_TYPE_CHOICES,widget=forms.RadioSelect(attrs={ 'style': 'margin-right: 5px;', 'placeholder' : 'Enter estimated land area...(optional)'}))
+    farm_land = forms.ModelChoiceField(queryset=FarmLand.objects.none(),required=False,label="Select FarmLand",widget=forms.Select(attrs={'class': 'form-select',  'placeholder' : 'Enter Farmland name...'}))
 
     manual_municipality = forms.ModelChoiceField(label="Manual: Municipality",queryset=MunicipalityName.objects.all(),required=False,widget=forms.Select(attrs={'class': 'form-select'}))
     manual_barangay = forms.ModelChoiceField(label="Manual: Barangay",queryset=BarangayName.objects.none(),required=False,widget=forms.Select(attrs={'class': 'form-select'}))
@@ -178,8 +178,8 @@ class RecordTransactionCreate(forms.ModelForm):
             self.fields['farm_land'].queryset = FarmLand.objects.filter(userinfo_id__auth_user=user)
 
 class PlantRecordCreate(forms.ModelForm):
-    min_expected_harvest = forms.IntegerField(label="Min Expected Harvest (units)", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1'}))
-    max_expected_harvest = forms.IntegerField(label="Max Expected Harvest (units)", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1'}))
+    min_expected_harvest = forms.IntegerField(label="Min Expected Harvest (units) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1', 'placeholder':'0'}))
+    max_expected_harvest = forms.IntegerField(label="Max Expected Harvest (units) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1', 'placeholder':'0'}))
 
     class Meta:
         model = initPlantRecord
@@ -188,8 +188,8 @@ class PlantRecordCreate(forms.ModelForm):
         widgets = {
             'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
-            'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom'}),
-            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom','placeholder': 'If not listed, enter commodity here'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
         }
 
 
@@ -198,18 +198,18 @@ class PlantRecordCreate(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
 class FarmlandRecordCreate(forms.ModelForm):
-    farm_name = forms.CharField(label="Farm Name *", max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    farm_size = forms.DecimalField(label="Estimated Farm Size (in hectares)", localize=True, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}))
-    farm_municipality = forms.ModelChoiceField(label="Farm Municipality *", queryset=MunicipalityName.objects.all(), widget=forms.Select(attrs={'class': 'form-select'}))
-    farm_barangay = forms.ModelChoiceField(label="Farm Barangay *", queryset=BarangayName.objects.none(), widget=forms.Select(attrs={'class': 'form-select'}))
+    farmland_name = forms.CharField(label="Farm Name *", max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Enter Farmland name...'}))
+    estimated_area = forms.DecimalField(label="Estimated Farm Size (in hectares)", localize=True, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder' : 'Enter land area...(optional)'}))
+    municipality = forms.ModelChoiceField(label="Municipality of Farm *", queryset=MunicipalityName.objects.all(), widget=forms.Select(attrs={'class': 'form-select'}))
+    barangay = forms.ModelChoiceField(label="Barangay of Farm *", queryset=BarangayName.objects.none(), widget=forms.Select(attrs={'class': 'form-select'}))
 
     class Meta:
         model = FarmLand
-        fields = ["farm_name", "farm_size", "farm_municipality", "farm_barangay"]
-        labels = {"farm_name": "Farm Name *", "farm_size": "Farm Size (in hectares) *", "farm_municipality": "Farm Municipality *", "farm_barangay": "Farm Barangay *"}
+        fields = ["farmland_name", "estimated_area", "municipality", "barangay"]
+        labels = {"farmland_name": "Farm Name *", "estimated_area": "Farm Size (in hectares) *", "municipality": "Municipality of Farm *", "barangay": "Barangay of Farm *"}
         widgets = {
-            'farm_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'farm_size': forms.NumberInput(attrs={'class': 'form-control'}),
-            'farm_municipality': forms.Select(attrs={'class': 'form-select'}),
-            'farm_barangay': forms.Select(attrs={'class': 'form-select'}),
+            'farmland_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'estimated_area': forms.NumberInput(attrs={'class': 'form-control'}),
+            'municipality': forms.Select(attrs={'class': 'form-select'}),
+            'barangay': forms.Select(attrs={'class': 'form-select'}),
         }

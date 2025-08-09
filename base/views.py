@@ -414,25 +414,63 @@ def farmland_record_view(request):
 
     if request.method == "POST":
         form = FarmlandRecordCreate(request.POST)
-        municipality_id = request.POST.get('farm_municipality')
+        municipality_id = request.POST.get('municipality')
         if municipality_id:
-            form.fields['farm_barangay'].queryset = BarangayName.objects.filter(municipality_id=municipality_id)
+            form.fields['barangay'].queryset = BarangayName.objects.filter(municipality_id=municipality_id)
         else:
-            form.fields['farm_barangay'].queryset = BarangayName.objects.none()
+            form.fields['barangay'].queryset = BarangayName.objects.none()
 
         if form.is_valid():
             farmland = form.save(commit=False)
             farmland.userinfo_id = userinfo
             farmland.save()
-            return redirect('base:farmland_record')  # or wherever you want to redirect after save
+            return redirect('base:farmland_owned')  # or wherever you want to redirect after save
     else:
         form = FarmlandRecordCreate()
-        form.fields['farm_barangay'].queryset = BarangayName.objects.none()
+        form.fields['barangay'].queryset = BarangayName.objects.none()
 
     context = {
         'form': form,
         'user_firstname': userinfo.firstname,
         'view_to_show': 'farmland_record', 
+    }
+    return render(request, 'loggedin/transaction/transaction.html', context)
+
+
+@login_required
+def farmland_record_edit_view(request, farminfo_id):
+    account_id = request.session.get('account_id')
+    userinfo_id = request.session.get('userinfo_id')
+    if not (account_id and userinfo_id):
+        return redirect('base:home')
+    userinfo = UserInformation.objects.get(pk=userinfo_id)
+    farmland = FarmLand.objects.get(pk=farminfo_id, userinfo_id=userinfo)
+
+    if request.method == "POST":
+        form = FarmlandRecordCreate(request.POST, instance=farmland)
+        municipality_id = request.POST.get('municipality')
+        if municipality_id:
+            form.fields['barangay'].queryset = BarangayName.objects.filter(municipality_id=municipality_id)
+        else:
+            form.fields['barangay'].queryset = BarangayName.objects.none()
+
+        if form.is_valid():
+            form.save()
+            return redirect('base:farmland_owned')
+    else:
+        form = FarmlandRecordCreate(instance=farmland)
+        # Set barangay queryset based on current municipality
+        if farmland.municipality:
+            form.fields['barangay'].queryset = BarangayName.objects.filter(municipality_id=farmland.municipality.pk)
+        else:
+            form.fields['barangay'].queryset = BarangayName.objects.none()
+
+    context = {
+        'form': form,
+        'user_firstname': userinfo.firstname,
+        'view_to_show': 'farmland_record',
+        'edit_mode': True,
+        'farmland': farmland,
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 
@@ -475,6 +513,21 @@ def account_panel_view(request):
         'user_emperson': request.user.userinformation.emergency_contact_person,
         'user_emcontact': request.user.userinformation.emergency_contact_number,
         'view_to_show': view_to_show,
+    }
+    return render(request, 'loggedin/account_panel.html', context)
+
+@login_required
+def farmland_owned_view(request):
+    userinfo_id = request.session.get('userinfo_id')
+    if not userinfo_id:
+        return redirect('base:home')
+    userinfo = UserInformation.objects.get(pk=userinfo_id)
+    farmlands = FarmLand.objects.filter(userinfo_id=userinfo)
+
+    context = {
+        'farmlands': farmlands,
+        'user_firstname': userinfo.firstname,
+        'view_to_show': 'farmland_owned',
     }
     return render(request, 'loggedin/account_panel.html', context)
 

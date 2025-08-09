@@ -313,12 +313,12 @@ a:hover {
 }
 
 .transaction-sidebar {
-    position: absolute;
+    position: fixed;
     /* top: 0; */
     /* margin-top: 4vh; */
     left: 0;
     width: 17vw;
-    height: 80vh;
+    height: 90vh;
     background: #fffdfa;
     border-right: 1px solid #f8faf5;
     z-index: 0;
@@ -355,7 +355,7 @@ a:hover {
     width: 100%;
     min-width: 72vw;
     max-width: 72vw;
-    /* min-height: 60vh; */
+    min-height: 60vh;
     margin: 2rem auto;
     background: #fffdfa;
 }
@@ -390,8 +390,8 @@ a:hover {
     position: fixed;
     left: 0;
     width: 17vw;
-    height: 80vh;
-    background: #fffdfa;
+    height: 90vh;
+    background: #14763d;
     border-right: 1px solid #f8faf5;
     z-index: 0;
     box-shadow: 3px 0 8px rgba(0,0,1,.05);
@@ -405,20 +405,23 @@ a:hover {
 }
 
 .account-main {
-    margin-left: 17vw;
+    margin-left: 10vw;
     width: 100%;
     display: flex;
-    justify-content: center;
+    justify-content: left;
     align-items: flex-start;
     min-height: 100vh;
     background: #f7fff2;
 }
 
+
 .account-content {
     width: 100%;
     min-width: 72vw;
     max-width: 72vw;
-    margin: 2rem auto;
+    /* margin: 2rem auto; */
     background: #fffdfa;
     border-radius: 1rem;
+    min-height: 60vh;
+
 }

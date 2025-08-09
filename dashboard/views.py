@@ -108,12 +108,12 @@ def forecast(request):
         if userinfo_id and account_id:
             userinfo = UserInformation.objects.get(pk=userinfo_id)
 
-            selected_commodity = request.GET.get('commodity_type')
+            selected_commodity = request.GET.get('commodity_id')
             qs = VerifiedHarvestRecord.objects.all()
-            commodity_types = qs.values_list('commodity_type', flat=True).distinct()
+            commodity_types = qs.values_list('commodity_id', flat=True).distinct()
 
             if selected_commodity:
-                qs = qs.filter(commodity_type=selected_commodity)
+                qs = qs.filter(commodity_id=selected_commodity)
             else:
                 selected_commodity = commodity_types.first() if commodity_types else None
                 if selected_commodity:

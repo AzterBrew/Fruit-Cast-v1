@@ -16,7 +16,7 @@ Fruit Cast | Create New Record
     <nav class="transaction-sidebar">
         <div class="sidebar-inner">
             <div class="sidebar-title">
-                <a href="?view=choose" class="text-decoration-none">
+                <a href="{% url 'base:newrecord' %}?view=choose" class="text-decoration-none">
                     <span class="fs-4 text-success fw-bold">Transaction</span>
                 </a>
             </div>
@@ -28,13 +28,13 @@ Fruit Cast | Create New Record
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a href="{% url 'base:transaction_history' %}" class="nav-link link-dark">
-                        <i class="bi bi-clock-history me-2"></i> Your Transaction History
+                    <a href="{% url 'base:farmland_record' %}" class="nav-link link-dark">
+                        <i class="bi bi-tree me-2"></i> New Farm Land Record
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a href="{% url 'base:farmland_record' %}" class="nav-link link-dark">
-                        <i class="bi bi-tree me-2"></i> Your Farm Land
+                    <a href="{% url 'base:transaction_history' %}" class="nav-link link-dark">
+                        <i class="bi bi-clock-history me-2"></i> Your Transaction History
                     </a>
                 </li>
             </ul>
@@ -52,8 +52,12 @@ Fruit Cast | Create New Record
                 {% include "loggedin/transaction/transaction_history.html" %}
             {% elif view_to_show == "farmland_record" %}
                 {% include "loggedin/farmland_record.html" %}
+            {% elif view_to_show == "choose" %}
+                {% include "loggedin/transaction/transaction_default.html" %}
             {% else %}
-                <p class="text-muted">Choose a transaction type in the sidebar</p>
+                <div class="container p-4">
+                    <p class="text-muted">Choose a transaction type in the sidebar</p>
+                </div>
             {% endif %}
         </div>
     </main>
