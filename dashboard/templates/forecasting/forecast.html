@@ -17,7 +17,7 @@ Fruit Cast | Forecast
                 <h1 class="mb-4 text-success fw-bold">
                     Forecast{% if selected_commodity_obj %}: {{ selected_commodity_obj.name }}{% endif %}
                 </h1>
-                <form method="get" class="mb-4">
+                <form method="get" class="mb-4" id="main-forecast-form">
                     <label for="commodity_type" class="form-label">Select Commodity Type:</label>
                     <select class="form-select w-auto d-inline-block" name="commodity_id" id="commodity_type" onchange="this.form.submit()">
                         {% for commodity in commodity_types %}
@@ -26,9 +26,18 @@ Fruit Cast | Forecast
                             </option>
                         {% endfor %}
                     </select>
+                    <label for="municipality" class="form-label ms-3">Select Municipality:</label>
+                    <select class="form-select w-auto d-inline-block" name="municipality_id" id="municipality" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        {% for muni in municipalities %}
+                            <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
+                                {{ muni.municipality }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </form>
                 {% if forecast_data %}
-                    <canvas id="forecastChart" style="height: 40vh;"></canvas>
+                    <canvas id="forecastChart" style="height: 55vh;"></canvas>
                     <h3 class="mt-5">Monthly Forecast Data</h3>
                     <table class="table table-striped">
                         <thead>
@@ -51,6 +60,71 @@ Fruit Cast | Forecast
                 {% else %}
                     <div class="alert alert-warning">Not enough data to generate a forecast for this commodity.</div>
                 {% endif %}
+
+                <hr>
+                <br>
+
+                {% for m in months %}
+                    {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}
+                        {% with m.name as filter_month_name %}
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if filter_month and filter_year %}
+                    <h3 class="mt-5">
+                        Forecasted Amount by Commodity
+                        {% if filter_month and filter_year %}
+                            ({{ filter_month_name }} {{ filter_year }})
+                        {% endif %}
+                    </h3>
+                {% else %}
+                    <h3 class="mt-5">Forecasted Amount by Commodity</h3>
+                {% endif %}
+
+                <form method="get" class="mb-4" id="summary-forecast-form">
+                    <label for="filter_month" class="form-label ms-3">Month:</label>
+                    <select class="form-select w-auto d-inline-block" name="filter_month" id="filter_month">
+                        {% for m in months %}
+                            <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>
+                                {{ m.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="filter_year" class="form-label ms-3">Year:</label>
+                    <select class="form-select w-auto d-inline-block" name="filter_year" id="filter_year">
+                        {% for y in available_years %}
+                            <option value="{{ y }}">{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-success ms-3">Show Summary</button>
+                    <a href="{% url 'dashboard:forecast' %}" class="btn btn-secondary ms-3">Reset</a>
+                </form>
+
+                {% if forecast_summary %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Commodity Type</th>
+                                <th>Forecasted Amount (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in forecast_summary %}
+                            <tr>
+                                <td>{{ row.commodity }}</td>
+                                <td>
+                                    {% if row.forecasted_kg is not None %}
+                                        {{ row.forecasted_kg }}
+                                    {% else %}
+                                        <span class="text-muted">Not enough data</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
             </div>
         </div>
 </div>
@@ -60,6 +134,51 @@ Fruit Cast | Forecast
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 <script>
+//for the forecast summary dropdown
+document.addEventListener('DOMContentLoaded', function() {
+    var monthSelect = document.getElementById('filter_month');
+    var yearSelect = document.getElementById('filter_year');
+    var currentYear = new Date().getFullYear();
+    var currentMonth = new Date().getMonth() + 1; // JS months are 0-based
+
+    function updateMonthOptions() {
+        var selectedYear = parseInt(yearSelect.value);
+        var foundVisible = false;
+        for (var i = 0; i < monthSelect.options.length; i++) {
+            var option = monthSelect.options[i];
+            var monthNum = parseInt(option.value);
+            if (!option.value) { // blank option
+                option.style.display = '';
+                continue;
+            }
+            if (selectedYear === currentYear) {
+                option.style.display = (monthNum > currentMonth) ? '' : 'none';
+            } else {
+                option.style.display = '';
+            }
+            if (option.style.display === '' && !foundVisible) {
+                foundVisible = true;
+            }
+        }
+        // If selected month is now hidden or blank, reset selection to blank
+        if (
+            monthSelect.selectedOptions.length &&
+            (monthSelect.selectedOptions[0].style.display === 'none' || !monthSelect.value)
+        ) {
+            monthSelect.selectedIndex = 0;
+        }
+    }
+
+    yearSelect.addEventListener('change', function() {
+        updateMonthOptions();
+        // Optionally, auto-submit the form:
+        // document.getElementById('summary-forecast-form').submit();
+    });
+
+    // Run on page load
+    updateMonthOptions();
+});
+    
 {% if forecast_data %}
     var forecastChart = new Chart(document.getElementById('forecastChart'), {
       type: 'line',
@@ -68,17 +187,29 @@ Fruit Cast | Forecast
         datasets: [{
           label: 'Forecasted Amount (kg)',
           data: {{ forecast_data.forecasted_count|safe }},
-          borderColor: 'rgba(75, 192, 192, 1)',
+          borderColor: '#40ca7aff',
           fill: false
         }]
       },
       options: {
         responsive: true,
+        plugins: {
+            datalabels: {
+                align: 'top',
+                anchor: 'end',
+                color: '#14763d',
+                font: { weight: 'bold' },
+                formatter: function(value) {
+                return value;
+                }
+            }
+        },
         scales: {
           x: { title: { display: true, text: 'Month' } },
           y: { title: { display: true, text: 'Amount (kg)' } }
         }
-      }
+      },
+      plugins: [ChartDataLabels]
     });
 {% endif %}
 
@@ -96,4 +227,5 @@ mapData.forEach(function(item) {
     }
 });
 </script>
+
 {% endblock content %}

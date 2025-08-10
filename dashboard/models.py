@@ -27,8 +27,6 @@ from base.models import *
 class VerifiedHarvestRecord(models.Model):
     harvest_date = models.DateField()
     commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
-    # commodity_custom = models.CharField(max_length=255, blank=True, null=True)
-    
     total_weight_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
     weight_per_unit_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
     @property
@@ -37,9 +35,8 @@ class VerifiedHarvestRecord(models.Model):
             return self.total_weight_kg / self.weight_per_unit_kg
         return None
     
-    # harvest_municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
-    # harvest_barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
-
+    municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
+    barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
     date_verified = models.DateTimeField(default=timezone.now)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
@@ -51,17 +48,13 @@ class VerifiedHarvestRecord(models.Model):
 class VerifiedPlantRecord(models.Model):
     plant_date = models.DateField()
     commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
-    # commodity_custom = models.CharField(max_length=255, blank=True, null=True)
-    
-    # plant_municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
-    # plant_barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
-    
     min_expected_harvest = models.IntegerField()
     max_expected_harvest = models.IntegerField()
     average_harvest_units = models.DecimalField(max_digits=10,decimal_places=2)    #count toh, not weight
     estimated_weight_kg = models.DecimalField(max_digits=10,decimal_places=2, null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
-    
+    municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
+    barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
     date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
     prev_record = models.ForeignKey('base.initPlantRecord', on_delete=models.SET_NULL, null=True, blank=True)

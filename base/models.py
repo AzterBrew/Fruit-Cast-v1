@@ -186,6 +186,7 @@ class CommodityType(models.Model):
     average_weight_per_unit_kg = models.DecimalField(max_digits=10, decimal_places=3)
     unit = models.ForeignKey(UnitMeasurement, on_delete=models.CASCADE)
     seasonal_months = models.ManyToManyField(Month, blank=True)
+    years_to_mature = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, help_text="Number of years from planting to first harvest")
 
     def __str__(self):
         return self.name    
@@ -251,7 +252,7 @@ class initPlantRecord(models.Model):
 
 class initHarvestRecord(models.Model):
     harvest_id = models.BigAutoField(primary_key=True)
-    transaction = models.OneToOneField(RecordTransaction, on_delete=models.CASCADE)
+    transaction = models.ForeignKey(RecordTransaction, on_delete=models.CASCADE)
 
     harvest_date = models.DateField()
     commodity_id = models.ForeignKey(CommodityType, on_delete=models.CASCADE)

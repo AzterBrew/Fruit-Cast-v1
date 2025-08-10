@@ -1,3 +1,14 @@
+MGA BAGUHIN
+
+* verified records
+- idagdag municipality field if not from transactions  
+
+* PLS need possibly dagdagan yung commoditytype model ng years to grow para maconsider 
+
+* If doable pa, tanggalin  yung commodity per harvest o plant record, then transfer sa transaction model yung commodity fields
+
+
+
 IF MODEL TABLES ARE TRUNCATED
 
 * commoditytype
@@ -15,6 +26,7 @@ IF MODEL TABLES ARE TRUNCATED
 * municipalityname
 - set this first before barangaynames
 - incase only barangay model is truncated, there is no pk=10
+- pk=14 is the Overall record, should be used for when assigning agriculturist
 
 * barangayname
 - incase only barangay model is truncated, there is no pk=10

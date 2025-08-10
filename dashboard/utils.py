@@ -119,33 +119,34 @@ from base.models import CommodityType, UnitMeasurement, Month
 # GENERATING THE THESIS2 VERIFIED RECORDS WITH COMMODITY TYPE NOT CONNECTED TO INITPLATNRECORD AND INITHARVESTRECORD
 
 from dashboard.models import VerifiedPlantRecord, VerifiedHarvestRecord
-from base.models import initPlantRecord, initHarvestRecord
+from base.models import MunicipalityName, BarangayName
 import random
 from datetime import timedelta
 
 def generate_verified_records():
-    # Get all commodity types
     commodities = list(CommodityType.objects.all())
-    if not commodities:
-        print("No commodities found. Populate CommodityType first.")
+    municipalities = list(MunicipalityName.objects.all())
+    barangays = list(BarangayName.objects.all())
+
+    if not commodities or not municipalities or not barangays:
+        print("Populate CommodityType, MunicipalityName, and BarangayName first.")
         return
 
-    # Generate VerifiedPlantRecord
+    # Generate 100 VerifiedPlantRecord
     for i in range(100):
-        # try:
-        #     prev_plant = initPlantRecord.objects.get(pk=i)
-        # except initPlantRecord.DoesNotExist:
-        #     print(f"initPlantRecord with id {i} does not exist. Skipping.")
-        #     continue
-
         commodity = random.choice(commodities)
+        municipality = random.choice(municipalities)
+        # Pick a barangay that belongs to the selected municipality
+        barangay_choices = [b for b in barangays if b.municipality_id == municipality]
+        barangay = random.choice(barangay_choices) if barangay_choices else random.choice(barangays)
+
         min_expected = random.randint(100, 500)
         max_expected = min_expected + random.randint(50, 200)
         average_units = (min_expected + max_expected) / 2
         estimated_weight = average_units * float(commodity.average_weight_per_unit_kg)
 
         VerifiedPlantRecord.objects.create(
-            plant_date=timezone.now().date() - timedelta(days=random.randint(0, 365)),
+            plant_date=timezone.now().date() - timedelta(days=random.randint(0, 730)),
             commodity_id=commodity,
             min_expected_harvest=min_expected,
             max_expected_harvest=max_expected,
@@ -153,38 +154,38 @@ def generate_verified_records():
             estimated_weight_kg=estimated_weight,
             remarks="Auto-generated record.",
             date_verified=timezone.now(),
-            # prev_record=prev_plant,
+            municipality=municipality,
+            barangay=barangay,
+            # prev_record left as None
         )
-        print(f"Created VerifiedPlantRecord for prev_record_id={i}")
+        print(f"Created VerifiedPlantRecord {i+1}/100")
 
-    # Generate VerifiedHarvestRecord
-    # for i in range(1, 9):
-    #     try:
-    #         prev_harvest = initHarvestRecord.objects.get(pk=i)
-    #     except initHarvestRecord.DoesNotExist:
-    #         print(f"initHarvestRecord with id {i} does not exist. Skipping.")
-    #         continue
-
+    # Generate 100 VerifiedHarvestRecord
+    for i in range(100):
         commodity = random.choice(commodities)
+        municipality = random.choice(municipalities)
+        barangay_choices = [b for b in barangays if b.municipality_id == municipality]
+        barangay = random.choice(barangay_choices) if barangay_choices else random.choice(barangays)
+
         total_weight = round(random.uniform(100, 1000), 2)
-        weight_per_unit = float(commodity.average_weight_per_unit_kg)
-        if weight_per_unit == 0:
-            weight_per_unit = 1.0  # avoid division by zero
+        weight_per_unit = float(commodity.average_weight_per_unit_kg) or 1.0
 
         VerifiedHarvestRecord.objects.create(
-            harvest_date=timezone.now().date() - timedelta(days=random.randint(0, 365)),
+            harvest_date=timezone.now().date() - timedelta(days=random.randint(0, 730)),
             commodity_id=commodity,
             total_weight_kg=total_weight,
             weight_per_unit_kg=weight_per_unit,
             remarks="Auto-generated record.",
             date_verified=timezone.now(),
-            # prev_record=prev_harvest,
+            municipality=municipality,
+            barangay=barangay,
+            # prev_record left as None
         )
-        print(f"Created VerifiedHarvestRecord for prev_record_id={i}")
+        print(f"Created VerifiedHarvestRecord {i+1}/100")
 
 # To run:
-from dashboard.utils import generate_verified_records
-generate_verified_records()
+# from dashboard.utils import generate_verified_records
+# generate_verified_records()
 
 
 
