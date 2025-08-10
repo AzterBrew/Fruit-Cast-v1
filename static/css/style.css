@@ -425,3 +425,20 @@ a:hover {
     min-height: 60vh;
 
 }
+
+.main-user {
+    display: flex;
+    margin-top: 4vh;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.main-user-content {
+    width: 100%;
+    min-width: 72vw;
+    max-width: 72vw;
+    min-height: 60vh;
+    margin: 2rem auto;
+    background: #fffdfa;
+    border-radius: 1rem;
+}

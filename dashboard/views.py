@@ -1,3 +1,4 @@
+from urllib import request
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
@@ -14,16 +15,16 @@ from django.urls import reverse
 from django.http import HttpResponseForbidden
 from django.db.models import Sum, Avg
 from django.http import JsonResponse
+from prophet import Prophet
 import pandas as pd
+import json
 from collections import defaultdict, OrderedDict
 import random
 from django.db.models.functions import TruncMonth, ExtractYear, ExtractMonth
 import calendar
-from prophet import Prophet
 from datetime import datetime
-import json
 from shapely.geometry import shape
-from dashboard.utils import generate_notifications, get_current_month
+# from dashboard.utils import generate_notifications, get_current_month
 
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
@@ -38,15 +39,17 @@ def notifications(request):
     if account_id:
         plant_records = VerifiedPlantRecord.objects.filter(
             prev_record__transaction_id__account_id=account_id
-        ).values_list('commodity_type', flat=True).distinct()
+        ).values_list('commodity_id', flat=True).distinct()
         
         crops = [crop for crop in plant_records if crop]  # Remove nulls or blanks if needed
 
-    notifications = generate_notifications(crops)
+    # notifications = generate_notifications(crops)
 
-    return render(request, 'notifications.html', {
-        'notifications': notifications,
-    })
+    # return render(request, 'notifications.html', {
+    #     'notifications': notifications,
+    # })
+    return render(request, 'notifications.html')
+    
 
 def create_verification_notification(user, record_type):
     message = f"Your {record_type} record has been verified!"
@@ -98,142 +101,118 @@ fruit_seasons = {
 }
 
 def forecast(request):
+    if not request.user.is_authenticated:
+        return render(request, 'home.html', {})
+
     print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
     
-    if request.user.is_authenticated:
-        account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
+    account_id = request.session.get('account_id')
+    userinfo_id = request.session.get('userinfo_id')
+    if not (userinfo_id and account_id):
+        return redirect('home')
 
-        if userinfo_id and account_id:
-            userinfo = UserInformation.objects.get(pk=userinfo_id)
+    userinfo = UserInformation.objects.get(pk=userinfo_id)
+    commodity_types = CommodityType.objects.all()
+    selected_commodity_id = request.GET.get('commodity_id')
+    selected_commodity_obj = None
 
-            selected_commodity = request.GET.get('commodity_id')
-            qs = VerifiedHarvestRecord.objects.all()
-            commodity_types = qs.values_list('commodity_id', flat=True).distinct()
-
-            if selected_commodity:
-                qs = qs.filter(commodity_id=selected_commodity)
-            else:
-                selected_commodity = commodity_types.first() if commodity_types else None
-                if selected_commodity:
-                    qs = qs.filter(commodity_type=selected_commodity)
-
-            qs = qs.values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg', 'commodity_type', 'harvest_barangay', 'harvest_municipality')
-
-            forecast_data = None
-            if qs.exists():
-                df = pd.DataFrame.from_records(qs)
-                df['ds'] = pd.to_datetime(df['harvest_date'])
-                df['y'] = df['total_weight_kg'] / df['weight_per_unit_kg']
-
-                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                df['ds'] = df['ds'].dt.to_timestamp()
-
-                model = Prophet()
-                model.fit(df)
-
-                future = model.make_future_dataframe(periods=12, freq='M')  # Forecast 12 months
-                forecast = model.predict(future)
-
-                # Adjust forecast based on peak season
-                # For simplicity, we assume the boost factor is 1.5 for peak months
-                peak_months = fruit_seasons.get(selected_commodity)
-                if peak_months and peak_months != ("All Year", "All Year"):
-                    peak_start, peak_end = peak_months
-                    peak_start = datetime.strptime(peak_start, '%B').month
-                    peak_end = datetime.strptime(peak_end, '%B').month
-
-                    forecast['adjusted_yhat'] = forecast['yhat']
-
-                    # Boost forecast for the peak months
-                    for i, row in forecast.iterrows():
-                        month = row['ds'].month
-                        if peak_start <= month <= peak_end:
-                            forecast.at[i, 'adjusted_yhat'] = forecast.at[i, 'yhat'] * 1.5  #  1.5 yung multiplier
-
-                labels = forecast['ds'].dt.strftime('%B %Y').tolist()
-                values = forecast['adjusted_yhat'].round().tolist()
-                combined_forecast = list(zip(labels, values))  
-
-                forecast_data = {
-                    'labels': labels,
-                    'forecasted_count': values,
-                    'combined': combined_forecast  # Add zipped list here
-                }
-                
-            # 2D MAPPING STUFF
-            # opening the geojson
-            # with open('static/geojson/Barangays.json', 'r') as f:
-            with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
-                geojson_data = json.load(f)
-            
-            
-            map_data = []
-
-            for feature in geojson_data['features']:
-                # Get the geometry (polygon)
-                geom = shape(feature['geometry'])
-                # Calculate the centroid of the polygon
-                centroid = geom.centroid
-                latitude = centroid.y
-                longitude = centroid.x
-
-                # Extract relevant properties (barangay, municipality)
-                barangay = feature['properties']['NAME_3']
-                municipality = feature['properties']['NAME_2']
-                province = feature['properties']['PROVINCE']
-
-                # Add the centroid coordinates to the map_data list
-                map_data.append({
-                    'latitude': latitude,
-                    'longitude': longitude,
-                    'barangay': barangay,
-                    'municipality': municipality,
-                    'province': province,
-                    'forecasted_amount': 0
-                })
-
-            # Now we update the map_data with forecast information
-            if qs.exists():
-                df = pd.DataFrame.from_records(qs)
-                df['ds'] = pd.to_datetime(df['harvest_date'])
-                df['y'] = df['total_weight_kg'].apply(float) / df['weight_per_unit_kg'].apply(float)
-
-                df['month'] = df['ds'].dt.month
-                df['year'] = df['ds'].dt.year
-                df = df.groupby(['month', 'year', 'commodity_type', 'harvest_barangay', 'harvest_municipality'])['y'].sum().reset_index()
-
-                # Optionally filter by selected month and commodity_type
-                if selected_commodity:
-                    df = df[df['commodity_type'] == selected_commodity]
-
-                # Create map data entries with forecasted amounts
-                for index, forecast_row in df.iterrows():
-                    barangay = forecast_row['harvest_barangay']
-                    forecasted_amount = forecast_row['y']  # Or your forecast logic
-                    # Find the matching barangay in the map data
-                    for item in map_data:
-                        if item['barangay'] == barangay:
-                            item['forecasted_amount'] = forecasted_amount
-                            break 
-
-            context = {
-                'user_firstname': userinfo.firstname,
-                'forecast_data': forecast_data,
-                'commodity_types': commodity_types,
-                'selected_commodity': selected_commodity,
-                'map_data': map_data,  
-            }
-            
-            return render(request, 'forecasting/forecast.html', context)
-
-        else:
-            print("⚠️ account_id missing in session!")
-            return redirect('home')
-
+    if selected_commodity_id:
+        try:
+            selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
+        except CommodityType.DoesNotExist:
+            selected_commodity_obj = None
     else:
-        return render(request, 'home.html', {})
+        selected_commodity_obj = commodity_types.first()
+        selected_commodity_id = selected_commodity_obj.commodity_id if selected_commodity_obj else None
+
+    # Filter harvest records for the selected commodity
+    qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
+    qs = qs.values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg', 'commodity_id', 'prev_record')
+
+    forecast_data = None
+    map_data = []
+
+    if qs.exists():
+        df = pd.DataFrame.from_records(qs)
+        df['ds'] = pd.to_datetime(df['harvest_date'])
+        df['y'] = df['total_weight_kg'].astype(float)  # Forecast total weight per month
+
+        # Group by month for Prophet
+        df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+        df['ds'] = df['ds'].dt.to_timestamp()
+
+        # Only run Prophet if there are at least 2 data points
+        if len(df) >= 2:
+            model = Prophet()
+            model.fit(df[['ds', 'y']])
+            future = model.make_future_dataframe(periods=12, freq='M')
+            forecast_df = model.predict(future)
+
+            labels = forecast_df['ds'].dt.strftime('%B %Y').tolist()
+            values = forecast_df['yhat'].round().tolist()
+            combined_forecast = list(zip(labels, values))
+
+            forecast_data = {
+                'labels': labels,
+                'forecasted_count': values,
+                'combined': combined_forecast
+            }
+        else:
+            forecast_data = None  # Not enough data for forecasting
+
+        # --- 2D Mapping ---
+        # Load geojson for municipalities
+        with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
+            geojson_data = json.load(f)
+
+        # Prepare mapping: forecasted amount per municipality (historical average as proxy)
+        # Get mapping from prev_record to transaction to farm_land to municipality
+        prev_to_municipality = {}
+        for rec in qs:
+            prev_id = rec['prev_record']
+            if prev_id:
+                try:
+                    prev = initHarvestRecord.objects.get(pk=prev_id)
+                    if prev.transaction and prev.transaction.location_type == 'farm_land' and prev.transaction.farm_land:
+                        municipality = prev.transaction.farm_land.municipality.municipality
+                        prev_to_municipality[prev_id] = municipality
+                except Exception:
+                    continue
+
+        # Calculate total historical harvest per municipality
+        df_full = pd.DataFrame.from_records(qs)
+        df_full['municipality'] = df_full['prev_record'].map(prev_to_municipality)
+        muni_group = df_full.groupby('municipality')['total_weight_kg'].sum().to_dict()
+
+        # Attach forecasted amount (using historical average as proxy) to map_data
+        for feature in geojson_data['features']:
+            properties = feature.get('properties', {})
+            municipality = properties.get('MUNICIPALI') or properties.get('NAME_2')
+            geom = shape(feature['geometry'])
+            centroid = geom.centroid
+            latitude = centroid.y
+            longitude = centroid.x
+            forecasted_amount = muni_group.get(municipality, 0)
+            map_data.append({
+                'latitude': latitude,
+                'longitude': longitude,
+                'barangay': None,
+                'municipality': municipality,
+                'province': properties.get('PROVINCE', None),
+                'forecasted_amount': float(forecasted_amount)
+            })
+
+    context = {
+        'user_firstname': userinfo.firstname,
+        'forecast_data': forecast_data,
+        'commodity_types': commodity_types,
+        'selected_commodity': selected_commodity_id,
+        'map_data': map_data,
+        'selected_commodity_obj': selected_commodity_obj,
+        'selected_commodity_id': selected_commodity_id,
+    }
+    return render(request, 'forecasting/forecast.html', context)
 
 
 # def forecast(request):        LAST LATEST VER
@@ -390,7 +369,7 @@ def monitor(request):
                 harvest_df['month'] = harvest_df['harvest_date'].dt.strftime('%B')
 
                 # Harvest weight per commodity
-                hc = harvest_df.groupby('commodity_type')['total_weight_kg'].sum()
+                hc = harvest_df.groupby('commodity_id')['total_weight_kg'].sum()
                 harvest__weights_bycomm_json = [float(weight) for weight in hc.values.tolist()]
                 
                 chart_data['harvest_commodity'] = {
@@ -408,7 +387,7 @@ def monitor(request):
                 }
 
                 # Average weight per unit by commodity
-                avgw = harvest_df.groupby('commodity_type')['weight_per_unit_kg'].mean()
+                avgw = harvest_df.groupby('commodity_id')['weight_per_unit_kg'].mean()
                 harvest_avg_weights_json = [float(weight) for weight in avgw.values.tolist()]
                 
                 chart_data['avg_weight'] = {
@@ -437,14 +416,14 @@ def monitor(request):
                 plant_df['month'] = plant_df['plant_date'].dt.strftime('%B')
 
                 # Count per commodity
-                pc = plant_df['commodity_type'].value_counts()
+                pc = plant_df['commodity_id'].value_counts()
                 chart_data['plant_commodity'] = {
                     'labels': pc.index.tolist(),
                     'values': pc.values.tolist()
                 }
 
                 # Estimated weight per commodity
-                ew = plant_df.groupby('commodity_type')['estimated_weight_kg'].sum()
+                ew = plant_df.groupby('commodity_id')['estimated_weight_kg'].sum()
                 estimated_weight_json = [float(weight) for weight in ew.values.tolist()]
                 chart_data['estimated_weight'] = {
                     'labels': ew.index.tolist(),
@@ -452,7 +431,7 @@ def monitor(request):
                 }
 
                 # Avg land area per commodity
-                la = plant_df.groupby('commodity_type')['land_area'].mean()
+                la = plant_df.groupby('commodity_id')['land_area'].mean()
                 chart_data['avg_land_area'] = {
                     'labels': la.index.tolist(),
                     'values': la.values.tolist()
@@ -507,8 +486,8 @@ def commoditytype_collect(request):
     commodity_list = set()
 
     # Collect commodity types from both harvest and plant records
-    commodity_list.update(VerifiedHarvestRecord.objects.values_list('commodity_type', flat=True))
-    commodity_list.update(VerifiedPlantRecord.objects.values_list('commodity_type', flat=True))
+    commodity_list.update(VerifiedHarvestRecord.objects.values_list('commodity_id', flat=True))
+    commodity_list.update(VerifiedPlantRecord.objects.values_list('commodity_id', flat=True))
 
     # Now let's associate the commodity types with their respective seasons
     commodity_seasons = {}

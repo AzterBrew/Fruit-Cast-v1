@@ -1,0 +1,27 @@
+IF MODEL TABLES ARE TRUNCATED
+
+* commoditytype
+- set pk=1 as 'Not Listed'
+
+* accountstatus
+- set pk | acc_status
+- pk = 2,3,...,7
+- acc_status = Verified, Pending, Rejected, Archived, Suspended, Removed
+
+* accounttype
+- pk = 1,2,3
+- account_type = Farmer, Administrator, Agriculturist
+
+* municipalityname
+- set this first before barangaynames
+- incase only barangay model is truncated, there is no pk=10
+
+* barangayname
+- incase only barangay model is truncated, there is no pk=10
+
+* month
+- just add all the months
+
+* unitmeasurement
+- pound/s (lbs), gram/s (g), kilogram/s (kg)
+

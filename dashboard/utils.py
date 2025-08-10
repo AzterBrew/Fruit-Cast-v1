@@ -1,72 +1,265 @@
 from datetime import datetime
-from base.models import CommodityType
 from django.utils import timezone
+from base.models import CommodityType, UnitMeasurement, Month
 
-fruit_seasons = {
-    "Mango": ("March", "June"),
-    "Banana": ("All Year", "All Year"),
-    "Papaya": ("All Year", "All Year"),
-    "Pineapple": ("March", "June"),
-    "Lanzones": ("September", "November"),
-    "Rambutan": ("August", "October"),
-    "Guava": ("August", "October"),
-    "Durian": ("August", "October"),
-    "Mangosteen": ("July", "September"),
-    "Calamansi": ("August", "October"),
-    "Watermelon": ("March", "July"),
-    "Avocado": ("July", "September"),
-    "Pomelo": ("August", "October"),
-}
 
-def get_current_month():
-    return datetime.now().strftime('%B')
+# GENERATING THESIS2 COMMODITY TYPE MODEL
 
-def is_in_season(commodity, month):
-    season = fruit_seasons.get(commodity)
-    if not season:
-        return False
-    if season[0] == "All Year":
-        return True
-    start, end = [datetime.strptime(m, "%B").month for m in season]
-    current_month = datetime.strptime(month, "%B").month
+# Define your fruits and their properties
+# fruits = [
+#     {
+#         "name": "Mango",
+#         "average_weight_per_unit_kg": 0.25,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["March", "April", "May", "June"]
+#     },
+#     {
+#         "name": "Banana",
+#         "average_weight_per_unit_kg": 0.15,
+#         "unit_abrv": "kg",
+#         "seasonal_months": [m for m in [
+#             "January", "February", "March", "April", "May", "June",
+#             "July", "August", "September", "October", "November", "December"
+#         ]]
+#     },
+#     {
+#         "name": "Papaya",
+#         "average_weight_per_unit_kg": 1.2,
+#         "unit_abrv": "kg",
+#         "seasonal_months": [m for m in [
+#             "January", "February", "March", "April", "May", "June",
+#             "July", "August", "September", "October", "November", "December"
+#         ]]
+#     },
+#     {
+#         "name": "Pineapple",
+#         "average_weight_per_unit_kg": 1.5,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["March", "April", "May", "June"]
+#     },
+#     {
+#         "name": "Lanzones",
+#         "average_weight_per_unit_kg": 0.02,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["September", "October", "November"]
+#     },
+#     {
+#         "name": "Rambutan",
+#         "average_weight_per_unit_kg": 0.03,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["August", "September", "October"]
+#     },
+#     {
+#         "name": "Guava",
+#         "average_weight_per_unit_kg": 0.2,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["August", "September", "October"]
+#     },
+#     {
+#         "name": "Durian",
+#         "average_weight_per_unit_kg": 1.5,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["August", "September", "October"]
+#     },
+#     {
+#         "name": "Mangosteen",
+#         "average_weight_per_unit_kg": 0.08,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["July", "August", "September"]
+#     },
+#     {
+#         "name": "Calamansi",
+#         "average_weight_per_unit_kg": 0.005,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["August", "September", "October"]
+#     },
+#     {
+#         "name": "Watermelon",
+#         "average_weight_per_unit_kg": 2.5,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["March", "April", "May", "June", "July"]
+#     },
+#     {
+#         "name": "Avocado",
+#         "average_weight_per_unit_kg": 0.3,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["July", "August", "September"]
+#     },
+#     {
+#         "name": "Pomelo",
+#         "average_weight_per_unit_kg": 1.0,
+#         "unit_abrv": "kg",
+#         "seasonal_months": ["August", "September", "October"]
+#     },
+# ]
 
-    if start <= end:
-        return start <= current_month <= end
-    else:
-        return current_month >= start or current_month <= end
+# def populate_commodity_types():
+#     for fruit in fruits:
+#         unit = UnitMeasurement.objects.get(unit_abrv=fruit["unit_abrv"])
+#         commodity, created = CommodityType.objects.get_or_create(
+#             name=fruit["name"],
+#             defaults={
+#                 "average_weight_per_unit_kg": fruit["average_weight_per_unit_kg"],
+#                 "unit": unit,
+#             }
+#         )
+#         if not created:
+#             commodity.average_weight_per_unit_kg = fruit["average_weight_per_unit_kg"]
+#             commodity.unit = unit
+#             commodity.save()
+#         # Set seasonal months
+#         months = Month.objects.filter(name__in=fruit["seasonal_months"])
+#         commodity.seasonal_months.set(months)
+#         commodity.save()
+#         print(f"{'Created' if created else 'Updated'}: {commodity.name}")
 
-def generate_notifications(crops):
-    """Generate a list of notifications for the user based on their crops and seasonality."""
-    current_month = get_current_month()
+# END OF COMMODITY TYPE SCRIPT
 
-    # Get commodity types and their seasonal months
-    commodity_seasons = {}
-    for commodity in CommodityType.objects.all():
-        commodity_seasons[commodity.name] = commodity.seasonal_months.values_list('number', flat=True)
 
-    notifications = []
+# GENERATING THE THESIS2 VERIFIED RECORDS WITH COMMODITY TYPE NOT CONNECTED TO INITPLATNRECORD AND INITHARVESTRECORD
 
-    for crop in crops:
-        in_season = current_month in commodity_seasons.get(crop, [])
-        alternatives = [
-            fruit for fruit, months in commodity_seasons.items()
-            if fruit != crop and current_month in months
-        ]
+from dashboard.models import VerifiedPlantRecord, VerifiedHarvestRecord
+from base.models import initPlantRecord, initHarvestRecord
+import random
+from datetime import timedelta
 
-        notifications.append({
-            'crop': crop,
-            'in_season': in_season,
-            'current_month': current_month,
-            'alternatives': alternatives,
-        })
+def generate_verified_records():
+    # Get all commodity types
+    commodities = list(CommodityType.objects.all())
+    if not commodities:
+        print("No commodities found. Populate CommodityType first.")
+        return
 
-    return notifications
+    # Generate VerifiedPlantRecord
+    for i in range(100):
+        # try:
+        #     prev_plant = initPlantRecord.objects.get(pk=i)
+        # except initPlantRecord.DoesNotExist:
+        #     print(f"initPlantRecord with id {i} does not exist. Skipping.")
+        #     continue
 
+        commodity = random.choice(commodities)
+        min_expected = random.randint(100, 500)
+        max_expected = min_expected + random.randint(50, 200)
+        average_units = (min_expected + max_expected) / 2
+        estimated_weight = average_units * float(commodity.average_weight_per_unit_kg)
+
+        VerifiedPlantRecord.objects.create(
+            plant_date=timezone.now().date() - timedelta(days=random.randint(0, 365)),
+            commodity_id=commodity,
+            min_expected_harvest=min_expected,
+            max_expected_harvest=max_expected,
+            average_harvest_units=average_units,
+            estimated_weight_kg=estimated_weight,
+            remarks="Auto-generated record.",
+            date_verified=timezone.now(),
+            # prev_record=prev_plant,
+        )
+        print(f"Created VerifiedPlantRecord for prev_record_id={i}")
+
+    # Generate VerifiedHarvestRecord
+    # for i in range(1, 9):
+    #     try:
+    #         prev_harvest = initHarvestRecord.objects.get(pk=i)
+    #     except initHarvestRecord.DoesNotExist:
+    #         print(f"initHarvestRecord with id {i} does not exist. Skipping.")
+    #         continue
+
+        commodity = random.choice(commodities)
+        total_weight = round(random.uniform(100, 1000), 2)
+        weight_per_unit = float(commodity.average_weight_per_unit_kg)
+        if weight_per_unit == 0:
+            weight_per_unit = 1.0  # avoid division by zero
+
+        VerifiedHarvestRecord.objects.create(
+            harvest_date=timezone.now().date() - timedelta(days=random.randint(0, 365)),
+            commodity_id=commodity,
+            total_weight_kg=total_weight,
+            weight_per_unit_kg=weight_per_unit,
+            remarks="Auto-generated record.",
+            date_verified=timezone.now(),
+            # prev_record=prev_harvest,
+        )
+        print(f"Created VerifiedHarvestRecord for prev_record_id={i}")
+
+# To run:
+from dashboard.utils import generate_verified_records
+generate_verified_records()
+
+
+
+# GENERATING THE THESIS1 VERIFIED RECORDS AND COMMODITY TYPE
+# fruit_seasons = {
+#     "Mango": ("March", "June"),
+#     "Banana": ("All Year", "All Year"),
+#     "Papaya": ("All Year", "All Year"),
+#     "Pineapple": ("March", "June"),
+#     "Lanzones": ("September", "November"),
+#     "Rambutan": ("August", "October"),
+#     "Guava": ("August", "October"),
+#     "Durian": ("August", "October"),
+#     "Mangosteen": ("July", "September"),
+#     "Calamansi": ("August", "October"),
+#     "Watermelon": ("March", "July"),
+#     "Avocado": ("July", "September"),
+#     "Pomelo": ("August", "October"),
+# }
+
+# def get_current_month():
+#     return datetime.now().strftime('%B')
+
+# def is_in_season(commodity, month):
+#     season = fruit_seasons.get(commodity)
+#     if not season:
+#         return False
+#     if season[0] == "All Year":
+#         return True
+#     start, end = [datetime.strptime(m, "%B").month for m in season]
+#     current_month = datetime.strptime(month, "%B").month
+
+#     if start <= end:
+#         return start <= current_month <= end
+#     else:
+#         return current_month >= start or current_month <= end
+
+# def generate_notifications(crops):
+#     """Generate a list of notifications for the user based on their crops and seasonality."""
+#     current_month = get_current_month()
+
+#     # Get commodity types and their seasonal months
+#     commodity_seasons = {}
+#     for commodity in CommodityType.objects.all():
+#         commodity_seasons[commodity.name] = commodity.seasonal_months.values_list('number', flat=True)
+
+#     notifications = []
+
+#     for crop in crops:
+#         in_season = current_month in commodity_seasons.get(crop, [])
+#         alternatives = [
+#             fruit for fruit, months in commodity_seasons.items()
+#             if fruit != crop and current_month in months
+#         ]
+
+#         notifications.append({
+#             'crop': crop,
+#             'in_season': in_season,
+#             'current_month': current_month,
+#             'alternatives': alternatives,
+#         })
+
+#     return notifications
+
+# END OF THESIS1 VERIFIED RECORD GENERATOR
+
+
+
+
+# MAKING THE SUPERUSER A RECORD IN THE TABLES 
 
 # for making superuser a record in userinformation and accountsinformation tables
 
 # from base.models import AuthUser
-# from base.models import UserInformation, AccountsInformation, AccountType, AccountStatus, BarangayName, MunicipalityName 
+# from base.models import UserInformation, AccountsInformation, AccountType, AccountStatus, BarangayName, MunicipalityName, AdminInformation
 # from django.utils import timezone
 # from django.utils.timezone import now
 
@@ -110,7 +303,17 @@ def generate_notifications(crops):
 # )
 
 
+# TRUNCATING THE TABLE SELECTED
 # for truncating a table 
 # from django.db import connection
 # with connection.cursor() as cursor:
 #     cursor.execute("TRUNCATE TABLE base_authuser RESTART IDENTITY CASCADE;")
+
+# SQL QUERY FOR THE COMMODITY TYPE
+# SELECT *
+# FROM base_commoditytype c
+# JOIN base_commoditytype_seasonal_months m2m ON c.commodity_id = m2m.commoditytype_id
+# JOIN base_month m ON m2m.month_id = m.month_id
+# -- WHERE m.name = 'August';
+# GROUP BY m.month_id, c.commodity_id, m2m.id
+# ORDER BY m.month_id

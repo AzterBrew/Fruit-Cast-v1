@@ -1,5 +1,5 @@
 {% extends "forecasting/layout.html" %}
-{%load static%}
+{% load static %}
 
 {% block title %}
 Fruit Cast | Forecast
@@ -10,112 +10,57 @@ Fruit Cast | Forecast
 {% endblock navbar %}
 
 {% block content %}
+<div class="main-user py-5">
 
-<div class="container2 p-6">
-
-    <div class="container mt-4">
-
-    <h1>Forecast
-        {% if forecast_data %}
-            : {{ selected_commodity }}
-        {% endif %}
-
-    </h1>
-        <div>
-                {% if forecast_data %}
-
+        <div class="row main-user-content justify-content-center">
+            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                <h1 class="mb-4 text-success fw-bold">
+                    Forecast{% if selected_commodity_obj %}: {{ selected_commodity_obj.name }}{% endif %}
+                </h1>
                 <form method="get" class="mb-4">
-                    <label for="commodity_type">Select Commodity Type:</label>
-                    <br></br>
-                    <select class="form-select w-25 col-md-3" name="commodity_type" id="commodity_type" onchange="this.form.submit()">
+                    <label for="commodity_type" class="form-label">Select Commodity Type:</label>
+                    <select class="form-select w-auto d-inline-block" name="commodity_id" id="commodity_type" onchange="this.form.submit()">
                         {% for commodity in commodity_types %}
-                            <option value="{{ commodity }}"  {% if commodity == selected_commodity %}selected{% endif %}>
-                                {{ commodity }}
+                            <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_commodity_id|stringformat:"s" %}selected{% endif %}>
+                                {{ commodity.name }}
                             </option>
                         {% endfor %}
                     </select>
                 </form>
-                <canvas id="forecastChart" height="100"></canvas>
-
-                {% comment %} THESIS2 {% endcomment %}
-                {% comment %} <script>
-                    const labels = {{ forecast_data.labels|safe }};
-                    const forecastedData = {{ forecast_data.forecasted_count|safe }};
-                    const ctx = document.getElementById('forecastChart').getContext('2d');
-
-                    const forecastChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Forecasted Unit Count',
-                                data: forecastedData,
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                borderWidth: 2,
-                                tension: 0.3,
-                                fill: true,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Unit Count'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Forecasted Month'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                </script> {% endcomment %}
-            
+                {% if forecast_data %}
+                    <canvas id="forecastChart" style="height: 40vh;"></canvas>
+                    <h3 class="mt-5">Monthly Forecast Data</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Forecasted Amount (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for month, forecast in forecast_data.combined %}
+                            <tr>
+                                <td>{{ month }}</td>
+                                <td>{{ forecast }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <h2 class="mt-5">2D Mapping</h2>
+                    <div id="map" style="height: 500px; z-index: 0"></div>
+                {% else %}
+                    <div class="alert alert-warning">Not enough data to generate a forecast for this commodity.</div>
+                {% endif %}
             </div>
-
-
-            
-            <h3>Monthly Forecast Data</h3>
-            <table class="table table-striped">
-            <thead>
-                <tr>
-                <th>Month</th>
-                <th>Forecasted Amount (kg)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for month, forecast in forecast_data.combined %}
-                <tr>
-                    <td>{{ month }}</td>
-                    <td>{{ forecast }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            </table>
-
-            
-
         </div>
-        {% comment %} 2DMAPPING {% endcomment %}
-            <h2>2D Mapping</h2>
-            <div id="map" style="height: 500px; z-index: 0"></div>
-        </div>
-    
-  <!-- Include chart.js and map.js -->
-   
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</div>
 
-  {% comment %} THESIS1 {% endcomment %}
-  <script>
-    // Initialize forecast chart
+<!-- Chart.js and Leaflet -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+{% if forecast_data %}
     var forecastChart = new Chart(document.getElementById('forecastChart'), {
       type: 'line',
       data: {
@@ -130,183 +75,25 @@ Fruit Cast | Forecast
       options: {
         responsive: true,
         scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'Month'
-            }
-          },
-          y: {
-            title: {
-              display: true,
-              text: 'Amount (kg)'
-            }
-          }
+          x: { title: { display: true, text: 'Month' } },
+          y: { title: { display: true, text: 'Amount (kg)' } }
         }
       }
     });
+{% endif %}
 
-    // Initialize Leaflet map
-    var map = L.map('map').setView([14.678, 120.536], 10); // Adjust coordinates if needed
+// Initialize Leaflet map
+var map = L.map('map').setView([14.678, 120.536], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    fetch("{% static 'geojson/Barangays.json' %}")
-    
-    .then(response => response.json())
-    .then(geoData => {
-      // Add the GeoJSON data to the map
-      L.geoJSON(geoData, {
-        onEachFeature: function (feature, layer) {
-          // Bind popups for each feature (barangay) with relevant information
-            const props = feature.properties;
-            const forecastAmount = props.forecasted_amount ?? 0;
-            const barangay = props.barangay || props.NAME_3 || "Unknown";
-            const municipality = props.municipality || props.NAME_2 || "Unknown";
-
-            layer.bindPopup(`
-            <strong>${barangay}, ${municipality}</strong><br>
-            Forecasted: ${forecastAmount.toFixed(2)} units
-            `);
-          //var barangayName = feature.properties.NAME_3;
-          //var municipalityName = feature.properties.NAME_2;
-          //var provinceName = feature.properties.PROVINCE;
-          
-          //var forecastedData = mapData.filter(item => 
-          //  item.barangay === barangayName && item.municipality === municipalityName);
-
-          //var forecastedAmount = forecastedData.length > 0 ? forecastedData[0].forecasted_amount : 0;
-
-          // Create a popup with the information
-          //layer.bindPopup(
-          //  `<b>${barangayName}</b><br>` +
-           // `Municipality: ${feature.properties.NAME_2}<br>` +
-           // `Province: ${provinceName}<br>` +
-           // `Forecasted Amount: ${forecastedAmount.toFixed(2)} kg`
-          //);
-        }
-      }).addTo(map);
-    })
-    .catch(error => {
-      console.error('Error loading GeoJSON:', error);
-    });
-
-    var mapData = {{ map_data|safe }}; // Ensure this is passed in the context
-      {% comment %} MARKERS IN MAP {% endcomment %}
-        {% comment %} mapData.forEach(function(item) {
-            if (item.latitude && item.longitude) { // Only add markers if the coordinates are valid
-                var marker = L.marker([item.latitude, item.longitude]).addTo(map);
-                marker.bindPopup('<b>' + item.harvest_barangay + '</b><br>' + item.harvest_municipality + '<br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
-            } else {
-                console.warn('Invalid coordinates for marker:', item);
-            }
-        }); {% endcomment %}
-
-  </script>
-
-  {% comment %} THESIS2 {% endcomment %}
-  {% comment %} <script>
-    let geojsonLayer;
-
-function getColor(value) {
-  return value > 1000 ? '#800026' :
-         value > 500  ? '#BD0026' :
-         value > 200  ? '#E31A1C' :
-         value > 100  ? '#FC4E2A' :
-         value > 50   ? '#FD8D3C' :
-         value > 20   ? '#FEB24C' :
-         value > 0    ? '#FED976' :
-                        '#FFEDA0';
-}
-
-function getForecastValue(barangay, municipality) {
-  for (let i = 0; i < mapData.length; i++) {
-    if (mapData[i].harvest_barangay === barangay &&
-        mapData[i].harvest_municipality === municipality) {
-      return mapData[i].forecasted_amount;
+var mapData = {{ map_data|safe }};
+mapData.forEach(function(item) {
+    if (item.latitude && item.longitude) {
+        var marker = L.marker([item.latitude, item.longitude]).addTo(map);
+        marker.bindPopup('<b>' + item.barangay + ', ' + item.municipality + '</b><br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
     }
-  }
-  return 0;
-}
-
-fetch("{% static 'geojson/Barangays.json' %}")
-  .then(response => response.json())
-  .then(geoData => {
-    geojsonLayer = L.geoJSON(geoData, {
-      style: function (feature) {
-        const barangay = feature.properties.NAME_3;
-        const municipality = feature.properties.NAME_2;
-        const forecastAmount = getForecastValue(barangay, municipality);
-
-        return {
-          fillColor: getColor(forecastAmount),
-          weight: 1,
-          opacity: 1,
-          color: 'white',
-          dashArray: '3',
-          fillOpacity: 0.7
-        };
-      },
-      onEachFeature: function (feature, layer) {
-        const barangay = feature.properties.NAME_3;
-        const municipality = feature.properties.NAME_2;
-        const forecastAmount = getForecastValue(barangay, municipality);
-
-        layer.bindPopup(`
-          <strong>${barangay}, ${municipality}</strong><br>
-          Forecasted: ${forecastAmount.toFixed(2)} kg
-        `);
-
-        layer.on({
-          mouseover: function (e) {
-            var layer = e.target;
-            layer.setStyle({
-              weight: 2,
-              color: '#666',
-              fillOpacity: 0.9
-            });
-          },
-          mouseout: function (e) {
-            geojsonLayer.resetStyle(e.target);
-          }
-        });
-      }
-    }).addTo(map);
-  });
-
-  document.addEventListener("DOMContentLoaded", function () {
-        var map = L.map('map').setView([14.678, 120.536], 10); // Center around Bataan
-
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        // Forecasted barangay data from Django context
-        var mapData = {{ map_data|safe }};
-
-        mapData.forEach(function (item) {
-            var marker = L.circleMarker([item.latitude, item.longitude], {
-                radius: 8,
-                fillColor: "#007bff",
-                color: "#0056b3",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).addTo(map);
-
-            marker.bindPopup(
-                "<b>" + item.barangay + ", " + item.municipality + "</b><br>" +
-                "Forecasted amount: " + item.forecasted_amount.toFixed(2) + " units"
-            );
-        });
-    });
-  </script> {% endcomment %}
-  {% else %}
-        <p>No forecast data available.</p>
-    {% endif %}
-</div>
+});
+</script>
 {% endblock content %}
-

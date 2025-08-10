@@ -27,7 +27,7 @@ from base.models import *
 class VerifiedHarvestRecord(models.Model):
     harvest_date = models.DateField()
     commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
-    commodity_custom = models.CharField(max_length=255, blank=True, null=True)
+    # commodity_custom = models.CharField(max_length=255, blank=True, null=True)
     
     total_weight_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
     weight_per_unit_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
@@ -46,12 +46,12 @@ class VerifiedHarvestRecord(models.Model):
     prev_record = models.ForeignKey('base.initHarvestRecord', on_delete=models.SET_NULL, null=True, blank=True)  #this connects to initial versoin thats also connected to the record table, which has hte location
     
     def __str__(self):
-        return f"{self.commodity_type} ({self.total_weight_kg} kg) on {self.harvest_date}"
+        return f"{self.commodity_id} ({self.total_weight_kg} kg) on {self.harvest_date}"
 
 class VerifiedPlantRecord(models.Model):
     plant_date = models.DateField()
     commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
-    commodity_custom = models.CharField(max_length=255, blank=True, null=True)
+    # commodity_custom = models.CharField(max_length=255, blank=True, null=True)
     
     # plant_municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
     # plant_barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
@@ -70,7 +70,7 @@ class VerifiedPlantRecord(models.Model):
 # estimated_weight_kg = average_harvest_units * avg_weight_per_unit_kg [avg weight per unit will be on the commodity type table]
 
     def __str__(self):
-        return f"{self.commodity_type} ({self.estimated_weight_kg} kg est.) on {self.plant_date}"
+        return f"{self.commodity_id} ({self.estimated_weight_kg} kg est.) on {self.plant_date}"
 
 
 class Notification(models.Model):
