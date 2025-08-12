@@ -1,10 +1,10 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName
+from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from base.forms import EditUserInformation
 from django.utils import timezone
@@ -15,7 +15,15 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.utils.crypto import get_random_string
 from .decorators import admin_or_agriculturist_required, superuser_required
-
+from django.views.decorators.csrf import csrf_exempt
+from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord
+from prophet import Prophet
+import pandas as pd
+from datetime import datetime
+from calendar import monthrange
+import json
+from shapely.geometry import shape
+import csv
 
 def admin_login(request):
     if request.method == 'POST':
@@ -80,18 +88,6 @@ def admin_dashboard(request):
         return HttpResponseForbidden("You are not authorized to access this page.")
 
     return render(request, 'admin_panel/admin_dashboard.html')
-
-# @login_required
-# def verify_accounts(request):
-#     # Show only accounts with status = 3 (Pending)
-#     pending_accounts = AccountsInformation.objects.filter(item_status_id=3)
-
-#     status_choices = AccountStatus.objects.all()
-
-#     return render(request, 'admin_panel/verify_accounts.html', {
-#         'pending_accounts': pending_accounts,
-#         'status_choices': status_choices,
-#     })
 
 @login_required
 def update_account_status(request, account_id):
@@ -345,7 +341,324 @@ def assign_account(request):
         'form': form
     })
 
+
+@login_required
+@admin_or_agriculturist_required
+def admin_forecast(request):
+    if not request.user.is_authenticated:
+        return render(request, 'home.html', {})
+
+    account_id = request.session.get('account_id')
+    userinfo_id = request.session.get('userinfo_id')
+    if not (userinfo_id and account_id):
+        return redirect('home')
+
+    userinfo = UserInformation.objects.get(pk=userinfo_id)
+    commodity_types = CommodityType.objects.exclude(pk=1)
+    all_municipalities = MunicipalityName.objects.exclude(pk=14)
+
+    selected_commodity_id = request.GET.get('commodity_id')
+    selected_municipality_id = request.GET.get('municipality_id')
+    selected_commodity_obj = None
+    selected_municipality_obj = None
+    filter_month = request.GET.get('filter_month')
+    filter_year = request.GET.get('filter_year')
     
+    if selected_commodity_id == "1":
+        selected_commodity_obj = None
+        selected_commodity_id = None
+    elif selected_commodity_id:
+        try:
+            selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
+        except CommodityType.DoesNotExist:
+            selected_commodity_obj = None
+    else:
+        selected_commodity_obj = commodity_types.first()
+        selected_commodity_id = selected_commodity_obj.commodity_id if selected_commodity_obj else None
+
+    if selected_municipality_id:
+        try:
+            selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
+        except MunicipalityName.DoesNotExist:
+            selected_municipality_obj = None
+    
+    
+    # Only show municipalities with at least 2 months of data for the selected commodity
+    municipality_qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
+    municipality_months = {}
+    for muni_id in all_municipalities.values_list('municipality_id', flat=True):
+        muni_records = municipality_qs.filter(municipality_id=muni_id)
+        months = muni_records.values_list('harvest_date', flat=True)
+        month_set = set((d.year, d.month) for d in months if d)
+        if len(month_set) >= 2:
+            municipality_months[muni_id] = True
+
+    municipalities = all_municipalities.filter(municipality_id__in=municipality_months.keys())
+
+    now_dt = datetime.now()
+    current_year = now_dt.year
+    available_years = [current_year, current_year + 1]
+    months = Month.objects.order_by('number')
+    
+    # Get in-season months for the selected commodity
+    in_season_months = set()
+    if selected_commodity_obj:
+        in_season_months = set(m.number for m in selected_commodity_obj.seasonal_months.all())
+
+    # Filter by commodity and municipality
+    qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
+    if selected_municipality_id:
+        qs = qs.filter(municipality_id=selected_municipality_id)
+    qs = qs.values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg', 'commodity_id', 'prev_record')
+
+    forecast_data = None
+    map_data = []
+
+    if qs.exists():
+        df = pd.DataFrame.from_records(qs)
+        df['ds'] = pd.to_datetime(df['harvest_date'])
+        df['y'] = df['total_weight_kg'].astype(float)
+
+        # Group by month for Prophet
+        df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+        df['ds'] = df['ds'].dt.to_timestamp()
+
+        # Remove outliers
+        if len(df) >= 4:
+            q_low = df['y'].quantile(0.05)
+            q_high = df['y'].quantile(0.95)
+            df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
+
+        # Optional: smooth data
+        df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
+
+        if len(df) >= 2:
+            model = Prophet(
+                yearly_seasonality=True,
+                changepoint_prior_scale=0.05,
+                seasonality_prior_scale=1
+            )
+            model.fit(df[['ds', 'y']])
+            future = model.make_future_dataframe(periods=12, freq='M')
+            forecast_df = model.predict(future)
+
+            # Apply seasonal boost to in-season months
+            boost_factor = 1.2
+            forecast_df['month_num'] = forecast_df['ds'].dt.month
+            forecast_df['yhat_boosted'] = forecast_df.apply(
+                lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
+                axis=1
+            )
+            forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
+
+            labels = forecast_df['ds'].dt.strftime('%B %Y').tolist()
+            month_numbers = forecast_df['ds'].dt.month.tolist()
+            years = forecast_df['ds'].dt.year.tolist()
+            values = forecast_df['yhat_boosted'].round().tolist()
+            combined_forecast = list(zip(labels, values, month_numbers, years))
+
+            forecast_data = {
+                'labels': labels,
+                'forecasted_count': values,
+                'combined': combined_forecast
+            }
+        else:
+            forecast_data = None
+
+        
+        #  Table for grouped by commodity, separate forecast / Forecast summary
+        
+        filter_month = request.GET.get('filter_month')
+        filter_year = request.GET.get('filter_year')
+        
+        
+        
+        now = datetime.now()
+        current_year = now.year
+        current_month = now.month
+        months =  Month.objects.order_by('number')
+        if filter_year and int(filter_year) == current_year:
+            months = months.filter(number__gt=now_dt.month)
+
+        # Prepare available years for the dropdown
+        current_year = datetime.now().year
+        available_years = [current_year, current_year + 1]
+        if not available_years:
+            available_years = [timezone.now().year]
+            
+        forecast_value_for_selected_month = None
+        if forecast_data and filter_month and filter_year:
+            for label, value in forecast_data['combined']:
+                # label is like "July 2025"
+                month_name, year_str = label.split()
+                if int(filter_year) == int(year_str) and int(filter_month) == datetime.strptime(month_name, "%B").month:
+                    forecast_value_for_selected_month = value
+                    break
+        # Prepare forecast summary per commodity for the selected month/year
+        
+        # --- 2D Mapping (unchanged, but you can filter map_data if you want) ---
+        with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
+            geojson_data = json.load(f)
+
+        prev_to_municipality = {}
+        for rec in qs:
+            prev_id = rec['prev_record']
+            if prev_id:
+                try:
+                    prev = initHarvestRecord.objects.get(pk=prev_id)
+                    if prev.transaction and prev.transaction.location_type == 'farm_land' and prev.transaction.farm_land:
+                        municipality = prev.transaction.farm_land.municipality.municipality
+                        prev_to_municipality[prev_id] = municipality
+                except Exception:
+                    continue
+
+        df_full = pd.DataFrame.from_records(qs)
+        df_full['municipality'] = df_full['prev_record'].map(prev_to_municipality)
+        muni_group = df_full.groupby('municipality')['total_weight_kg'].sum().to_dict()
+
+        for feature in geojson_data['features']:
+            properties = feature.get('properties', {})
+            municipality = properties.get('MUNICIPALI') or properties.get('NAME_2')
+            geom = shape(feature['geometry'])
+            centroid = geom.centroid
+            latitude = centroid.y
+            longitude = centroid.x
+            forecasted_amount = muni_group.get(municipality, 0)
+            map_data.append({
+                'latitude': latitude,
+                'longitude': longitude,
+                'barangay': None,
+                'municipality': municipality,
+                'province': properties.get('PROVINCE', None),
+                'forecasted_amount': float(forecasted_amount),
+                'forecast_value_for_selected_month': forecast_value_for_selected_month
+            })
+
+    context = {
+        'user_firstname': userinfo.firstname,
+        'forecast_data': forecast_data,
+        'commodity_types': commodity_types,
+        'municipalities': municipalities,
+        'selected_commodity': selected_commodity_id,
+        'selected_municipality': selected_municipality_id,
+        'map_data': map_data,
+        'selected_commodity_obj': selected_commodity_obj,
+        'selected_commodity_id': selected_commodity_id,
+        'selected_municipality_obj': selected_municipality_obj,
+        'filter_month': filter_month,
+        'filter_year': filter_year,
+        'available_years': available_years,
+        'months': months
+    }
+    
+    return render(request, 'admin_panel/admin_forecast.html', context)
+
+
+@csrf_exempt
+@login_required
+@admin_or_agriculturist_required
+def save_admin_forecast(request):
+    if request.method == 'POST':
+        commodity_id = request.POST.get('commodity_id')
+        municipality_id = request.POST.get('municipality_id')
+        if not municipality_id or municipality_id == 'None':
+            municipality_id = 14  # pk for 'Overall'
+        months = request.POST.getlist('months[]')
+        years = request.POST.getlist('years[]')
+        values = request.POST.getlist('values[]')
+        forecast_type = request.POST.get('forecast_type', 'by_commodity')
+
+        try:
+            userinfo = UserInformation.objects.get(auth_user=request.user)
+            admin_info = AdminInformation.objects.filter(userinfo_id=userinfo).first()
+        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+            admin_info = None
+            
+        if forecast_type == "by_commodity":
+            commodity = CommodityType.objects.get(pk=commodity_id)
+            municipality = MunicipalityName.objects.get(pk=municipality_id)
+            notes = f"Commodity Type: {commodity.name}; Municipality: {municipality.municipality}"
+        elif forecast_type == "by_time":
+            # Use the first month/year in the list for the note (or adjust as needed)
+            month_obj = Month.objects.get(number=int(months[0]))
+            notes = f"Month and Year: {month_obj.name} {years[0]}"
+        else:
+            notes = "Batch forecast generated via admin panel."
+            
+            
+        # Create the batch
+        batch = ForecastBatch.objects.create(
+            generated_by=admin_info,
+            notes=notes,
+        )
+        
+        print("POST months:", request.POST.getlist('months[]'))
+        print("POST years:", request.POST.getlist('years[]'))
+        print("POST values:", request.POST.getlist('values[]'))
+
+        for month, year, value in zip(months, years, values):
+            if not month or not year or not value:
+                continue  # skip incomplete data
+            month_obj = Month.objects.get(number=int(month))
+            commodity = CommodityType.objects.get(pk=commodity_id)
+            avg_weight_per_unit = float(commodity.average_weight_per_unit_kg)
+            forecasted_kg = float(value)
+            forecasted_count_units = forecasted_kg / avg_weight_per_unit if avg_weight_per_unit else None
+            
+            ForecastResult.objects.create(
+                batch=batch,
+                commodity=commodity,
+                forecast_month=month_obj,
+                forecast_year=int(year),
+                municipality_id=int(municipality_id),
+                forecasted_amount_kg=forecasted_kg,
+                forecasted_count_units=forecasted_count_units,
+                source_data_last_updated=timezone.now(),
+                seasonal_boost_applied=True,
+            )
+        return redirect('administrator:admin_forecastviewall')
+    else:
+        return redirect('administrator:admin_forecast')
+
+
+def forecast_csv(request, batch_id):
+    batch = get_object_or_404(ForecastBatch, pk=batch_id)
+    results = ForecastResult.objects.filter(batch=batch).select_related('commodity', 'municipality', 'forecast_month')
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="forecast_batch_{batch_id}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Commodity', 'Municipality', 'Month', 'Forecasted Amount (kg)', 'Forecasted Count (units)', 'Batch ID', 'Generated At'])
+
+    for result in results:
+        writer.writerow([
+            result.commodity.name,
+            result.municipality.municipality,
+            f"{result.forecast_month.name} {result.forecast_year}",
+            result.forecasted_amount_kg,
+            result.forecasted_count_units,
+            result.batch.batch_id if result.batch else '',
+            result.batch.generated_at.strftime('%Y-%m-%d %H:%M') if result.batch else '',
+        ])
+
+    return response
+
+
+@login_required
+@admin_or_agriculturist_required
+def admin_forecastviewall(request):
+    batches = ForecastBatch.objects.select_related('generated_by__userinfo_id').order_by('-generated_at')
+    return render(request, 'admin_panel/admin_forecastviewall.html', {'batches': batches})
+
+@login_required
+@admin_or_agriculturist_required
+def admin_forecastbatchdetails(request, batch_id):
+    batch = get_object_or_404(ForecastBatch, pk=batch_id)
+    results = ForecastResult.objects.filter(batch=batch).select_related('commodity', 'municipality', 'forecast_month')
+    return render(request, 'admin_panel/admin_forecastbatchdetails.html', {'batch': batch, 'results': results})
+
+
 
 
 def accinfo(request):
