@@ -15,7 +15,7 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.utils.crypto import get_random_string
 from .decorators import admin_or_agriculturist_required, superuser_required
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord
 from prophet import Prophet
 import pandas as pd
@@ -24,6 +24,7 @@ from calendar import monthrange
 import json
 from shapely.geometry import shape
 import csv
+from django.core.paginator import Paginator
 
 def admin_login(request):
     if request.method == 'POST':
@@ -471,6 +472,39 @@ def admin_forecast(request):
         filter_month = request.GET.get('filter_month')
         filter_year = request.GET.get('filter_year')
         
+        forecast_summary = []
+        if filter_month and filter_year:
+            filter_month = int(filter_month)
+            filter_year = int(filter_year)
+            for commodity in commodity_types:
+                qs_for_sum = VerifiedHarvestRecord.objects.filter(commodity_id=commodity.commodity_id)
+                if selected_municipality_id:
+                    qs_for_sum = qs_for_sum.filter(municipality_id=selected_municipality_id)
+                qs_for_sum = qs_for_sum.values('harvest_date', 'total_weight_kg')
+                if qs_for_sum.exists():
+                    df = pd.DataFrame.from_records(qs_for_sum)
+                    df['ds'] = pd.to_datetime(df['harvest_date'])
+                    df['y'] = df['total_weight_kg'].astype(float)
+                    df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                    df['ds'] = df['ds'].dt.to_timestamp()
+                    if len(df) >= 2:
+                        model = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.05, seasonality_prior_scale=1)
+                        model.fit(df[['ds', 'y']])
+                        last_day = monthrange(filter_year, filter_month)[1]
+                        forecast_date = datetime(filter_year, filter_month, last_day)
+                        future = pd.DataFrame({'ds': [forecast_date]})
+                        forecast = model.predict(future)
+                        forecasted_kg = max(0, round(forecast['yhat'].iloc[0]))
+                    else:
+                        forecasted_kg = None
+                else:
+                    forecasted_kg = None
+                forecast_summary.append({
+                    'commodity': commodity.name,
+                    'forecasted_kg': forecasted_kg
+                })
+        else:
+            forecast_summary = None
         
         
         now = datetime.now()
@@ -488,7 +522,7 @@ def admin_forecast(request):
             
         forecast_value_for_selected_month = None
         if forecast_data and filter_month and filter_year:
-            for label, value in forecast_data['combined']:
+            for label, value, month_number, year in forecast_data['combined']:
                 # label is like "July 2025"
                 month_name, year_str = label.split()
                 if int(filter_year) == int(year_str) and int(filter_month) == datetime.strptime(month_name, "%B").month:
@@ -548,10 +582,108 @@ def admin_forecast(request):
         'filter_month': filter_month,
         'filter_year': filter_year,
         'available_years': available_years,
-        'months': months
+        'months': months,
+        'forecast_summary': forecast_summary,
     }
     
     return render(request, 'admin_panel/admin_forecast.html', context)
+
+
+@login_required
+@admin_or_agriculturist_required
+@csrf_protect
+def generate_all_forecasts(request):
+    if request.method == 'POST':
+        admin_info = AdminInformation.objects.filter(userinfo_id__auth_user=request.user).first()
+        if not admin_info:
+            messages.error(request, "Admin information not found.")
+            return redirect('administrator:admin_forecast')
+
+        commodities = CommodityType.objects.exclude(pk=1)
+        municipalities = MunicipalityName.objects.exclude(pk=14)
+        months = Month.objects.order_by('number')
+        now_dt = datetime.now()
+        current_year = now_dt.year
+        current_month = now_dt.month
+
+        # For each commodity and municipality, generate a 12-month forecast
+        for commodity in commodities:
+            for commodity in commodities:
+                in_season_months = set(m.number for m in commodity.seasonal_months.all())
+                for municipality in municipalities:
+                    qs = VerifiedHarvestRecord.objects.filter(commodity_id=commodity, municipality=municipality)
+                    if not qs.exists():
+                        continue
+                    df = pd.DataFrame.from_records(qs.values('harvest_date', 'total_weight_kg'))
+                    if df.empty:
+                        continue
+                    df['ds'] = pd.to_datetime(df['harvest_date'])
+                    df['y'] = df['total_weight_kg'].astype(float)
+                    df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                    df['ds'] = df['ds'].dt.to_timestamp()
+
+                    # Remove outliers
+                    if len(df) >= 4:
+                        q_low = df['y'].quantile(0.05)
+                        q_high = df['y'].quantile(0.95)
+                        df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
+
+                    # Smooth data
+                    df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
+
+                    # Skip if less than 2 non-NaN rows
+                    if df['y'].notna().sum() < 2:
+                        print(f"Skipping: Commodity={commodity.name}, Municipality={municipality.municipality} (not enough data)")
+                        continue
+
+                    model = Prophet(
+                        yearly_seasonality=True,
+                        changepoint_prior_scale=0.05,
+                        seasonality_prior_scale=1
+                    )
+                    model.fit(df[['ds', 'y']])
+                    future = model.make_future_dataframe(periods=12, freq='M')
+                    forecast_df = model.predict(future)
+
+                    # Apply seasonal boost to in-season months
+                    boost_factor = 1.2
+                    forecast_df['month_num'] = forecast_df['ds'].dt.month
+                    forecast_df['yhat_boosted'] = forecast_df.apply(
+                        lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
+                        axis=1
+                    )
+                    forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
+
+                    notes = f"Commodity Type: {commodity.name}; Municipality: {municipality.municipality}"
+                    batch = ForecastBatch.objects.create(
+                        generated_by=admin_info,
+                        notes=notes
+                    )
+
+                    # Save forecast results for the next 12 months (use yhat_boosted, total weight in kg)
+                    for i in range(1, 13):
+                        forecast_row = forecast_df.iloc[-13 + i]  # last 12 months
+                        forecast_month = forecast_row['ds'].month
+                        forecast_year = forecast_row['ds'].year
+                        month_obj = months.get(number=forecast_month)
+                        forecasted_kg = float(forecast_row['yhat_boosted'])
+                        print(f"Submitting: Commodity={commodity.name}, Municipality={municipality.municipality}, Month={month_obj.name}, Year={forecast_year}, Forecasted KG={forecasted_kg}")
+                        ForecastResult.objects.create(
+                            batch=batch,
+                            commodity=commodity,
+                            forecast_month=month_obj,
+                            forecast_year=forecast_year,
+                            municipality=municipality,
+                            forecasted_amount_kg=forecasted_kg,
+                            forecasted_count_units=None,
+                            seasonal_boost_applied=True,
+                            source_data_last_updated=now(),
+                            notes="Bulk auto-generated"
+                        )
+        messages.success(request, "Bulk forecast generation complete!")
+        return redirect('administrator:admin_forecastviewall')
+    else:
+        return redirect('administrator:admin_forecast')
 
 
 @csrf_exempt
@@ -559,63 +691,94 @@ def admin_forecast(request):
 @admin_or_agriculturist_required
 def save_admin_forecast(request):
     if request.method == 'POST':
-        commodity_id = request.POST.get('commodity_id')
-        municipality_id = request.POST.get('municipality_id')
-        if not municipality_id or municipality_id == 'None':
-            municipality_id = 14  # pk for 'Overall'
-        months = request.POST.getlist('months[]')
-        years = request.POST.getlist('years[]')
-        values = request.POST.getlist('values[]')
-        forecast_type = request.POST.get('forecast_type', 'by_commodity')
-
+        forecast_type = request.POST.get('forecast_type', 'by_month')
         try:
             userinfo = UserInformation.objects.get(auth_user=request.user)
             admin_info = AdminInformation.objects.filter(userinfo_id=userinfo).first()
         except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
             admin_info = None
-            
-        if forecast_type == "by_commodity":
+
+        if forecast_type == "by_month":
+            commodity_id = request.POST.get('commodity_id')
+            municipality_id = request.POST.get('municipality_id')
+            if not municipality_id or municipality_id == 'None':
+                municipality_id = 14  # pk for 'Overall'
+            months = request.POST.getlist('months[]')
+            years = request.POST.getlist('years[]')
+            values = request.POST.getlist('values[]')
+            if not (months and years and values and commodity_id):
+                messages.error(request, "Missing forecast data. Please try again.")
+                return redirect('administrator:admin_forecast')
             commodity = CommodityType.objects.get(pk=commodity_id)
             municipality = MunicipalityName.objects.get(pk=municipality_id)
             notes = f"Commodity Type: {commodity.name}; Municipality: {municipality.municipality}"
-        elif forecast_type == "by_time":
-            # Use the first month/year in the list for the note (or adjust as needed)
-            month_obj = Month.objects.get(number=int(months[0]))
-            notes = f"Month and Year: {month_obj.name} {years[0]}"
-        else:
-            notes = "Batch forecast generated via admin panel."
-            
-            
-        # Create the batch
-        batch = ForecastBatch.objects.create(
-            generated_by=admin_info,
-            notes=notes,
-        )
-        
-        print("POST months:", request.POST.getlist('months[]'))
-        print("POST years:", request.POST.getlist('years[]'))
-        print("POST values:", request.POST.getlist('values[]'))
-
-        for month, year, value in zip(months, years, values):
-            if not month or not year or not value:
-                continue  # skip incomplete data
-            month_obj = Month.objects.get(number=int(month))
-            commodity = CommodityType.objects.get(pk=commodity_id)
-            avg_weight_per_unit = float(commodity.average_weight_per_unit_kg)
-            forecasted_kg = float(value)
-            forecasted_count_units = forecasted_kg / avg_weight_per_unit if avg_weight_per_unit else None
-            
-            ForecastResult.objects.create(
-                batch=batch,
-                commodity=commodity,
-                forecast_month=month_obj,
-                forecast_year=int(year),
-                municipality_id=int(municipality_id),
-                forecasted_amount_kg=forecasted_kg,
-                forecasted_count_units=forecasted_count_units,
-                source_data_last_updated=timezone.now(),
-                seasonal_boost_applied=True,
+            batch = ForecastBatch.objects.create(
+                generated_by=admin_info,
+                notes=notes,
             )
+            for month, year, value in zip(months, years, values):
+                if not month or not year or not value:
+                    continue  # skip incomplete data
+                month_obj = Month.objects.get(number=int(month))
+                avg_weight_per_unit = float(commodity.average_weight_per_unit_kg)
+                forecasted_kg = float(value)
+                forecasted_count_units = forecasted_kg / avg_weight_per_unit if avg_weight_per_unit else None
+                ForecastResult.objects.create(
+                    batch=batch,
+                    commodity=commodity,
+                    forecast_month=month_obj,
+                    forecast_year=int(year),
+                    municipality_id=int(municipality_id),
+                    forecasted_amount_kg=forecasted_kg,
+                    forecasted_count_units=forecasted_count_units,
+                    source_data_last_updated=timezone.now(),
+                    seasonal_boost_applied=True,
+                )
+        elif forecast_type == "by_commodity":
+            municipality_id = request.POST.get('municipality_id')
+            if not municipality_id or municipality_id == 'None':
+                municipality_id = 14  # pk for 'Overall'
+            filter_month = request.POST.get('filter_month')
+            filter_year = request.POST.get('filter_year')
+            commodity_ids = request.POST.getlist('commodity_ids[]')
+            values = request.POST.getlist('values[]')
+            if not (commodity_ids and values and filter_month and filter_year):
+                messages.error(request, "Missing forecast summary data. Please try again.")
+                return redirect('administrator:admin_forecast')
+            try:
+                month_obj = Month.objects.get(number=int(filter_month))
+            except Month.DoesNotExist:
+                messages.error(request, "Invalid month selected.")
+                return redirect('administrator:admin_forecast')
+            notes = f"Month and Year: {month_obj.name} {filter_year}"
+            batch = ForecastBatch.objects.create(
+                generated_by=admin_info,
+                notes=notes,
+            )
+            for commodity_id, value in zip(commodity_ids, values):
+                if not commodity_id or not value:
+                    continue
+                try:
+                    commodity = CommodityType.objects.get(pk=commodity_id)
+                except CommodityType.DoesNotExist:
+                    continue
+                avg_weight_per_unit = float(commodity.average_weight_per_unit_kg)
+                forecasted_kg = float(value)
+                forecasted_count_units = forecasted_kg / avg_weight_per_unit if avg_weight_per_unit else None
+                ForecastResult.objects.create(
+                    batch=batch,
+                    commodity=commodity,
+                    forecast_month=month_obj,
+                    forecast_year=int(filter_year),
+                    municipality_id=int(municipality_id),
+                    forecasted_amount_kg=forecasted_kg,
+                    forecasted_count_units=forecasted_count_units,
+                    source_data_last_updated=timezone.now(),
+                    seasonal_boost_applied=True,
+                )
+        else:
+            messages.error(request, "Unknown forecast type.")
+            return redirect('administrator:admin_forecast')
         return redirect('administrator:admin_forecastviewall')
     else:
         return redirect('administrator:admin_forecast')
@@ -629,14 +792,14 @@ def forecast_csv(request, batch_id):
     response['Content-Disposition'] = f'attachment; filename="forecast_batch_{batch_id}.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Commodity', 'Municipality', 'Month', 'Forecasted Amount (kg)', 'Forecasted Count (units)', 'Batch ID', 'Generated At'])
+    writer.writerow(['Commodity', 'Municipality', 'Month & Year', 'Forecasted Amount (kg)', 'Forecasted Count (units)', 'Batch ID', 'Generated At'])
 
     for result in results:
         writer.writerow([
             result.commodity.name,
             result.municipality.municipality,
             f"{result.forecast_month.name} {result.forecast_year}",
-            result.forecasted_amount_kg,
+            round(result.forecasted_amount_kg, 2) or 0,
             result.forecasted_count_units,
             result.batch.batch_id if result.batch else '',
             result.batch.generated_at.strftime('%Y-%m-%d %H:%M') if result.batch else '',
@@ -645,17 +808,21 @@ def forecast_csv(request, batch_id):
     return response
 
 
+
 @login_required
 @admin_or_agriculturist_required
 def admin_forecastviewall(request):
     batches = ForecastBatch.objects.select_related('generated_by__userinfo_id').order_by('-generated_at')
-    return render(request, 'admin_panel/admin_forecastviewall.html', {'batches': batches})
+    paginator = Paginator(batches, 10)  # Show 10 batches per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'admin_panel/admin_forecastviewall.html', {'page_obj': page_obj})
 
 @login_required
 @admin_or_agriculturist_required
 def admin_forecastbatchdetails(request, batch_id):
     batch = get_object_or_404(ForecastBatch, pk=batch_id)
-    results = ForecastResult.objects.filter(batch=batch).select_related('commodity', 'municipality', 'forecast_month')
+    results = ForecastResult.objects.filter(batch=batch).select_related('commodity', 'municipality', 'forecast_month').order_by('forecast_year', 'forecast_month__number')
     return render(request, 'admin_panel/admin_forecastbatchdetails.html', {'batch': batch, 'results': results})
 
 

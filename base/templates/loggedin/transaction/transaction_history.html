@@ -39,13 +39,30 @@
                         {% comment %} <td>{{ transaction.pk }}</td> {% endcomment %}
 
                         <td>
-                            {% if transaction.initplantrecord.commodity_id.pk == 1 or transaction.initharvestrecord.commodity_id.pk == 1 %}
-                                {{ transaction.initplantrecord.commodity_custom }}
-                            {% elif transaction.initplantrecord.commodity_id.pk >= 1 or transaction.initharvestrecord.commodity_id.pk >= 1 %}
-                                {{ transaction.initharvestrecord.commoditytype.name }}
+                            {% if transaction.initplantrecord %}
+                                {% if transaction.initplantrecord.commodity_id.pk == 1 %}
+                                    {{ transaction.initplantrecord.commodity_custom }}
+                                {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
+                                    {{ transaction.initplantrecord.commodity_id.name }}
+                                {% endif %}
+                            {% elif transaction.initharvestrecord %}
+                                {% if transaction.initharvestrecord.commodity_id.pk == 1 %}
+                                    {{ transaction.initharvestrecord.commodity_custom }}
+                                {% elif transaction.initharvestrecord.commodity_id.pk > 1 %}
+                                    {{ transaction.initharvestrecord.commodity_id.name }}
+                                {% endif %}
                             {% else %}
                                 N/A
                             {% endif %}
+{% comment %} 
+                            {% if transaction.initplantrecord.commodity_id.pk == 1 or transaction.initharvestrecord.commodity_id.pk == 1 %}
+                                {{ transaction.initplantrecord.commodity_custom }}
+                            {% elif transaction.initplantrecord.commodity_id.pk > 1 or transaction.initharvestrecord.commodity_id.pk > 1 %}
+                                {{ transaction.initplantrecord.commoditytype.name }}
+                            {% else %}
+                                N/A
+                            {% endif %} {% endcomment %}
+                        
                         </td>
                         {% comment %} <td>{{ transaction.harvest_status }}</td> {% endcomment %}
                         <td>{{ transaction.get_location_display }}</td>

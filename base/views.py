@@ -256,6 +256,9 @@ def plant_record_view(request):
             plant_record.transaction = transaction
             plant_record.save()
             print("may nasave pala")
+            
+            from dashboard.views import schedule_harvest_notification
+            schedule_harvest_notification(plant_record)
 
             return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
         else:

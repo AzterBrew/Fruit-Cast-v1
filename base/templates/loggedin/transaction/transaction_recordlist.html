@@ -9,7 +9,13 @@
             <h4>Plant Record</h4>
             <ul>
                 <li>Date Planted: {{ plant_record.plant_date|date:"d/m/Y" }}</li>
-                <li>Commodity: {{ plant_record.commodity_custom }}</li>
+                <li>Commodity: 
+                    {% if plant_record.commodity_id %}
+                        {{ plant_record.commodity_id.name }}
+                    {% else %}
+                        {{ plant_record.commodity_custom }}
+                    {% endif %}
+                </li>
                 <li>Minimum Expected Harvest: {{ plant_record.min_expected_harvest }}</li>
                 <li>Maximum Expected Harvest: {{ plant_record.max_expected_harvest }}</li>
                 <li>Remarks: {{ plant_record.remarks }}</li>
@@ -26,11 +32,11 @@
             </ul>
         {% endif %}
         <div class="mt-4 d-flex">
-            {% if not harvest_record %}
+            {% comment %} {% if not harvest_record %} {% endcomment %}
                 <a href="{% url 'base:harvest_record_for_plant' transaction.transaction_id %}" class="btn btn-success me-2">
                     Create the harvest record for this plant record
                 </a>
-            {% endif %}
+            {% comment %} {% endif %} {% endcomment %}
             <a href="{% url 'base:transaction_history' %}" class="btn btn-secondary">
                 Back to Transaction History
             </a>

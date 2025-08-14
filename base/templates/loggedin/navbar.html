@@ -17,21 +17,38 @@
                 <li class="nav-item"><a class="nav-link" href="{% url 'base:home' %}">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:forecast' %}">Forecast</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:monitor' %}">Monitor</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:notifications' %}">Notification</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'base:account_info_panel' %}">Account</a></li>
+                {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:notifications' %}"> <i class="bi bi-bell"></i> Notification</a></li> {% endcomment %}
                 <li class="nav-item">
-                    <form action="{% url 'base:logout' %}" method="post" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-link nav-link ms-2 me-3">Logout</button>
-                    </form>
+                    <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#notifPanel" aria-controls="notifPanel">
+                    <i class="bi bi-bell"></i> Notification
+                    {% if unread_count and unread_count > 0 %}
+                        <span class="badge bg-danger">{{ unread_count }}</span>
+                    {% endif %}
+                    </a>
                 </li>
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person"></i> Account
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+                        <li>
+                        <a class="dropdown-item" href="{% url 'administrator:accinfo' %}">Account Page</a>
+                        </li>
+                        <li>
+                        <form action="{% url 'base:logout' %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item">Logout</button>
+                        </form>
+                        </li>
+                    </ul>
+                    </li>
             </ul>
         </div>
     </div>
 </nav>
 
 {% comment %} OFFCANVAS SECTION {% endcomment %}
-
+{% comment %} LEFT SIDE BAR {% endcomment %}
 
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
     <div class="offcanvas-header">
@@ -44,7 +61,7 @@
     </div>
     <div class="offcanvas-body d-flex flex-column h-100">  
         <div class="list-group">
-          <a href="{% url 'base:solo_harvest_record' %}" class="list-group-item list-group-item-action w-75">Create New Record</a>        
+          <a href="{% url 'base:plant_record' %}" class="list-group-item list-group-item-action w-75">Create New Record</a>        
         </div>
         <br>
         <br>
@@ -74,3 +91,58 @@
     </div>
   </div>
 
+
+
+  {% comment %} NOTIF OFFCANVAS {% endcomment %}
+
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="notifPanel" aria-labelledby="notifPanelLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="notifPanelLabel">Notifications</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    {% if notifications %}
+      <ul class="list-group">
+        {% for notification in notifications %}
+            <li class="list-group-item{% if not notification.is_read %} fw-bold{% endif %}" id="notif-{{ notification.id }}">
+                <a href="{{ notification.redirect_url }}" class="notif-link link-success" data-notif-id="{{ notification.id }}">
+                    <div>{{ notification.message|truncatechars:75 }}</div>
+                    <small class="text-muted">{{ notification.created_at|date:"M d, Y H:i" }}</small>
+                </a>
+            </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="text-muted">No notifications</div>
+    {% endif %}
+    <div class="mt-3 text-center">
+      <a href="{% url 'dashboard:notifications' %}" class="btn btn-outline-success btn-sm">View all notifications</a>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.notif-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            var notifId = this.getAttribute('data-notif-id');
+            // Mark as read via AJAX
+            fetch("{% url 'dashboard:mark_notification_read' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "notif_id=" + notifId
+            }).then(response => {
+                if (response.ok) {
+                    // Remove the notification from the list
+                    var li = document.getElementById('notif-' + notifId);
+                    if (li) li.remove();
+                }
+            });
+            // Let the link continue to its href
+        });
+    });
+});
+</script>

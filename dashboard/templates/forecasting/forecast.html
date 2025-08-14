@@ -1,5 +1,6 @@
 {% extends "forecasting/layout.html" %}
 {% load static %}
+{% comment %} {% load json %} {% endcomment %}
 
 {% block title %}
 Fruit Cast | Forecast
@@ -11,7 +12,6 @@ Fruit Cast | Forecast
 
 {% block content %}
 <div class="main-user py-5">
-
         <div class="row main-user-content justify-content-center">
             <div class="card shadow-sm rounded-4 p-4 mb-4">
                 <h1 class="mb-4 text-success fw-bold">
@@ -27,8 +27,10 @@ Fruit Cast | Forecast
                         {% endfor %}
                     </select>
                     <label for="municipality" class="form-label ms-3">Select Municipality:</label>
+                    {% comment %} {{ forecast_data.labels|json_script:"forecast-labels" }}
+                    {{ forecast_data.forecasted_count|json_script:"forecast-values" }} {% endcomment %}
                     <select class="form-select w-auto d-inline-block" name="municipality_id" id="municipality" onchange="this.form.submit()">
-                        <option value="">All</option>
+                        <option value="14" {% if selected_municipality|stringformat:"s" == "14" %}selected{% endif %}>Overall</option>
                         {% for muni in municipalities %}
                             <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
                                 {{ muni.municipality }}
@@ -50,21 +52,97 @@ Fruit Cast | Forecast
                             {% for month, forecast in forecast_data.combined %}
                             <tr>
                                 <td>{{ month }}</td>
-                                <td>{{ forecast }}</td>
+                                <td>{{ forecast|floatformat:2 }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    <h2 class="mt-5">2D Mapping</h2>
-                    <div id="map" style="height: 500px; z-index: 0"></div>
+                    <form method="get" action="{% url 'dashboard:forecast_csv' %}">
+                        <input type="hidden" name="csv_type" value="by_month">
+                        <input type="hidden" name="batch_id" value="{{ batch_id }}">
+                        <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
+                        <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
+                        <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
+                        {% comment %} <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|escapejs }}'> {% endcomment %}
+                        <button type="submit" class="btn btn-outline-success mb-3">Download CSV for this Forecast</button>
+                    </form>
+                    {% if user_role_id == 2 or user_role_id == 3 %}
+                        <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-success mb-3">View All Forecast Batches</a>
+                    {% endif %}
                 {% else %}
-                    <div class="alert alert-warning">Not enough data to generate a forecast for this commodity.</div>
+                    <div class="alert alert-warning">No forecast data available for this commodity and municipality. Please contact your administrator.</div>
+                {% endif %}
+                
+                <h2 class="mt-5 text-success fw-bold">Choropleth Map of Bataan</h2>
+                <h3 class="mb-4">by Forecasted Amount (kg)</h3>
+                {% if forecast_data %}
+                    <div id="map" style="height: 500px; z-index: 0"></div>
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Only run if map div exists
+                        if (document.getElementById('map')) {
+                            var map = L.map('map').setView([14.68, 120.53], 10); // Center on Bataan
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '© OpenStreetMap contributors'
+                            }).addTo(map);
+
+                            // Example: forecasted amounts per municipality (replace with real data from backend)
+                            // Should be a dict: {municipality_id: value}
+                            var forecastChoropleth = {};
+                            {% if forecast_data.municipality_values %}
+                                forecastChoropleth = {{ forecast_data.municipality_values|safe }};
+                            {% endif %}
+
+                            // Color scale function
+                            function getColor(d) {
+                                return d > 10000 ? '#005a32' :
+                                       d > 5000  ? '#238b45' :
+                                       d > 2000  ? '#41ab5d' :
+                                       d > 1000  ? '#74c476' :
+                                       d > 500   ? '#a1d99b' :
+                                       d > 0     ? '#c7e9c0' :
+                                                   '#f7fcf5';
+                            }
+
+                            function style(feature) {
+                                var muniId = feature.properties.OBJECTID; // or use a custom property if you have one
+                                var value = forecastChoropleth[muniId] || 0;
+                                return {
+                                    fillColor: getColor(value),
+                                    weight: 2,
+                                    opacity: 1,
+                                    color: 'white',
+                                    dashArray: '3',
+                                    fillOpacity: 0.7
+                                };
+                            }
+
+                            // Add GeoJSON layer
+                            fetch("{% static 'geojson/BATAAN_MUNICIPALITY.geojson' %}")
+                                .then(response => response.json())
+                                .then(data => {
+                                    L.geoJSON(data, {
+                                        style: style,
+                                        onEachFeature: function (feature, layer) {
+                                            var muni = feature.properties.MUNICIPALI;
+                                            var muniId = feature.properties.OBJECTID;
+                                            var value = forecastChoropleth[muniId] || 0;
+                                            layer.bindPopup('<b>' + muni + '</b><br>Forecasted Amount: ' + value + ' kg');
+                                        }
+                                    }).addTo(map);
+                                });
+                        }
+                    });
+                    </script>
+                {% else %}
+                    <div class="alert alert-warning">No forecast data available for this commodity and municipality. Please contact your administrator.</div>
                 {% endif %}
 
                 <hr>
                 <br>
+                <a href="{% url 'dashboard:forecast_bycommodity' %}" class="btn btn-outline-success mb-3">Forecast by commodity</a>
 
-                {% for m in months %}
+                {% comment %} {% for m in months %}
                     {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}
                         {% with m.name as filter_month_name %}
                         {% endwith %}
@@ -100,8 +178,12 @@ Fruit Cast | Forecast
                     <button type="submit" class="btn btn-success ms-3">Show Summary</button>
                     <a href="{% url 'dashboard:forecast' %}" class="btn btn-secondary ms-3">Reset</a>
                 </form>
+                <a href="{% url 'dashboard:forecast_bycommodity' %}" class="btn btn-outline-success mb-3">Forecast by commodity</a> {% endcomment %}
 
-                {% if forecast_summary %}
+                {% comment %} {% if forecast_summary %}
+                    <div class="my-4">
+                        <canvas id="forecastSummaryBarChart" style="height: 45vh;"></canvas>
+                    </div>
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -124,13 +206,21 @@ Fruit Cast | Forecast
                             {% endfor %}
                         </tbody>
                     </table>
-                {% endif %}
+                    <form method="get" action="{% url 'dashboard:forecast_csv' %}">
+                        {% if filter_month %}<input type="hidden" name="filter_month" value="{{ filter_month }}">{% endif %}
+                        {% if filter_year %}<input type="hidden" name="filter_year" value="{{ filter_year }}">{% endif %}
+                        {% if selected_municipality %}<input type="hidden" name="municipality_id" value="{{ selected_municipality }}">{% endif %}
+                        <button type="submit" class="btn btn-outline-success mb-3">Download CSV</button>
+                    </form>
+                {% endif %} {% endcomment %}
             </div>
         </div>
 </div>
 
 <!-- Chart.js and Leaflet -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 <script>
@@ -140,14 +230,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var yearSelect = document.getElementById('filter_year');
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth() + 1; // JS months are 0-based
-
+    var labels = {{ forecast_data.labels|safe }};
+    var values = {{ forecast_data.forecasted_count|safe }};
+/*
     function updateMonthOptions() {
         var selectedYear = parseInt(yearSelect.value);
         var foundVisible = false;
         for (var i = 0; i < monthSelect.options.length; i++) {
             var option = monthSelect.options[i];
             var monthNum = parseInt(option.value);
-            if (!option.value) { // blank option
+            if (!option.value) { // blank option    
                 option.style.display = '';
                 continue;
             }
@@ -169,63 +261,88 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    yearSelect.addEventListener('change', function() {
+    yearSelect && yearSelect.addEventListener('change', function() {
         updateMonthOptions();
-        // Optionally, auto-submit the form:
-        // document.getElementById('summary-forecast-form').submit();
     });
-
-    // Run on page load
     updateMonthOptions();
-});
+
+    // Render forecast summary bar chart if present
     
-{% if forecast_data %}
-    var forecastChart = new Chart(document.getElementById('forecastChart'), {
-      type: 'line',
-      data: {
-        labels: {{ forecast_data.labels|safe }},
-        datasets: [{
-          label: 'Forecasted Amount (kg)',
-          data: {{ forecast_data.forecasted_count|safe }},
-          borderColor: '#40ca7aff',
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-            datalabels: {
-                align: 'top',
-                anchor: 'end',
-                color: '#14763d',
-                font: { weight: 'bold' },
-                formatter: function(value) {
-                return value;
+    {% if forecast_summary_chart %}
+    var barLabels = {{ forecast_summary_chart.labels|safe }};
+    var barValues = {{ forecast_summary_chart.values|safe }};
+    var ctxBar = document.getElementById('forecastSummaryBarChart');
+    if (ctxBar) {
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: barLabels,
+                datasets: [{
+                    label: 'Forecasted Amount (kg)',
+                    data: barValues,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        color: '#14763d',
+                        font: { weight: 'bold' },
+                        formatter: function(value) { return value; }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Commodity Type' } },
+                    y: { title: { display: true, text: 'Amount (kg)' }, beginAtZero: true }
                 }
-            }
-        },
-        scales: {
-          x: { title: { display: true, text: 'Month' } },
-          y: { title: { display: true, text: 'Amount (kg)' } }
-        }
-      },
-      plugins: [ChartDataLabels]
-    });
-{% endif %}
-
-// Initialize Leaflet map
-var map = L.map('map').setView([14.678, 120.536], 10);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors'
-}).addTo(map);
-
-var mapData = {{ map_data|safe }};
-mapData.forEach(function(item) {
-    if (item.latitude && item.longitude) {
-        var marker = L.marker([item.latitude, item.longitude]).addTo(map);
-        marker.bindPopup('<b>' + item.barangay + ', ' + item.municipality + '</b><br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
+            },
+            plugins: [ChartDataLabels]
+        });
     }
-});
+    {% endif %}
+*/
+    // Render line chart for forecast_data if present
+    {% if forecast_data %}
+    Chart.register(window.ChartDataLabels);
+    var labels = {{ forecast_data.labels|safe }};
+    var values = {{ forecast_data.forecasted_count|safe }};
+        var forecastChart = new Chart(document.getElementById('forecastChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Forecasted Amount (kg)',
+                    data: values,
+                    borderColor: '#40ca7aff',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    datalabels: {
+                        align: 'top',
+                        anchor: 'end',
+                        color: '#14763d',
+                        font: { weight: 'bold' },
+                        formatter: function(value) { return value; }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Month' } },
+                    y: { title: { display: true, text: 'Amount (kg)' } }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    });
+
+    {% endif %}
 </script>
 
 {% endblock content %}

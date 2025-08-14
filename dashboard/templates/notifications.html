@@ -1,7 +1,8 @@
-{% extends "monitoring/layout.html" %}
+{% extends "loggedin/layout.html" %}
+{% load static %}
 
 {% block title %}
-Fruit Cast | Monitor
+Fruit Cast | Notifications
 {% endblock title %}
 
 {% block navbar %}
@@ -9,17 +10,70 @@ Fruit Cast | Monitor
 {% endblock navbar %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>🔔 Notifications</h2>
-
-  <ul>
-        {% for notification in notifications %}
-            <li class="{% if notification.is_read %}read{% else %}unread{% endif %}">
-                <p>{{ notification.message }}</p>
-                <small>{{ notification.created_at }}</small>
-            </li>
-        {% endfor %}
-    </ul>
+<div class="main-user py-5">
+    <div class="row main-user-content justify-content-center">
+        <div class="card shadow-sm rounded-4 p-4 mb-4" style="max-width: 600px;">
+            <h1 class="mb-4 text-success fw-bold">
+                <i class="bi bi-bell"></i> Notifications
+            </h1>
+            {% if notifications %}
+                <ul class="list-group">
+                    {% for notification in notifications %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start {% if not notification.is_read %}fw-bold{% endif %}" id="notif-{{ notification.id }}">
+                            <div class="ms-2 me-auto">
+                                <div>
+                                    {% if notification.redirect_url %}
+                                        <a href="{{ notification.redirect_url }}" class="text-decoration-none text-success notif-link" data-notif-id="{{ notification.id }}">
+                                            {{ notification.message|truncatechars:110 }}
+                                        </a>
+                                    {% else %}
+                                        <span class="notif-link" data-notif-id="{{ notification.id }}" style="cursor:pointer;">
+                                            {{ notification.message|truncatechars:110 }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ notification.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                            {% if not notification.is_read %}
+                                <span class="badge bg-success rounded-pill" id="badge-{{ notification.id }}">New</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="alert alert-info mt-3">No notifications yet.</div>
+            {% endif %}
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.notif-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            var notifId = this.getAttribute('data-notif-id');
+            // Mark as read via AJAX
+            fetch("{% url 'dashboard:mark_notification_read' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "notif_id=" + notifId
+            }).then(response => {
+                if (response.ok) {
+                    // Remove the "New" badge and bold style
+                    var badge = document.getElementById('badge-' + notifId);
+                    if (badge) badge.remove();
+                    var li = document.getElementById('notif-' + notifId);
+                    if (li) li.classList.remove('fw-bold');
+                }
+            });
+            // Let the link continue to its href (if any)
+        });
+    });
+});
+</script>
+
 
 {% endblock %}

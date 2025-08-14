@@ -68,49 +68,43 @@ class VerifiedPlantRecord(models.Model):
 
 class Notification(models.Model):
     account = models.ForeignKey('base.AccountsInformation', on_delete=models.CASCADE)
-    
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
-
-    # Optional but helpful
-    linked_plant_record = models.ForeignKey('base.initPlantRecord', on_delete=models.SET_NULL, null=True, blank=True, help_text="If notification is related to a specific plant record")
-
-    # If you want flexibility to link to other kinds of records in the future:
-    redirect_url = models.URLField(blank=True, null=True, help_text="Custom redirect URL")
+    notification_type = models.CharField(max_length=50, default="general")
+    scheduled_for = models.DateTimeField(null=True, blank=True)
+    linked_plant_record = models.ForeignKey('base.initPlantRecord', on_delete=models.SET_NULL, null=True, blank=True)
+    redirect_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"Notif for {self.account.userinfo_id.firstname} {self.account.userinfo_id.lastname} - {self.message[:30]}"
 
-class ForecastResult(models.Model):
-    forecast_id = models.BigAutoField(primary_key=True)
 
-    # Forecasted context
-    commodity = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)
-    forecast_month = models.IntegerField()  # 1-12
-    forecast_year = models.IntegerField()
-    
-    # Location
-    municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.CASCADE)
-    barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
-
-    # Values
-    forecasted_amount_kg = models.FloatField() #weight
-    forecasted_count_units = models.FloatField()  # optional, if you want both
-
-    # Metadata
-    seasonal_boost_applied = models.BooleanField(default=False)
+class ForecastBatch(models.Model):
+    batch_id = models.BigAutoField(primary_key=True)
     generated_at = models.DateTimeField(auto_now_add=True)
-    source_data_last_updated = models.DateTimeField()
     generated_by = models.ForeignKey('base.AdminInformation', on_delete=models.SET_NULL, null=True, blank=True)
-
-    class Meta:
-        unique_together = ('commodity', 'forecast_month', 'forecast_year', 'municipality', 'barangay')
+    notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.commodity.name} - {self.forecast_month}/{self.forecast_year} in {self.barangay.name if self.barangay else self.municipality.name}"
+        return f"Forecast Batch {self.batch_id} at {self.generated_at.strftime('%Y-%m-%d %H:%M')}"
 
+class ForecastResult(models.Model):
+    forecast_id = models.BigAutoField(primary_key=True)
+    batch = models.ForeignKey(ForecastBatch, on_delete=models.CASCADE, null=True, blank=True, related_name='results')
+    commodity = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)
+    forecast_month = models.ForeignKey('base.Month', on_delete=models.CASCADE)
+    forecast_year = models.IntegerField()
+    municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.CASCADE)
+    # barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
+    forecasted_amount_kg = models.FloatField()
+    forecasted_count_units = models.FloatField(null=True, blank=True)
+    seasonal_boost_applied = models.BooleanField(default=False)
+    source_data_last_updated = models.DateTimeField()
+    notes = models.TextField(blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.commodity.name} - {self.forecast_month}/{self.forecast_year} in {self.municipality.name}"
 
 # only model left unchanged
 

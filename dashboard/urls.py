@@ -10,8 +10,10 @@ app_name = 'dashboard'
 urlpatterns = [
     # path('', home, name='home'),
     path('forecast/', forecast, name="forecast"),
+    path('forecast/download_csv/', views.forecast_csv, name='forecast_csv'),
+    path('forecast/bycommodity/', views.forecast_bycommodity, name='forecast_bycommodity'),
     path('monitor/', monitor, name="monitor"),
-    # path('commodities/add', add_commodity, name="addcommodity"),
     path('notifications/', notifications, name='notifications'),
+    path('mark-notification-read/', views.mark_notification_read, name='mark_notification_read'),
 ]
  

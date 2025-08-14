@@ -3,16 +3,16 @@
 {% block navbar %}
 
 {% comment %} NAVBAR SECTION {% endcomment %}
-<nav class="navbar navbar-expand-lg navbar-light">
-    <a class="btn btn-tarnsparent ms-5" data-bs-toggle="offcanvas" href="#offcanvasguest" role="button" aria-controls="offcanvasExample">
-        =
-      </a>
-    {% if user.is_authenticated and user_role_id == 2 or user.is_authenticated and user_role_id == 3 %}
-    
-    <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 50px;">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+    <div class="container-fluid">
+        <!-- Offcanvas Toggle Button (always visible) -->
+        <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
+            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+        </button>
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'administrator:admin_dashboard' %}">
+            <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+            <span class="fw-bold text-success">Fruit Cast</span>
+        </a>
   
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <p style="margin-top: 2vmin"> | Welcome 
@@ -30,57 +30,33 @@
           {% endif %}
         {% endif %}
 
-      <ul class="navbar-nav ms-auto me-auto">
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'administrator:admin_dashboard' %}"><b>Home</b> <span class="sr-only"></span></a>
-        </li> 
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'administrator:verify_accounts' %}"><b>Farmer Accounts</b><span class="sr-only"></span></a>
-        </li>
-        <li class="nav-item">
-          {% comment %} <a class="nav-link" href="{% url 'administrator:show_allaccounts' %}"><b>See All Accounts</b><span class="sr-only"></span></a> {% endcomment %}
-        </li>
-        <li class="nav-item">
-            {% comment %} <a class="nav-link" href="{% url 'dashboard:monitor' %}"><b>Verify Harvests</b><span class="sr-only"></span></a> {% endcomment %}
-          </li>          
-        </li>
-      </ul>
-
-      <ul class="navbar-nav ms-auto me-5">
-        <li class="nav-item">
-          {% comment %} <a class="nav-link" href="{% url 'dashboard:notifications' %}"><b>Notification</b><span class="sr-only"></span></a>         {% endcomment %}
-        </li>
-        <li class="nav-item">
-          {% comment %} <a class="nav-link" href="{% url 'base:accinfo' %}"><b>Account</b><span class="sr-only"></span></a>         {% endcomment %}
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'administrator:accinfo' %}"><b>Account</b><span class="sr-only"></span></a>        
-        </li>
-        <li class="nav-item">
-
-            {% comment %} <a class="nav-link" href="{% url 'base:logout' %}"><b>Logout</b></a> {% endcomment %}
-            <form action="{% url 'base:logout' %}" method="post" class="nav-btn mb-0">
-                      {% csrf_token %}
-                      <button type="submit" class="btn">Logout</button>
-                    </form>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'administrator:admin_dashboard' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'base:home' %}">To Public Site</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'administrator:admin_forecast' %}">Generate Forecast</a></li>
+        {% if user.is_superuser and user_role_id == 2 %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'administrator:assign_account' %}">Manage Privilege</a></li>
+        {% endif %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person"></i> Account
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+            <li>
+              <a class="dropdown-item" href="{% url 'administrator:accinfo' %}">Account Page</a>
+            </li>
+            <li>
+              <form action="{% url 'base:logout' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item">Logout</button>
+              </form>
+            </li>
+          </ul>
         </li>
       </ul>
     </div>
-    {% else %}
-        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 50px;">
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <p class="text-danger ms-3 my-2">You do not have permission to view this page.</p>
-            <ul class="navbar-nav ms-auto me-5">
-                <li class="nav-item">
-                    <form action="{% url 'base:login' %}" method="post" class="nav-btn mb-0">
-                      {% csrf_token %}
-                      <button type="submit" class="btn">Login</button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-    {% endif %}
-  </nav>
+  </div>
+</nav>
 
 {% comment %} OFFCANVAS SECTION {% endcomment %}
 
@@ -110,6 +86,7 @@
           {% if user_role_id == 2 %}  
             
             <a href="{% url 'administrator:show_allaccounts' %}" class="list-group-item list-group-item-action">Administrators and Agriculturists</a>
+            <a href="{% url 'administrator:admin_forecast' %}" class="list-group-item list-group-item-action">Generate Forecast</a>
           {% endif%}
           {% if user.is_superuser and user_role_id == 2 %}
             {% comment %} {% if authuser.issuperuser = True%} it should show the button or link Manage Privilege {% endcomment %}

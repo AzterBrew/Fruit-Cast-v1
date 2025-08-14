@@ -1,0 +1,232 @@
+{% extends "admin_login/layout.html" %}
+{% load static %}
+{% load admin_extras %}
+
+{% block title %}Fruit Cast | Admin Forecast{% endblock %}
+{% block navbar %}
+    {% include "admin_panel/navbar.html" %}
+{% endblock navbar %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                <h1 class="mb-4 text-success fw-bold">
+                    Forecast Generator (Admin)
+                </h1>
+                <h2 class="mb-4 text-success fw-bold">
+                    By Month
+                </h2>
+                <form method="get" class="mb-4" id="main-forecast-form">
+                    <label for="commodity_type" class="form-label">Select Commodity Type:</label>
+                    <select class="form-select w-auto d-inline-block" name="commodity_id" id="commodity_type" onchange="this.form.submit()">
+                        {% for commodity in commodity_types %}
+                            <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_commodity_id|stringformat:"s" %}selected{% endif %}>
+                                {{ commodity.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="municipality" class="form-label ms-3">Select Municipality:</label>
+                    <select class="form-select w-auto d-inline-block" name="municipality_id" id="municipality" onchange="this.form.submit()">
+                        <option value="14" {% if selected_municipality == '14' %}selected{% endif %}>Overall</option>
+                        {% for muni in municipalities %}
+                            <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
+                                {{ muni.municipality }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% if forecast_data %}
+                    <canvas id="forecastChart" style="height: 55vh;"></canvas>
+                    <h3 class="mt-5">Monthly Forecast Data</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Forecasted Amount (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for label, value, month_number, year in forecast_data.combined %}
+                                <tr>
+                                    <td>{{ label }}</td>
+                                    <td>{{ value }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <form method="post" action="{% url 'administrator:save_admin_forecast' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
+                        <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
+                        {% for label, value, month_number, year in forecast_data.combined %}
+                            <input type="hidden" name="months[]" value="{{ month_number }}">
+                            <input type="hidden" name="years[]" value="{{ year }}">
+                            <input type="hidden" name="values[]" value="{{ value }}">
+                            <input type="hidden" name="forecast_type" value="by_month">
+                        {% endfor %}
+                        <button type="submit" class="btn btn-success mt-4">Save Forecast to Database</button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning">Not enough data to generate a forecast for this commodity.</div>
+                {% endif %}
+                <hr>
+                <h2 class="mt-5 text-success fw-bold">Forecasted Amount by Commodity</h2>
+                {% if filter_month and filter_year %}
+                    {% if filter_month and filter_year %}
+                            ({{ filter_month_name }} {{ filter_year }})
+                        {% endif %}
+                {% endif %}
+
+                <form method="get" class="mb-4" id="summary-forecast-form">
+                    <label for="filter_month" class="form-label ms-3">Month:</label>
+                    <select class="form-select w-auto d-inline-block" name="filter_month" id="filter_month">
+                        {% for m in months %}
+                            <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>
+                                {{ m.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="filter_year" class="form-label ms-3">Year:</label>
+                    <select class="form-select w-auto d-inline-block" name="filter_year" id="filter_year">
+                        {% for y in available_years %}
+                            <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-success ms-3">Show Summary</button>
+                </form>
+
+                {% if forecast_summary %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Commodity Type</th>
+                                <th>Forecasted Amount (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in forecast_summary %}
+                            <tr>
+                                <td>{{ row.commodity }}</td>
+                                <td>
+                                    {% if row.forecasted_kg is not None %}
+                                        {{ row.forecasted_kg }}
+                                    {% else %}
+                                        <span class="text-muted">Not enough data</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <form method="post" action="{% url 'administrator:save_admin_forecast' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="forecast_type" value="by_commodity">
+                        <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
+                        <input type="hidden" name="filter_month" value="{{ filter_month }}">
+                        <input type="hidden" name="filter_year" value="{{ filter_year }}">
+                        {% for row in forecast_summary %}
+                            <input type="hidden" name="commodity_ids[]" value="{{ commodity_types|get_commodity_id:row.commodity }}">
+                            <input type="hidden" name="values[]" value="{{ row.forecasted_kg }}">
+                        {% endfor %}
+                        <button type="submit" class="btn btn-success mt-3">Save Forecast Summary to Database</button>
+                    </form>
+
+
+                {% endif %}
+                <hr>
+                <form method="post" action="{% url 'administrator:generate_all_forecasts' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger mb-3" onclick="return confirm('Are you sure you want to generate forecasts for ALL commodities and ALL municipalities for the next 12 months? This may take a while.')">Generate All Forecasts (12 months, all commodities, all municipalities)</button>
+                </form>
+                <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-success mb-3 ms-2">View All Forecast Batches</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var monthSelect = document.getElementById('filter_month');
+    var yearSelect = document.getElementById('filter_year');
+    var currentYear = new Date().getFullYear();
+    var currentMonth = new Date().getMonth() + 1; // JS months are 0-based
+
+    function updateMonthOptions() {
+        var selectedYear = parseInt(yearSelect.value);
+        var foundVisible = false;
+        for (var i = 0; i < monthSelect.options.length; i++) {
+            var option = monthSelect.options[i];
+            var monthNum = parseInt(option.value);
+            if (!option.value) { // blank option
+                option.style.display = '';
+                continue;
+            }
+            if (selectedYear === currentYear) {
+                option.style.display = (monthNum > currentMonth) ? '' : 'none';
+            } else {
+                option.style.display = '';
+            }
+            if (option.style.display === '' && !foundVisible) {
+                foundVisible = true;
+            }
+        }
+        // If selected month is now hidden or blank, reset selection to blank
+        if (
+            monthSelect.selectedOptions.length &&
+            (monthSelect.selectedOptions[0].style.display === 'none' || !monthSelect.value)
+        ) {
+            monthSelect.selectedIndex = 0;
+        }
+    }
+
+    yearSelect.addEventListener('change', function() {
+        updateMonthOptions();
+        // Optionally, auto-submit the form:
+        // document.getElementById('summary-forecast-form').submit();
+    });
+
+    // Run on page load
+    updateMonthOptions();
+});
+    
+{% if forecast_data %}
+    var forecastChart = new Chart(document.getElementById('forecastChart'), {
+      type: 'line',
+      data: {
+        labels: {{ forecast_data.labels|safe }},
+        datasets: [{
+          label: 'Forecasted Amount (kg)',
+          data: {{ forecast_data.forecasted_count|safe }},
+          borderColor: '#40ca7aff',
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+            datalabels: {
+                align: 'top',
+                anchor: 'end',
+                color: '#14763d',
+                font: { weight: 'bold' },
+                formatter: function(value) {
+                return value;
+                }
+            }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Month' } },
+          y: { title: { display: true, text: 'Amount (kg)' } }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+{% endif %}
+
+</script>
+{% endblock content %}

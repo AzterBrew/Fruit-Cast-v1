@@ -1,0 +1,126 @@
+{% extends "forecasting/layout.html" %}
+{% load static %}
+
+{% block title %}
+Forecast by Commodity
+{% endblock %}
+
+{% block navbar %}
+    {% include "loggedin/navbar.html" %}
+{% endblock navbar %}
+
+{% block content %}
+<div class="main-user py-5">
+        <div class="row main-user-content justify-content-center">
+            <div class="card shadow-sm rounded-4 p-4 mb-4">
+            <h1 class="mb-4 text-success fw-bold">Forecasted Amount by Commodity</h1>
+            <form method="get" class="mb-4" id="summary-forecast-form">
+                <label for="filter_month" class="form-label ms-3">Month:</label>
+                <select class="form-select w-auto d-inline-block" name="filter_month" id="filter_month">
+                    {% for m in months %}
+                        <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>
+                            {{ m.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <label for="filter_year" class="form-label ms-3">Year:</label>
+                <select class="form-select w-auto d-inline-block" name="filter_year" id="filter_year">
+                    {% for y in available_years %}
+                        <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+                <label for="municipality" class="form-label ms-3">Municipality:</label>
+                <select class="form-select w-auto d-inline-block" name="municipality_id" id="municipality">
+                    <option value="14" {% if selected_municipality|stringformat:"s" == "14" %}selected{% endif %}>Overall</option>
+                    {% for muni in all_municipalities %}
+                        <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
+                            {{ muni.municipality }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-success ms-3">Show Summary</button>
+            </form>
+
+            {% if forecast_summary_chart %}
+            <div class="my-4">
+                <canvas id="forecastSummaryBarChart" style="height: 45vh;"></canvas>
+            </div>
+            {% endif %}
+
+            {% if forecast_summary %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Commodity</th>
+                        <th>Forecasted Amount (kg)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in forecast_summary %}
+                    <tr>
+                        <td>{{ row.commodity }}</td>
+                        <td>{{ row.forecasted_kg|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <form method="get" action="{% url 'dashboard:forecast_csv' %}">
+                <input type="hidden" name="csv_type" value="by_commodity">
+                <input type="hidden" name="filter_month" value="{{ filter_month }}">
+                <input type="hidden" name="filter_year" value="{{ filter_year }}">
+                <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
+                <button type="submit" class="btn btn-outline-success mb-3">Download CSV for this Summary</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if forecast_summary_chart %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var barLabels = {{ forecast_summary_chart.labels|safe }};
+        var barValues = {{ forecast_summary_chart.values|safe }};
+        var ctxBar = document.getElementById('forecastSummaryBarChart');
+        if (ctxBar) {
+            new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: barLabels,
+                    datasets: [{
+                        label: 'Forecasted Amount (kg)',
+                        data: barValues,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#14763d',
+                            font: { weight: 'bold' },
+                            formatter: function(value) { return value; }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Commodity Type' } },
+                        y: { title: { display: true, text: 'Amount (kg)' }, beginAtZero: true }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+    });
+</script>
+{% endif%}
+
+
+
+{% endblock %}
