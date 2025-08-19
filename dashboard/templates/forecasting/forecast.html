@@ -78,6 +78,8 @@ Fruit Cast | Forecast
                 {% if forecast_data %}
                     <div id="map" style="height: 500px; z-index: 0"></div>
                     <script>
+                    var forecastChoropleth = {{ choropleth_data|safe }};
+                    
                     document.addEventListener('DOMContentLoaded', function() {
                         // Only run if map div exists
                         if (document.getElementById('map')) {
@@ -88,7 +90,6 @@ Fruit Cast | Forecast
 
                             // Example: forecasted amounts per municipality (replace with real data from backend)
                             // Should be a dict: {municipality_id: value}
-                            var forecastChoropleth = {};
                             {% if forecast_data.municipality_values %}
                                 forecastChoropleth = {{ forecast_data.municipality_values|safe }};
                             {% endif %}
@@ -96,12 +97,12 @@ Fruit Cast | Forecast
                             // Color scale function
                             function getColor(d) {
                                 return d > 10000 ? '#005a32' :
-                                       d > 5000  ? '#238b45' :
-                                       d > 2000  ? '#41ab5d' :
-                                       d > 1000  ? '#74c476' :
-                                       d > 500   ? '#a1d99b' :
-                                       d > 0     ? '#c7e9c0' :
-                                                   '#f7fcf5';
+                                        d > 5000  ? '#238b45' :
+                                        d > 2000  ? '#41ab5d' :
+                                        d > 1000  ? '#74c476' :
+                                        d > 500   ? '#a1d99b' :
+                                        d > 0     ? '#c7e9c0' :
+                                                    '#f7fcf5';
                             }
 
                             function style(feature) {
@@ -117,22 +118,41 @@ Fruit Cast | Forecast
                                 };
                             }
 
+                            function onEachFeature(feature, layer) {
+                                var muni = feature.properties.MUNICIPALI;
+                                var muniId = feature.properties.OBJECTID;
+                                var value = forecastChoropleth[muniId] || 0;
+                                layer.bindPopup('<b>' + muni + '</b><br>Forecasted Amount: ' + value + ' kg');
+
+                                // Use turf.js to get centroid for both Polygon and MultiPolygon
+                                try {
+                                    var centroid = turf.centroid(feature);
+                                    var latlng = [centroid.geometry.coordinates[1], centroid.geometry.coordinates[0]];
+                                    L.marker(latlng, {
+                                        icon: L.divIcon({
+                                            className: 'choropleth-label',
+                                            html: '<b>' + value + ' kg</b>',
+                                            iconSize: [60, 20]
+                                        })
+                                    }).addTo(layer._map || map);
+                                } catch (e) {
+                                    // fallback: do nothing
+                                }
+                            }
+
+
                             // Add GeoJSON layer
                             fetch("{% static 'geojson/BATAAN_MUNICIPALITY.geojson' %}")
                                 .then(response => response.json())
                                 .then(data => {
                                     L.geoJSON(data, {
                                         style: style,
-                                        onEachFeature: function (feature, layer) {
-                                            var muni = feature.properties.MUNICIPALI;
-                                            var muniId = feature.properties.OBJECTID;
-                                            var value = forecastChoropleth[muniId] || 0;
-                                            layer.bindPopup('<b>' + muni + '</b><br>Forecasted Amount: ' + value + ' kg');
-                                        }
+                                        onEachFeature: onEachFeature
                                     }).addTo(map);
                                 });
-                        }
-                    });
+                            }
+                        });
+                                
                     </script>
                 {% else %}
                     <div class="alert alert-warning">No forecast data available for this commodity and municipality. Please contact your administrator.</div>

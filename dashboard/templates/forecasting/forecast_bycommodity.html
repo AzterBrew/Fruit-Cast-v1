@@ -45,6 +45,8 @@ Forecast by Commodity
             <div class="my-4">
                 <canvas id="forecastSummaryBarChart" style="height: 45vh;"></canvas>
             </div>
+            {% else %}
+                <div class="alert alert-warning">No forecast data available for this commodity and municipality. Please contact your administrator.</div>
             {% endif %}
 
             {% if forecast_summary %}

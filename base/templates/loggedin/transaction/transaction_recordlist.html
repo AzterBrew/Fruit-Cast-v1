@@ -31,6 +31,9 @@
                 <li>Average Individual Weight: {{ harvest_record.weight_per_unit }} {{ harvest_record.unit.unit_abrv }}</li>
             </ul>
         {% endif %}
+        {% if plant_notification and  %}
+            <p class="alert alert-warning">{{ plant_notification.message }}</p>
+        {% endif %}
         <div class="mt-4 d-flex">
             {% comment %} {% if not harvest_record %} {% endcomment %}
                 <a href="{% url 'base:harvest_record_for_plant' transaction.transaction_id %}" class="btn btn-success me-2">

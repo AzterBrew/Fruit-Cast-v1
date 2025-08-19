@@ -397,6 +397,13 @@ def transaction_recordlist(request, transaction_id):
         harvest_record = initHarvestRecord.objects.get(transaction=transaction)
     except initHarvestRecord.DoesNotExist:
         pass
+    
+    plant_notification = None
+    if plant_record:
+        plant_notification = Notification.objects.filter(
+            linked_plant_record=plant_record,
+            is_read=True
+        ).order_by('-created_at').first()
 
     context = {
         'transaction': transaction,
@@ -404,6 +411,7 @@ def transaction_recordlist(request, transaction_id):
         'harvest_record': harvest_record,
         'view_to_show': 'recordlist',  # So transaction.html knows what to include
         'user_firstname': transaction.account_id.userinfo_id.firstname,
+        'plant_notification': plant_notification
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 

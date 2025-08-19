@@ -20,12 +20,13 @@ urlpatterns = [
     # path('generate_report/', views.generate_report, name='generate_report'),
     path('accountinfo/', accinfo, name="accinfo"),
     path('accountinfo/edit', editacc, name="editacc"),
-    # path('commodities/add', add_commodity, name="addcommodity"),
     path('admin-forecast/', views.admin_forecast, name='admin_forecast'),
     path('save-admin-forecast/', views.save_admin_forecast, name='save_admin_forecast'),
     path('generate-all-forecasts/', views.generate_all_forecasts, name='generate_all_forecasts'),
     path('admin-forecast/batch/<int:batch_id>/download_csv/', views.forecast_csv, name='forecast_csv'),
     path('admin-forecast/batches/', views.admin_forecastviewall, name='admin_forecastviewall'),
     path('admin-forecast/batch/<int:batch_id>/', views.admin_forecastbatchdetails, name='admin_forecastbatchdetails'),
-    
+    path('commodities/', views.admin_commodity_list, name='admin_commodity_list'),
+    path('commodity/add/', views.admin_commodity_add_edit, name='admin_commodity_add'),
+    path('commodity/<int:pk>/edit/', views.admin_commodity_add_edit, name='admin_commodity_edit'),
 ]

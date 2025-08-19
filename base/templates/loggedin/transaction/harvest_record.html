@@ -104,7 +104,7 @@
             <br>
         {% if not transaction %}
             <div>
-                <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="">link</a> before creating a harvest record.</p>
+                <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="{% url 'base:farmland_record' %}">link</a> before creating a harvest record.</p>
             </div>
             <div class="row g-3">
                 {% for field in transaction_form %}

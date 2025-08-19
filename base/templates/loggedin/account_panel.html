@@ -26,6 +26,14 @@ Fruit Cast | Account Panel
                         <i class="bi bi-tree me-2"></i> Owned Farmland Recorded
                     </a>
                 </li>
+              {% if user_role_id == 3 or user_role_id == 2 %}
+
+                <li class="nav-item mb-2">
+                    <a href="{% url 'administrator:admin_dashboard' %}" class="nav-link link-light">
+                        <i class="bi bi-gear me-2"></i> Head to Admin Panel
+                    </a>
+                </li>
+                {% endif%}
 
                 {# Add more account-related links here #}
             </ul>

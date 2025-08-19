@@ -72,7 +72,11 @@
                     <div class="alert alert-warning">Not enough data to generate a forecast for this commodity.</div>
                 {% endif %}
                 <hr>
-                <h2 class="mt-5 text-success fw-bold">Forecasted Amount by Commodity</h2>
+
+{% comment %} NOT NEEDED NA FORECAST GENERATIONS SINCE UTILIZED NA YUNG CURRENT FORECAST RECORDS {% endcomment %}
+
+                    
+                {% comment %} <h2 class="mt-5 text-success fw-bold">Forecasted Amount by Commodity</h2>
                 {% if filter_month and filter_year %}
                     {% if filter_month and filter_year %}
                             ({{ filter_month_name }} {{ filter_year }})
@@ -132,15 +136,16 @@
                         {% endfor %}
                         <button type="submit" class="btn btn-success mt-3">Save Forecast Summary to Database</button>
                     </form>
-
-
-                {% endif %}
                 <hr>
+                {% endif %} {% endcomment %}
+
+
+                <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-success mb-3 ms-2">View All Forecast Batches</a>
+
                 <form method="post" action="{% url 'administrator:generate_all_forecasts' %}" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger mb-3" onclick="return confirm('Are you sure you want to generate forecasts for ALL commodities and ALL municipalities for the next 12 months? This may take a while.')">Generate All Forecasts (12 months, all commodities, all municipalities)</button>
                 </form>
-                <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-success mb-3 ms-2">View All Forecast Batches</a>
             </div>
         </div>
     </div>

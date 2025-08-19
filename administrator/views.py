@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from base.forms import EditUserInformation
 from django.utils import timezone
 from django.utils.timezone import now
-from .forms import AssignAdminAgriForm
+from .forms import AssignAdminAgriForm, CommodityTypeForm
 from django.db import transaction
 from django.core.mail import send_mail
 from django.contrib import messages
@@ -227,6 +227,7 @@ def show_allaccounts(request):
         'current_order': order,
     })
 
+@admin_or_agriculturist_required
 @require_POST
 def change_account_type(request, account_id):
     user_info = request.user.userinformation
@@ -467,44 +468,46 @@ def admin_forecast(request):
             forecast_data = None
 
         
+        # NOT NEEDED NA FORECAST_SUMMARY since utilized na yung forecast sa by month to display the by commodity forecast
+        
         #  Table for grouped by commodity, separate forecast / Forecast summary
         
         filter_month = request.GET.get('filter_month')
         filter_year = request.GET.get('filter_year')
         
-        forecast_summary = []
-        if filter_month and filter_year:
-            filter_month = int(filter_month)
-            filter_year = int(filter_year)
-            for commodity in commodity_types:
-                qs_for_sum = VerifiedHarvestRecord.objects.filter(commodity_id=commodity.commodity_id)
-                if selected_municipality_id:
-                    qs_for_sum = qs_for_sum.filter(municipality_id=selected_municipality_id)
-                qs_for_sum = qs_for_sum.values('harvest_date', 'total_weight_kg')
-                if qs_for_sum.exists():
-                    df = pd.DataFrame.from_records(qs_for_sum)
-                    df['ds'] = pd.to_datetime(df['harvest_date'])
-                    df['y'] = df['total_weight_kg'].astype(float)
-                    df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                    df['ds'] = df['ds'].dt.to_timestamp()
-                    if len(df) >= 2:
-                        model = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.05, seasonality_prior_scale=1)
-                        model.fit(df[['ds', 'y']])
-                        last_day = monthrange(filter_year, filter_month)[1]
-                        forecast_date = datetime(filter_year, filter_month, last_day)
-                        future = pd.DataFrame({'ds': [forecast_date]})
-                        forecast = model.predict(future)
-                        forecasted_kg = max(0, round(forecast['yhat'].iloc[0]))
-                    else:
-                        forecasted_kg = None
-                else:
-                    forecasted_kg = None
-                forecast_summary.append({
-                    'commodity': commodity.name,
-                    'forecasted_kg': forecasted_kg
-                })
-        else:
-            forecast_summary = None
+        # forecast_summary = []
+        # if filter_month and filter_year:
+        #     filter_month = int(filter_month)
+        #     filter_year = int(filter_year)
+        #     for commodity in commodity_types:
+        #         qs_for_sum = VerifiedHarvestRecord.objects.filter(commodity_id=commodity.commodity_id)
+        #         if selected_municipality_id:
+        #             qs_for_sum = qs_for_sum.filter(municipality_id=selected_municipality_id)
+        #         qs_for_sum = qs_for_sum.values('harvest_date', 'total_weight_kg')
+        #         if qs_for_sum.exists():
+        #             df = pd.DataFrame.from_records(qs_for_sum)
+        #             df['ds'] = pd.to_datetime(df['harvest_date'])
+        #             df['y'] = df['total_weight_kg'].astype(float)
+        #             df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+        #             df['ds'] = df['ds'].dt.to_timestamp()
+        #             if len(df) >= 2:
+        #                 model = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.05, seasonality_prior_scale=1)
+        #                 model.fit(df[['ds', 'y']])
+        #                 last_day = monthrange(filter_year, filter_month)[1]
+        #                 forecast_date = datetime(filter_year, filter_month, last_day)
+        #                 future = pd.DataFrame({'ds': [forecast_date]})
+        #                 forecast = model.predict(future)
+        #                 forecasted_kg = max(0, round(forecast['yhat'].iloc[0]))
+        #             else:
+        #                 forecasted_kg = None
+        #         else:
+        #             forecasted_kg = None
+        #         forecast_summary.append({
+        #             'commodity': commodity.name,
+        #             'forecasted_kg': forecasted_kg
+        #         })
+        # else:
+        #     forecast_summary = None
         
         
         now = datetime.now()
@@ -583,7 +586,7 @@ def admin_forecast(request):
         'filter_year': filter_year,
         'available_years': available_years,
         'months': months,
-        'forecast_summary': forecast_summary,
+        # 'forecast_summary': forecast_summary,
     }
     
     return render(request, 'admin_panel/admin_forecast.html', context)
@@ -825,7 +828,33 @@ def admin_forecastbatchdetails(request, batch_id):
     results = ForecastResult.objects.filter(batch=batch).select_related('commodity', 'municipality', 'forecast_month').order_by('forecast_year', 'forecast_month__number')
     return render(request, 'admin_panel/admin_forecastbatchdetails.html', {'batch': batch, 'results': results})
 
+@login_required
+@admin_or_agriculturist_required
+def admin_commodity_list(request):
+    commodities = CommodityType.objects.all()
+    return render(request, 'admin_panel/admin_commodity.html', {'commodities': commodities})
 
+
+@login_required
+@admin_or_agriculturist_required
+def admin_commodity_add_edit(request, pk=None):
+    if pk:
+        commodity = get_object_or_404(CommodityType, pk=pk)
+    else:
+        commodity = None
+
+    if request.method == 'POST':
+        form = CommodityTypeForm(request.POST, instance=commodity)
+        if form.is_valid():
+            form.save()
+            return redirect('administrator:admin_commodity_list')
+        else : 
+            print("⚠️ Not valid Form errors:", form.errors)
+    else:
+        form = CommodityTypeForm(instance=commodity)
+        print("⚠️ Not post Form errors:", form.errors)
+
+    return render(request, 'admin_panel/commodity_add.html', {'form': form, 'commodity': commodity})
 
 
 def accinfo(request):

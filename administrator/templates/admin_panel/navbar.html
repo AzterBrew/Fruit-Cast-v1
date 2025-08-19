@@ -30,7 +30,7 @@
           {% endif %}
         {% endif %}
 
-      <ul class="navbar-nav ms-auto">
+      <ul class="navbar-nav ms-auto"> 
         <li class="nav-item"><a class="nav-link" href="{% url 'administrator:admin_dashboard' %}">Home</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'base:home' %}">To Public Site</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'administrator:admin_forecast' %}">Generate Forecast</a></li>
@@ -43,7 +43,7 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
             <li>
-              <a class="dropdown-item" href="{% url 'administrator:accinfo' %}">Account Page</a>
+              <a class="dropdown-item" href="{% url 'base:account_info_panel' %}">Account Page</a>
             </li>
             <li>
               <form action="{% url 'base:logout' %}" method="post" class="d-inline">
@@ -85,6 +85,7 @@
           {% endif %}
           {% if user_role_id == 2 %}  
             
+            <a href="{% url 'administrator:admin_commodity_list' %}" class="list-group-item list-group-item-action">View Commodity Types</a>
             <a href="{% url 'administrator:show_allaccounts' %}" class="list-group-item list-group-item-action">Administrators and Agriculturists</a>
             <a href="{% url 'administrator:admin_forecast' %}" class="list-group-item list-group-item-action">Generate Forecast</a>
           {% endif%}

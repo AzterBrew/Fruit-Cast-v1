@@ -2,68 +2,64 @@
 
 {% block navbar %}
 {% comment %} NAVBAR SECTION {% endcomment %}
-<nav class="navbar navbar-expand-lg navbar-light">
-
-    <a class="btn btn-tarnsparent ms-5" data-bs-toggle="offcanvas" href="#offcanvasguest" role="button" aria-controls="offcanvasExample">
-        =
-      </a>
-    <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 50px;">
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+  <div class="container-fluid">
+    <!-- Offcanvas Toggle Button (always visible on mobile) -->
+    <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
+            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+        </button>
+    <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
+      <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+      <span class="fw-bold text-success">Fruit Cast</span>
+    </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-  
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-
-      <ul class="navbar-nav ms-auto me-auto">
-        <li class="nav-item active">
-            <a class="nav-link" href="{% url 'base:home' %}"><b>Home</b> <span class="sr-only"></span></a>
-        </li> 
-        <li class="nav-item active">
-          <a class="nav-link" href="#"><b>Forecast</b><span class="sr-only"></span></a>
-        </li>
-        <li class="nav-item active">
-            <a class="nav-link" href="#"><b>Monitor</b><span class="sr-only"></span></a>
-          </li>          
-        </li>
-      </ul>
-
-      <ul class="navbar-nav ms-auto me-5">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
         <li class="nav-item">
+          <a class="nav-link" href="{% url 'base:home' %}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Forecast</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Monitor</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'base:about' %}">About Us</a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-outline-success ms-3 me-2" href="{% url 'base:login' %}">Login</a>
         </li>
       </ul>
     </div>
-  </nav>
+  </div>
+</nav>
 
 {% comment %} OFFCANVAS SECTION {% endcomment %}
 
 
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
-    <div class="offcanvas-header">
-      <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast</h5>
-      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-header">      
-        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto"style="max-height: 20vh; align-content : center;">
-
-    </div>
-    <div class="offcanvas-body d-flex flex-column h-100">      
-        <div class="list-group">
-            {% comment %} <a href="#" class="list-group-item list-group-item-action">Report History</a>
-            <a href="#" class="list-group-item list-group-item-action">Account Details</a> {% endcomment %}
-            <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action">Home</a>
-            <a href="#" class="list-group-item list-group-item-action">Forecast</a>
-            <a href="#" class="list-group-item list-group-item-action">Monitor</a>
-            <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a>
-            <a href="{% url 'base:login' %}" class="list-group-item list-group-item-action">Login to access other functions</a>
-            <!-- Collapsible Section -->
-
-            
-        </div>
-        <br>
-        <div class="flex-grow-1"></div>
-        <hr>
-        <br>
-    </div>
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
+  <div class="offcanvas-header">
+    <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto" style="max-height: 20vh; align-content: center;">
+  </div>
+  <div class="offcanvas-body d-flex flex-column h-100">
+    <div class="list-group">
+      <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action">Home</a>
+      <a href="#" class="list-group-item list-group-item-action">Forecast</a>
+      <a href="#" class="list-group-item list-group-item-action">Monitor</a>
+      <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a>
+      <a href="{% url 'base:login' %}" class="list-group-item list-group-item-action">Login to access other functions</a>
+    </div>
+    <div class="flex-grow-1"></div>
+    <hr>
+    <br>
+  </div>
+</div>
 
   {% endblock navbar %}
