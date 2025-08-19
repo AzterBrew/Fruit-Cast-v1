@@ -230,7 +230,7 @@ def forecast(request):
             .filter(commodity_id=selected_commodity_id)
             .exclude(municipality_id=14)
             .values('forecast_month', 'forecast_year')
-            .distinct()
+            .distinct().order_by('forecast_year', 'forecast_month__number')
         )
         # For each (month, year), sum the latest forecast for each municipality
         for my in month_years:
@@ -256,7 +256,7 @@ def forecast(request):
                         forecast_month=month,
                         forecast_year=year,
                         batch__batch_id=latest_batch
-                    ).first()
+                    ).order_by('forecast_year', 'forecast_month__number').first()
                     if fr:
                         total_kg += fr.forecasted_amount_kg or 0
             # Get month name for label
@@ -297,6 +297,8 @@ def forecast(request):
         'forecasted_count': values,
         'combined': combined
     } if labels else None
+    
+    print(forecast_data)
 
     now_dt = datetime.now()
     current_year = now_dt.year
@@ -331,7 +333,7 @@ def forecast(request):
         objectids = geojson_name_to_objectids.get(name_key, [])
         muni_id_to_objectids[muni.municipality_id] = objectids
 
-    # Manual test values for each municipality (ID: value)
+    # pang testing previously
     test_values = {
         1: 1000,   # Abucay
         2: 800,    # Bagac
@@ -348,12 +350,34 @@ def forecast(request):
     }
 
     # Build choropleth data: OBJECTID -> value
-    choropleth_data = {}
-    for muni_id, value in test_values.items():
-        for objectid in muni_id_to_objectids.get(muni_id, []):
-            choropleth_data[objectid] = value
     
-    context = {
+    # initial with predefined values
+    # choropleth_data = {}
+    # for muni_id, value in test_values.items():
+    #     for objectid in muni_id_to_objectids.get(muni_id, []):
+    #         choropleth_data[objectid] = value
+    
+    choropleth_data = {}
+    
+    
+    if filter_month and filter_year and selected_commodity_id:
+        results = ForecastResult.objects.filter(
+            commodity_id=selected_commodity_id,
+            forecast_month__number=filter_month,
+            forecast_year=filter_year
+        ).values('municipality__municipality_id').annotate(
+            forecasted_kg=Sum('forecasted_amount_kg')
+        )
+        
+        for res in results:
+            choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
+
+        # for row in results:
+        #     choropleth_data[str(row['municipality__municipality_id'])] = float(row['forecasted_kg'] or 0)
+        #     print(f"Municipality ID: {row['municipality__municipality_id']}, Forecasted KG: {row['forecasted_kg']}")
+
+    print("Choropleth Data:", choropleth_data)  # Debug print
+    context = { 
         'user_firstname': userinfo.firstname,
         'forecast_data': forecast_data,
         'batch_id' : latest_batch,
@@ -366,8 +390,8 @@ def forecast(request):
         'selected_commodity_id': selected_commodity_id,
         'selected_municipality_obj': selected_municipality_obj,
         'selected_municipality': selected_municipality_id,
-        # 'filter_month': filter_month,
-        # 'filter_year': filter_year,
+        'filter_month': filter_month,
+        'filter_year': filter_year,
         'available_years': available_years,
         'months': months,
         'choropleth_data' : json.dumps(choropleth_data)

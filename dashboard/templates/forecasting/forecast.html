@@ -76,6 +76,29 @@ Fruit Cast | Forecast
                 <h2 class="mt-5 text-success fw-bold">Choropleth Map of Bataan</h2>
                 <h3 class="mb-4">by Forecasted Amount (kg)</h3>
                 {% if forecast_data %}
+
+                <form method="get" class="mb-4" id="choropleth-filter-form">
+                    <label for="commodity_type" class="form-label">Commodity:</label>
+                    <select class="form-select w-auto d-inline-block" name="commodity_id" id="commodity_type" onchange="this.form.submit()">
+                        {% for commodity in commodity_types %}
+                            <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_commodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="filter_month" class="form-label ms-3">Month:</label>
+                    <select class="form-select w-auto d-inline-block" name="filter_month" id="filter_month" onchange="this.form.submit()">
+                        {% for m in months %}
+                            <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="filter_year" class="form-label ms-3">Year:</label>
+                    <select class="form-select w-auto d-inline-block" name="filter_year" id="filter_year" onchange="this.form.submit()">
+                        {% for y in available_years %}
+                            <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+
+
                     <div id="map" style="height: 500px; z-index: 0"></div>
                     <script>
                     var forecastChoropleth = {{ choropleth_data|safe }};
@@ -96,14 +119,49 @@ Fruit Cast | Forecast
 
                             // Color scale function
                             function getColor(d) {
-                                return d > 10000 ? '#005a32' :
-                                        d > 5000  ? '#238b45' :
-                                        d > 2000  ? '#41ab5d' :
-                                        d > 1000  ? '#74c476' :
-                                        d > 500   ? '#a1d99b' :
-                                        d > 0     ? '#c7e9c0' :
-                                                    '#f7fcf5';
+                                // Adjust thresholds as needed
+                                return d > 10000 ? '#006837' :
+                                    d > 5000  ? '#31a354' :
+                                    d > 1000  ? '#78c679' :
+                                    d > 0     ? '#c2e699' :
+                                                '#ffffcc';
                             }
+
+                            function style(feature) {
+                                var muniId = feature.properties.OBJECTID;
+                                var value = forecastChoropleth[muniId] || 0;
+                                return {
+                                    fillColor: getColor(value),
+                                    weight: 1,
+                                    opacity: 1,
+                                    color: 'white',
+                                    fillOpacity: 0.7
+                                };
+                            }
+
+                            function onEachFeature(feature, layer) {
+                                var muniId = String(feature.properties.OBJECTID);
+                                var value = forecastChoropleth[muniId] !== undefined ? forecastChoropleth[muniId] : 0;
+                                if (feature.geometry.type === "Polygon") {
+                                    var centroid = turf.centroid(feature);
+                                    var latlng = [centroid.geometry.coordinates[1], centroid.geometry.coordinates[0]];
+                                    L.marker(latlng, {
+                                        icon: L.divIcon({
+                                            className: 'choropleth-label',
+                                            html: `<b>${value.toFixed(2)}</b> kg`,
+                                            iconSize: [60, 20]
+                                        })
+                                    }).addTo(map);
+                                }
+                                layer.setStyle({
+                                    fillColor: getColor(value),
+                                    fillOpacity: 0.7,
+                                    color: '#333',
+                                    weight: 1
+                                });
+                                layer.bindTooltip(feature.properties.MUNICIPALI + "<br>" + value.toFixed(2) + " kg");
+                            }
+                            
 
                             function style(feature) {
                                 var muniId = feature.properties.OBJECTID; // or use a custom property if you have one
@@ -117,6 +175,7 @@ Fruit Cast | Forecast
                                     fillOpacity: 0.7
                                 };
                             }
+                            
 
                             function onEachFeature(feature, layer) {
                                 var muni = feature.properties.MUNICIPALI;
@@ -144,8 +203,8 @@ Fruit Cast | Forecast
                             // Add GeoJSON layer
                             fetch("{% static 'geojson/BATAAN_MUNICIPALITY.geojson' %}")
                                 .then(response => response.json())
-                                .then(data => {
-                                    L.geoJSON(data, {
+                                .then(geojsonData => {
+                                    L.geoJSON(geojsonData, {
                                         style: style,
                                         onEachFeature: onEachFeature
                                     }).addTo(map);
