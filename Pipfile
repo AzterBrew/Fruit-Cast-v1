@@ -8,6 +8,15 @@ django = "*"
 psycopg2 = "==2.9.10"
 gunicorn = "*"
 prophet = "*"
+shapely = "*"
+matplotlib = "*"
+pandas = "*"
+numpy = "*"
+plotly = "*"
+holidays = "*"
+cmdstanpy = "*"
+pillow = "*"
+colorama = "*"
 
 [dev-packages]
 
