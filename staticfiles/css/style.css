@@ -1,0 +1,444 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* montserrat-regular - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/montserrat-v29-latin-regular.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+/* montserrat-700 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/montserrat-v29-latin-700.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* montserrat-300 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300;
+  src: url('../fonts/montserrat-v29-latin-300.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+body {
+    min-height: 100vh;
+    background-color: #f7fff2;
+    color: #27371a;
+    /* font-size: 2rem; */
+    display: flex;
+    flex-flow: column;
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* testing */
+div { 
+    border-color: rgb(48, 6, 6);
+    /* height: 50%;
+    width: 70%; */
+}
+
+#formlogout {
+    text-align: right;
+}
+
+#formlogout button {
+    height: 4em;
+    border: none;
+    background: none;
+    text-decoration: none;
+    color: #f6facd;
+}
+
+
+.nav a{
+    display: inline-flex;
+    font-size: 2vmax;
+    
+}
+
+.nav a {
+    color: #f6facd;
+}
+
+.nav button:hover{
+    background-color: #293323 !important;    
+}
+
+.navbar {
+    border-bottom: 2px solid #9ea999;
+    box-shadow: 0 0.1vmax .5vmax #b9cbb3;
+    position: fixed;
+    height: 10vh;
+    background-color: #fffdfa;
+    z-index: 3;
+    min-width: 100vw;
+}
+
+.btn-transparent {
+    background-color: transparent;
+    border: none;
+    color: #546749; /* or any color you want, like Bootstrap's primary */
+    font-size: 2rem; /* optional: make the "=" symbol bigger */
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-transparent:hover {
+    background-color: #546749; /* light blue hover */
+    color: #293323; /* darker blue on hover */
+}
+
+.home-container {
+    display: flex;
+    margin: 1rem 3rem 5rem 3rem;
+    width: 90vmax;
+    max-width: 95%;
+    align-items: center;
+}
+
+.home-container div {
+    padding: 1rem;
+
+}
+
+.home-left-container, .home-left-container p {
+    min-width: 40%;
+    padding: 1rem;
+    text-align: justify;
+}
+
+.home-right-container img  {
+    width: 55vmax;
+    min-width: 40vmax;
+    max-width: 50vmax;
+    border: #27371a;
+    padding: 1rem;
+    border-radius: 20%;
+}
+
+.login-container {
+    display: flex;
+    min-width: 98vmax;
+    /* align-items: center; */
+    /* background-color: #546749; */
+    /* background-image: linear-gradient(to bottom left, #546749, #f7fff2); */
+    background-image: url("../images/background.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 0;
+    /* height: 100vh; */
+    min-height: 100vh;
+}
+.login-left-container {
+    margin: 5%;
+    padding: 1rem;
+    color: #f7fff2;
+    margin-top: 15%;
+    min-width: 40%;
+    max-width: 50%;
+    min-height: 40vh;
+}
+
+.login-left-container p {
+    text-align: justify;
+}
+
+.login-left-container h1 {
+    text-align: left;
+}
+
+.login-left-container p, .login-left-container h1 {
+    text-shadow: #293323 1px 0 15px;
+}
+
+.login-right-container {
+    width: 55vmax;
+    min-height: 90vh;
+    /* background-color: #f7fff2; */
+    align-items: center;
+    padding-top: 15vh;
+    /* text-align: center; */
+    /* margin-top: 10vh; */
+    padding: 10vh 5vh 10vh 10vh;
+    line-height: 2vmin;
+}
+
+.login-right-container div {
+    padding: 1vmin;
+}
+
+
+
+.logindiv {
+    font-size: 1rem;
+}
+
+.logindiv label {
+    /* text-align: left; */
+    font-size: 3vmin;
+    height: 1rem;
+    padding-bottom: 5%;
+}
+
+.logindiv input {
+    width: 60%;
+}
+
+.logindiv a {
+    color: #27371a;
+    font-size: 2vmin;
+    padding: 2%;
+    border-radius: 15%;
+    border-style: solid;
+    border-width: 2px;
+}
+
+.center-div-text {
+    text-align: center;
+}
+
+
+.offcanvas-p {
+    font-size: 13px;
+}
+
+.title {
+    text-align: center;
+    width: 100%;
+}
+
+.title a {
+    font-size: 4rem !important; 
+}
+
+
+
+.container1 {
+    background-color:#fffefc;
+    width: 50vmax;
+    min-height: 50vh;
+    padding-top: 7vmin;
+    padding: 7vmin;
+    box-shadow: 0 0.2vmax .5vmax #69894e;
+    margin-top: 12vh;
+    margin-bottom: 5vh;
+    line-height: 2vmin;
+}
+
+.container2 {
+    background-color:#fffefc;
+    width: 70vw;
+    min-height: 50vh;
+    padding-top: 7vmin;
+    padding: 7vmin;
+    box-shadow: 0 0.2vmax .5vmax #69894e;
+    margin-top: 12vh;
+    margin-bottom: 5vh;
+    line-height: 2vmin;
+}
+
+.form-error {
+    color: red;
+    font-size: 0.9em;
+  }
+  
+.transaction-view{
+    /* display: inline-block; */
+    background-color: #fffefc;
+    min-height: 80vh;
+    min-width: 90vw;
+    margin-top: 12vh;
+}
+
+.transaction-side {
+    max-width: 50vw;
+    background-color: #fffefc;
+    box-shadow: 0 0.1vmax .5vmax #b9cbb3;
+    z-index: 1;
+}
+
+.chosen-transaction {
+    max-width: 70vw;
+    box-shadow: 0 0.1vmax .3vmax #b9cbb3;
+}
+
+
+nav {
+    padding: 1rem;
+    background-color: #416e3f;
+    /* color: white; */
+}
+
+main {
+    flex-grow: 1;
+    display: grid;
+    place-content: center;
+}
+
+/* h1,
+p {
+    text-align: center;
+} */
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    opacity: .85;
+}
+
+.visually-locked {
+  pointer-events: none;
+  background-color: #e9ecef;
+}
+
+/* Fixed sidebar layout for transaction pages */
+.transaction-layout {
+    display: flex;
+    margin-top: 4vh;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.transaction-sidebar {
+    position: fixed;
+    /* top: 0; */
+    /* margin-top: 4vh; */
+    left: 0;
+    width: 17vw;
+    height: 90vh;
+    background: #fffdfa;
+    border-right: 1px solid #f8faf5;
+    z-index: 0;
+    box-shadow: 3px 0 8px rgba(0,0,1,.05);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.transaction-sidebar .nav-link {
+    font-size: 1.3rem; /* Adjust as needed (e.g., 1rem, 1.25rem, etc.) */
+}
+
+.sidebar-inner {
+    padding: 2rem 1rem;
+}
+
+.sidebar-title {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.transaction-main {
+    margin-left: 10vw; /* same as sidebar width */
+    width: 100%;
+    display: flex;
+    justify-content: left;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.transaction-content {
+    width: 100%;
+    min-width: 72vw;
+    max-width: 72vw;
+    min-height: 60vh;
+    margin: 2rem auto;
+    background: #fffdfa;
+}
+
+@media (max-width: 991px) {
+    .transaction-sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        box-shadow: none;
+        border-right: none;
+    }
+    .transaction-main {
+        margin-left: 0;
+    }
+    .transaction-content {
+        margin: 1rem;
+        min-height: 60vh;
+    }
+}
+
+
+/* Account panel layout */
+.account-layout {
+    display: flex;
+    margin-top: 4vh;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.account-sidebar {
+    position: fixed;
+    left: 0;
+    width: 17vw;
+    height: 90vh;
+    background: #14763d;
+    border-right: 1px solid #f8faf5;
+    z-index: 0;
+    box-shadow: 3px 0 8px rgba(0,0,1,.05);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.account-sidebar .nav-link {
+    font-size: 1.2rem;
+}
+
+.account-main {
+    margin-left: 10vw;
+    width: 100%;
+    display: flex;
+    justify-content: left;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+
+.account-content {
+    width: 100%;
+    min-width: 72vw;
+    max-width: 72vw;
+    /* margin: 2rem auto; */
+    background: #fffdfa;
+    border-radius: 1rem;
+    min-height: 60vh;
+
+}
+
+.main-user {
+    display: flex;
+    margin-top: 4vh;
+    min-height: 100vh;
+    background: #f7fff2;
+}
+
+.main-user-content {
+    width: 100%;
+    min-width: 72vw;
+    max-width: 72vw;
+    min-height: 60vh;
+    margin: 2rem auto;
+    background: #f7fff2;
+    border-radius: 1rem;
+}
