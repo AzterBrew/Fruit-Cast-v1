@@ -1009,6 +1009,48 @@ def custom_login(request):
                 user = authenticate(request, username=contact, password=password)  
 
             if user is not None:
+                
+                if user.is_superuser:
+                    # Check if UserInformation exists for this user
+                    if not UserInformation.objects.filter(auth_user=user).exists():
+                        admin_type = AccountType.objects.get(account_type='Administrator')
+                        active_status = AccountStatus.objects.get(pk=2)  # Adjust if needed
+                        barangay = BarangayName.objects.get(pk=1)
+                        municipality = MunicipalityName.objects.get(pk=1)
+                        municipality_assigned = MunicipalityName.objects.get(pk=14)  # Adjust if needed
+
+                        userinfo = UserInformation.objects.create(
+                            auth_user=user,
+                            firstname='Admin',
+                            lastname='User',
+                            middlename='',
+                            nameextension='',
+                            sex='',
+                            contact_number='',
+                            user_email=user.email,
+                            birthdate='1950-01-01',
+                            emergency_contact_person='',
+                            emergency_contact_number='',
+                            address_details='',
+                            barangay_id=barangay,
+                            municipality_id=municipality,
+                            religion='None',
+                            civil_status='Single',
+                        )
+
+                        account_info = AccountsInformation.objects.create(
+                            userinfo_id=userinfo,
+                            account_type_id=admin_type,
+                            acc_status_id=active_status,
+                            account_isverified=True,
+                            account_register_date=timezone.now(),
+                        )
+
+                        admin_info = AdminInformation.objects.create(
+                            userinfo_id=userinfo,
+                            municipality_incharge=municipality_assigned,
+                        )
+                        
                 login(request, user)
                 
                 try:
