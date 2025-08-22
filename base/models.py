@@ -244,8 +244,8 @@ class initPlantRecord(models.Model):
     commodity_id = models.ForeignKey(CommodityType, on_delete=models.CASCADE)
     commodity_custom = models.CharField(max_length=255, blank=True)  # "Other"
     record_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='plant_status_transactions')
-    min_expected_harvest = models.IntegerField()
-    max_expected_harvest = models.IntegerField()
+    min_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
+    max_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
     remarks = models.TextField(blank=True)
 
 class initHarvestRecord(models.Model):

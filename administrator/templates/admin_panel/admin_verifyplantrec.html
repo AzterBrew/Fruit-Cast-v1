@@ -13,32 +13,46 @@ Fruit Cast | Plant and Harvest Records
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card shadow-sm rounded-4 p-4 mb-4">
-                <h2>Plant Record Verification</h2>
-                <form method="get" class="mb-3">
-                    <select name="municipality">
-                        <option value="">All Municipalities</option>
-                        {% for m in municipalities %}
-                            <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
-                        {% endfor %}
-                    </select>
-                    <select name="commodity">
-                        <option value="">All Commodities</option>
-                        {% for c in commodities %}
-                            <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == selected_commodity %}selected{% endif %}>{{ c.name }}</option>
-                        {% endfor %}
-                    </select>  
-                    <button type="submit">Filter</button>
+                <h2 class="text-xl font-bold mb-4">Harvest Record Verification</h2>
+                <form method="get" class="mb-3" id="filterForm">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label for="municipality" class="form-label mb-0">Filter by Municipality:</label>
+                            <select name="municipality" id="municipality" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                {% for m in municipalities %}
+                                    <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="commodity" class="form-label mb-0">Filter by Commodity:</label>
+                            <select name="commodity" id="commodity" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                {% for c in commodities %}
+                                    <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == selected_commodity %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success btn-sm w-100">Filter</button>
+                        </div>
+                    </div>
                 </form>
 
-                <table class="table">
-                    <thead>
+                {% if records %}
+                <table class="table table-bordered table-hover">
+                    <thead class="table-success">
                         <tr>
                             <th>ID</th>
                             <th>Plant Date</th>
                             <th>Commodity</th>
                             <th>Municipality</th>
                             <th>Barangay</th>
-                            <!-- Add more columns as needed -->
+                            <th>Minimum Expected Harvest</th>
+                            <th>Maximum Expected Harvest</th>
+                            <th>Unit</th>
+                            <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -47,19 +61,46 @@ Fruit Cast | Plant and Harvest Records
                             <td>{{ rec.pk }}</td>
                             <td>{{ rec.plant_date }}</td>
                             <td>{{ rec.commodity_id.name }}</td>
-                            <td>{{ rec.transaction.manual_municipality.municipality }}</td>
-                            <td>{{ rec.transaction.manual_barangay.barangay }}</td>
-                            <!-- Add more fields as needed -->
+                            <td>
+                                {% if rec.transaction.farm_land %}
+                                    {{ rec.transaction.farm_land.municipality.municipality }}
+                                {% elif rec.transaction.manual_municipality %}
+                                    {{ rec.transaction.manual_municipality.municipality }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if rec.transaction.farm_land %}
+                                    {{ rec.transaction.farm_land.barangay.barangay }}
+                                {% elif rec.transaction.manual_barangay %}
+                                    {{ rec.transaction.manual_barangay.barangay }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ rec.total_weight }}</td>
+                            <td>{{ rec.unit.unit_full }}</td>
+                            <td>{{ rec.remarks|default:"-" }}</td>
                         </tr>
-                        {% empty %}
-                        <tr><td colspan="5">No records found.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                
+                {% else %}
+                    <p>No records found.</p>
+                {% endif %}
             </div>
         </div>
     </div>
-  </div>
 </div>
+
+<script>
+    // Auto-submit form on filter change
+    document.getElementById('municipality').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+    document.getElementById('commodity').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+</script>
 {% endblock content %}
