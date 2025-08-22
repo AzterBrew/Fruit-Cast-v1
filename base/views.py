@@ -1050,6 +1050,8 @@ def custom_login(request):
                             userinfo_id=userinfo,
                             municipality_incharge=municipality_assigned,
                         )
+                
+                
                         
                 login(request, user)
                 
@@ -1070,8 +1072,11 @@ def custom_login(request):
                 except AccountsInformation.DoesNotExist:
                     print("no acc info record for this user")
                     messages.error(request, 'Account not registered')  
-                    
-                return redirect('base:home')
+
+                if account_info.account_type_id == 2 or account_info.account_type_id == 3:
+                    return redirect('administrator:admin_dashboard')
+                else:                    
+                    return redirect('base:home')
             else:
                 messages.error(request, 'Invalid email/phone or password.')  
                 print("🔥 Login failed...")  # Debugging log

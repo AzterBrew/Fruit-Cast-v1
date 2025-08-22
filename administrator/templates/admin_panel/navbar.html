@@ -79,7 +79,8 @@
         <div class="list-group">
           {% if user_role_id == 2 or user_role_id == 3 %}  
 
-            <a href="#" class="list-group-item list-group-item-action">Verify Plant and Harvest Records</a>
+            <a href="{% url 'administrator:admin_verifyplantrec' %}" class="list-group-item list-group-item-action">Verify Plant Records</a>
+            <a href="{% url 'administrator:admin_verifyharvestrec' %}" class="list-group-item list-group-item-action">Verify Harvest Records</a>
             <a href="{% url 'administrator:verify_accounts' %}" class="list-group-item list-group-item-action">Farmer Accounts</a>
           
           {% endif %}

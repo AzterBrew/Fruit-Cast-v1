@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord
+from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord, initPlantRecord
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseForbidden, HttpResponse
@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord
 from prophet import Prophet
 import pandas as pd
+from django.db.models import Q
 from datetime import datetime
 from calendar import monthrange
 import json
@@ -855,6 +856,92 @@ def admin_commodity_add_edit(request, pk=None):
         print("⚠️ Not post Form errors:", form.errors)
 
     return render(request, 'admin_panel/commodity_add.html', {'form': form, 'commodity': commodity})
+
+
+@login_required
+@admin_or_agriculturist_required
+def admin_verifyplantrec(request):
+    user = request.user
+    userinfo = UserInformation.objects.get(auth_user=user)
+    admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+    municipality_assigned = admin_info.municipality_incharge
+
+    filter_municipality = request.GET.get('municipality')
+    filter_commodity = request.GET.get('commodity')
+
+    if municipality_assigned.pk == 14:
+        # Super admin: show all
+        records = initPlantRecord.objects.all()
+    else:
+        # Only records in admin's municipality
+        records = initPlantRecord.objects.filter(
+            Q(transaction__farm_land__municipality=municipality_assigned) |
+            Q(transaction__farm_land__isnull=True, transaction__manual_municipality=municipality_assigned)
+        )
+
+    # Apply filters if present
+    if filter_municipality:
+        records = records.filter(
+            Q(transaction__farm_land__municipality__pk=filter_municipality) |
+            Q(transaction__farm_land__isnull=True, transaction__manual_municipality__pk=filter_municipality)
+        )
+    if filter_commodity:
+        records = records.filter(commodity_id=filter_commodity)
+
+    municipalities = MunicipalityName.objects.all()
+    commodities = CommodityType.objects.all()
+
+    context = {
+        'records': records,
+        'municipalities': municipalities,
+        'commodities': commodities,
+        'selected_municipality': filter_municipality,
+        'selected_commodity': filter_commodity,
+    }
+    return render(request, 'admin_panel/admin_verifyplantrec.html', context)
+
+
+@login_required
+@admin_or_agriculturist_required
+def admin_verifyharvestrec(request):
+    user = request.user
+    userinfo = UserInformation.objects.get(auth_user=user)
+    admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+    municipality_assigned = admin_info.municipality_incharge
+
+    filter_municipality = request.GET.get('municipality')
+    filter_commodity = request.GET.get('commodity')
+
+    if municipality_assigned.pk == 14:
+        # Super admin: show all
+        records = initHarvestRecord.objects.all()
+    else:
+        # Only records in admin's municipality
+        records = initHarvestRecord.objects.filter(
+            Q(transaction__farm_land__municipality=municipality_assigned) |
+            Q(transaction__farm_land__isnull=True, transaction__manual_municipality=municipality_assigned)
+        )
+
+    # Apply filters if present
+    if filter_municipality:
+        records = records.filter(
+            Q(transaction__farm_land__municipality__pk=filter_municipality) |
+            Q(transaction__farm_land__isnull=True, transaction__manual_municipality__pk=filter_municipality)
+        )
+    if filter_commodity:
+        records = records.filter(commodity_id=filter_commodity)
+
+    municipalities = MunicipalityName.objects.all()
+    commodities = CommodityType.objects.all()
+
+    context = {
+        'records': records,
+        'municipalities': municipalities,
+        'commodities': commodities,
+        'selected_municipality': filter_municipality,
+        'selected_commodity': filter_commodity,
+    }
+    return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
 
 
 def accinfo(request):

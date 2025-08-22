@@ -213,9 +213,9 @@ class RecordTransaction (models.Model):
     account_id = models.ForeignKey(AccountsInformation, on_delete=models.CASCADE)
     transaction_date = models.DateTimeField(default=timezone.now)
     date_verified = models.DateTimeField(null=True, blank=True)
-
-    plant_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='plant_status_transactions')
-    harvest_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='harvest_status_transactions')
+    # should be in the kwan sa recordlist template
+    planting_failed = models.BooleanField(default=False)
+    failure_reason = models.TextField(blank=True, null=True)
     # location stuff choosing
     location_type = models.CharField(choices=LOCATION_TYPE_CHOICES, max_length=20, default='manual')
     farm_land = models.ForeignKey(FarmLand, null=True, blank=True, on_delete=models.SET_NULL)
@@ -232,9 +232,7 @@ class RecordTransaction (models.Model):
         return "No location set"
     
 # tentative with these fields
-    item_status_id = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, related_name="transaction_status")
     tr_verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
-
 
 
 class initPlantRecord(models.Model):
@@ -245,7 +243,7 @@ class initPlantRecord(models.Model):
     plant_date = models.DateField()
     commodity_id = models.ForeignKey(CommodityType, on_delete=models.CASCADE)
     commodity_custom = models.CharField(max_length=255, blank=True)  # "Other"
-    
+    record_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='plant_status_transactions')
     min_expected_harvest = models.IntegerField()
     max_expected_harvest = models.IntegerField()
     remarks = models.TextField(blank=True)
@@ -257,7 +255,7 @@ class initHarvestRecord(models.Model):
     harvest_date = models.DateField()
     commodity_id = models.ForeignKey(CommodityType, on_delete=models.CASCADE)
     commodity_custom = models.CharField(max_length=255, blank=True)
-
+    record_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='harvest_status_transactions')
     total_weight = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.ForeignKey(UnitMeasurement, on_delete=models.CASCADE)
     weight_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
