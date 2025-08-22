@@ -100,21 +100,34 @@ WSGI_APPLICATION = 'FruitCast.wsgi.application'
 #         'HOST': 'localhost'
 #     }
 # }
+
 DATABASE_URL = os.environ.get('DATABASE_URL')
-db_info = urlparse(DATABASE_URL)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'fruitcastdb',
-        # 'NAME': db_info.path[1:], 
-        'USER': db_info.username,
-        'PASSWORD': db_info.password,
-        'HOST': db_info.hostname,
-        'PORT': db_info.port,
-        'OPTIONS': {'sslmode':'require'},
-        'CONN_MAX_AGE': 60,
+if DATABASE_URL:
+    db_info = urlparse(DATABASE_URL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_info.path[1:],
+            'USER': db_info.username,
+            'PASSWORD': db_info.password,
+            'HOST': db_info.hostname,
+            'PORT': db_info.port,
+            'OPTIONS': {'sslmode': 'require'},
+            'CONN_MAX_AGE': 0,  # <--- this is the key fix
+        }
     }
-}
+else:
+    # fallback for local dev
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'fruitcast_db'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
 
 #digiocean
 
