@@ -887,9 +887,10 @@ def login_success(request):
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
 
     if request.user.is_authenticated:
-        return render(request, 'loggedin/home.html', {})
+        # return render(request, 'loggedin/home.html', {})
+        return redirect('base:home')
     else:        
-        return render(request, 'home.html', {})
+        return render('home.html')
     # return redirect("base:home")  
     # Redirect to home *manually*
 
