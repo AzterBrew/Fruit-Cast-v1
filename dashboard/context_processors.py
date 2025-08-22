@@ -7,12 +7,12 @@ def unread_notifications(request):
     account_id = request.session.get('account_id')
     if not account_id:
         return {}
-    notifications = Notification.objects.filter(
+    notifications_qs = Notification.objects.filter(
         account__account_id=account_id,
-        is_read=False,
         scheduled_for__lte=timezone.now()
-    ).order_by('-created_at')[:10]
-    unread_count = notifications.count()
+    ).order_by('-created_at')
+    notifications = notifications_qs[:10]
+    unread_count = notifications_qs.filter(is_read=False).count()
     return {
         'notifications': notifications,
         'unread_count': unread_count,
