@@ -112,6 +112,7 @@ DATABASES = {
         'HOST': db_info.hostname,
         'PORT': db_info.port,
         'OPTIONS': {'sslmode':'require'},
+        'CONN_MAX_AGE': 60,
     }
 }
 
