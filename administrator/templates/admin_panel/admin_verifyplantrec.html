@@ -56,7 +56,6 @@ Fruit Cast | Plant and Harvest Records
                                 <th>Barangay</th>
                                 <th>Minimum Expected Harvest</th>
                                 <th>Maximum Expected Harvest</th>
-                                <th>Unit</th>
                                 <th>Remarks</th>
                                 <th>Current Status</th>
                             </tr>
@@ -95,9 +94,8 @@ Fruit Cast | Plant and Harvest Records
                                 </td>
                                 <td>{{ rec.min_expected_harvest }}</td>
                                 <td>{{ rec.max_expected_harvest }}</td>
-                                <td>{{ rec.unit.unit_full }}</td>
                                 <td>{{ rec.remarks|default:"-" }}</td>
-                                <td>{{ rec.record_status.acc_status }}</td>
+                                <td>{{ rec.record_status_id.acc_status }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
