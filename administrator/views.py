@@ -16,7 +16,7 @@ from django.contrib import messages
 from django.utils.crypto import get_random_string
 from .decorators import admin_or_agriculturist_required, superuser_required
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
-from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord
+from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord, VerifiedPlantRecord
 from prophet import Prophet
 import pandas as pd
 from django.db.models import Q
@@ -896,16 +896,50 @@ def admin_verifyplantrec(request):
             # Get the status object
             try:
                 new_status = AccountStatus.objects.get(pk=new_status_pk)
-                # Bulk update
-                updated = initPlantRecord.objects.filter(pk__in=selected_ids).update(record_status=new_status)
-                messages.success(request, f"Updated {updated} record(s) successfully.")
+                admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+                updated_records = initPlantRecord.objects.filter(pk__in=selected_ids)
+                for rec in updated_records:
+                    # If status is 'Verified' (pk=2), create VerifiedPlantRecord if not exists
+                    if int(new_status_pk) == 2:
+                        from dashboard.models import VerifiedPlantRecord
+                        if not VerifiedPlantRecord.objects.filter(prev_record=rec).exists():
+                            transaction = rec.transaction
+                            # Determine barangay and municipality
+                            if transaction.farm_land:
+                                barangay = transaction.farm_land.barangay
+                                municipality = transaction.farm_land.municipality
+                            else:
+                                barangay = transaction.manual_barangay
+                                municipality = transaction.manual_municipality
+                                
+                            VerifiedPlantRecord.objects.create(
+                                plant_date=rec.plant_date,
+                                commodity_id=rec.commodity_id,
+                                min_expected_harvest=rec.min_expected_harvest,
+                                max_expected_harvest=rec.max_expected_harvest,
+                                average_harvest_units=(rec.min_expected_harvest + rec.max_expected_harvest) / 2,
+                                estimated_weight_kg=None,  # Compute if needed
+                                remarks=rec.remarks,
+                                municipality=municipality,
+                                barangay=barangay,
+                                date_verified=timezone.now(),
+                                verified_by=admin_info,
+                                prev_record=rec
+                            )
+                            print(f"✅ Created VerifiedPlantRecord for initPlantRecord ID {rec.pk}")
+                            
+                    # Always update the record status
+                    rec.record_status = new_status
+                    rec.save()
+                messages.success(request, "Records updated successfully.")
             except AccountStatus.DoesNotExist:
                 messages.error(request, "Invalid status selected.")
+            except AdminInformation.DoesNotExist:
+                messages.error(request, "Admin information not found.")
         else:
             messages.warning(request, "No records selected or no status chosen.")
-        return redirect('administrator:admin_verifyplantrec')  # Use your URL name
+        return redirect('administrator:admin_verifyplantrec')
 
-    
     
     municipalities = MunicipalityName.objects.all()
     commodities = CommodityType.objects.all()
