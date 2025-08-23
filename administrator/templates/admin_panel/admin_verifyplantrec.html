@@ -34,8 +34,14 @@ Fruit Cast | Plant and Harvest Records
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-success btn-sm w-100">Filter</button>
+                        <div class="col-md-4">
+                            <label for="status" class="form-label mb-0">Filter by Status:</label>
+                            <select name="status" id="status" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                {% for status in status_choices %}
+                                    <option value="{{ status.pk }}" {% if selected_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </form>
@@ -95,7 +101,7 @@ Fruit Cast | Plant and Harvest Records
                                 <td>{{ rec.min_expected_harvest }}</td>
                                 <td>{{ rec.max_expected_harvest }}</td>
                                 <td>{{ rec.remarks|default:"-" }}</td>
-                                <td>{{ rec.record_status_id.acc_status }}</td>
+                                <td>{{ rec.record_status.acc_status }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -123,6 +129,9 @@ Fruit Cast | Plant and Harvest Records
         document.getElementById('filterForm').submit();
     });
     document.getElementById('commodity').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+    document.getElementById('status').addEventListener('change', function() {
         document.getElementById('filterForm').submit();
     });
 </script>

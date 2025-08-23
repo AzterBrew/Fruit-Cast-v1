@@ -887,7 +887,11 @@ def admin_verifyplantrec(request):
         )
     if filter_commodity:
         records = records.filter(commodity_id=filter_commodity)
-
+    
+    filter_status = request.GET.get('status')
+    if filter_status:
+        records = records.filter(record_status__pk=filter_status)
+    
     # for updating ng record
     if request.method == "POST":
         selected_ids = request.POST.getlist('selected_records')
