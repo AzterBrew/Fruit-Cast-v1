@@ -59,7 +59,13 @@ Fruit Cast | Plant and Harvest Records
                         <tr>
                             <td>{{ rec.pk }}</td>
                             <td>{{ rec.harvest_date }}</td>
-                            <td>{{ rec.commodity_id.name }}</td>
+                            <td>
+                                {% if rec.commodity_id.pk == 1 %}
+                                    {{ rec.commodity_custom }}
+                                {% else %}
+                                    {{ rec.commodity_id.name }}
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if rec.transaction.farm_land %}
                                     {{ rec.transaction.farm_land.municipality.municipality }}

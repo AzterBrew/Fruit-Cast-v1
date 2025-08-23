@@ -888,13 +888,35 @@ def admin_verifyplantrec(request):
     if filter_commodity:
         records = records.filter(commodity_id=filter_commodity)
 
+    # for updating ng record
+    if request.method == "POST":
+        selected_ids = request.POST.getlist('selected_records')
+        new_status_pk = request.POST.get('new_status')
+        if selected_ids and new_status_pk:
+            # Get the status object
+            try:
+                new_status = AccountStatus.objects.get(pk=new_status_pk)
+                # Bulk update
+                updated = initPlantRecord.objects.filter(pk__in=selected_ids).update(record_status=new_status)
+                messages.success(request, f"Updated {updated} record(s) successfully.")
+            except AccountStatus.DoesNotExist:
+                messages.error(request, "Invalid status selected.")
+        else:
+            messages.warning(request, "No records selected or no status chosen.")
+        return redirect('administrator:admin_verifyplantrec')  # Use your URL name
+
+    
+    
     municipalities = MunicipalityName.objects.all()
     commodities = CommodityType.objects.all()
+    status_choices = AccountStatus.objects.all()
+    
 
     context = {
         'records': records,
         'municipalities': municipalities,
         'commodities': commodities,
+        'status_choices': status_choices,
         'selected_municipality': filter_municipality,
         'selected_commodity': filter_commodity,
     }

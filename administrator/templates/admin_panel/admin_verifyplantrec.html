@@ -41,51 +41,76 @@ Fruit Cast | Plant and Harvest Records
                 </form>
 
                 {% if records %}
-                <table class="table table-bordered table-hover">
-                    <thead class="table-success">
-                        <tr>
-                            <th>ID</th>
-                            <th>Plant Date</th>
-                            <th>Commodity</th>
-                            <th>Municipality</th>
-                            <th>Barangay</th>
-                            <th>Minimum Expected Harvest</th>
-                            <th>Maximum Expected Harvest</th>
-                            <th>Unit</th>
-                            <th>Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for rec in records %}
-                        <tr>
-                            <td>{{ rec.pk }}</td>
-                            <td>{{ rec.plant_date }}</td>
-                            <td>{{ rec.commodity_id.name }}</td>
-                            <td>
-                                {% if rec.transaction.farm_land %}
-                                    {{ rec.transaction.farm_land.municipality.municipality }}
-                                {% elif rec.transaction.manual_municipality %}
-                                    {{ rec.transaction.manual_municipality.municipality }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if rec.transaction.farm_land %}
-                                    {{ rec.transaction.farm_land.barangay.barangay }}
-                                {% elif rec.transaction.manual_barangay %}
-                                    {{ rec.transaction.manual_barangay.barangay }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td>{{ rec.total_weight }}</td>
-                            <td>{{ rec.unit.unit_full }}</td>
-                            <td>{{ rec.remarks|default:"-" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <form method="post">
+                    {% csrf_token %}
+
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th>ID</th>
+                                <th>Farmer</th>
+                                <th>Plant Date</th>
+                                <th>Commodity</th>
+                                <th>Municipality</th>
+                                <th>Barangay</th>
+                                <th>Minimum Expected Harvest</th>
+                                <th>Maximum Expected Harvest</th>
+                                <th>Unit</th>
+                                <th>Remarks</th>
+                                <th>Current Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in records %}
+                            <tr>
+                                <td><input type="checkbox" name="selected_records" value="{{ rec.pk }}"></td>
+                                <td>{{ rec.pk }}</td>
+                                <td>{{ rec.transaction.account_id.userinfo_id.lastname }}, {{ rec.transaction.account_id.userinfo_id.firstname }} </td>
+                                <td>{{ rec.plant_date }}</td>
+                                <td>
+                                    {% if rec.commodity_id.pk == 1 %}
+                                        {{ rec.commodity_custom }}
+                                    {% else %}
+                                        {{ rec.commodity_id.name }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if rec.transaction.farm_land %}
+                                        {{ rec.transaction.farm_land.municipality.municipality }}
+                                    {% elif rec.transaction.manual_municipality %}
+                                        {{ rec.transaction.manual_municipality.municipality }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if rec.transaction.farm_land %}
+                                        {{ rec.transaction.farm_land.barangay.barangay }}
+                                    {% elif rec.transaction.manual_barangay %}
+                                        {{ rec.transaction.manual_barangay.barangay }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ rec.min_expected_harvest }}</td>
+                                <td>{{ rec.max_expected_harvest }}</td>
+                                <td>{{ rec.unit.unit_full }}</td>
+                                <td>{{ rec.remarks|default:"-" }}</td>
+                                <td>{{ rec.record_status.acc_status }}</td>
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div>
+                        <select name="new_status" required>
+                            {% for status in status_choices %}
+                                <option value="{{ status.pk }}">{{ status.acc_status }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Update Selected</button>
+                    </div>
+                </form>
                 {% else %}
                     <p>No records found.</p>
                 {% endif %}
