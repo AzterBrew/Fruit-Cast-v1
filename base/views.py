@@ -12,11 +12,12 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
+from django.core.mail import send_mail
 import json
 #from .forms import CustomUserCreationForm  # make sure this is imported
 from django.http import JsonResponse
 from django.db import transaction
-
+import random
 from .models import *
 from dashboard.models import *
 from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
@@ -897,6 +898,31 @@ def login_success(request):
 def get_barangays(request, municipality_id):
     barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('barangay_id', 'barangay')
     return JsonResponse([{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays], safe=False)
+
+def register_email(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        # Check if email already exists
+        if AuthUser.objects.filter(email=email).exists():
+            return render(request, "registration/register_email.html", {"email_error": "Email already registered."})
+        # Generate verification code
+        verification_code = str(random.randint(100000, 999999))
+        # Store in session
+        request.session["reg_email"] = email
+        request.session["reg_password"] = password
+        request.session["reg_code"] = verification_code
+        # Send email
+        send_mail(
+            "Your Fruit Cast Verification Code",
+            f"Your verification code is: {verification_code}",
+            "noreply@fruitcast.com",  # Change to your sender email
+            [email],
+            fail_silently=False,
+        )
+        return redirect("base:register_verify_code")
+    return render(request, "registration/register_email.html")
+
     
 def register_step1(request):
     if request.user.is_authenticated: 
@@ -944,6 +970,8 @@ def register_step2(request):
         if form.is_valid():
             try:
                 with transaction.atomic():  # Everything inside here must succeed or nothing will be saved
+                    
+                    
                     auth_user = AuthUser.objects.create_user(
                         email=form.cleaned_data['user_email'],
                         password=form.cleaned_data['password1']

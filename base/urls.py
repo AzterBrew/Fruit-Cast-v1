@@ -12,6 +12,8 @@ urlpatterns = [
     # path('', homeguest, name='homeguest'),
     path('', home, name='home'),
     path('get-barangays/<int:municipality_id>/', views.get_barangays, name='get_barangays'),
+    path('register/email/', views.register_email, name='register_email'),
+    
     path('register/step1/', views.register_step1, name='register_step1'),
     path('register/step2/', views.register_step2, name='register_step2'),
     # path('signup/', register_step1, name='registerauth'),
