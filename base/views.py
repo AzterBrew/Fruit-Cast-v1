@@ -13,14 +13,14 @@ from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
 from django.core.mail import send_mail
-import json
+import json, time
 #from .forms import CustomUserCreationForm  # make sure this is imported
 from django.http import JsonResponse
 from django.db import transaction
 import random
 from .models import *
 from dashboard.models import *
-from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
+from .forms import CombinedRegistrationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -900,6 +900,11 @@ def get_barangays(request, municipality_id):
     return JsonResponse([{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays], safe=False)
 
 def register_email(request):
+    if request.method == "GET":
+        # User is starting over, clear any previous registration session data
+        for key in ['verification_code', 'verification_email', 'verification_password', 'verification_code_time', 'email_verified']:
+            if key in request.session:
+                del request.session[key]
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
@@ -912,6 +917,7 @@ def register_email(request):
         request.session["reg_email"] = email
         request.session["reg_password"] = password
         request.session["reg_code"] = verification_code
+        request.session['verification_code_time'] = int(time.time())  # Store timestamp
         # Send email
         send_mail(
             "Your Fruit Cast Verification Code",
@@ -920,12 +926,31 @@ def register_email(request):
             [email],
             fail_silently=False,
         )
+        # MODIFY THIS EMAIL PAGKA OKS NA
         return redirect("base:register_verify_code")
     return render(request, "registration/register_email.html")
 
 
 def register_verify_code(request):
-    return render(request, "registration/register_verify.html")
+    if not request.session.get("reg_email") or not request.session.get("reg_code"):
+        # User hasn't started registration properly
+        return redirect("base:register_email")
+    code_error = None
+    if request.method == "POST":
+        input_code = request.POST.get("code")
+        session_code = request.session.get("reg_code")
+        if input_code == session_code:
+            request.session["reg_verified"] = True
+            return redirect("base:register_step1")
+        else:
+            code_error = "Invalid verification code. Please check your email and try again."
+        
+        code_time = request.session.get('verification_code_time')
+        if not code_time or (int(time.time()) - code_time > 600):  # 600 seconds = 10 minutes
+            code_error = "Verification code has expired. Please request a new one."
+            # Optionally clear session here
+            return render(request, 'registration/register_verify.html', {'code_error': code_error})
+    return render(request, "registration/register_verify.html", {"code_error": code_error})
 
     
 def register_step1(request):
@@ -934,7 +959,7 @@ def register_step1(request):
 
     else:
         if request.method == "POST":
-            form = CustomUserInformationForm(request.POST)
+            form = CombinedRegistrationForm(request.POST)
             if form.is_valid():
                 step1_data = form.cleaned_data.copy()
 
@@ -947,18 +972,18 @@ def register_step1(request):
                 step1_data["barangay_id"] = barangay_obj.pk if barangay_obj else None
                 step1_data["municipality_id"] = municipality_obj.pk if municipality_obj else None
 
-                request.session['step1_data'] = step1_data
+                # request.session['step1_data'] = step1_data
                 
-                return redirect('base:register_step2')
-        else:
-            step1_data = request.session.get('step1_data')
-            if step1_data:
-                # Convert stored PKs back into objects
-                if step1_data.get("barangay_id"):
-                    step1_data["barangay_id"] = BarangayName.objects.get(pk=step1_data["barangay_id"])
-                if step1_data.get("municipality_id"):
-                    step1_data["municipality_id"] = MunicipalityName.objects.get(pk=step1_data["municipality_id"])
-            form = CustomUserInformationForm(initial=request.session.get('step1_data'))
+                return redirect('base:login')
+        # else:
+        #     step1_data = request.session.get('step1_data')
+        #     if step1_data:
+        #         # Convert stored PKs back into objects
+        #         if step1_data.get("barangay_id"):
+        #             step1_data["barangay_id"] = BarangayName.objects.get(pk=step1_data["barangay_id"])
+        #         if step1_data.get("municipality_id"):
+        #             step1_data["municipality_id"] = MunicipalityName.objects.get(pk=step1_data["municipality_id"])
+        #     form = CustomUserInformationForm(initial=request.session.get('step1_data'))
 
         return render(request, 'registration/register_step1.html', {'form': form})
 
@@ -970,7 +995,7 @@ def register_step2(request):
         return redirect('base:register_step1')  # magredirect sa unang page so users wouldnt skip p1
     
     if request.method == "POST":
-        form = UserContactAndAccountForm(request.POST)
+        form = CombinedRegistrationForm(request.POST)
         if form.is_valid():
             try:
                 with transaction.atomic():  # Everything inside here must succeed or nothing will be saved
@@ -1019,7 +1044,7 @@ def register_step2(request):
                 print("Exception:", str(e))  # <-- Add this to see the real issue
                 form.add_error(None, "Something went wrong during registration. Please try again.")
     else:
-        form = UserContactAndAccountForm()
+        form = CombinedRegistrationForm()
 
     return render(request, 'registration/register_step2.html', {'form': form})
 

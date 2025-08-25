@@ -23,7 +23,25 @@
       <div class="card shadow p-4">
         <h1 class="text-center mb-4">Email Verification</h1>
     
-       <p>Enter here your verification code sent to this email</p>
+       <p class="text-center">Enter the verification code sent to your email.</p>
+        <form method="POST" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="id_code">Verification Code *</label>
+            <input type="text" class="form-control" id="id_code" name="code" required>
+            {% if code_error %}
+              <div class="text-danger small">{{ code_error }}</div>
+            {% endif %}
+          </div>
+          <div class="text-center mt-4">
+            <hr />
+            <button type="submit" class="btn btn-success">Verify</button>
+            <div class="mt-3">
+              <p>or</p>
+              <a href="/register/email" class="btn btn-secondary">Back</a>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   </div>
