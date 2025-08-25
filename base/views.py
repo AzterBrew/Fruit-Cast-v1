@@ -984,7 +984,7 @@ def register_step1(request):
                     user_info.save()
                     # Create AccountsInformation (Pending, Farmer by default)
                     account_type_instance = AccountType.objects.get(account_type__iexact="Farmer")
-                    item_status_instance = AccountStatus.objects.get(acc_status__iexact="Pending")
+                    item_status_instance = AccountStatus.objects.get(acc_status__iexact="Verified")
                     AccountsInformation.objects.create(
                         userinfo_id=user_info,
                         account_type_id=account_type_instance,

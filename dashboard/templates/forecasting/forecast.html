@@ -75,7 +75,7 @@ Fruit Cast | Forecast
                 
                 <h2 class="mt-5 text-success fw-bold">Choropleth Map of Bataan</h2>
                 <h3 class="mb-4">by Forecasted Amount (kg)</h3>
-                {% if forecast_data %}
+                {% comment %} {% if forecast_data %} {% endcomment %}
 
                 <form method="get" class="mb-4" id="choropleth-filter-form">
                     <label for="commodity_type" class="form-label">Commodity:</label>
@@ -213,9 +213,9 @@ Fruit Cast | Forecast
                         });
                                 
                     </script>
-                {% else %}
+                {% comment %} {% else %} {% endcomment %}
                     <div class="alert alert-warning">No forecast data available for this commodity and municipality. Please contact your administrator.</div>
-                {% endif %}
+                {% comment %} {% endif %} {% endcomment %}
 
                 <hr>
                 <br>

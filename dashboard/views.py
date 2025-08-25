@@ -372,6 +372,21 @@ def forecast(request):
         for res in results:
             choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
 
+    else :
+        choropleth_data = {
+        1: 0,   # Abucay
+        2: 0,    # Bagac
+        3: 0,   # Balanga City
+        4: 0,   # Dinalupihan
+        5: 0,    # Hermosa
+        6: 0,   # Limay
+        7: 0,   # Mariveles
+        8: 0,    # Morong
+        9: 0,    # Orani
+        11: 0,  # Orion
+        12: 0,   # Pilar
+        13: 0    # Samal
+    }
         # for row in results:
         #     choropleth_data[str(row['municipality__municipality_id'])] = float(row['forecasted_kg'] or 0)
         #     print(f"Municipality ID: {row['municipality__municipality_id']}, Forecasted KG: {row['forecasted_kg']}")
