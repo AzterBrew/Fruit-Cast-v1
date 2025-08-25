@@ -957,24 +957,23 @@ def register_step1(request):
     if request.user.is_authenticated: 
         return render(request, 'loggedin/home.html', {})
 
-    else:
-        if request.method == "POST":
-            form = RegistrationForm(request.POST)
-            if form.is_valid():
-                step1_data = form.cleaned_data.copy()
+    if request.method == "POST":
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            step1_data = form.cleaned_data.copy()
 
-                if isinstance(step1_data.get("birthdate"), date):
-                    step1_data["birthdate"] = step1_data["birthdate"].isoformat()
+            if isinstance(step1_data.get("birthdate"), date):
+                step1_data["birthdate"] = step1_data["birthdate"].isoformat()
 
-                barangay_obj = step1_data.get("barangay_id")
-                municipality_obj = step1_data.get("municipality_id")
+            barangay_obj = step1_data.get("barangay_id")
+            municipality_obj = step1_data.get("municipality_id")
 
-                step1_data["barangay_id"] = barangay_obj.pk if barangay_obj else None
-                step1_data["municipality_id"] = municipality_obj.pk if municipality_obj else None
+            step1_data["barangay_id"] = barangay_obj.pk if barangay_obj else None
+            step1_data["municipality_id"] = municipality_obj.pk if municipality_obj else None
 
-                # request.session['step1_data'] = step1_data
+            # request.session['step1_data'] = step1_data
                 
-                return redirect('base:login')
+            return redirect('base:login')
         # else:
         #     step1_data = request.session.get('step1_data')
         #     if step1_data:
@@ -985,7 +984,7 @@ def register_step1(request):
         #             step1_data["municipality_id"] = MunicipalityName.objects.get(pk=step1_data["municipality_id"])
         #     form = CustomUserInformationForm(initial=request.session.get('step1_data'))
 
-        return render(request, 'registration/register_step1.html', {'form': form})
+    return render(request, 'registration/register_step1.html', {'form': form})
 
 
 def register_step2(request):
