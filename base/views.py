@@ -959,7 +959,7 @@ def register_step1(request):
 
     else:
         if request.method == "POST":
-            form = CombinedRegistrationForm(request.POST)
+            form = RegistrationForm(request.POST)
             if form.is_valid():
                 step1_data = form.cleaned_data.copy()
 
