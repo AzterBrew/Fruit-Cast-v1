@@ -184,10 +184,9 @@ class CommodityType(models.Model):
     commodity_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     average_weight_per_unit_kg = models.DecimalField(max_digits=10, decimal_places=3)
-    unit = models.ForeignKey(UnitMeasurement, on_delete=models.CASCADE)
     seasonal_months = models.ManyToManyField(Month, blank=True)
     years_to_mature = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, help_text="Number of years from planting to first harvest")
-
+    years_to_bearfruit = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, help_text="Number of years from first harvest to the next fruit bearing")
     def __str__(self):
         return self.name    
 

@@ -26,6 +26,7 @@ import json
 from shapely.geometry import shape
 import csv
 from django.core.paginator import Paginator
+from collections import OrderedDict
 
 def admin_login(request):
     if request.method == 'POST':
@@ -468,10 +469,59 @@ def admin_forecast(request):
         else:
             forecast_data = None
 
+        # END OF WORKING FORECAST NA COMBINED SAVING NG HISTORICAL AT FORECAST 
         
-        # NOT NEEDED NA FORECAST_SUMMARY since utilized na yung forecast sa by month to display the by commodity forecast
+        # QUERY FOR THE HISTORICAL DATA POINTS FROM THE DB
         
-        #  Table for grouped by commodity, separate forecast / Forecast summary
+        # historical_qs = VerifiedHarvestRecord.objects.filter(
+        #     commodity_id=selected_commodity_id,
+        #     municipality_id=selected_municipality_id
+        # ).order_by('harvest_date')
+
+        # # Group by month/year
+        # historical_data = OrderedDict()
+        # for rec in historical_qs:
+        #     key = rec.harvest_date.strftime('%B %Y')
+        #     historical_data[key] = historical_data.get(key, 0) + float(rec.total_weight_kg)
+
+        # if historical_qs.exists():
+        #     df = pd.DataFrame([
+        #         {'ds': rec.harvest_date, 'y': float(rec.total_weight_kg)}
+        #         for rec in historical_qs
+        #     ])
+        #     model = Prophet()
+        #     model.fit(df)
+        #     future = model.make_future_dataframe(periods=12, freq='M')
+        #     forecast = model.predict(future)
+
+        #     # 3. Split Prophet output into historical and forecast
+        #     last_hist_date = df['ds'].max()
+        #     forecast['month_year'] = forecast['ds'].dt.strftime('%B %Y')
+        #     historical_pred = forecast[forecast['ds'] <= last_hist_date]
+        #     forecast_pred = forecast[forecast['ds'] > last_hist_date]
+
+        #     # 4. Prepare for Chart.js
+        #     all_labels = list(OrderedDict.fromkeys(
+        #         list(historical_data.keys()) +
+        #         list(forecast['month_year'])
+        #     ))
+        #     existing_values = [historical_data.get(label, None) for label in all_labels]
+        #     forecast_values = []
+        #     for label in all_labels:
+        #         row = forecast_pred[forecast_pred['month_year'] == label]
+        #         forecast_values.append(float(row['yhat'].values[0]) if not row.empty else None)
+
+        # # modify this pagka nasure ng nagana, add to existing context
+        # context = {
+        #     # ...other context...
+        #     'all_labels': all_labels,
+        #     'existing_values': existing_values,
+        #     'forecast_values': forecast_values,
+        #     # ...other context...
+        # }
+        
+        
+        
         
         filter_month = request.GET.get('filter_month')
         filter_year = request.GET.get('filter_year')
@@ -839,6 +889,34 @@ def admin_commodity_list(request):
 @login_required
 @admin_or_agriculturist_required
 def admin_commodity_add_edit(request, pk=None):
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        csv_file = request.FILES["csv_file"]
+        decoded = csv_file.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(decoded)
+        for row in reader:
+            name = row["name"].strip()
+            avg_weight = float(row["average_weight_per_unit_kg"])
+            years_to_mature = float(row["years_to_mature"])
+            years_to_bearfruit = float(row.get("years_to_bearfruit", 0))
+            commodity, _ = CommodityType.objects.get_or_create(
+                name=name,
+                defaults={
+                    "average_weight_per_unit_kg": avg_weight,
+                    "years_to_mature": years_to_mature,
+                    "years_to_bearfruit": years_to_bearfruit,
+                }
+            )
+            commodity.average_weight_per_unit_kg = avg_weight
+            commodity.years_to_mature = years_to_mature
+            commodity.years_to_bearfruit = years_to_bearfruit
+            commodity.save()
+            months = [m.strip() for m in row["seasonal_months"].split(";")]
+            month_objs = Month.objects.filter(name__in=months)
+            commodity.seasonal_months.set(month_objs)
+        messages.success(request, "CSV uploaded successfully.")
+        return redirect("administrator:admin_commodity_list")
+
+    
     if pk:
         commodity = get_object_or_404(CommodityType, pk=pk)
     else:

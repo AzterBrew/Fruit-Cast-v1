@@ -333,22 +333,6 @@ def forecast(request):
         objectids = geojson_name_to_objectids.get(name_key, [])
         muni_id_to_objectids[muni.municipality_id] = objectids
 
-    # pang testing previously
-    test_values = {
-        1: 1000,   # Abucay
-        2: 800,    # Bagac
-        3: 1500,   # Balanga City
-        4: 1200,   # Dinalupihan
-        5: 900,    # Hermosa
-        6: 1100,   # Limay
-        7: 1300,   # Mariveles
-        8: 700,    # Morong
-        9: 950,    # Orani
-        11: 1050,  # Orion
-        12: 980,   # Pilar
-        13: 870    # Samal
-    }
-
     # Build choropleth data: OBJECTID -> value
     
     # initial with predefined values
