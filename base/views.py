@@ -20,7 +20,7 @@ from django.db import transaction
 import random
 from .models import *
 from dashboard.models import *
-from .forms import CombinedRegistrationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
+from .forms import RegistrationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
 
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
@@ -995,7 +995,7 @@ def register_step2(request):
         return redirect('base:register_step1')  # magredirect sa unang page so users wouldnt skip p1
     
     if request.method == "POST":
-        form = CombinedRegistrationForm(request.POST)
+        form = RegistrationForm(request.POST)
         if form.is_valid():
             try:
                 with transaction.atomic():  # Everything inside here must succeed or nothing will be saved
@@ -1044,7 +1044,7 @@ def register_step2(request):
                 print("Exception:", str(e))  # <-- Add this to see the real issue
                 form.add_error(None, "Something went wrong during registration. Please try again.")
     else:
-        form = CombinedRegistrationForm()
+        form = RegistrationForm()
 
     return render(request, 'registration/register_step2.html', {'form': form})
 
