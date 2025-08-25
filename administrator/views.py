@@ -24,7 +24,7 @@ from datetime import datetime
 from calendar import monthrange
 import json
 from shapely.geometry import shape
-import csv
+import csv, io
 from django.core.paginator import Paginator
 from collections import OrderedDict
 
@@ -891,10 +891,13 @@ def admin_commodity_list(request):
 def admin_commodity_add_edit(request, pk=None):
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = request.FILES["csv_file"]
-        decoded = csv_file.read().decode("utf-8").splitlines()
-        reader = csv.DictReader(decoded)
+        decoded_file = csv_file.read().decode("utf-8")
+        reader = csv.DictReader(io.StringIO(decoded_file))
         for row in reader:
-            name = row["name"].strip()
+            # Clean up keys and values
+            row = {k.strip(): v.strip() for k, v in row.items()}
+            print(row)  # Debug: See what keys you have
+            name = row["name"]  # This will now work if the header is correct
             avg_weight = float(row["average_weight_per_unit_kg"])
             years_to_mature = float(row["years_to_mature"])
             years_to_bearfruit = float(row.get("years_to_bearfruit", 0))
