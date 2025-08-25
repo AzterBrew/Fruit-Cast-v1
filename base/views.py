@@ -923,6 +923,10 @@ def register_email(request):
         return redirect("base:register_verify_code")
     return render(request, "registration/register_email.html")
 
+
+def register_verify_code(request):
+    return render(request, "registration/register_verify.html")
+
     
 def register_step1(request):
     if request.user.is_authenticated: 
