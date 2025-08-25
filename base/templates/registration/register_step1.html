@@ -33,23 +33,86 @@
 
 </div> {% endcomment %}
 <div class="login-container">
-  <div class="container py-5" style="max-width: 900px;">
+  <div class="container py-5" style="max-width: 80vw;">
     <div class="card shadow p-4">
       <h1 class="text-center mb-4">Complete Registration</h1>
       <form method="POST" id="register-form" novalidate>
           {% csrf_token %}
-          {% for field in form %}
-            {% if field.name != 'barangay_id' and  field.name != 'municipality_id'%}
-              <div class="mb-3">
-                <label class="form-label">{{ field.label_tag }}</label>
-                {{ field }}
-                {% if field.errors %}
-                  <div class="text-danger small">{{ field.errors }}</div>
-                {% endif %}
-              </div>
-            {% endif %}
-          {% endfor %}
-
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_firstname">First Name *</label>
+              {{ form.firstname }}
+              {% if form.firstname.errors %}
+                <div class="text-danger small">{{ form.firstname.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_lastname">Last Name *</label>
+              {{ form.lastname }}
+              {% if form.lastname.errors %}
+                <div class="text-danger small">{{ form.lastname.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_middlename">Middle Name *</label>
+              {{ form.middlename }}
+              {% if form.middlename.errors %}
+                <div class="text-danger small">{{ form.middlename.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_nameextension">Name Extension</label>
+              {{ form.nameextension }}
+              {% if form.nameextension.errors %}
+                <div class="text-danger small">{{ form.nameextension.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_sex">Sex *</label>
+              {{ form.sex }}
+              {% if form.sex.errors %}
+                <div class="text-danger small">{{ form.sex.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_birthdate">Date of Birth *</label>
+              {{ form.birthdate }}
+              {% if form.birthdate.errors %}
+                <div class="text-danger small">{{ form.birthdate.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_municipality_id">Municipality *</label>
+              {{ form.municipality_id }}
+              {% if form.municipality_id.errors %}
+                <div class="text-danger small">{{ form.municipality_id.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_barangay_id">Barangay *</label>
+              <select name="barangay_id" id="id_barangay_id" class="form-select" disabled>
+                <option value="">Select a municipality first</option>
+              </select>
+              {% if form.barangay_id.errors %}
+                <div class="text-danger small">{{ form.barangay_id.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label class="form-label" for="id_address_details">Address Details *</label>
+              {{ form.address_details }}
+              {% if form.address_details.errors %}
+                <div class="text-danger small">{{ form.address_details.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
           <!-- Municipality -->
           <div class="mb-3">
             <label class="form-label" for="id_municipality_id">Municipality *</label>
@@ -63,6 +126,56 @@
               <option value="">Select a municipality first</option>
             </select>
           </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_religion">Religion *</label>
+              {{ form.religion }}
+              {% if form.religion.errors %}
+                <div class="text-danger small">{{ form.religion.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_civil_status">Civil Status *</label>
+              {{ form.civil_status }}
+              {% if form.civil_status.errors %}
+                <div class="text-danger small">{{ form.civil_status.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_rsbsa_ref_number">RSBSA Reference Number</label>
+              {{ form.rsbsa_ref_number }}
+              {% if form.rsbsa_ref_number.errors %}
+                <div class="text-danger small">{{ form.rsbsa_ref_number.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_contact_number">Contact Number *</label>
+              {{ form.contact_number }}
+              {% if form.contact_number.errors %}
+                <div class="text-danger small">{{ form.contact_number.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_emergency_contact_person">Emergency Contact Person *</label>
+              {{ form.emergency_contact_person }}
+              {% if form.emergency_contact_person.errors %}
+                <div class="text-danger small">{{ form.emergency_contact_person.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="id_emergency_contact_number">Emergency Contact Person's Contact No. *</label>
+              {{ form.emergency_contact_number }}
+              {% if form.emergency_contact_number.errors %}
+                <div class="text-danger small">{{ form.emergency_contact_number.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          
     
           <div class="text-center mt-4">
             <hr />
