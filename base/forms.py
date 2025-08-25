@@ -69,14 +69,14 @@ class RegistrationForm(forms.ModelForm):
     emergency_contact_number = forms.CharField(label="Emergency Contact Person's Contact No. *", validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
     civil_status = forms.ChoiceField(label="Civil Status *", choices=CIVSTAT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
     
-    password1 = forms.CharField(
-        label="Password *",
-        widget=forms.PasswordInput(attrs={'class': 'form-control'})
-    )
-    password2 = forms.CharField(
-        label="Confirm Password *",
-        widget=forms.PasswordInput(attrs={'class': 'form-control'})
-    )
+    # password1 = forms.CharField(
+    #     label="Password *",
+    #     widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    # )
+    # password2 = forms.CharField(
+    #     label="Confirm Password *",
+    #     widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    # )
     sex = forms.ChoiceField(label="Sex *", choices=SEX_CHOICES, widget=forms.RadioSelect)
 
     nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank if N/A'}))
@@ -99,14 +99,14 @@ class RegistrationForm(forms.ModelForm):
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if Not Applicable'}),
             'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Last Name, First Name Middle Name'}),
         }
-    def clean(self):
-        cleaned_data = super().clean()
-        # Add password match validation, etc.
-        password1 = cleaned_data.get("password1")
-        password2 = cleaned_data.get("password2")
-        if password1 and password2 and password1 != password2:
-            self.add_error('password2', "Passwords do not match.")
-        return cleaned_data
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     # Add password match validation, etc.
+    #     password1 = cleaned_data.get("password1")
+    #     password2 = cleaned_data.get("password2")
+    #     if password1 and password2 and password1 != password2:
+    #         self.add_error('password2', "Passwords do not match.")
+    #     return cleaned_data
     
 class CustomUserInformationForm(forms.ModelForm):
     sex = forms.ChoiceField(label="Sex *", choices=SEX_CHOICES, widget=forms.RadioSelect)

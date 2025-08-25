@@ -900,6 +900,8 @@ def get_barangays(request, municipality_id):
     return JsonResponse([{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays], safe=False)
 
 def register_email(request):
+    email_error = None
+    password_error = None
     if request.method == "GET":
         # User is starting over, clear any previous registration session data
         for key in ['verification_code', 'verification_email', 'verification_password', 'verification_code_time', 'email_verified']:
@@ -908,27 +910,33 @@ def register_email(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+        
         # Check if email already exists
         if AuthUser.objects.filter(email=email).exists():
             return render(request, "registration/register_email.html", {"email_error": "Email already registered."})
         # Generate verification code
-        verification_code = str(random.randint(100000, 999999))
-        # Store in session
-        request.session["reg_email"] = email
-        request.session["reg_password"] = password
-        request.session["reg_code"] = verification_code
-        request.session['verification_code_time'] = int(time.time())  # Store timestamp
-        # Send email
-        send_mail(
-            "Your Fruit Cast Verification Code",
-            f"Your verification code is: {verification_code}",
-            "noreply@fruitcast.com",  # Change to your sender email
-            [email],
-            fail_silently=False,
-        )
+        
+        if password != confirm_password:
+            password_error = "Passwords do not match."
+        else:
+            # Save email and password to session, send verification code, etc.
+            request.session["reg_email"] = email
+            request.session["reg_password"] = password
+            verification_code = str(random.randint(100000, 999999))
+            request.session["reg_code"] = verification_code
+            request.session['verification_code_time'] = int(time.time())  # Store timestamp
+            # Send email
+            send_mail(
+                "Your Fruit Cast Verification Code",
+                f"Your verification code is: {verification_code}",
+                "noreply@fruitcast.com",  # Change to your sender email
+                [email],
+                fail_silently=False,
+            )
         # MODIFY THIS EMAIL PAGKA OKS NA
         return redirect("base:register_verify_code")
-    return render(request, "registration/register_email.html")
+    return render(request, "registration/register_email.html", {"email_error": email_error,"password_error": password_error,})
 
 
 def register_verify_code(request):
@@ -955,35 +963,44 @@ def register_verify_code(request):
     
 def register_step1(request):
     if request.user.is_authenticated: 
-        return render(request, 'loggedin/home.html', {})
+        return redirect('base:home')
+    reg_email = request.session.get('reg_email')
+    reg_password = request.session.get('reg_password') 
+    
+    if not reg_email:
+        return redirect('base:register_email')
 
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            step1_data = form.cleaned_data.copy()
-
-            if isinstance(step1_data.get("birthdate"), date):
-                step1_data["birthdate"] = step1_data["birthdate"].isoformat()
-
-            barangay_obj = step1_data.get("barangay_id")
-            municipality_obj = step1_data.get("municipality_id")
-
-            step1_data["barangay_id"] = barangay_obj.pk if barangay_obj else None
-            step1_data["municipality_id"] = municipality_obj.pk if municipality_obj else None
-
-            # request.session['step1_data'] = step1_data
-                
-            return redirect('base:login')
-        # else:
-        #     step1_data = request.session.get('step1_data')
-        #     if step1_data:
-        #         # Convert stored PKs back into objects
-        #         if step1_data.get("barangay_id"):
-        #             step1_data["barangay_id"] = BarangayName.objects.get(pk=step1_data["barangay_id"])
-        #         if step1_data.get("municipality_id"):
-        #             step1_data["municipality_id"] = MunicipalityName.objects.get(pk=step1_data["municipality_id"])
-        #     form = CustomUserInformationForm(initial=request.session.get('step1_data'))
-
+            try:
+                with transaction.atomic():
+                    # Create AuthUser
+                    auth_user = AuthUser.objects.create_user(email=reg_email, password=reg_password)
+                    # Prepare UserInformation
+                    user_info = form.save(commit=False)
+                    user_info.auth_user = auth_user
+                    user_info.user_email = reg_email  # Set email from session
+                    user_info.save()
+                    # Create AccountsInformation (Pending, Farmer by default)
+                    account_type_instance = AccountType.objects.get(account_type__iexact="Farmer")
+                    item_status_instance = AccountStatus.objects.get(acc_status__iexact="Pending")
+                    AccountsInformation.objects.create(
+                        userinfo_id=user_info,
+                        account_type_id=account_type_instance,
+                        acc_status_id=item_status_instance,
+                        account_register_date=timezone.now()
+                    )
+                    # Optionally: clear session registration vars
+                    for key in ['reg_email', 'reg_code', 'reg_password', 'reg_verified']:
+                        if key in request.session:
+                            del request.session[key]
+                    return redirect('base:login')
+            except Exception as e:
+                print("Exception during registration:", str(e))
+                form.add_error(None, "Something went wrong during registration. Please try again.")
+    else:
+        form = RegistrationForm()
     return render(request, 'registration/register_step1.html', {'form': form})
 
 
