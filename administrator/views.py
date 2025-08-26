@@ -1132,7 +1132,6 @@ def admin_add_verifyharvestrec(request):
                     barangay = BarangayName.objects.get(pk=int(barangay_id_str), municipality_id=municipality)
                 else:
                     barangay = None
-                barangay = BarangayName.objects.get(pk=int(barangay_id_str), municipality_id=municipality)
                 VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
                     commodity_id=commodity,
