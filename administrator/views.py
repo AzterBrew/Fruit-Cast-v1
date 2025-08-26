@@ -448,7 +448,7 @@ def admin_forecast(request):
             forecast_df = model.predict(future)
 
             # Apply seasonal boost to in-season months
-            boost_factor = 1.2
+            boost_factor = 1.0
             forecast_df['month_num'] = forecast_df['ds'].dt.month
             forecast_df['yhat_boosted'] = forecast_df.apply(
                 lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
@@ -701,7 +701,7 @@ def generate_all_forecasts(request):
                     forecast_df = model.predict(future)
 
                     # Apply seasonal boost to in-season months
-                    boost_factor = 1.2
+                    boost_factor = 1.0
                     forecast_df['month_num'] = forecast_df['ds'].dt.month
                     forecast_df['yhat_boosted'] = forecast_df.apply(
                         lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
@@ -1127,7 +1127,11 @@ def admin_add_verifyharvestrec(request):
             try:
                 commodity = CommodityType.objects.get(pk=int(row["commodity"]))
                 municipality = MunicipalityName.objects.get(pk=int(row['municipality']))
-                barangay = BarangayName.objects.get(pk=int(row["barangay"]), municipality_id=municipality)
+                barangay_id_str = row.get("barangay", "")
+                if not barangay_id_str:
+                    print("Skipping row due to missing barangay:", row)
+                    continue 
+                barangay = BarangayName.objects.get(pk=int(barangay_id_str), municipality_id=municipality)
                 VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
                     commodity_id=commodity,
