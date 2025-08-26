@@ -76,7 +76,7 @@ Fruit Cast | Plant and Harvest Records
                                 <td>{{ rec.plant_date }}</td>
                                 <td>
                                     {% if rec.commodity_id.pk == 1 %}
-                                        {{ rec.commodity_custom }}
+                                        Not Listed : {{ rec.commodity_custom }}
                                     {% else %}
                                         {{ rec.commodity_id.name }}
                                     {% endif %}

@@ -888,12 +888,18 @@ def login_success(request):
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
 
     if request.user.is_authenticated:
-        # return render(request, 'loggedin/home.html', {})
+        try:
+            userinfo = request.user.userinformation
+            account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
+            if account_info.account_type_id.pk in [2, 3]:
+                return redirect('administrator:admin_dashboard')
+            else:
+                return redirect('base:home') 
+        except Exception as e:
+            print("Login redirect error:", e)
+            return redirect('base:home')
+    else:
         return redirect('base:home')
-    else:        
-        return render('home.html')
-    # return redirect("base:home")  
-    # Redirect to home *manually*
 
 def get_barangays(request, municipality_id):
     barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('barangay_id', 'barangay')
