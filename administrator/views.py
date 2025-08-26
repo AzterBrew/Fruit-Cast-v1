@@ -414,40 +414,25 @@ def admin_forecast(request):
     qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
     if selected_municipality_id:
         qs = qs.filter(municipality_id=selected_municipality_id)
-    qs = qs.values('harvest_date', 'total_weight_kg', 'weight_per_unit_kg', 'commodity_id', 'prev_record')
-
-    forecast_data = None
-    map_data = []
+    qs = qs.values('harvest_date', 'total_weight_kg')
 
     if qs.exists():
-        df = pd.DataFrame.from_records(qs)
-        df['ds'] = pd.to_datetime(df['harvest_date'])
-        df['y'] = df['total_weight_kg'].astype(float)
-
-        # Group by month for Prophet
-        # df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-        # df['ds'] = df['ds'].dt.to_timestamp()
-
-        df['year_month'] = df['ds'].dt.to_period('M')
-        df = df.groupby('year_month')['y'].sum().reset_index()
-        df['ds'] = df['year_month'].dt.to_timestamp()
+        df = pd.DataFrame(list(qs))
+        df['harvest_date'] = pd.to_datetime(df['harvest_date'])
+        # Group by year and month, sum total_weight_kg
+        df['year'] = df['harvest_date'].dt.year
+        df['month'] = df['harvest_date'].dt.month
+        grouped = df.groupby(['year', 'month'], as_index=False)['total_weight_kg'].sum()
+        # Create ds column for Prophet (first of month)
+        grouped['ds'] = pd.to_datetime(dict(year=grouped['year'], month=grouped['month'], day=1))
+        prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
+        prophet_df = prophet_df[prophet_df['y'] > 0]
+        prophet_df = prophet_df.drop_duplicates(subset=['ds'])
         
-        # Remove outliers
-        if len(df) >= 4:
-            q_low = df['y'].quantile(0.05)
-            q_high = df['y'].quantile(0.95)
-            df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
-
-        # Optional: smooth data
-        df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
-
-        if len(df) >= 2 :
-            model = Prophet(
-                yearly_seasonality=True,
-                changepoint_prior_scale=0.05,
-                seasonality_prior_scale=1
-            )
-            model.fit(df[['ds', 'y']])
+        if len(prophet_df) >= 2:
+            model = Prophet()
+            model.fit(prophet_df)
+            
             future = model.make_future_dataframe(periods=12, freq='M')
             forecast_df = model.predict(future)
 
@@ -473,6 +458,9 @@ def admin_forecast(request):
             }
         else:
             forecast_data = None
+            
+    else:
+        forecast_data = None
 
         # END OF WORKING FORECAST NA COMBINED SAVING NG HISTORICAL AT FORECAST 
         
