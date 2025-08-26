@@ -212,6 +212,8 @@ def show_allaccounts(request):
         sort_field = '-' + sort_field
 
     all_accounts = accounts_query.order_by(sort_field)
+    
+    print(all_accounts)
 
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()
@@ -955,7 +957,7 @@ def admin_verifyplantrec(request):
     # Municipality filter logic
     if user.is_superuser or municipality_assigned.pk == 14:
         municipalities = MunicipalityName.objects.all()
-        records = VerifiedPlantRecord.objects.all()
+        records = initPlantRecord.objects.all()
     else:
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
         records = VerifiedPlantRecord.objects.filter(municipality=municipality_assigned)
@@ -1022,7 +1024,7 @@ def admin_verifyharvestrec(request):
     status_choices = AccountStatus.objects.all()
 
     # Query records
-    records = VerifiedHarvestRecord.objects.all()
+    records = initHarvestRecord.objects.all()
     if selected_municipality:
         records = records.filter(municipality__pk=selected_municipality)
     elif not (is_superuser or is_pk14):

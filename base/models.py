@@ -124,10 +124,10 @@ class AdminInformation(models.Model):
     municipality_incharge = models.ForeignKey(MunicipalityName, on_delete=models.CASCADE)
     @property
     def account_type(self):
-        try:
-            return AccountsInformation.objects.get(userinfo_id=self.userinfo_id).account_type_id.account_type
-        except AccountsInformation.DoesNotExist:
-            return ""
+        acc_info = AccountsInformation.objects.filter(userinfo_id=self.userinfo_id).select_related('account_type_id').first()
+        if acc_info and acc_info.account_type_id:
+            return acc_info.account_type_id.account_type
+        return "Unknown"
         
 class AccountsInformation(models.Model):
     account_id = models.BigAutoField(primary_key=True)
