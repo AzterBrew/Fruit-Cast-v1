@@ -443,30 +443,35 @@ def admin_forecast(request):
                 changepoint_prior_scale=0.05,
                 seasonality_prior_scale=1
             )
-            model.fit(df[['ds', 'y']])
-            future = model.make_future_dataframe(periods=12, freq='M')
-            forecast_df = model.predict(future)
+            try:
+                model.fit(df[['ds', 'y']])
+                future = model.make_future_dataframe(periods=12, freq='M')
+                forecast_df = model.predict(future)
 
-            # Apply seasonal boost to in-season months
-            boost_factor = 1.0
-            forecast_df['month_num'] = forecast_df['ds'].dt.month
-            forecast_df['yhat_boosted'] = forecast_df.apply(
-                lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
-                axis=1
-            )
-            forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
+                # Apply seasonal boost to in-season months
+                boost_factor = 1.0
+                forecast_df['month_num'] = forecast_df['ds'].dt.month
+                forecast_df['yhat_boosted'] = forecast_df.apply(
+                    lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
+                    axis=1
+                )
+                forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
 
-            labels = forecast_df['ds'].dt.strftime('%B %Y').tolist()
-            month_numbers = forecast_df['ds'].dt.month.tolist()
-            years = forecast_df['ds'].dt.year.tolist()
-            values = forecast_df['yhat_boosted'].round().tolist()
-            combined_forecast = list(zip(labels, values, month_numbers, years))
+                labels = forecast_df['ds'].dt.strftime('%B %Y').tolist()
+                month_numbers = forecast_df['ds'].dt.month.tolist()
+                years = forecast_df['ds'].dt.year.tolist()
+                values = forecast_df['yhat_boosted'].round().tolist()
+                combined_forecast = list(zip(labels, values, month_numbers, years))
 
-            forecast_data = {
-                'labels': labels,
-                'forecasted_count': values,
-                'combined': combined_forecast
-            }
+                forecast_data = {
+                    'labels': labels,
+                    'forecasted_count': values,
+                    'combined': combined_forecast
+                }
+            except Exception as e:
+                messages.error(request, f"Forecasting failed: {e}")
+                print(f"Forecasting failed: {e}")
+                forecast_data = None
         else:
             forecast_data = None
 
