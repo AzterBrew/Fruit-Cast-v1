@@ -945,7 +945,6 @@ def admin_verifyplantrec(request):
     user = request.user
     userinfo = UserInformation.objects.get(auth_user=user)
     admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
-    account_type = admin_info.account_type_id.account_type
     municipality_assigned = admin_info.municipality_incharge
 
     # Filters
@@ -995,7 +994,6 @@ def admin_verifyplantrec(request):
         'selected_municipality': filter_municipality,
         'selected_commodity': filter_commodity,
         'selected_status': filter_status,
-        'account_type': account_type,
     }
     return render(request, 'admin_panel/admin_verifyplantrec.html', context)
 
@@ -1006,7 +1004,6 @@ def admin_verifyharvestrec(request):
     user = request.user
     userinfo = UserInformation.objects.get(auth_user=user)
     admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
-    account_type = admin_info.account_type_id.account_type
     is_superuser = user.is_superuser
     is_pk14 = admin_info.municipality_incharge.pk == 14
 
@@ -1058,7 +1055,6 @@ def admin_verifyharvestrec(request):
         'selected_municipality': selected_municipality,
         'selected_commodity': selected_commodity,
         'selected_status': selected_status,
-        'account_type': account_type,
     }
     return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
 
