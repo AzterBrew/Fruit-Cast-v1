@@ -1125,7 +1125,7 @@ def admin_add_verifyharvestrec(request):
         for row in reader:
             row = {k.strip(): v.strip() for k, v in row.items()}
             try:
-                commodity = CommodityType.objects.get(name=row["commodity"])
+                commodity = CommodityType.objects.get(pk=int(row["commodity"]))
                 municipality = MunicipalityName.objects.get(pk=int(row['municipality']))
                 barangay = BarangayName.objects.get(pk=int(row["barangay"]), municipality_id=municipality)
                 VerifiedHarvestRecord.objects.create(
@@ -1142,7 +1142,7 @@ def admin_add_verifyharvestrec(request):
                 )
             except Exception as e:
                 print("Error processing row:", row, e)
-        return redirect("administrator:admin_verifyharvestrec")
+        return redirect("administrator:admin_harvestverified")
 
     elif request.method == "POST":
         form = VerifiedHarvestRecordForm(request.POST)

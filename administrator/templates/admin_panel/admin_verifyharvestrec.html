@@ -135,8 +135,10 @@ Fruit Cast | Plant and Harvest Records
                 {% else %}
                     <p>No records found.</p>
                 {% endif %}
+                <br>
+                <hr>
                 <a href="{% url 'administrator:admin_add_verifyharvestrec' %}" class="btn btn-success mb-3">Add Bulk Harvest Record</a>
-                <a href="{% url 'administrator:admin_add_verifyharvestrec' %}" class="btn btn-success mb-3">Add Bulk Harvest Record</a>
+                <a href="{% url 'administrator:admin_harvestverified' %}" class="btn btn-success mb-3">View Verified Harvest Records</a>
             </div>
         </div>
     </div>
