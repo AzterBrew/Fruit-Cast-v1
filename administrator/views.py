@@ -1128,9 +1128,10 @@ def admin_add_verifyharvestrec(request):
                 commodity = CommodityType.objects.get(pk=int(row["commodity"]))
                 municipality = MunicipalityName.objects.get(pk=int(row['municipality']))
                 barangay_id_str = row.get("barangay", "")
-                if not barangay_id_str:
-                    print("Skipping row due to missing barangay:", row)
-                    continue 
+                if barangay_id_str:
+                    barangay = BarangayName.objects.get(pk=int(barangay_id_str), municipality_id=municipality)
+                else:
+                    barangay = None
                 barangay = BarangayName.objects.get(pk=int(barangay_id_str), municipality_id=municipality)
                 VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
