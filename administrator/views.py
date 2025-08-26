@@ -213,7 +213,6 @@ def show_allaccounts(request):
 
     all_accounts = accounts_query.order_by(sort_field)
     
-    print(all_accounts)
 
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()
@@ -970,20 +969,45 @@ def admin_verifyplantrec(request):
     if filter_status:
         records = records.filter(record_status__pk=filter_status)
 
-    # Batch update
     if request.method == "POST":
         selected_ids = request.POST.getlist('selected_records')
-        new_status_pk = request.POST.get('new_status')
-        if selected_ids and new_status_pk:
-            new_status = AccountStatus.objects.get(pk=new_status_pk)
-            for rec in records.filter(pk__in=selected_ids):
-                rec.record_status = new_status
-                if not rec.verified_by:
-                    rec.verified_by = admin_info
-                rec.save()
-            messages.success(request, "Selected records updated successfully.")
-        else:
-            messages.error(request, "No records selected or status not chosen.")
+        new_status_pk = int(request.POST.get('new_status'))
+        verified_status_pk = 2  # pk for "Verified"
+        new_status = AccountStatus.objects.get(pk=new_status_pk)
+        for rec in records.filter(pk__in=selected_ids):
+            rec.record_status = new_status
+            if not rec.verified_by:
+                rec.verified_by = admin_info
+            rec.save()
+            # Only create VerifiedPlantRecord if status is "Verified" and not already created
+            if new_status_pk == verified_status_pk:
+                if not VerifiedPlantRecord.objects.filter(prev_record=rec).exists():
+                    # Get location
+                    if rec.transaction.farm_land:
+                        municipality = rec.transaction.farm_land.municipality
+                        barangay = rec.transaction.farm_land.barangay
+                    else:
+                        municipality = rec.transaction.manual_municipality
+                        barangay = rec.transaction.manual_barangay
+                    # Calculate average and estimated weight
+                    avg_units = (rec.min_expected_harvest + rec.max_expected_harvest) / 2
+                    est_weight = avg_units * float(rec.commodity_id.average_weight_per_unit_kg)
+                    VerifiedPlantRecord.objects.create(
+                        plant_date=rec.plant_date,
+                        commodity_id=rec.commodity_id,
+                        min_expected_harvest=rec.min_expected_harvest,
+                        max_expected_harvest=rec.max_expected_harvest,
+                        average_harvest_units=avg_units,
+                        estimated_weight_kg=est_weight,
+                        remarks=rec.remarks,
+                        municipality=municipality,
+                        barangay=barangay,
+                        verified_by=admin_info,
+                        prev_record=rec,
+                    )
+                messages.success(request, "Selected records updated successfully.")
+            else:
+                messages.error(request, "No records selected or status not chosen.")
 
     commodities = CommodityType.objects.all()
     status_choices = AccountStatus.objects.all()
@@ -1036,15 +1060,44 @@ def admin_verifyharvestrec(request):
 
     # Batch update
     if request.method == 'POST':
-        selected_ids = request.POST.getlist('selected_records')
-        new_status_pk = request.POST.get('new_status')
-        if selected_ids and new_status_pk:
-            new_status = AccountStatus.objects.get(pk=new_status_pk)
-            for rec in records.filter(pk__in=selected_ids):
-                rec.record_status = new_status
-                if not rec.verified_by:
-                    rec.verified_by = admin_info
-                rec.save()
+        selected_ids = request.POST.getlist("selected_records")
+    new_status_id = int(request.POST.get("new_status"))
+    verified_status_pk = 2  # or whatever pk for "Verified" is
+
+    for rec_id in selected_ids:
+        rec = initHarvestRecord.objects.get(pk=rec_id)
+        rec.record_status_id = new_status_id
+        rec.save()
+
+        if new_status_id == verified_status_pk:
+            # Only create if not already exists
+            exists = VerifiedHarvestRecord.objects.filter(prev_record=rec).exists()
+            if not exists:
+                # Use farm_land or manual fields for location
+                if rec.transaction.farm_land:
+                    municipality = rec.transaction.farm_land.municipality
+                    barangay = rec.transaction.farm_land.barangay
+                else:
+                    municipality = rec.transaction.manual_municipality
+                    barangay = rec.transaction.manual_barangay
+
+                VerifiedHarvestRecord.objects.create(
+                    harvest_date=rec.harvest_date,
+                    commodity_id=rec.commodity_id,
+                    total_weight_kg=rec.total_weight,
+                    weight_per_unit_kg=rec.weight_per_unit,
+                    remarks=rec.remarks,
+                    municipality=municipality,
+                    barangay=barangay,
+                    verified_by=admin_info,  # set this to the current admin
+                    prev_record=rec,
+                )
+                    
+            # for rec in records.filter(pk__in=selected_ids):
+            #     rec.record_status = new_status
+            #     if not rec.verified_by:
+            #         rec.verified_by = admin_info
+            #     rec.save()
             messages.success(request, "Selected records updated successfully.")
         else:
             messages.error(request, "No records selected or status not chosen.")

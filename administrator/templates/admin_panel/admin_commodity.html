@@ -53,6 +53,15 @@ Fruit Cast | Forecast
                 </table>
                 <p class="form-text">Note : If only in months, calculate with : [no. of months / 12]</p>
 
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert 
+                        {% if message.tags %} alert-{{ message.tags }} {% endif %} text-danger small mt-2">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
     </div>
   </div>
 </div>

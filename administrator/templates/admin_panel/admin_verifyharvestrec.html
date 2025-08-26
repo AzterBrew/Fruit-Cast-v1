@@ -61,7 +61,6 @@ Fruit Cast | Plant and Harvest Records
                                 <th>Total Weight</th>
                                 <th>Unit</th>
                                 <th>Remarks</th>
-                                <th>Verified By</th>
                                 <th>Current Status</th>
                                 <th>Verified by</th>
                             </tr>
@@ -84,13 +83,6 @@ Fruit Cast | Plant and Harvest Records
                                 <td>{{ rec.total_weight_kg }}</td>
                                 <td>{{ rec.weight_per_unit_kg }}</td>
                                 <td>{{ rec.remarks|default:"-" }}</td>
-                                <td>
-                                    {% if rec.verified_by %}
-                                        {{ rec.verified_by.account_type }} : {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
-                                    {% else %}
-                                        not yet verified
-                                    {% endif %}
-                                </td>
                                 <td>
                                     {% if rec.record_status %}
                                         {{ rec.record_status.acc_status }}
