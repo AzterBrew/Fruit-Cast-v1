@@ -891,7 +891,8 @@ def login_success(request):
         try:
             userinfo = request.user.userinformation
             account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
-            if account_info.account_type_id.pk in [2, 3]:
+            print(f"Account Type ID: {account_info.account_type_id.pk}")  # Debugging log
+            if account_info.account_type_id.pk == 2 or account_info.account_type_id.pk == 3:
                 return redirect('administrator:admin_dashboard')
             else:
                 return redirect('base:home') 
