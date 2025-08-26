@@ -22,6 +22,7 @@ Fruit Cast | Forecast
                             {% comment %} <th>Unit</th> {% endcomment %}
                             <th>Average Weight (kg)</th>
                             <th>Years to Mature</th>
+                            <th>Years to Bear Fruit after first harvest</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -33,6 +34,7 @@ Fruit Cast | Forecast
                             {% comment %} <td>{{ commodity.unit_name }}</td> {% endcomment %}
                             <td>{{ commodity.average_weight_per_unit_kg }}</td>
                             <td>{{ commodity.years_to_mature }}</td>
+                            <td>{{ commodity.years_to_bearfruit }}</td>
                             <td>
                                 <a href="{% url 'administrator:admin_commodity_edit' commodity.pk %}" class="btn btn-sm btn-outline-primary">
                                     Edit
@@ -49,6 +51,8 @@ Fruit Cast | Forecast
                     </tbody>
                     {% endif %}
                 </table>
+                <p class="form-text">Note : If only in months, calculate with : [no. of months / 12]</p>
+
     </div>
   </div>
 </div>

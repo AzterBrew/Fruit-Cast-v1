@@ -237,7 +237,7 @@ class RecordTransaction (models.Model):
         return "No location set"
     
 # tentative with these fields
-    tr_verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
+    # tr_verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
 
 
 class initPlantRecord(models.Model):
@@ -252,6 +252,8 @@ class initPlantRecord(models.Model):
     min_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
     max_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
     remarks = models.TextField(blank=True)
+    verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
+    date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
 
 class initHarvestRecord(models.Model):
     harvest_id = models.BigAutoField(primary_key=True)
@@ -265,6 +267,8 @@ class initHarvestRecord(models.Model):
     unit = models.ForeignKey(UnitMeasurement, on_delete=models.CASCADE)
     weight_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
     remarks = models.TextField(blank=True)
+    verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
+    date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
 
 
 
