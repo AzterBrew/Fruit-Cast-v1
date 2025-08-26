@@ -1060,47 +1060,45 @@ def admin_verifyharvestrec(request):
 
     # Batch update
     if request.method == 'POST':
-        selected_ids = request.POST.getlist("selected_records")
-    new_status_id = int(request.POST.get("new_status"))
-    verified_status_pk = 2  # or whatever pk for "Verified" is
+        selected_ids = request.POST.getlist('selected_records')
+        new_status_pk = int(request.POST.get('new_status'))
+        verified_status_pk = 2  # pk for "Verified"
+        new_status = AccountStatus.objects.get(pk=new_status_pk)
+        for rec in records.filter(pk__in=selected_ids):
+            rec.record_status = new_status
+            if not rec.verified_by:
+                rec.verified_by = admin_info
+            rec.save()
+            # Only create VerifiedHarvestRecord if status is "Verified" and not already created
+            if new_status_pk == verified_status_pk:
+                if not VerifiedHarvestRecord.objects.filter(prev_record=rec).exists():
+                    if rec.transaction.farm_land:
+                        municipality = rec.transaction.farm_land.municipality
+                        barangay = rec.transaction.farm_land.barangay
+                    else:
+                        municipality = rec.transaction.manual_municipality
+                        barangay = rec.transaction.manual_barangay
 
-    for rec_id in selected_ids:
-        rec = initHarvestRecord.objects.get(pk=rec_id)
-        rec.record_status_id = new_status_id
-        rec.save()
-
-        if new_status_id == verified_status_pk:
-            # Only create if not already exists
-            exists = VerifiedHarvestRecord.objects.filter(prev_record=rec).exists()
-            if not exists:
-                # Use farm_land or manual fields for location
-                if rec.transaction.farm_land:
-                    municipality = rec.transaction.farm_land.municipality
-                    barangay = rec.transaction.farm_land.barangay
-                else:
-                    municipality = rec.transaction.manual_municipality
-                    barangay = rec.transaction.manual_barangay
-
-                VerifiedHarvestRecord.objects.create(
-                    harvest_date=rec.harvest_date,
-                    commodity_id=rec.commodity_id,
-                    total_weight_kg=rec.total_weight,
-                    weight_per_unit_kg=rec.weight_per_unit,
-                    remarks=rec.remarks,
-                    municipality=municipality,
-                    barangay=barangay,
-                    verified_by=admin_info,  # set this to the current admin
-                    prev_record=rec,
-                )
-                    
-            # for rec in records.filter(pk__in=selected_ids):
-            #     rec.record_status = new_status
-            #     if not rec.verified_by:
-            #         rec.verified_by = admin_info
-            #     rec.save()
-            messages.success(request, "Selected records updated successfully.")
-        else:
-            messages.error(request, "No records selected or status not chosen.")
+                    VerifiedHarvestRecord.objects.create(
+                        harvest_date=rec.harvest_date,
+                        commodity_id=rec.commodity_id,
+                        total_weight_kg=rec.total_weight,
+                        weight_per_unit_kg=rec.weight_per_unit,
+                        remarks=rec.remarks,
+                        municipality=municipality,
+                        barangay=barangay,
+                        verified_by=admin_info,  # set this to the current admin
+                        prev_record=rec,
+                    )
+                        
+                # for rec in records.filter(pk__in=selected_ids):
+                #     rec.record_status = new_status
+                #     if not rec.verified_by:
+                #         rec.verified_by = admin_info
+                #     rec.save()
+                messages.success(request, "Selected records updated successfully.")
+            else:
+                messages.error(request, "No records selected or status not chosen.")
 
     context = {
         'municipalities': municipalities,
