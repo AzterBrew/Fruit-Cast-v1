@@ -891,7 +891,7 @@ def admin_commodity_list(request):
 def admin_commodity_add_edit(request, pk=None):
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = request.FILES["csv_file"]
-        decoded_file = csv_file.read().decode("utf-8")
+        decoded_file = csv_file.read().decode("utf-8-sig")
         reader = csv.DictReader(io.StringIO(decoded_file))
         for row in reader:
             # Clean up keys and values
