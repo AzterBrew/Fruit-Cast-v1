@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from base.forms import EditUserInformation
 from django.utils import timezone
 from django.utils.timezone import now
-from .forms import AssignAdminAgriForm, CommodityTypeForm
+from .forms import AssignAdminAgriForm, CommodityTypeForm, VerifiedHarvestRecordForm
 from django.db import transaction
 from django.core.mail import send_mail
 from django.contrib import messages
@@ -1083,6 +1083,54 @@ def admin_verifyharvestrec(request):
         'selected_commodity': filter_commodity,
     }
     return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
+
+@login_required
+@admin_or_agriculturist_required
+def admin_add_verifyharvestrec(request):
+    municipalities = MunicipalityName.objects.all()
+    admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
+    context = {'municipalities': municipalities}
+
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        csv_file = request.FILES["csv_file"]
+        decoded_file = csv_file.read().decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(decoded_file))
+        for row in reader:
+            row = {k.strip(): v.strip() for k, v in row.items()}
+            try:
+                commodity = CommodityType.objects.get(name=row["commodity"])
+                municipality = MunicipalityName.objects.get(municipality=row["municipality"])
+                barangay = BarangayName.objects.get(barangay=row["barangay"], municipality_id=municipality)
+                VerifiedHarvestRecord.objects.create(
+                    harvest_date=row["harvest_date"],
+                    commodity_id=commodity,
+                    total_weight_kg=row["total_weight_kg"],
+                    weight_per_unit_kg=row["weight_per_unit_kg"],
+                    municipality=municipality,
+                    barangay=barangay,
+                    remarks=row.get("remarks", ""),
+                    date_verified=timezone.now(),
+                    verified_by=admin_info,
+                    prev_record=None,
+                )
+            except Exception as e:
+                print("Error processing row:", row, e)
+        return redirect("administrator:admin_verifyharvestrec")
+
+    elif request.method == "POST":
+        form = VerifiedHarvestRecordForm(request.POST)
+        if form.is_valid():
+            rec = form.save(commit=False)
+            rec.date_verified = timezone.now()
+            rec.verified_by = admin_info
+            rec.prev_record = None
+            rec.save()
+            return redirect("administrator:admin_verifyharvestrec")
+        context["form"] = form
+    else:
+        context["form"] = VerifiedHarvestRecordForm()
+
+    return render(request, "admin_panel/verifyharvest_add.html", context)
 
 
 def accinfo(request):

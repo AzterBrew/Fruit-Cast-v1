@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views import *
+from base.views import get_barangays
 
 app_name = 'administrator'
 
@@ -18,6 +19,7 @@ urlpatterns = [
     # path('manage_users/', views.manage_users, name='manage_users'),
     path('verify_records/plant', views.admin_verifyplantrec, name='admin_verifyplantrec'),
     path('verify_records/harvest', views.admin_verifyharvestrec, name='admin_verifyharvestrec'),
+    path('verify_records/harvest/add', views.admin_add_verifyharvestrec, name='admin_add_verifyharvestrec'),
     # path('generate_report/', views.generate_report, name='generate_report'),
     path('accountinfo/', accinfo, name="accinfo"),
     path('accountinfo/edit', editacc, name="editacc"),
@@ -30,4 +32,5 @@ urlpatterns = [
     path('commodities/', views.admin_commodity_list, name='admin_commodity_list'),
     path('commodity/add/', views.admin_commodity_add_edit, name='admin_commodity_add'),
     path('commodity/<int:pk>/edit/', views.admin_commodity_add_edit, name='admin_commodity_edit'),
+    path('get_barangays/<int:municipality_id>/', get_barangays, name='get_barangays'),
 ]

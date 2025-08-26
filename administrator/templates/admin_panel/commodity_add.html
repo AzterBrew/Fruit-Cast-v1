@@ -44,15 +44,17 @@ Fruit Cast | Forecast
                   <button type="submit" class="btn btn-success">{% if commodity %}Update{% else %}Save{% endif %}</button>
                   <a href="{% url 'administrator:admin_commodity_list' %}" class="btn btn-secondary">Back to List</a>
               </form>
+            <hr>
+            <p>or upload a CSV file of commodities:</p>
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <h4>Upload a CSV file with the following format: </h4>
+              <p>name,average_weight_per_unit_kg,seasonal_months,years_to_mature,years_to_bearfruit</p>
+              <p>Mango,4.00,"January;February;March",2.0,0.5</p>
+              <input type="file" name="csv_file" accept=".csv" required>
+              <button type="submit" class="btn btn-success">Upload CSV</button>
+            </form>
           </div>
-          <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <h4>Upload a CSV file with the following format: </h4>
-            <p>name,average_weight_per_unit_kg,seasonal_months,years_to_mature,years_to_bearfruit</p>
-            <p>Mango,4.00,"January;February;March",2.0,0.5</p>
-            <input type="file" name="csv_file" accept=".csv" required>
-            <button type="submit" class="btn btn-success">Upload CSV</button>
-          </form>
         </div>
       </div>
     </div>
