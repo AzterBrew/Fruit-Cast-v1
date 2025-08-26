@@ -1126,8 +1126,8 @@ def admin_add_verifyharvestrec(request):
             row = {k.strip(): v.strip() for k, v in row.items()}
             try:
                 commodity = CommodityType.objects.get(name=row["commodity"])
-                municipality = MunicipalityName.objects.get(municipality=row["municipality"])
-                barangay = BarangayName.objects.get(barangay=row["barangay"], municipality_id=municipality)
+                municipality = MunicipalityName.objects.get(pk=int(row['municipality']))
+                barangay = BarangayName.objects.get(pk=int(row["barangay"]), municipality_id=municipality)
                 VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
                     commodity_id=commodity,
@@ -1158,6 +1158,13 @@ def admin_add_verifyharvestrec(request):
         context["form"] = VerifiedHarvestRecordForm()
 
     return render(request, "admin_panel/verifyharvest_add.html", context)
+
+
+@login_required
+@admin_or_agriculturist_required
+def admin_harvestverified(request):
+    records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
+    return render(request, 'admin_panel/admin_harvestverified.html', {'records': records})
 
 
 def accinfo(request):

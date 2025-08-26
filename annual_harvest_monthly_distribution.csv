@@ -1,0 +1,97 @@
+harvest_date,commodity,municipality,barangay,total_weight_kg,weight_per_unit_kg,remarks
+2025-01-01,4,5,,4.0,1.2,Distributed from annual total
+2025-02-01,4,5,,4.0,1.2,Distributed from annual total
+2025-03-01,4,5,,4.0,1.2,Distributed from annual total
+2025-04-01,4,5,,4.0,1.2,Distributed from annual total
+2025-05-01,4,5,,4.0,1.2,Distributed from annual total
+2025-06-01,4,5,,4.0,1.2,Distributed from annual total
+2025-07-01,4,5,,4.0,1.2,Distributed from annual total
+2025-08-01,4,5,,4.0,1.2,Distributed from annual total
+2025-09-01,4,5,,4.0,1.2,Distributed from annual total
+2025-10-01,4,5,,4.0,1.2,Distributed from annual total
+2025-11-01,4,5,,4.0,1.2,Distributed from annual total
+2025-12-01,4,5,,4.0,1.2,Distributed from annual total
+2025-04-01,5,5,,180.0,1.2,Peak season
+2025-05-01,5,5,,180.0,1.2,Peak season
+2025-06-01,5,5,,180.0,1.2,Peak season
+2025-01-01,5,5,,0.0,1.2,Off-season
+2025-02-01,5,5,,0.0,1.2,Off-season
+2025-03-01,5,5,,0.0,1.2,Off-season
+2025-07-01,5,5,,0.0,1.2,Off-season
+2025-08-01,5,5,,0.0,1.2,Off-season
+2025-09-01,5,5,,0.0,1.2,Off-season
+2025-10-01,5,5,,0.0,1.2,Off-season
+2025-11-01,5,5,,0.0,1.2,Off-season
+2025-12-01,5,5,,0.0,1.2,Off-season
+2025-08-01,3,5,,30.0,1.2,Peak season
+2025-09-01,3,5,,30.0,1.2,Peak season
+2025-10-01,3,5,,30.0,1.2,Peak season
+2025-01-01,3,5,,0.0,1.2,Off-season
+2025-02-01,3,5,,0.0,1.2,Off-season
+2025-03-01,3,5,,0.0,1.2,Off-season
+2025-04-01,3,5,,0.0,1.2,Off-season
+2025-05-01,3,5,,0.0,1.2,Off-season
+2025-06-01,3,5,,0.0,1.2,Off-season
+2025-07-01,3,5,,0.0,1.2,Off-season
+2025-11-01,3,5,,0.0,1.2,Off-season
+2025-12-01,3,5,,0.0,1.2,Off-season
+2025-05-01,6,5,,30.0,1.2,Peak season
+2025-06-01,6,5,,30.0,1.2,Peak season
+2025-07-01,6,5,,30.0,1.2,Peak season
+2025-01-01,6,5,,0.0,1.2,Off-season
+2025-02-01,6,5,,0.0,1.2,Off-season
+2025-03-01,6,5,,0.0,1.2,Off-season
+2025-04-01,6,5,,0.0,1.2,Off-season
+2025-08-01,6,5,,0.0,1.2,Off-season
+2025-09-01,6,5,,0.0,1.2,Off-season
+2025-10-01,6,5,,0.0,1.2,Off-season
+2025-11-01,6,5,,0.0,1.2,Off-season
+2025-12-01,6,5,,0.0,1.2,Off-season
+2025-01-01,7,5,,1.5,1.2,Distributed from annual total
+2025-02-01,7,5,,1.5,1.2,Distributed from annual total
+2025-03-01,7,5,,1.5,1.2,Distributed from annual total
+2025-04-01,7,5,,1.5,1.2,Distributed from annual total
+2025-05-01,7,5,,1.5,1.2,Distributed from annual total
+2025-06-01,7,5,,1.5,1.2,Distributed from annual total
+2025-07-01,7,5,,1.5,1.2,Distributed from annual total
+2025-08-01,7,5,,1.5,1.2,Distributed from annual total
+2025-09-01,7,5,,1.5,1.2,Distributed from annual total
+2025-10-01,7,5,,1.5,1.2,Distributed from annual total
+2025-11-01,7,5,,1.5,1.2,Distributed from annual total
+2025-12-01,7,5,,1.5,1.2,Distributed from annual total
+2025-11-01,8,5,,22.5,1.2,Peak season
+2025-12-01,8,5,,22.5,1.2,Peak season
+2025-01-01,8,5,,22.5,1.2,Peak season
+2025-02-01,8,5,,22.5,1.2,Peak season
+2025-03-01,8,5,,0.0,1.2,Off-season
+2025-04-01,8,5,,0.0,1.2,Off-season
+2025-05-01,8,5,,0.0,1.2,Off-season
+2025-06-01,8,5,,0.0,1.2,Off-season
+2025-07-01,8,5,,0.0,1.2,Off-season
+2025-08-01,8,5,,0.0,1.2,Off-season
+2025-09-01,8,5,,0.0,1.2,Off-season
+2025-10-01,8,5,,0.0,1.2,Off-season
+2025-07-01,9,5,,0.875,1.2,Peak season
+2025-08-01,9,5,,0.875,1.2,Peak season
+2025-09-01,9,5,,0.875,1.2,Peak season
+2025-10-01,9,5,,0.875,1.2,Peak season
+2025-01-01,9,5,,0.0,1.2,Off-season
+2025-02-01,9,5,,0.0,1.2,Off-season
+2025-03-01,9,5,,0.0,1.2,Off-season
+2025-04-01,9,5,,0.0,1.2,Off-season
+2025-05-01,9,5,,0.0,1.2,Off-season
+2025-06-01,9,5,,0.0,1.2,Off-season
+2025-11-01,9,5,,0.0,1.2,Off-season
+2025-12-01,9,5,,0.0,1.2,Off-season
+2025-07-01,2,5,,30.0,1.2,Peak season
+2025-08-01,2,5,,30.0,1.2,Peak season
+2025-09-01,2,5,,30.0,1.2,Peak season
+2025-01-01,2,5,,0.0,1.2,Off-season
+2025-02-01,2,5,,0.0,1.2,Off-season
+2025-03-01,2,5,,0.0,1.2,Off-season
+2025-04-01,2,5,,0.0,1.2,Off-season
+2025-05-01,2,5,,0.0,1.2,Off-season
+2025-06-01,2,5,,0.0,1.2,Off-season
+2025-10-01,2,5,,0.0,1.2,Off-season
+2025-11-01,2,5,,0.0,1.2,Off-season
+2025-12-01,2,5,,0.0,1.2,Off-season

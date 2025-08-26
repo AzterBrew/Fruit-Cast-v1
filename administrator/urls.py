@@ -20,6 +20,7 @@ urlpatterns = [
     path('verify_records/plant', views.admin_verifyplantrec, name='admin_verifyplantrec'),
     path('verify_records/harvest', views.admin_verifyharvestrec, name='admin_verifyharvestrec'),
     path('verify_records/harvest/add', views.admin_add_verifyharvestrec, name='admin_add_verifyharvestrec'),
+    path('harvest_verified/', views.admin_harvestverified, name='admin_harvestverified'),
     # path('generate_report/', views.generate_report, name='generate_report'),
     path('accountinfo/', accinfo, name="accinfo"),
     path('accountinfo/edit', editacc, name="editacc"),
