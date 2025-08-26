@@ -425,9 +425,13 @@ def admin_forecast(request):
         df['y'] = df['total_weight_kg'].astype(float)
 
         # Group by month for Prophet
-        df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-        df['ds'] = df['ds'].dt.to_timestamp()
+        # df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+        # df['ds'] = df['ds'].dt.to_timestamp()
 
+        df['year_month'] = df['ds'].dt.to_period('M')
+        df = df.groupby('year_month')['y'].sum().reset_index()
+        df['ds'] = df['year_month'].dt.to_timestamp()
+        
         # Remove outliers
         if len(df) >= 4:
             q_low = df['y'].quantile(0.05)
@@ -437,7 +441,7 @@ def admin_forecast(request):
         # Optional: smooth data
         df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
 
-        if len(df) >= 2:
+        if len(df) >= 2 :
             model = Prophet(
                 yearly_seasonality=True,
                 changepoint_prior_scale=0.05,
