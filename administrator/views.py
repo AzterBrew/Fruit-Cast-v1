@@ -945,91 +945,47 @@ def admin_verifyplantrec(request):
     user = request.user
     userinfo = UserInformation.objects.get(auth_user=user)
     admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+    account_type = admin_info.account_type_id.account_type
     municipality_assigned = admin_info.municipality_incharge
 
+    # Filters
     filter_municipality = request.GET.get('municipality')
     filter_commodity = request.GET.get('commodity')
-
-    if municipality_assigned.pk == 14:
-        # Super admin: show all
-        records = initPlantRecord.objects.all()
-    else:
-        # Only records in admin's municipality
-        records = initPlantRecord.objects.filter(
-            Q(transaction__farm_land__municipality=municipality_assigned) |
-            Q(transaction__farm_land__isnull=True, transaction__manual_municipality=municipality_assigned)
-        )
-
-    # Apply filters if present
-    if filter_municipality:
-        records = records.filter(
-            Q(transaction__farm_land__municipality__pk=filter_municipality) |
-            Q(transaction__farm_land__isnull=True, transaction__manual_municipality__pk=filter_municipality)
-        )
-    if filter_commodity:
-        records = records.filter(commodity_id=filter_commodity)
-    
     filter_status = request.GET.get('status')
+
+    # Municipality filter logic
+    if user.is_superuser or municipality_assigned.pk == 14:
+        municipalities = MunicipalityName.objects.all()
+        records = VerifiedPlantRecord.objects.all()
+    else:
+        municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
+        records = VerifiedPlantRecord.objects.filter(municipality=municipality_assigned)
+
+    # Apply filters
+    if filter_municipality:
+        records = records.filter(municipality__pk=filter_municipality)
+    if filter_commodity:
+        records = records.filter(commodity_id__pk=filter_commodity)
     if filter_status:
         records = records.filter(record_status__pk=filter_status)
-    
-    # for updating ng record
+
+    # Batch update
     if request.method == "POST":
         selected_ids = request.POST.getlist('selected_records')
         new_status_pk = request.POST.get('new_status')
         if selected_ids and new_status_pk:
-            # Get the status object
-            try:
-                new_status = AccountStatus.objects.get(pk=new_status_pk)
-                admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
-                updated_records = initPlantRecord.objects.filter(pk__in=selected_ids)
-                for rec in updated_records:
-                    # If status is 'Verified' (pk=2), create VerifiedPlantRecord if not exists
-                    if int(new_status_pk) == 2:
-                        from dashboard.models import VerifiedPlantRecord
-                        if not VerifiedPlantRecord.objects.filter(prev_record=rec).exists():
-                            transaction = rec.transaction
-                            # Determine barangay and municipality
-                            if transaction.farm_land:
-                                barangay = transaction.farm_land.barangay
-                                municipality = transaction.farm_land.municipality
-                            else:
-                                barangay = transaction.manual_barangay
-                                municipality = transaction.manual_municipality
-                                
-                            VerifiedPlantRecord.objects.create(
-                                plant_date=rec.plant_date,
-                                commodity_id=rec.commodity_id,
-                                min_expected_harvest=rec.min_expected_harvest,
-                                max_expected_harvest=rec.max_expected_harvest,
-                                average_harvest_units=(rec.min_expected_harvest + rec.max_expected_harvest) / 2,
-                                estimated_weight_kg=None,  # Compute if needed
-                                remarks=rec.remarks,
-                                municipality=municipality,
-                                barangay=barangay,
-                                date_verified=timezone.now(),
-                                verified_by=admin_info,
-                                prev_record=rec
-                            )
-                            print(f"✅ Created VerifiedPlantRecord for initPlantRecord ID {rec.pk}")
-                            
-                    # Always update the record status
-                    rec.record_status = new_status
-                    rec.save()
-                messages.success(request, "Records updated successfully.")
-            except AccountStatus.DoesNotExist:
-                messages.error(request, "Invalid status selected.")
-            except AdminInformation.DoesNotExist:
-                messages.error(request, "Admin information not found.")
+            new_status = AccountStatus.objects.get(pk=new_status_pk)
+            for rec in records.filter(pk__in=selected_ids):
+                rec.record_status = new_status
+                if not rec.verified_by:
+                    rec.verified_by = admin_info
+                rec.save()
+            messages.success(request, "Selected records updated successfully.")
         else:
-            messages.warning(request, "No records selected or no status chosen.")
-        return redirect('administrator:admin_verifyplantrec')
+            messages.error(request, "No records selected or status not chosen.")
 
-    
-    municipalities = MunicipalityName.objects.all()
     commodities = CommodityType.objects.all()
     status_choices = AccountStatus.objects.all()
-    
 
     context = {
         'records': records,
@@ -1038,6 +994,8 @@ def admin_verifyplantrec(request):
         'status_choices': status_choices,
         'selected_municipality': filter_municipality,
         'selected_commodity': filter_commodity,
+        'selected_status': filter_status,
+        'account_type': account_type,
     }
     return render(request, 'admin_panel/admin_verifyplantrec.html', context)
 
@@ -1048,39 +1006,59 @@ def admin_verifyharvestrec(request):
     user = request.user
     userinfo = UserInformation.objects.get(auth_user=user)
     admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
-    municipality_assigned = admin_info.municipality_incharge
+    account_type = admin_info.account_type_id.account_type
+    is_superuser = user.is_superuser
+    is_pk14 = admin_info.municipality_incharge.pk == 14
 
-    filter_municipality = request.GET.get('municipality')
-    filter_commodity = request.GET.get('commodity')
+    # Filters
+    selected_municipality = request.GET.get('municipality')
+    selected_commodity = request.GET.get('commodity')
+    selected_status = request.GET.get('status')
 
-    if municipality_assigned.pk == 14:
-        # Super admin: show all
-        records = initHarvestRecord.objects.all()
+    # Only show allowed municipalities
+    if is_superuser or is_pk14:
+        municipalities = MunicipalityName.objects.all()
     else:
-        # Only records in admin's municipality
-        records = initHarvestRecord.objects.filter(
-            Q(transaction__farm_land__municipality=municipality_assigned) |
-            Q(transaction__farm_land__isnull=True, transaction__manual_municipality=municipality_assigned)
-        )
+        municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
 
-    # Apply filters if present
-    if filter_municipality:
-        records = records.filter(
-            Q(transaction__farm_land__municipality__pk=filter_municipality) |
-            Q(transaction__farm_land__isnull=True, transaction__manual_municipality__pk=filter_municipality)
-        )
-    if filter_commodity:
-        records = records.filter(commodity_id=filter_commodity)
-
-    municipalities = MunicipalityName.objects.all()
     commodities = CommodityType.objects.all()
+    status_choices = AccountStatus.objects.all()
+
+    # Query records
+    records = VerifiedHarvestRecord.objects.all()
+    if selected_municipality:
+        records = records.filter(municipality__pk=selected_municipality)
+    elif not (is_superuser or is_pk14):
+        records = records.filter(municipality=admin_info.municipality_incharge)
+    if selected_commodity:
+        records = records.filter(commodity_id__pk=selected_commodity)
+    if selected_status:
+        records = records.filter(record_status__pk=selected_status)
+
+    # Batch update
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_records')
+        new_status_pk = request.POST.get('new_status')
+        if selected_ids and new_status_pk:
+            new_status = AccountStatus.objects.get(pk=new_status_pk)
+            for rec in records.filter(pk__in=selected_ids):
+                rec.record_status = new_status
+                if not rec.verified_by:
+                    rec.verified_by = admin_info
+                rec.save()
+            messages.success(request, "Selected records updated successfully.")
+        else:
+            messages.error(request, "No records selected or status not chosen.")
 
     context = {
-        'records': records,
         'municipalities': municipalities,
         'commodities': commodities,
-        'selected_municipality': filter_municipality,
-        'selected_commodity': filter_commodity,
+        'status_choices': status_choices,
+        'records': records,
+        'selected_municipality': selected_municipality,
+        'selected_commodity': selected_commodity,
+        'selected_status': selected_status,
+        'account_type': account_type,
     }
     return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
 

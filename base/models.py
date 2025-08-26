@@ -122,7 +122,13 @@ class AdminInformation(models.Model):
     first_added = models.DateTimeField(default=timezone.now)
     userinfo_id = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
     municipality_incharge = models.ForeignKey(MunicipalityName, on_delete=models.CASCADE)
-    
+    @property
+    def account_type(self):
+        try:
+            return AccountsInformation.objects.get(userinfo_id=self.userinfo_id).account_type_id.account_type
+        except AccountsInformation.DoesNotExist:
+            return ""
+        
 class AccountsInformation(models.Model):
     account_id = models.BigAutoField(primary_key=True)
     account_register_date = models.DateTimeField()

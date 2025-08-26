@@ -77,12 +77,20 @@ Fruit Cast | {% block page_title %}{% endblock %}
                 </div>
                 {{ form.municipality.errors }}
             </div>
-
+            {% if messages %}
+            {% for message in messages %}
+              <div class="alert 
+                {% if message.tags %} alert-{{ message.tags }} {% endif %} text-danger small mt-2">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
 
             <div class="text-center">
-                <button type="submit" class="btn btn-primary">Assign Account</button>
+                <button type="submit" class="btn btn-success">Assign Account</button>
             </div>
         </form>
+        
         {%else%}
                 <p>You do not have permission to view this page. </p>
         {% endif%}

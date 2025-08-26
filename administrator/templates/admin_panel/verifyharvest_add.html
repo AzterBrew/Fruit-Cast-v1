@@ -76,14 +76,21 @@ Add Verified Harvest Record
         var municipalityId = this.value;
         var barangaySelect = document.getElementById('id_barangay');
         barangaySelect.innerHTML = '<option value="">Loading...</option>';
-        fetch('/get_barangays/' + municipalityId + '/')
-            .then(response => response.json())
-            .then(data => {
-                barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-                data.forEach(function(barangay) {
-                    barangaySelect.innerHTML += '<option value="' + barangay.id + '">' + barangay.barangay + '</option>';
+        barangaySelect.disabled = true;
+        if (municipalityId) {
+            fetch('/get_barangays/' + municipalityId + '/')
+                .then(response => response.json())
+                .then(data => {
+                    barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                    data.forEach(function(barangay) {
+                        barangaySelect.innerHTML += '<option value="' + barangay.id + '">' + barangay.barangay + '</option>';
+                    });
+                    barangaySelect.disabled = false;
                 });
-            });
+        } else {
+            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+            barangaySelect.disabled = true;
+        }
     });
 </script>
 {% endblock content %}

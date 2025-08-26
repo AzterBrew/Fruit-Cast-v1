@@ -14,7 +14,6 @@ Fruit Cast | Plant and Harvest Records
         <div class="col-lg-10">
             <div class="card shadow-sm rounded-4 p-4 mb-4">
                 <h2 class="text-xl font-bold mb-4">Harvest Record Verification</h2>
-                <a href="{% url 'administrator:admin_add_verifyharvestrec' %}" class="btn btn-success mb-3">Add Bulk Harvest Record</a>
                 <form method="get" class="mb-3" id="filterForm">
                     <div class="row g-2 align-items-end">
                         <div class="col-md-4">
@@ -35,66 +34,100 @@ Fruit Cast | Plant and Harvest Records
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-success btn-sm w-100">Filter</button>
+                        <div class="col-md-4">
+                            <label for="status" class="form-label mb-0">Filter by Status:</label>
+                            <select name="status" id="status" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                {% for status in status_choices %}
+                                    <option value="{{ status.pk }}" {% if selected_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </form>
 
                 {% if records %}
-                <table class="table table-bordered table-hover">
-                    <thead class="table-success">
-                        <tr>
-                            <th>ID</th>
-                            <th>Harvest Date</th>
-                            <th>Commodity</th>
-                            <th>Municipality</th>
-                            <th>Barangay</th>
-                            <th>Total Weight</th>
-                            <th>Unit</th>
-                            <th>Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for rec in records %}
-                        <tr>
-                            <td>{{ rec.pk }}</td>
-                            <td>{{ rec.harvest_date }}</td>
-                            <td>
-                                {% if rec.commodity_id.pk == 1 %}
-                                    {{ rec.commodity_custom }}
-                                {% else %}
-                                    {{ rec.commodity_id.name }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if rec.transaction.farm_land %}
-                                    {{ rec.transaction.farm_land.municipality.municipality }}
-                                {% elif rec.transaction.manual_municipality %}
-                                    {{ rec.transaction.manual_municipality.municipality }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if rec.transaction.farm_land %}
-                                    {{ rec.transaction.farm_land.barangay.barangay }}
-                                {% elif rec.transaction.manual_barangay %}
-                                    {{ rec.transaction.manual_barangay.barangay }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td>{{ rec.total_weight }}</td>
-                            <td>{{ rec.unit.unit_full }}</td>
-                            <td>{{ rec.remarks|default:"-" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <form method="post">
+                    {% csrf_token %}
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th>[]</th>
+                                <th>ID</th>
+                                <th>Harvest Date</th>
+                                <th>Commodity</th>
+                                <th>Municipality</th>
+                                <th>Barangay</th>
+                                <th>Total Weight</th>
+                                <th>Unit</th>
+                                <th>Remarks</th>
+                                <th>Verified By</th>
+                                <th>Current Status</th>
+                                <th>Verified by</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in records %}
+                            <tr>
+                                <td><input type="checkbox" name="selected_records" value="{{ rec.pk }}"></td>
+                                <td>{{ rec.pk }}</td>
+                                <td>{{ rec.harvest_date }}</td>
+                                <td>
+                                    {% if rec.commodity_id.pk == 1 %}
+                                        {{ rec.commodity_custom }}
+                                    {% else %}
+                                        {{ rec.commodity_id.name }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ rec.municipality.municipality }}</td>
+                                <td>{{ rec.barangay.barangay }}</td>
+                                <td>{{ rec.total_weight_kg }}</td>
+                                <td>{{ rec.weight_per_unit_kg }}</td>
+                                <td>{{ rec.remarks|default:"-" }}</td>
+                                <td>
+                                    {% if rec.verified_by %}
+                                        {{ rec.verified_by.account_type }} : {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
+                                    {% else %}
+                                        not yet verified
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if rec.record_status %}
+                                        {{ rec.record_status.acc_status }}
+                                    {% else %}
+                                        Pending
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if rec.verified_by %}
+                                        {{ rec.verified_by.account_type }} : {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
+                                    {% else %}
+                                        not yet verified
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if messages %}
+                        <div class="alert 
+                            {% if message.tags %} alert-{{ message.tags }} {% endif %} text-danger small mt-2">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <select name="new_status" class="form-select form-select-sm" required>
+                            {% for status in status_choices %}
+                                <option value="{{ status.pk }}">{{ status.acc_status }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-success btn-sm">Update Selected</button>
+                    </div>
+                </form>
                 {% else %}
                     <p>No records found.</p>
                 {% endif %}
+                <a href="{% url 'administrator:admin_add_verifyharvestrec' %}" class="btn btn-success mb-3">Add Bulk Harvest Record</a>
             </div>
         </div>
     </div>
@@ -106,6 +139,9 @@ Fruit Cast | Plant and Harvest Records
         document.getElementById('filterForm').submit();
     });
     document.getElementById('commodity').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+    document.getElementById('status').addEventListener('change', function() {
         document.getElementById('filterForm').submit();
     });
 </script>
