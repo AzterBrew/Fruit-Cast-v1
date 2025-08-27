@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     
 {% if forecast_data %}
-    var forecastChart = new Chart(document.getElementById('forecastChart'), {
+    {% comment %} var forecastChart = new Chart(document.getElementById('forecastChart'), {
       type: 'line',
       data: {
         labels: {{ forecast_data.labels|safe }},
@@ -210,7 +210,31 @@ document.addEventListener('DOMContentLoaded', function() {
           borderColor: '#40ca7aff',
           fill: false
         }]
-      },
+      }, {% endcomment %}
+
+      {% comment %} TESTING FORECAST w/ separate line {% endcomment %}
+      var forecastChart = new Chart(document.getElementById('forecastChart'), {
+        type: 'line',
+        data: {
+            labels: {{ forecast_data.hist_labels|safe }}.concat({{ forecast_data.forecast_labels|safe }}),
+            datasets: [
+            {
+                label: 'Historical Data (kg)',
+                data: {{ forecast_data.hist_values|safe }},
+                borderColor: '#14763d',
+                fill: false,
+                tension: 0.1
+            },
+            {
+                label: 'Forecasted Data (kg)',
+                data: Array({{ forecast_data.hist_values|length }}).fill(null).concat({{ forecast_data.forecast_values|safe }}),
+                borderColor: '#40ca7aff',
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.1
+            }
+            ]
+        },
       options: {
         responsive: true,
         plugins: {

@@ -410,64 +410,128 @@ def admin_forecast(request):
     if selected_commodity_obj:
         in_season_months = set(m.number for m in selected_commodity_obj.seasonal_months.all())
 
-    # Filter by commodity and municipality
-    qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
-    if selected_municipality_id:
-        qs = qs.filter(municipality_id=selected_municipality_id)
-    qs = qs.values('harvest_date', 'total_weight_kg')
+    # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
+    
+    qs = VerifiedHarvestRecord.objects.filter(
+        commodity_id=selected_commodity_id,
+        municipality_id=selected_municipality_id
+    ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
 
-    print("QS before if exists condition", qs)
-    if qs.exists():
-        df = pd.DataFrame(list(qs))
-        df['harvest_date'] = pd.to_datetime(df['harvest_date'])
-        # Group by year and month, sum total_weight_kg
-        df['year'] = df['harvest_date'].dt.year
-        df['month'] = df['harvest_date'].dt.month
-        grouped = df.groupby(['year', 'month'], as_index=False)['total_weight_kg'].sum()
-        grouped['ds'] = pd.to_datetime(grouped['year'].astype(str) + '-' + grouped['month'].astype(str) + '-01')
-        prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
-        prophet_df = prophet_df.drop_duplicates(subset=['ds'])
-        prophet_df = prophet_df.dropna(subset=['ds', 'y'])
-        prophet_df = prophet_df.sort_values('ds')
-        
-        print("Grouped DataFrame before creating 'ds':", grouped)
-        
-        # prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
-        # prophet_df = prophet_df[prophet_df['y'] > 0]
-        # prophet_df = prophet_df.drop_duplicates(subset=['ds'])
-        
-        if len(prophet_df) >= 2:
-            model = Prophet()
-            model.fit(prophet_df)
-            
-            future = model.make_future_dataframe(periods=12, freq='M')
-            forecast_df = model.predict(future)
-
-            # Apply seasonal boost to in-season months, removed boost since kwan naman
-            boost_factor = 1.0
-            forecast_df['month_num'] = forecast_df['ds'].dt.month
-            forecast_df['yhat_boosted'] = forecast_df.apply(
-                lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
-                axis=1
-            )
-            forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
-
-            labels = forecast_df['ds'].dt.strftime('%B %Y').tolist()
-            month_numbers = forecast_df['ds'].dt.month.tolist()
-            years = forecast_df['ds'].dt.year.tolist()
-            values = forecast_df['yhat_boosted'].round().tolist()
-            combined_forecast = list(zip(labels, values, month_numbers, years))
-
-            forecast_data = {
-                'labels': labels,
-                'forecasted_count': values,
-                'combined': combined_forecast
-            }
-        else:
-            forecast_data = None
-            
-    else:
+    if not qs.exists():
         forecast_data = None
+    else:
+        # Prepare DataFrame for Prophet
+        df = pd.DataFrame(list(qs))
+        df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+        df['ds'] = pd.to_datetime(df['ds'])
+
+        # Prophet model
+        m = Prophet(yearly_seasonality=True, daily_seasonality=False, weekly_seasonality=False)
+        m.fit(df)
+
+        # Determine forecast range
+        last_hist_date = df['ds'].max()
+        today = datetime.now().replace(day=1)
+        # Start forecasting from the month after the last historical data
+        start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
+        # End at current month + 12 months
+        end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
+
+        # Generate all months from start_date to end_date
+        future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
+        future = pd.DataFrame({'ds': future_months})
+
+        # Forecast
+        forecast = m.predict(future)
+
+        # Prepare data for chart
+        # Historical data
+        hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
+        hist_values = df['y'].tolist()
+
+        # Forecasted data (only future, not overlapping with history)
+        forecast_only = forecast[forecast['ds'] > last_hist_date]
+        forecast_labels = forecast_only['ds'].dt.strftime('%b %Y').tolist()
+        forecast_values = forecast_only['yhat'].round(2).tolist()
+
+        # For table and form
+        combined = list(zip(forecast_labels, forecast_values, 
+                            forecast_only['ds'].dt.month.tolist(), 
+                            forecast_only['ds'].dt.year.tolist()))
+        
+        print("Forecast data only:", forecast_labels, forecast_values)
+        print("Historical data only:", hist_labels, hist_values)
+
+        forecast_data = {
+            'hist_labels': hist_labels,
+            'hist_values': hist_values,
+            'forecast_labels': forecast_labels,
+            'forecast_values': forecast_values,
+            'combined': combined,
+        }
+    
+    
+    
+    # INITIAL WORKING FORECASTING
+
+    # Filter by commodity and municipality
+    # qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
+    # if selected_municipality_id:
+    #     qs = qs.filter(municipality_id=selected_municipality_id)
+    # qs = qs.values('harvest_date', 'total_weight_kg')
+
+    # print("QS before if exists condition", qs)
+    # if qs.exists():
+    #     df = pd.DataFrame(list(qs))
+    #     df['harvest_date'] = pd.to_datetime(df['harvest_date'])
+    #     # Group by year and month, sum total_weight_kg
+    #     df['year'] = df['harvest_date'].dt.year
+    #     df['month'] = df['harvest_date'].dt.month
+    #     grouped = df.groupby(['year', 'month'], as_index=False)['total_weight_kg'].sum()
+    #     grouped['ds'] = pd.to_datetime(grouped['year'].astype(str) + '-' + grouped['month'].astype(str) + '-01')
+    #     prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
+    #     prophet_df = prophet_df.drop_duplicates(subset=['ds'])
+    #     prophet_df = prophet_df.dropna(subset=['ds', 'y'])
+    #     prophet_df = prophet_df.sort_values('ds')
+        
+    #     print("Grouped DataFrame before creating 'ds':", grouped)
+        
+    #     # prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
+    #     # prophet_df = prophet_df[prophet_df['y'] > 0]
+    #     # prophet_df = prophet_df.drop_duplicates(subset=['ds'])
+        
+    #     if len(prophet_df) >= 2:
+    #         model = Prophet()
+    #         model.fit(prophet_df)
+            
+    #         future = model.make_future_dataframe(periods=12, freq='M')
+    #         forecast_df = model.predict(future)
+
+    #         # Apply seasonal boost to in-season months, removed boost since kwan naman
+    #         boost_factor = 1.0
+    #         forecast_df['month_num'] = forecast_df['ds'].dt.month
+    #         forecast_df['yhat_boosted'] = forecast_df.apply(
+    #             lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
+    #             axis=1
+    #         )
+    #         forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
+
+    #         labels = forecast_df['ds'].dt.strftime('%B %Y').tolist()
+    #         month_numbers = forecast_df['ds'].dt.month.tolist()
+    #         years = forecast_df['ds'].dt.year.tolist()
+    #         values = forecast_df['yhat_boosted'].round().tolist()
+    #         combined_forecast = list(zip(labels, values, month_numbers, years))
+
+    #         forecast_data = {
+    #             'labels': labels,
+    #             'forecasted_count': values,
+    #             'combined': combined_forecast
+    #         }
+    #     else:
+    #         forecast_data = None
+            
+    # else:
+    #     forecast_data = None
 
         # END OF WORKING FORECAST NA COMBINED SAVING NG HISTORICAL AT FORECAST 
         
@@ -519,47 +583,11 @@ def admin_forecast(request):
         #     'forecast_values': forecast_values,
         #     # ...other context...
         # }
-        
-        
+
         
         
         filter_month = request.GET.get('filter_month')
         filter_year = request.GET.get('filter_year')
-        
-        # forecast_summary = []
-        # if filter_month and filter_year:
-        #     filter_month = int(filter_month)
-        #     filter_year = int(filter_year)
-        #     for commodity in commodity_types:
-        #         qs_for_sum = VerifiedHarvestRecord.objects.filter(commodity_id=commodity.commodity_id)
-        #         if selected_municipality_id:
-        #             qs_for_sum = qs_for_sum.filter(municipality_id=selected_municipality_id)
-        #         qs_for_sum = qs_for_sum.values('harvest_date', 'total_weight_kg')
-        #         if qs_for_sum.exists():
-        #             df = pd.DataFrame.from_records(qs_for_sum)
-        #             df['ds'] = pd.to_datetime(df['harvest_date'])
-        #             df['y'] = df['total_weight_kg'].astype(float)
-        #             df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-        #             df['ds'] = df['ds'].dt.to_timestamp()
-        #             if len(df) >= 2:
-        #                 model = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.05, seasonality_prior_scale=1)
-        #                 model.fit(df[['ds', 'y']])
-        #                 last_day = monthrange(filter_year, filter_month)[1]
-        #                 forecast_date = datetime(filter_year, filter_month, last_day)
-        #                 future = pd.DataFrame({'ds': [forecast_date]})
-        #                 forecast = model.predict(future)
-        #                 forecasted_kg = max(0, round(forecast['yhat'].iloc[0]))
-        #             else:
-        #                 forecasted_kg = None
-        #         else:
-        #             forecasted_kg = None
-        #         forecast_summary.append({
-        #             'commodity': commodity.name,
-        #             'forecasted_kg': forecasted_kg
-        #         })
-        # else:
-        #     forecast_summary = None
-        
         
         now = datetime.now()
         current_year = now.year
