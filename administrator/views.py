@@ -416,6 +416,7 @@ def admin_forecast(request):
         qs = qs.filter(municipality_id=selected_municipality_id)
     qs = qs.values('harvest_date', 'total_weight_kg')
 
+    print("QS before if exists condition", qs)
     if qs.exists():
         df = pd.DataFrame(list(qs))
         df['harvest_date'] = pd.to_datetime(df['harvest_date'])
@@ -423,17 +424,17 @@ def admin_forecast(request):
         df['year'] = df['harvest_date'].dt.year
         df['month'] = df['harvest_date'].dt.month
         grouped = df.groupby(['year', 'month'], as_index=False)['total_weight_kg'].sum()
-        # Create ds column for Prophet (first of month)
-        
-        # previous line for grouping
-        # grouped['ds'] = pd.to_datetime(dict(year=grouped['year'], month=grouped['month'], day=1))
-        
         grouped['ds'] = pd.to_datetime(grouped['year'].astype(str) + '-' + grouped['month'].astype(str) + '-01')
-        grouped = grouped.sort_values('ds')
-        
         prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
-        prophet_df = prophet_df[prophet_df['y'] > 0]
         prophet_df = prophet_df.drop_duplicates(subset=['ds'])
+        prophet_df = prophet_df.dropna(subset=['ds', 'y'])
+        prophet_df = prophet_df.sort_values('ds')
+        
+        print("Grouped DataFrame before creating 'ds':", grouped)
+        
+        # prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
+        # prophet_df = prophet_df[prophet_df['y'] > 0]
+        # prophet_df = prophet_df.drop_duplicates(subset=['ds'])
         
         if len(prophet_df) >= 2:
             model = Prophet()
