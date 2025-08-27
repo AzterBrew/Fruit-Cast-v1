@@ -585,42 +585,42 @@ def admin_forecast(request):
         # Prepare forecast summary per commodity for the selected month/year
         
         # --- 2D Mapping (unchanged, but you can filter map_data if you want) ---
-        with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
-            geojson_data = json.load(f)
+        # with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
+        #     geojson_data = json.load(f)
 
-        prev_to_municipality = {}
-        for rec in qs:
-            prev_id = rec['prev_record']
-            if prev_id:
-                try:
-                    prev = initHarvestRecord.objects.get(pk=prev_id)
-                    if prev.transaction and prev.transaction.location_type == 'farm_land' and prev.transaction.farm_land:
-                        municipality = prev.transaction.farm_land.municipality.municipality
-                        prev_to_municipality[prev_id] = municipality
-                except Exception:
-                    continue
+        # prev_to_municipality = {}
+        # for rec in qs:
+        #     prev_id = rec['prev_record']
+        #     if prev_id:
+        #         try:
+        #             prev = initHarvestRecord.objects.get(pk=prev_id)
+        #             if prev.transaction and prev.transaction.location_type == 'farm_land' and prev.transaction.farm_land:
+        #                 municipality = prev.transaction.farm_land.municipality.municipality
+        #                 prev_to_municipality[prev_id] = municipality
+        #         except Exception:
+        #             continue
 
-        df_full = pd.DataFrame.from_records(qs)
-        df_full['municipality'] = df_full['prev_record'].map(prev_to_municipality)
-        muni_group = df_full.groupby('municipality')['total_weight_kg'].sum().to_dict()
+        # df_full = pd.DataFrame.from_records(qs)
+        # df_full['municipality'] = df_full['prev_record'].map(prev_to_municipality)
+        # muni_group = df_full.groupby('municipality')['total_weight_kg'].sum().to_dict()
 
-        for feature in geojson_data['features']:
-            properties = feature.get('properties', {})
-            municipality = properties.get('MUNICIPALI') or properties.get('NAME_2')
-            geom = shape(feature['geometry'])
-            centroid = geom.centroid
-            latitude = centroid.y
-            longitude = centroid.x
-            forecasted_amount = muni_group.get(municipality, 0)
-            map_data.append({
-                'latitude': latitude,
-                'longitude': longitude,
-                'barangay': None,
-                'municipality': municipality,
-                'province': properties.get('PROVINCE', None),
-                'forecasted_amount': float(forecasted_amount),
-                'forecast_value_for_selected_month': forecast_value_for_selected_month
-            })
+        # for feature in geojson_data['features']:
+        #     properties = feature.get('properties', {})
+        #     municipality = properties.get('MUNICIPALI') or properties.get('NAME_2')
+        #     geom = shape(feature['geometry'])
+        #     centroid = geom.centroid
+        #     latitude = centroid.y
+        #     longitude = centroid.x
+        #     forecasted_amount = muni_group.get(municipality, 0)
+        #     map_data.append({
+        #         'latitude': latitude,
+        #         'longitude': longitude,
+        #         'barangay': None,
+        #         'municipality': municipality,
+        #         'province': properties.get('PROVINCE', None),
+        #         'forecasted_amount': float(forecasted_amount),
+        #         'forecast_value_for_selected_month': forecast_value_for_selected_month
+        #     })
 
     context = {
         'user_firstname': userinfo.firstname,
