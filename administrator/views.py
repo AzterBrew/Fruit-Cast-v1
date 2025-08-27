@@ -22,11 +22,12 @@ import pandas as pd
 from django.db.models import Q
 from datetime import datetime
 from calendar import monthrange
-import json
 from shapely.geometry import shape
-import csv, io
+import csv, io, joblib, json, os
 from django.core.paginator import Paginator
 from collections import OrderedDict
+from pathlib import Path
+from django.shortcuts import render, redirect
 
 def admin_login(request):
     if request.method == 'POST':
@@ -412,6 +413,7 @@ def admin_forecast(request):
 
     # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
     
+    # Get historical data
     qs = VerifiedHarvestRecord.objects.filter(
         commodity_id=selected_commodity_id,
         municipality_id=selected_municipality_id
@@ -420,55 +422,53 @@ def admin_forecast(request):
     if not qs.exists():
         forecast_data = None
     else:
-        # Prepare DataFrame for Prophet
         df = pd.DataFrame(list(qs))
         df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
         df['ds'] = pd.to_datetime(df['ds'])
+        # Group by month
+        df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+        df = df.groupby('ds', as_index=False)['y'].sum()
 
-        # Prophet model
-        m = Prophet(yearly_seasonality=True, daily_seasonality=False, weekly_seasonality=False)
-        m.fit(df)
+        # Load trained model
+        model_dir = os.path.join('prophet_models')
+        model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
+        model_path = os.path.join(model_dir, model_filename)
 
-        # Determine forecast range
-        last_hist_date = df['ds'].max()
-        today = datetime.now().replace(day=1)
-        # Start forecasting from the month after the last historical data
-        start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
-        # End at current month + 12 months
-        end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
+        if not os.path.exists(model_path):
+            forecast_data = None  # Or show a message to run the training command
+        else:
+            m = joblib.load(model_path)
 
-        # Generate all months from start_date to end_date
-        future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
-        future = pd.DataFrame({'ds': future_months})
+            last_hist_date = df['ds'].max()
+            today = datetime.now().replace(day=1)
+            start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
+            end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
+            future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
+            future = pd.DataFrame({'ds': future_months})
 
-        # Forecast
-        forecast = m.predict(future)
+            forecast = m.predict(future)
 
-        # Prepare data for chart
-        # Historical data
-        hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
-        hist_values = df['y'].tolist()
+            # Prepare data for chart
+            hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
+            hist_values = df['y'].tolist()
+            forecast_only = forecast[forecast['ds'] > last_hist_date]
+            forecast_labels = forecast_only['ds'].dt.strftime('%b %Y').tolist()
+            forecast_values = forecast_only['yhat'].round(2).tolist()
+            combined = list(zip(forecast_labels, forecast_values,
+                                forecast_only['ds'].dt.month.tolist(),
+                                forecast_only['ds'].dt.year.tolist()))
 
-        # Forecasted data (only future, not overlapping with history)
-        forecast_only = forecast[forecast['ds'] > last_hist_date]
-        forecast_labels = forecast_only['ds'].dt.strftime('%b %Y').tolist()
-        forecast_values = forecast_only['yhat'].round(2).tolist()
-
-        # For table and form
-        combined = list(zip(forecast_labels, forecast_values, 
-                            forecast_only['ds'].dt.month.tolist(), 
-                            forecast_only['ds'].dt.year.tolist()))
         
         print("Forecast data only:", forecast_labels, forecast_values)
         print("Historical data only:", hist_labels, hist_values)
 
         forecast_data = {
-            'hist_labels': hist_labels,
-            'hist_values': hist_values,
-            'forecast_labels': forecast_labels,
-            'forecast_values': forecast_values,
-            'combined': combined,
-        }
+                'hist_labels': hist_labels,
+                'hist_values': hist_values,
+                'forecast_labels': forecast_labels,
+                'forecast_values': forecast_values,
+                'combined': combined,
+            }
     
     
     
