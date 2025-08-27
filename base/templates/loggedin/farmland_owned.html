@@ -28,15 +28,15 @@
                 </tbody>
             </table>
 
+            {% else %}
+            <p>No farmlands recorded yet.</p>
+            {% endif %}
+
             <div>
                 <a href="{% url 'base:farmland_record' %}" class="btn btn-success">
                     Add New Farmland
                 </a>
             </div>
-        {% else %}
-            <p>No farmlands recorded yet.</p>
-
         </div>
     </div>
-{% endif %}
 {% endblock content %}

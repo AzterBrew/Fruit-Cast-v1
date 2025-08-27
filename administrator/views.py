@@ -424,7 +424,13 @@ def admin_forecast(request):
         df['month'] = df['harvest_date'].dt.month
         grouped = df.groupby(['year', 'month'], as_index=False)['total_weight_kg'].sum()
         # Create ds column for Prophet (first of month)
-        grouped['ds'] = pd.to_datetime(dict(year=grouped['year'], month=grouped['month'], day=1))
+        
+        # previous line for grouping
+        # grouped['ds'] = pd.to_datetime(dict(year=grouped['year'], month=grouped['month'], day=1))
+        
+        grouped['ds'] = pd.to_datetime(grouped['year'].astype(str) + '-' + grouped['month'].astype(str) + '-01')
+        grouped = grouped.sort_values('ds')
+        
         prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
         prophet_df = prophet_df[prophet_df['y'] > 0]
         prophet_df = prophet_df.drop_duplicates(subset=['ds'])
@@ -436,7 +442,7 @@ def admin_forecast(request):
             future = model.make_future_dataframe(periods=12, freq='M')
             forecast_df = model.predict(future)
 
-            # Apply seasonal boost to in-season months
+            # Apply seasonal boost to in-season months, removed boost since kwan naman
             boost_factor = 1.0
             forecast_df['month_num'] = forecast_df['ds'].dt.month
             forecast_df['yhat_boosted'] = forecast_df.apply(
