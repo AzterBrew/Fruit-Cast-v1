@@ -458,9 +458,9 @@ def admin_forecast(request):
                                 forecast_only['ds'].dt.month.tolist(),
                                 forecast_only['ds'].dt.year.tolist()))
 
+            print("Forecast data only:", forecast_labels, forecast_values)
+            print("Historical data only:", hist_labels, hist_values)
         
-        print("Forecast data only:", forecast_labels, forecast_values)
-        print("Historical data only:", hist_labels, hist_values)
 
         forecast_data = {
                 'hist_labels': hist_labels,
