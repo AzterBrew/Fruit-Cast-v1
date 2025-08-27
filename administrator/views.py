@@ -435,7 +435,13 @@ def admin_forecast(request):
         model_path = os.path.join(model_dir, model_filename)
 
         if not os.path.exists(model_path):
+            hist_labels = []
+            hist_values = []
+            forecast_labels = []
+            forecast_values = []
+            combined = []
             forecast_data = None  # Or show a message to run the training command
+            print("No trained model found.")
         else:
             m = joblib.load(model_path)
 
@@ -461,14 +467,13 @@ def admin_forecast(request):
             print("Forecast data only:", forecast_labels, forecast_values)
             print("Historical data only:", hist_labels, hist_values)
         
-
-        forecast_data = {
-                'hist_labels': hist_labels,
-                'hist_values': hist_values,
-                'forecast_labels': forecast_labels,
-                'forecast_values': forecast_values,
-                'combined': combined,
-            }
+            forecast_data = {
+                    'hist_labels': hist_labels,
+                    'hist_values': hist_values,
+                    'forecast_labels': forecast_labels,
+                    'forecast_values': forecast_values,
+                    'combined': combined,
+                }
     
     
     

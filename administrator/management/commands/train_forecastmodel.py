@@ -28,20 +28,39 @@ class Command(BaseCommand):
                     continue
 
                 df = pd.DataFrame(list(qs))
-                df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
-                df['ds'] = pd.to_datetime(df['ds'])
-                # Group by month
-                df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
-                df = df.groupby('ds', as_index=False)['y'].sum()
+                if df.empty:
+                    self.stdout.write(f"No data for {muni} - {comm}")
+                    continue
+                df['ds'] = pd.to_datetime(df['harvest_date'])
+                df['y'] = df['total_weight_kg'].astype(float)
+                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                df['ds'] = df['ds'].dt.to_timestamp()
 
-                if len(df) < 2:
-                    self.stdout.write(f"Not enough monthly data for {muni} - {comm}")
+                # Remove outliers (5th and 95th percentiles)
+                if len(df) >= 4:
+                    q_low = df['y'].quantile(0.05)
+                    q_high = df['y'].quantile(0.95)
+                    df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
+
+                # Smooth data (rolling mean)
+                df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
+
+                # Skip if less than 2 non-NaN rows
+                if df['y'].notna().sum() < 2:
+                    self.stdout.write(f"Skipping: {comm.name}, {muni.municipality} (not enough data after cleaning)")
                     continue
 
-                m = Prophet(yearly_seasonality=True, daily_seasonality=False, weekly_seasonality=False)
-                m.fit(df)
+                # Prophet model with tuned parameters
+                m = Prophet(
+                    yearly_seasonality=True,
+                    changepoint_prior_scale=0.05,
+                    seasonality_prior_scale=1,
+                    daily_seasonality=False,
+                    weekly_seasonality=False
+                )
+                m.fit(df[['ds', 'y']])
 
-                # Save model
+                # Save model (optionally, could also save last cleaned df for debugging)
                 model_filename = f"prophet_{comm.commodity_id}_{muni.municipality_id}.joblib"
                 model_path = os.path.join(model_dir, model_filename)
                 joblib.dump(m, model_path)
