@@ -7,10 +7,10 @@ name = "pypi"
 django = "*"
 psycopg2 = "==2.9.10"
 gunicorn = "*"
-prophet = "*"
+prophet = "==1.1.4"
 shapely = "*"
 matplotlib = "*"
-pandas = "*"
+pandas = "==2.1.4"
 numpy = "*"
 plotly = "*"
 holidays = "*"
@@ -21,4 +21,4 @@ colorama = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.13"
+python_version = "3.11"

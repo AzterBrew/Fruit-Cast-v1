@@ -629,7 +629,7 @@ def admin_forecast(request):
         'municipalities': municipalities,
         'selected_commodity': selected_commodity_id,
         'selected_municipality': selected_municipality_id,
-        'map_data': map_data,
+        # 'map_data': map_data,
         'selected_commodity_obj': selected_commodity_obj,
         'selected_commodity_id': selected_commodity_id,
         'selected_municipality_obj': selected_municipality_obj,
