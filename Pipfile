@@ -17,6 +17,7 @@ holidays = "*"
 cmdstanpy = "*"
 pillow = "*"
 colorama = "*"
+joblib = "*"
 
 [dev-packages]
 
