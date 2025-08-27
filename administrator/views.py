@@ -1139,7 +1139,7 @@ def admin_add_verifyharvestrec(request):
                     barangay = None
                 VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
-                    commodity_id=commodity_obj.pk if commodity_obj else None,
+                    commodity_id=commodity_obj,
                     total_weight_kg=row["total_weight_kg"],
                     weight_per_unit_kg=row["weight_per_unit_kg"],
                     municipality=municipality,
