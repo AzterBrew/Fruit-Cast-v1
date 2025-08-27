@@ -1124,7 +1124,13 @@ def admin_add_verifyharvestrec(request):
         for row in reader:
             row = {k.strip(): v.strip() for k, v in row.items()}
             try:
-                commodity = CommodityType.objects.get(pk=int(row["commodity"]))
+                commodity_name = row['commodity'].strip()
+                try:
+                    commodity_obj = CommodityType.objects.get(name__iexact=commodity_name)
+                except CommodityType.DoesNotExist:
+                    print(f"Commodity '{commodity_name}' does not exist in CommodityType model.")
+                    messages.error(request, f"Commodity '{commodity_name}' does not exist in CommodityType model. Row skipped.")
+                    continue  # Skip this row
                 municipality = MunicipalityName.objects.get(pk=int(row['municipality']))
                 barangay_id_str = row.get("barangay", "")
                 if barangay_id_str:
@@ -1133,7 +1139,7 @@ def admin_add_verifyharvestrec(request):
                     barangay = None
                 VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
-                    commodity_id=commodity,
+                    commodity_id=commodity_obj.pk if commodity_obj else None,
                     total_weight_kg=row["total_weight_kg"],
                     weight_per_unit_kg=row["weight_per_unit_kg"],
                     municipality=municipality,
