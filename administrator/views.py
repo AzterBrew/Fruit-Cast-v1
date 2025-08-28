@@ -429,10 +429,6 @@ def admin_forecast(request):
         grouped['label'] = grouped['year_month'].dt.strftime('%b %Y')
         hist_labels = grouped['label'].tolist()
         hist_values = grouped['total_weight_kg'].tolist()
-        
-        # Group by month
-        df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
-        df = df.groupby('ds', as_index=False)['y'].sum()
 
         # Load trained model
         model_dir = os.path.join('prophet_models')
