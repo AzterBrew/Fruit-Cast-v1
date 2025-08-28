@@ -308,9 +308,11 @@ document.addEventListener('DOMContentLoaded', function() {
     var monthSelect = document.getElementById('filter_month');
     var yearSelect = document.getElementById('filter_year');
     var currentYear = new Date().getFullYear();
-    var currentMonth = new Date().getMonth() + 1; // JS months are 0-based
+    var currentMonth = new Date().getMonth() + 1;
     var labels = {{ forecast_data.labels|safe }};
     var values = {{ forecast_data.forecasted_count|safe }};
+});
+
 /*
     function updateMonthOptions() {
         var selectedYear = parseInt(yearSelect.value);
@@ -388,45 +390,50 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render line chart for forecast_data if present
     {% if forecast_data %}
         var forecastChart = new Chart(document.getElementById('forecastChart'), {
-            type: 'line',
-            data: {
-                labels: {{ forecast_data.hist_labels|safe }}.concat({{ forecast_data.forecast_labels|safe }}),
-                datasets: [
-                {
-                    label: 'Historical Data (kg)',
-                    data: {{ forecast_data.hist_values|safe }},
-                    borderColor: '#14763d',
-                    fill: false,
-                    tension: 0.1
-                },
-                {
-                    label: 'Forecasted Data (kg)',
-                    data: Array({{ forecast_data.hist_values|length }}).fill(null).concat({{ forecast_data.forecast_values|safe }}),
-                    borderColor: '#40ca7aff',
-                    fill: false,
-                    tension: 0.1
-                }
-                ]
+        type: 'line',
+        data: {
+            labels: {{ forecast_data.hist_labels|safe }}.concat({{ forecast_data.forecast_labels|safe }}),
+            datasets: [
+            {
+                label: 'Historical Data (kg)',
+                data: {{ forecast_data.hist_values|safe }},
+                borderColor: '#14763d',
+                fill: false,
+                tension: 0.1
             },
-        options: {
-                responsive: true,
-                plugins: {
-                    datalabels: {
-                        align: 'top',
-                        anchor: 'end',
-                        color: '#14763d',
-                        font: { weight: 'bold' },
-                        formatter: function(value) { return value; }
-                    }
-                },
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'Amount (kg)' } }
+            {
+                label: 'Forecasted Data (kg)',
+                data: Array({{ forecast_data.hist_values|length }}).fill(null).concat({{ forecast_data.forecast_values|safe }}),
+                borderColor: '#40ca7aff',
+                fill: false,
+                tension: 0.1
+            }
+            ]
+        },
+      options: {
+        responsive: true,
+        /** 
+        plugins: {
+            datalabels: {
+                align: 'top',
+                anchor: 'end',
+                color: '#14763d',
+                font: { weight: 'bold' },
+                formatter: function(value) {
+                return value;
                 }
-            },
-            plugins: [ChartDataLabels]
-        });
+            }
+        },
+        **/
+        scales: {
+          x: { title: { display: true, text: 'Month' } },
+          y: { title: { display: true, text: 'Amount (kg)' } }
+        }
+      },
+      plugins: [ChartDataLabels]
     });
+    {% else %}
+        console.log("No forecast data available for chart.");
 
     {% endif %}
 </script>
