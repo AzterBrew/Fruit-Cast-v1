@@ -309,8 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var yearSelect = document.getElementById('filter_year');
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth() + 1;
-    var labels = {{ forecast_data.labels|safe }};
-    var values = {{ forecast_data.forecasted_count|safe }};
 });
 
 /*
