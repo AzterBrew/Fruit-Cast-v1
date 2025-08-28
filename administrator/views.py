@@ -423,12 +423,12 @@ def admin_forecast(request):
         forecast_data = None
     else:
         df = pd.DataFrame(list(qs))
-        df['harvest_date'] = pd.to_datetime(df['harvest_date'])
-        df['year_month'] = df['harvest_date'].dt.to_period('M')
-        grouped = df.groupby('year_month')['total_weight_kg'].sum().reset_index()
-        grouped['label'] = grouped['year_month'].dt.strftime('%b %Y')
-        hist_labels = grouped['label'].tolist()
-        hist_values = grouped['total_weight_kg'].tolist()
+        df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+        df['ds'] = pd.to_datetime(df['ds'])
+        
+        # Group by month (as timestamp, not period)
+        df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+        df = df.groupby('ds', as_index=False)['y'].sum()
 
         # Load trained model
         model_dir = os.path.join('prophet_models')
@@ -446,7 +446,7 @@ def admin_forecast(request):
         else:
             m = joblib.load(model_path)
 
-            last_hist_date = df['year_month'].max()
+            last_hist_date = df['ds'].max()
             today = datetime.now().replace(day=1)
             start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
             end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
@@ -456,14 +456,14 @@ def admin_forecast(request):
             forecast = m.predict(future)
 
             # Prepare data for chart
-            # hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
-            # hist_values = df['y'].tolist()
+            hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
+            hist_values = df['y'].tolist()
             forecast_only = forecast[forecast['ds'] > last_hist_date]
             forecast_labels = forecast_only['ds'].dt.strftime('%b %Y').tolist()
             forecast_values = forecast_only['yhat'].round(2).tolist()
             combined = list(zip(forecast_labels, forecast_values,
-                                forecast_only['ds'].dt.month.tolist(),
-                                forecast_only['ds'].dt.year.tolist()))
+                            forecast_only['ds'].dt.month.tolist(),
+                            forecast_only['ds'].dt.year.tolist()))
 
             print("Forecast data only:", forecast_labels, forecast_values)
             print("Historical data only:", hist_labels, hist_values)
