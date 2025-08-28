@@ -206,6 +206,12 @@ def forecast(request):
     
     filter_month = request.GET.get('filter_month')
     filter_year = request.GET.get('filter_year')
+    
+    now = datetime.now()
+    if not filter_month:
+        filter_month = str(now.month)
+    if not filter_year:
+        filter_year = str(now.year)
 
     # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
     
@@ -274,7 +280,8 @@ def forecast(request):
     months =  Month.objects.order_by('number')
     if filter_year and int(filter_year) == current_year:
         months = months.filter(number__gt=now_dt.month)
-
+    print(filter_month, filter_year)
+    
     # Prepare available years for the dropdown
     current_year = datetime.now().year
     available_years = [current_year, current_year + 1]
