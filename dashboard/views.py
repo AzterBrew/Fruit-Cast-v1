@@ -218,9 +218,7 @@ def forecast(request):
                 forecast_df = forecast
             forecast_labels = forecast_df['ds'].dt.strftime('%b %Y').tolist()
             forecast_values = forecast_df['yhat'].clip(lower=0).round(2).tolist()
-            combined = list(zip(forecast_labels, forecast_values,
-                                forecast_df['ds'].dt.month.tolist(),
-                                forecast_df['ds'].dt.year.tolist()))
+            combined = list(zip(forecast_labels, forecast_values))
             print("Forecast data only:", forecast_labels, forecast_values)
             print("Historical data only:", hist_labels, hist_values)
 
