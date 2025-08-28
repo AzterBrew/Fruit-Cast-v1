@@ -350,12 +350,15 @@ def forecast(request):
     except ForecastBatch.DoesNotExist:
         latest_batch = None
     
+    print('LatestBatch : ',latest_batch)
+    
     # Initialize an empty dictionary for the map data
     choropleth_data = {}
 
     # Check if all required filters and a batch exist
     if latest_batch and selected_commodity_id and filter_month and filter_year:
         try:
+            print("latest_batch and selected_commodity_id and filter_month and filter_year")
             # Query the database to get the total forecasted amount for each municipality
             # for the selected batch, commodity, month, and year.
             forecast_results = ForecastResult.objects.filter(

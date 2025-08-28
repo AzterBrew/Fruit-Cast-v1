@@ -104,7 +104,7 @@ class ForecastResult(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.commodity.name} - {self.forecast_month}/{self.forecast_year} in {self.municipality.name}"
+        return f"{self.commodity.name} - {self.forecast_month}/{self.forecast_year} in {self.municipality.municipality}"
 
 # only model left unchanged
 
