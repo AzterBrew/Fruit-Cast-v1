@@ -431,7 +431,7 @@ def admin_forecast(request):
         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
         df = df.groupby('ds', as_index=False)['y'].sum()
         hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
-        hist_values = df['y'].tolist()
+        hist_values = [float(v) for v in df['y'].tolist()]
 
         # Prepare forecast data (from trained model)
         model_dir = os.path.join('prophet_models')
