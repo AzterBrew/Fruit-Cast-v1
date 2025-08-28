@@ -73,6 +73,15 @@
                 {% endif %}
                 <hr>
 
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert 
+                        {% if message.tags %} alert-{{ message.tags }} {% endif %} text-danger small mt-2">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
 {% comment %} NOT NEEDED NA FORECAST GENERATIONS SINCE UTILIZED NA YUNG CURRENT FORECAST RECORDS {% endcomment %}
 
                     
@@ -146,7 +155,7 @@
                     {% csrf_token %}
                     <button type="submit" class="btn btn-warning mb-3">Retrain All Forecast Models</button>
                 </form>
-                
+
                 <form method="post" action="{% url 'administrator:generate_all_forecasts' %}" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger mb-3" onclick="return confirm('Are you sure you want to generate forecasts for ALL commodities and ALL municipalities for the next 12 months? This may take a while.')">Generate All Forecasts (12 months, all commodities, all municipalities)</button>
@@ -234,7 +243,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: 'Forecasted Data (kg)',
                 data: Array({{ forecast_data.hist_values|length }}).fill(null).concat({{ forecast_data.forecast_values|safe }}),
                 borderColor: '#40ca7aff',
-                borderDash: [5, 5],
                 fill: false,
                 tension: 0.1
             }
@@ -242,6 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
       options: {
         responsive: true,
+        /** 
         plugins: {
             datalabels: {
                 align: 'top',
@@ -253,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         },
+        **/
         scales: {
           x: { title: { display: true, text: 'Month' } },
           y: { title: { display: true, text: 'Amount (kg)' } }

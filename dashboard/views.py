@@ -17,7 +17,7 @@ from django.db.models import Sum, Avg, Max
 from django.http import JsonResponse
 from prophet import Prophet
 import pandas as pd
-import json
+import json, joblib,csv, os
 from collections import defaultdict, OrderedDict
 import random
 from django.db.models.functions import TruncMonth, ExtractYear, ExtractMonth
@@ -27,8 +27,8 @@ from django.utils import timezone
 from shapely.geometry import shape
 # from dashboard.utils import generate_notifications, get_current_month
 from calendar import monthrange
-import csv
-import os
+from pathlib import Path
+
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from base.models import *
@@ -164,16 +164,9 @@ def forecast(request):
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
-    forecast_qs = []
-    latest_batch = None
-    labels = []
-    values = []
-    combined = []
     
     selected_commodity_id = request.GET.get('commodity_id')
     selected_municipality_id = request.GET.get('municipality_id')
-    if not selected_municipality_id:
-        selected_municipality_id = "14"
     selected_commodity_obj = None
     selected_municipality_obj = None
 
@@ -182,129 +175,67 @@ def forecast(request):
             selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
         except CommodityType.DoesNotExist:
             selected_commodity_obj = None
+    else:
+        selected_commodity_obj = commodity_types.first()
+        selected_commodity_id = selected_commodity_obj.commodity_id if selected_commodity_obj else None
 
     if selected_municipality_id:
         try:
             selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
         except MunicipalityName.DoesNotExist:
             selected_municipality_obj = None
+    else:
+        selected_municipality_obj = all_municipalities.first()
+        selected_municipality_id = selected_municipality_obj.municipality_id if selected_municipality_obj else None
 
     filter_month = request.GET.get('filter_month')
     filter_year = request.GET.get('filter_year')
-    # forecast_summary = None
-
-    # if filter_month and filter_year:
-    #     # Show forecast summary bar chart for all commodities for this month/year
-    #     # filter_month = int(filter_month)
-    #     # filter_year = int(filter_year)
-    #     # forecast_summary = []
-    #     # bar_labels = []
-    #     # bar_values = []
-    #     for commodity in commodity_types:
-    #         result = ForecastResult.objects.filter(
-    #             commodity=commodity,
-    #             forecast_month__number=filter_month,
-    #             forecast_year=filter_year,
-    #             municipality_id=selected_municipality_id
-    #         ).order_by('-batch__generated_at').first()
-    #         forecasted_kg = result.forecasted_amount_kg if result else None
-    #         forecast_summary.append({
-    #             'commodity': commodity.name,
-    #             'forecasted_kg': forecasted_kg
-    #         })
-    #         bar_labels.append(commodity.name)
-    #         bar_values.append(forecasted_kg if forecasted_kg is not None else 0)
-    #     # For chart.js
-    #     forecast_summary_chart = {
-    #         'labels': bar_labels,
-    #         'values': bar_values
-    #     }
     
-    # Query ForecastResult for this commodity and municipality (line chart)
-    
-    if selected_municipality_id and str(selected_municipality_id) == "14":
-        municipalities = MunicipalityName.objects.exclude(pk=14)
-        # Get all months and years present in ForecastResult for this commodity
-        month_years = (
-            ForecastResult.objects
-            .filter(commodity_id=selected_commodity_id)
-            .exclude(municipality_id=14)
-            .values('forecast_month', 'forecast_year')
-            .distinct().order_by('forecast_year', 'forecast_month__number')
-        )
-        # For each (month, year), sum the latest forecast for each municipality
-        for my in month_years:
-            month = my['forecast_month']
-            year = my['forecast_year']
-            total_kg = 0
-            for muni in municipalities:
-                # Get latest batch for this muni, month, year, and commodity
-                latest_batch = (
-                    ForecastResult.objects
-                    .filter(
-                        commodity_id=selected_commodity_id,
-                        municipality=muni,
-                        forecast_month=month,
-                        forecast_year=year
-                    )
-                    .aggregate(latest_batch=Max('batch__batch_id'))['latest_batch']
-                )
-                if latest_batch:
-                    fr = ForecastResult.objects.filter(
-                        commodity_id=selected_commodity_id,
-                        municipality=muni,
-                        forecast_month=month,
-                        forecast_year=year,
-                        batch__batch_id=latest_batch
-                    ).order_by('forecast_year', 'forecast_month__number').first()
-                    if fr:
-                        total_kg += fr.forecasted_amount_kg or 0
-            # Get month name for label
-            month_name = Month.objects.get(pk=month).name
-            label = f"{month_name} {year}"
-            labels.append(label)
-            values.append(round(total_kg, 2))
-            combined.append((label, round(total_kg, 2)))
-    else:
-        # Individual municipality: get latest batch for that muni and commodity
-        latest_batch = (
-            ForecastResult.objects
-            .filter(
+    forecast_data = None
+    if selected_commodity_id and selected_municipality_id:
+        model_path = Path('prophet_models') / f'prophet_{selected_commodity_id}_{selected_municipality_id}.joblib'
+        if model_path.exists():
+            model = joblib.load(model_path)
+            # Get historical data for chart
+            qs = VerifiedHarvestRecord.objects.filter(
                 commodity_id=selected_commodity_id,
                 municipality_id=selected_municipality_id
-            )
-            .aggregate(latest_batch=Max('batch__batch_id'))['latest_batch']
-        )
-        if latest_batch:
-            forecast_qs = (
-                ForecastResult.objects
-                .filter(
-                    commodity_id=selected_commodity_id,
-                    municipality_id=selected_municipality_id,
-                    batch__batch_id=latest_batch
-                )
-                .order_by('forecast_year', 'forecast_month__number')
-            )
-            for fr in forecast_qs:
-                label = f"{fr.forecast_month.name} {fr.forecast_year}"
-                value = round(fr.forecasted_amount_kg or 0, 2)
-                labels.append(label)
-                values.append(value)
-                combined.append((label, value))
+            ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+            df = pd.DataFrame(list(qs))
+            if not df.empty:
+                df['ds'] = pd.to_datetime(df['harvest_date'])
+                df['y'] = df['total_weight_kg'].astype(float)
+                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                df['ds'] = df['ds'].dt.to_timestamp()
+                hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
+                hist_values = df['y'].tolist()
+            else:
+                hist_labels, hist_values = [], []
 
-    forecast_data = {
-        'labels': labels,
-        'forecasted_count': values,
-        'combined': combined
-    } if labels else None
-    
-    print(forecast_data)
+            # Forecast for next 12 months
+            future = model.make_future_dataframe(periods=12, freq='M')
+            forecast = model.predict(future)
+            # Only show forecasted months (not overlapping with history)
+            last_hist_date = df['ds'].max() if not df.empty else None
+            forecast_df = forecast[forecast['ds'] > last_hist_date] if last_hist_date is not None else forecast
+            forecast_labels = forecast_df['ds'].dt.strftime('%b %Y').tolist()
+            forecast_values = forecast_df['yhat'].clip(lower=0).round(2).tolist()
+
+            # Combine for chart
+            forecast_data = {
+                'hist_labels': hist_labels,
+                'hist_values': hist_values,
+                'forecast_labels': forecast_labels,
+                'forecast_values': forecast_values,
+                'labels': hist_labels + forecast_labels,
+                'forecasted_count': hist_values + forecast_values,
+            }
 
     now_dt = datetime.now()
     current_year = now_dt.year
     available_years = [current_year, current_year + 1]
     months = Month.objects.order_by('number')
-    print(latest_batch)
+    # print(latest_batch)
     
     
     # CHOROPLETH 2D MAP TEST DATA
@@ -341,21 +272,60 @@ def forecast(request):
     #     for objectid in muni_id_to_objectids.get(muni_id, []):
     #         choropleth_data[objectid] = value
     
-    choropleth_data = {}
     
+    # # OLD WORKING 2D MAP RETRIEVING DATA FROM FORECASTRESULT MODEL
+    # choropleth_data = {}
     
-    if filter_month and filter_year and selected_commodity_id:
-        results = ForecastResult.objects.filter(
-            commodity_id=selected_commodity_id,
-            forecast_month__number=filter_month,
-            forecast_year=filter_year
-        ).values('municipality__municipality_id').annotate(
-            forecasted_kg=Sum('forecasted_amount_kg')
-        )
+    # if filter_month and filter_year and selected_commodity_id:
+    #     results = ForecastResult.objects.filter(
+    #         commodity_id=selected_commodity_id,
+    #         forecast_month__number=filter_month,
+    #         forecast_year=filter_year
+    #     ).values('municipality__municipality_id').annotate(
+    #         forecasted_kg=Sum('forecasted_amount_kg')
+    #     )
         
-        for res in results:
-            choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
+    #     for res in results:
+    #         choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
 
+    choropleth_data = []
+    if selected_commodity_id and filter_month and filter_year:
+        for muni in MunicipalityName.objects.exclude(pk=14):
+            model_path = Path('prophet_models') / f'prophet_{selected_commodity_id}_{muni.municipality_id}.joblib'
+            if not model_path.exists():
+                continue
+            model = joblib.load(model_path)
+            # Generate enough future months to cover the requested date
+            # Find the last date in the training data
+            qs = VerifiedHarvestRecord.objects.filter(
+                commodity_id=selected_commodity_id,
+                municipality_id=muni.municipality_id
+            ).values('harvest_date').order_by('harvest_date')
+            if not qs.exists():
+                continue
+            last_hist_date = pd.to_datetime(qs.last()['harvest_date'])
+            # Calculate how many months ahead the target date is
+            target_date = pd.Timestamp(year=int(filter_year), month=int(filter_month), day=1)
+            months_ahead = (target_date.year - last_hist_date.year) * 12 + (target_date.month - last_hist_date.month)
+            if months_ahead < 1:
+                months_ahead = 1
+            # Generate future dataframe
+            future = model.make_future_dataframe(periods=months_ahead, freq='M')
+            forecast = model.predict(future)
+            # Find the forecast for the selected month/year
+            forecast['month'] = forecast['ds'].dt.month
+            forecast['year'] = forecast['ds'].dt.year
+            row = forecast[(forecast['month'] == int(filter_month)) & (forecast['year'] == int(filter_year))]
+            if not row.empty:
+                forecasted_kg = max(row.iloc[0]['yhat'], 0)  # Clip negative values
+            else:
+                forecasted_kg = 0
+            choropleth_data.append({
+                'municipality_id': muni.municipality_id,
+                'municipality': muni.municipality,
+                'forecasted_kg': forecasted_kg
+            })
+    
     else :
         choropleth_data = {
         1: 0,   # Abucay
@@ -379,7 +349,6 @@ def forecast(request):
     context = { 
         'user_firstname': userinfo.firstname,
         'forecast_data': forecast_data,
-        'batch_id' : latest_batch,
         'forecast_combined_json': json.dumps(forecast_data['combined']) if forecast_data else '[]',
         # 'forecast_summary': forecast_summary,
         # 'forecast_summary_chart': forecast_summary_chart if filter_month and filter_year else None,
@@ -393,7 +362,7 @@ def forecast(request):
         'filter_year': filter_year,
         'available_years': available_years,
         'months': months,
-        'choropleth_data' : json.dumps(choropleth_data)
+        'choropleth_data' : choropleth_data
     }
     return render(request, 'forecasting/forecast.html', context)
 
