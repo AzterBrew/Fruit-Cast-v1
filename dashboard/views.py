@@ -153,9 +153,6 @@ fruit_seasons = {
 
 
 def forecast(request):
-    if not request.user.is_authenticated:
-        return render(request, 'home.html', {})
-
     account_id = request.session.get('account_id')
     userinfo_id = request.session.get('userinfo_id')
     if not (userinfo_id and account_id):
@@ -164,7 +161,7 @@ def forecast(request):
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
-    
+
     selected_commodity_id = request.GET.get('commodity_id')
     selected_municipality_id = request.GET.get('municipality_id')
     selected_commodity_obj = None
@@ -188,9 +185,6 @@ def forecast(request):
         selected_municipality_obj = all_municipalities.first()
         selected_municipality_id = selected_municipality_obj.municipality_id if selected_municipality_obj else None
 
-    filter_month = request.GET.get('filter_month')
-    filter_year = request.GET.get('filter_year')
-    
     forecast_data = None
     if selected_commodity_id and selected_municipality_id:
         model_path = Path('prophet_models') / f'prophet_{selected_commodity_id}_{selected_municipality_id}.joblib'
@@ -209,26 +203,32 @@ def forecast(request):
                 df['ds'] = df['ds'].dt.to_timestamp()
                 hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
                 hist_values = df['y'].tolist()
+                last_hist_date = df['ds'].max()
             else:
-                hist_labels, hist_values = [], []
+                hist_labels, hist_values, last_hist_date = [], [], None
 
             # Forecast for next 12 months
             future = model.make_future_dataframe(periods=12, freq='M')
             forecast = model.predict(future)
             # Only show forecasted months (not overlapping with history)
-            last_hist_date = df['ds'].max() if not df.empty else None
-            forecast_df = forecast[forecast['ds'] > last_hist_date] if last_hist_date is not None else forecast
+            if last_hist_date is not None:
+                forecast_df = forecast[forecast['ds'] > last_hist_date]
+            else:
+                forecast_df = forecast
             forecast_labels = forecast_df['ds'].dt.strftime('%b %Y').tolist()
             forecast_values = forecast_df['yhat'].clip(lower=0).round(2).tolist()
+            combined = list(zip(forecast_labels, forecast_values,
+                                forecast_df['ds'].dt.month.tolist(),
+                                forecast_df['ds'].dt.year.tolist()))
+            print("Forecast data only:", forecast_labels, forecast_values)
+            print("Historical data only:", hist_labels, hist_values)
 
-            # Combine for chart
             forecast_data = {
                 'hist_labels': hist_labels,
                 'hist_values': hist_values,
                 'forecast_labels': forecast_labels,
                 'forecast_values': forecast_values,
-                'labels': hist_labels + forecast_labels,
-                'forecasted_count': hist_values + forecast_values,
+                'combined':combined,
             }
 
     now_dt = datetime.now()
@@ -288,59 +288,8 @@ def forecast(request):
     #     for res in results:
     #         choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
 
-    choropleth_data = []
-    if selected_commodity_id and filter_month and filter_year:
-        for muni in MunicipalityName.objects.exclude(pk=14):
-            model_path = Path('prophet_models') / f'prophet_{selected_commodity_id}_{muni.municipality_id}.joblib'
-            if not model_path.exists():
-                continue
-            model = joblib.load(model_path)
-            # Generate enough future months to cover the requested date
-            # Find the last date in the training data
-            qs = VerifiedHarvestRecord.objects.filter(
-                commodity_id=selected_commodity_id,
-                municipality_id=muni.municipality_id
-            ).values('harvest_date').order_by('harvest_date')
-            if not qs.exists():
-                continue
-            last_hist_date = pd.to_datetime(qs.last()['harvest_date'])
-            # Calculate how many months ahead the target date is
-            target_date = pd.Timestamp(year=int(filter_year), month=int(filter_month), day=1)
-            months_ahead = (target_date.year - last_hist_date.year) * 12 + (target_date.month - last_hist_date.month)
-            if months_ahead < 1:
-                months_ahead = 1
-            # Generate future dataframe
-            future = model.make_future_dataframe(periods=months_ahead, freq='M')
-            forecast = model.predict(future)
-            # Find the forecast for the selected month/year
-            forecast['month'] = forecast['ds'].dt.month
-            forecast['year'] = forecast['ds'].dt.year
-            row = forecast[(forecast['month'] == int(filter_month)) & (forecast['year'] == int(filter_year))]
-            if not row.empty:
-                forecasted_kg = max(row.iloc[0]['yhat'], 0)  # Clip negative values
-            else:
-                forecasted_kg = 0
-            choropleth_data.append({
-                'municipality_id': muni.municipality_id,
-                'municipality': muni.municipality,
-                'forecasted_kg': forecasted_kg
-            })
-    
-    else :
-        choropleth_data = {
-        1: 0,   # Abucay
-        2: 0,    # Bagac
-        3: 0,   # Balanga City
-        4: 0,   # Dinalupihan
-        5: 0,    # Hermosa
-        6: 0,   # Limay
-        7: 0,   # Mariveles
-        8: 0,    # Morong
-        9: 0,    # Orani
-        11: 0,  # Orion
-        12: 0,   # Pilar
-        13: 0    # Samal
-    }
+    choropleth_data = get_choropleth_data(selected_commodity_id, filter_month, filter_year)
+       
         # for row in results:
         #     choropleth_data[str(row['municipality__municipality_id'])] = float(row['forecasted_kg'] or 0)
         #     print(f"Municipality ID: {row['municipality__municipality_id']}, Forecasted KG: {row['forecasted_kg']}")
@@ -852,6 +801,46 @@ def commoditytype_collect(request):
     return commodity_seasons
 
 
+# function to get the choropleth 2d map data
+def get_choropleth_data(selected_commodity_id, filter_month, filter_year):
+    """
+    Returns a dict: {municipality_id: forecasted_kg, ...}
+    """
+    choropleth_data = {}
+    if not (selected_commodity_id and filter_month and filter_year):
+        return choropleth_data
+
+    for muni in MunicipalityName.objects.exclude(pk=14):
+        model_path = Path('prophet_models') / f'prophet_{selected_commodity_id}_{muni.municipality_id}.joblib'
+        if not model_path.exists():
+            choropleth_data[muni.municipality_id] = 0
+            continue
+
+        model = joblib.load(model_path)
+        # Get last date in training data for this muni/commodity
+        qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id=selected_commodity_id,
+            municipality_id=muni.municipality_id
+        ).values('harvest_date').order_by('harvest_date')
+        if not qs.exists():
+            choropleth_data[muni.municipality_id] = 0
+            continue
+        last_hist_date = pd.to_datetime(qs.last()['harvest_date'])
+        target_date = pd.Timestamp(year=int(filter_year), month=int(filter_month), day=1)
+        months_ahead = (target_date.year - last_hist_date.year) * 12 + (target_date.month - last_hist_date.month)
+        if months_ahead < 1:
+            months_ahead = 1
+        future = model.make_future_dataframe(periods=months_ahead, freq='M')
+        forecast = model.predict(future)
+        forecast['month'] = forecast['ds'].dt.month
+        forecast['year'] = forecast['ds'].dt.year
+        row = forecast[(forecast['month'] == int(filter_month)) & (forecast['year'] == int(filter_year))]
+        if not row.empty:
+            forecasted_kg = max(row.iloc[0]['yhat'], 0)
+        else:
+            forecasted_kg = 0
+        choropleth_data[muni.municipality_id] = round(forecasted_kg, 2)
+    return choropleth_data
 
 
 # def add_commodity(request):
