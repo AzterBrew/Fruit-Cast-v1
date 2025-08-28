@@ -162,13 +162,10 @@ def forecast(request):
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
 
-    selected_commodity_id = request.GET.get('commodity_id')
-    selected_municipality_id = request.GET.get('municipality_id')
-    selected_commodity_obj = None
-    selected_municipality_obj = None
-    
-
-    if selected_commodity_id:
+    if selected_commodity_id == "1":
+        selected_commodity_obj = None
+        selected_commodity_id = None
+    elif selected_commodity_id:
         try:
             selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
         except CommodityType.DoesNotExist:
@@ -182,54 +179,91 @@ def forecast(request):
             selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
         except MunicipalityName.DoesNotExist:
             selected_municipality_obj = None
+    
+    
+    # Only show municipalities with at least 2 months of data for the selected commodity
+    municipality_qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
+    municipality_months = {}
+    for muni_id in all_municipalities.values_list('municipality_id', flat=True):
+        muni_records = municipality_qs.filter(municipality_id=muni_id)
+        months = muni_records.values_list('harvest_date', flat=True)
+        month_set = set((d.year, d.month) for d in months if d)
+        if len(month_set) >= 2:
+            municipality_months[muni_id] = True
+
+    municipalities = all_municipalities.filter(municipality_id__in=municipality_months.keys())
+
+    now_dt = datetime.now()
+    current_year = now_dt.year
+    available_years = [current_year, current_year + 1]
+    months = Month.objects.order_by('number')
+    
+    # Get in-season months for the selected commodity
+    in_season_months = set()
+    if selected_commodity_obj:
+        in_season_months = set(m.number for m in selected_commodity_obj.seasonal_months.all())
+
+    # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
+    
+    # Get historical data
+    print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id))
+
+    qs = VerifiedHarvestRecord.objects.filter(
+        commodity_id=selected_commodity_id,
+        municipality_id=selected_municipality_id
+    ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+
+    if not qs.exists():
+        forecast_data = None
     else:
-        selected_municipality_obj = all_municipalities.first()
-        selected_municipality_id = selected_municipality_obj.municipality_id if selected_municipality_obj else None
+        # Prepare historical data
+        df = pd.DataFrame(list(qs))
+        df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+        df['ds'] = pd.to_datetime(df['ds'])
+        df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+        df = df.groupby('ds', as_index=False)['y'].sum()
+        hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
+        hist_values = [float(v) for v in df['y'].tolist()]
 
-    forecast_data = None
-    if selected_commodity_id and selected_municipality_id:
-        model_path = Path('prophet_models') / f'prophet_{selected_commodity_id}_{selected_municipality_id}.joblib'
-        if model_path.exists():
-            model = joblib.load(model_path)
-            # Get historical data for chart
-            qs = VerifiedHarvestRecord.objects.filter(
-                commodity_id=selected_commodity_id,
-                municipality_id=selected_municipality_id
-            ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-            df = pd.DataFrame(list(qs))
-            if not df.empty:
-                df['ds'] = pd.to_datetime(df['harvest_date'])
-                df['y'] = df['total_weight_kg'].astype(float)
-                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                df['ds'] = df['ds'].dt.to_timestamp()
-                hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
-                hist_values = df['y'].tolist()
-                last_hist_date = df['ds'].max()
-            else:
-                hist_labels, hist_values, last_hist_date = [], [], None
+        # Prepare forecast data (from trained model)
+        model_dir = os.path.join('prophet_models')
+        model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
+        model_path = os.path.join(model_dir, model_filename)
 
-            # Forecast for next 12 months
-            future = model.make_future_dataframe(periods=12, freq='M')
-            forecast = model.predict(future)
-            # Only show forecasted months (not overlapping with history)
-            if last_hist_date is not None:
-                forecast_df = forecast[forecast['ds'] > last_hist_date]
-            else:
-                forecast_df = forecast
-            forecast_labels = forecast_df['ds'].dt.strftime('%b %Y').tolist()
-            forecast_values = forecast_df['yhat'].clip(lower=0).round(2).tolist()
-            combined = list(zip(forecast_labels, forecast_values))
+        if not os.path.exists(model_path):
+            forecast_labels = []
+            forecast_values = []
+            combined = []
+            forecast_data = None
+            print("No trained model found.")
+        else:
+            m = joblib.load(model_path)
+            last_hist_date = df['ds'].max()
+            today = datetime.now().replace(day=1)
+            start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
+            end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
+            future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
+            future = pd.DataFrame({'ds': future_months})
+            forecast = m.predict(future)
+            forecast_only = forecast[forecast['ds'] > last_hist_date]
+            forecast_labels = forecast_only['ds'].dt.strftime('%b %Y').tolist()
+            forecast_values = forecast_only['yhat'].round(2).tolist()
+            combined = list(zip(forecast_labels, forecast_values,
+                                forecast_only['ds'].dt.month.tolist(),
+                                forecast_only['ds'].dt.year.tolist()))
+
             print("Forecast data only:", forecast_labels, forecast_values)
             print("Historical data only:", hist_labels, hist_values)
 
+            # Combine for Chart.js: historical line, then forecast line
             forecast_data = {
                 'hist_labels': hist_labels,
                 'hist_values': hist_values,
                 'forecast_labels': forecast_labels,
                 'forecast_values': forecast_values,
-                'combined':combined,
+                'combined': combined,
             }
-
+            
     now_dt = datetime.now()
     current_year = now_dt.year
     available_years = [current_year, current_year + 1]
