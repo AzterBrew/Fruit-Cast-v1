@@ -207,11 +207,6 @@ def forecast(request):
     filter_month = request.GET.get('filter_month')
     filter_year = request.GET.get('filter_year')
     
-    now = datetime.now()
-    if not filter_month:
-        filter_month = str(now.month)
-    if not filter_year:
-        filter_year = str(now.year)
 
     # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
     
@@ -873,6 +868,12 @@ def get_choropleth_data(selected_commodity_id, filter_month, filter_year):
 
     # Get all municipalities except the "Overall" one (usually pk=14)
     municipalities = MunicipalityName.objects.exclude(pk=14)
+    
+    now = datetime.now()
+    if not filter_month:
+        filter_month = str(now.month)
+    if not filter_year:
+        filter_year = str(now.year)
 
     for muni in municipalities:
         model_filename = f"prophet_{selected_commodity_id}_{muni.municipality_id}.joblib"
