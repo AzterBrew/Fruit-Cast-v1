@@ -161,6 +161,11 @@ def forecast(request):
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
+    
+    selected_commodity_id = request.GET.get('commodity_id')
+    selected_municipality_id = request.GET.get('municipality_id')
+    selected_commodity_obj = None
+    selected_municipality_obj = None
 
     if selected_commodity_id == "1":
         selected_commodity_obj = None
