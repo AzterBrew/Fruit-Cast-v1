@@ -691,7 +691,9 @@ def retrain_forecast_model(request):
 @csrf_protect
 def generate_all_forecasts(request):
     if request.method == 'POST':
-        admin_info = AdminInformation.objects.filter(userinfo__auth_user=request.user).first()
+        user = request.user
+        userinfo = UserInformation.objects.get(auth_user=user)
+        admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
         if not admin_info:
             messages.error(request, "Admin information not found.")
             return redirect('administrator:admin_forecast')
