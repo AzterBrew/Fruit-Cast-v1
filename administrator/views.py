@@ -691,94 +691,82 @@ def retrain_forecast_model(request):
 @csrf_protect
 def generate_all_forecasts(request):
     if request.method == 'POST':
-        admin_info = AdminInformation.objects.filter(userinfo_id__auth_user=request.user).first()
+        admin_info = AdminInformation.objects.filter(userinfo__auth_user=request.user).first()
         if not admin_info:
             messages.error(request, "Admin information not found.")
             return redirect('administrator:admin_forecast')
-
+        
+        # 1. Create a single ForecastBatch object to track this generation run.
+        #    This is the most crucial step for the new architecture.
+        try:
+            batch = ForecastBatch.objects.create(generated_by=admin_info, notes="Bulk auto-generated forecast")
+        except Exception as e:
+            messages.error(request, f"Failed to create forecast batch: {e}")
+            return redirect('administrator:admin_forecast')
+            
         commodities = CommodityType.objects.exclude(pk=1)
         municipalities = MunicipalityName.objects.exclude(pk=14)
-        months = Month.objects.order_by('number')
-        now_dt = datetime.now()
-        current_year = now_dt.year
-        current_month = now_dt.month
+        
+        model_dir = 'prophet_models'
+        saved_forecasts_count = 0
+        
+        try:
+            # Wrap the entire process in a transaction to ensure atomicity
+            with transaction.atomic():
+                for commodity in commodities:
+                    for municipality in municipalities:
+                        model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
+                        model_path = os.path.join(model_dir, model_filename)
 
-        # For each commodity and municipality, generate a 12-month forecast
-        for commodity in commodities:
-            for commodity in commodities:
-                in_season_months = set(m.number for m in commodity.seasonal_months.all())
-                for municipality in municipalities:
-                    qs = VerifiedHarvestRecord.objects.filter(commodity_id=commodity, municipality=municipality)
-                    if not qs.exists():
-                        continue
-                    df = pd.DataFrame.from_records(qs.values('harvest_date', 'total_weight_kg'))
-                    if df.empty:
-                        continue
-                    df['ds'] = pd.to_datetime(df['harvest_date'])
-                    df['y'] = df['total_weight_kg'].astype(float)
-                    df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                    df['ds'] = df['ds'].dt.to_timestamp()
+                        if not os.path.exists(model_path):
+                            print(f"No model found for {commodity.name} in {municipality.municipality}. Skipping.")
+                            continue
+                        
+                        # Load the pre-trained model
+                        model = joblib.load(model_path)
+                        
+                        # Get historical data to determine the forecast start date
+                        last_hist_record = VerifiedHarvestRecord.objects.filter(
+                            commodity=commodity, 
+                            municipality=municipality
+                        ).order_by('harvest_date').last()
+                        
+                        if not last_hist_record:
+                            continue
 
-                    # Remove outliers
-                    if len(df) >= 4:
-                        q_low = df['y'].quantile(0.05)
-                        q_high = df['y'].quantile(0.95)
-                        df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
+                        # Generate a 12-month forecast using the loaded model
+                        future = model.make_future_dataframe(periods=12, freq='M')
+                        forecast_df = model.predict(future)
 
-                    # Smooth data
-                    df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
+                        # Filter for the forecasted period (data points after the last historical entry)
+                        forecast_only = forecast_df[forecast_df['ds'] > pd.to_datetime(last_hist_record.harvest_date)]
 
-                    # Skip if less than 2 non-NaN rows
-                    if df['y'].notna().sum() < 2:
-                        print(f"Skipping: Commodity={commodity.name}, Municipality={municipality.municipality} (not enough data)")
-                        continue
+                        # 2. Iterate and save each forecasted month's data as a ForecastResult object
+                        for _, row in forecast_only.iterrows():
+                            # You need to fetch the Month object using its number
+                            forecast_month_obj = Month.objects.get(number=row['ds'].month)
+                            
+                            forecasted_value = max(0, round(row['yhat'], 2))
 
-                    model = Prophet(
-                        yearly_seasonality=True,
-                        changepoint_prior_scale=0.05,
-                        seasonality_prior_scale=1
-                    )
-                    model.fit(df[['ds', 'y']])
-                    future = model.make_future_dataframe(periods=12, freq='M')
-                    forecast_df = model.predict(future)
-
-                    # Apply seasonal boost to in-season months
-                    boost_factor = 1.0
-                    forecast_df['month_num'] = forecast_df['ds'].dt.month
-                    forecast_df['yhat_boosted'] = forecast_df.apply(
-                        lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
-                        axis=1
-                    )
-                    forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
-
-                    notes = f"Commodity Type: {commodity.name}; Municipality: {municipality.municipality}"
-                    batch = ForecastBatch.objects.create(
-                        generated_by=admin_info,
-                        notes=notes
-                    )
-
-                    # Save forecast results for the next 12 months (use yhat_boosted, total weight in kg)
-                    for i in range(1, 13):
-                        forecast_row = forecast_df.iloc[-13 + i]  # last 12 months
-                        forecast_month = forecast_row['ds'].month
-                        forecast_year = forecast_row['ds'].year
-                        month_obj = months.get(number=forecast_month)
-                        forecasted_kg = float(forecast_row['yhat_boosted'])
-                        print(f"Submitting: Commodity={commodity.name}, Municipality={municipality.municipality}, Month={month_obj.name}, Year={forecast_year}, Forecasted KG={forecasted_kg}")
-                        ForecastResult.objects.create(
-                            batch=batch,
-                            commodity=commodity,
-                            forecast_month=month_obj,
-                            forecast_year=forecast_year,
-                            municipality=municipality,
-                            forecasted_amount_kg=forecasted_kg,
-                            forecasted_count_units=None,
-                            seasonal_boost_applied=True,
-                            source_data_last_updated=now(),
-                            notes="Bulk auto-generated"
-                        )
-        messages.success(request, "Bulk forecast generation complete!")
-        return redirect('administrator:admin_forecastviewall')
+                            ForecastResult.objects.create(
+                                batch=batch,
+                                commodity=commodity,
+                                municipality=municipality,
+                                forecasted_amount_kg=forecasted_value,
+                                forecast_month=forecast_month_obj,
+                                forecast_year=row['ds'].year,
+                                source_data_last_updated=last_hist_record.harvest_date,
+                                notes="Bulk auto-generated"
+                            )
+                            saved_forecasts_count += 1
+            
+            messages.success(request, f"Successfully generated and saved {saved_forecasts_count} new forecasts under Batch {batch.batch_id}.")
+            return redirect('administrator:admin_forecast')
+            
+        except Exception as e:
+            messages.error(request, f"Error during forecast generation: {e}")
+            # If an error occurs, the transaction will be rolled back, preventing partial data saves
+            return redirect('administrator:admin_forecast')
     else:
         return redirect('administrator:admin_forecast')
 

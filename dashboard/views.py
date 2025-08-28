@@ -345,11 +345,39 @@ def forecast(request):
 
 
     
-    choropleth_data = get_choropleth_data(selected_commodity_id, filter_month, filter_year)
-       
-        # for row in results:
-        #     choropleth_data[str(row['municipality__municipality_id'])] = float(row['forecasted_kg'] or 0)
-        #     print(f"Municipality ID: {row['municipality__municipality_id']}, Forecasted KG: {row['forecasted_kg']}")
+    try:
+        latest_batch = ForecastBatch.objects.latest('generated_at')
+    except ForecastBatch.DoesNotExist:
+        latest_batch = None
+    
+    # Initialize an empty dictionary for the map data
+    choropleth_data = {}
+
+    # Check if all required filters and a batch exist
+    if latest_batch and selected_commodity_id and filter_month and filter_year:
+        try:
+            # Query the database to get the total forecasted amount for each municipality
+            # for the selected batch, commodity, month, and year.
+            forecast_results = ForecastResult.objects.filter(
+                batch=latest_batch,
+                commodity_id=selected_commodity_id,
+                forecast_month__number=filter_month,
+                forecast_year=filter_year
+            ).values('municipality_id').annotate(
+                total_forecasted_kg=Sum('forecasted_amount_kg')
+            )
+            
+            # Populate the dictionary for your map
+            for result in forecast_results:
+                muni_id = result['municipality_id']
+                total_kg = result['total_forecasted_kg']
+                # The keys in your map's JavaScript need to be strings
+                choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
+                
+        except Exception as e:
+            # Log any errors and return an empty dictionary to prevent the view from crashing
+            print(f"Error fetching choropleth data: {e}")
+            choropleth_data = {}
 
     print("Choropleth Data:", choropleth_data)  # Debug print
     context = { 
