@@ -269,11 +269,27 @@ def forecast(request):
                 'combined': combined,
             }
             
-    now_dt = datetime.now()
-    current_year = now_dt.year
+    now = datetime.now()
+    current_year = now.year
+    current_month = now.month
+    months =  Month.objects.order_by('number')
+    if filter_year and int(filter_year) == current_year:
+        months = months.filter(number__gt=now_dt.month)
+
+    # Prepare available years for the dropdown
+    current_year = datetime.now().year
     available_years = [current_year, current_year + 1]
-    months = Month.objects.order_by('number')
-    # print(latest_batch)
+    if not available_years:
+        available_years = [timezone.now().year]
+            
+    forecast_value_for_selected_month = None
+    if forecast_data and filter_month and filter_year:
+        for label, value, month_number, year in forecast_data['combined']:
+            # label is like "July 2025"
+            month_name, year_str = label.split()
+            if int(filter_year) == int(year_str) and int(filter_month) == datetime.strptime(month_name, "%B").month:
+                forecast_value_for_selected_month = value
+                break
     
     
     # CHOROPLETH 2D MAP TEST DATA
