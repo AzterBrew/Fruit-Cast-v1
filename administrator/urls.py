@@ -25,6 +25,7 @@ urlpatterns = [
     path('accountinfo/', accinfo, name="accinfo"),
     path('accountinfo/edit', editacc, name="editacc"),
     path('admin-forecast/', views.admin_forecast, name='admin_forecast'),
+    path('retrain-forecast-model/', views.retrain_forecast_model, name='retrain_forecast_model'),
     path('save-admin-forecast/', views.save_admin_forecast, name='save_admin_forecast'),
     path('generate-all-forecasts/', views.generate_all_forecasts, name='generate_all_forecasts'),
     path('admin-forecast/batch/<int:batch_id>/download_csv/', views.forecast_csv, name='forecast_csv'),

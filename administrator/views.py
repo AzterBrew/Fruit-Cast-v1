@@ -27,6 +27,8 @@ import csv, io, joblib, json, os
 from django.core.paginator import Paginator
 from collections import OrderedDict
 from pathlib import Path
+from django.core.management import call_command
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, redirect
 
 def admin_login(request):
@@ -671,6 +673,17 @@ def admin_forecast(request):
     }
     
     return render(request, 'admin_panel/admin_forecast.html', context)
+
+
+@login_required
+@admin_or_agriculturist_required
+@staff_member_required
+def retrain_forecast_model(request):
+    if request.method == "POST":
+        call_command('train_forecastmodel')
+        messages.success(request, "Forecast models retrained successfully!")
+        return redirect('administrator:admin_forecast')
+    return HttpResponseForbidden()
 
 
 @login_required
