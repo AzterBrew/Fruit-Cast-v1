@@ -49,11 +49,11 @@ Fruit Cast | Forecast
                             </tr>
                         </thead>
                         <tbody>
-                            {% for month, forecast in forecast_data.combined %}
-                            <tr>
-                                <td>{{ month }}</td>
-                                <td>{{ forecast|floatformat:2 }}</td>
-                            </tr>
+                            {% for label, value, month_number, year in forecast_data.combined %}
+                                <tr>
+                                    <td>{{ label }}</td>
+                                    <td>{{ value }}</td>
+                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>
