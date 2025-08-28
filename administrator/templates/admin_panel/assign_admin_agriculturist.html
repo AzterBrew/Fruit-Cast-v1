@@ -16,7 +16,7 @@ Fruit Cast | {% block page_title %}{% endblock %}
             <div class="card shadow-sm rounded-4 p-4 mb-4">
         {% if user_role_id == 2 and user.is_superuser %}
         {% comment %} restricting view to non admins {% endcomment %}
-        <h2 class="text-center mb-4">Assign Account Role</h2>
+        <h2 class="text-center mb-4">Create Administrator/Agriculturist Account</h2>
 
         <form method="POST" action="{% url 'administrator:assign_account' %}">
           {% if form.errors %}
