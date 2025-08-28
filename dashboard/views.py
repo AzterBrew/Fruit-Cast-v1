@@ -200,7 +200,14 @@ def forecast(request):
 
     now_dt = datetime.now()
     current_year = now_dt.year
-    available_years = [current_year, current_year + 1]
+    available_years = list(
+    ForecastResult.objects.order_by('forecast_year')
+        .values_list('forecast_year', flat=True).distinct()
+    )
+    if not available_years:
+        available_years = [timezone.now().year]
+
+    # Always show all months
     months = Month.objects.order_by('number')
     
     
@@ -277,9 +284,11 @@ def forecast(request):
         months = months.filter(number__gt=now_dt.month)
     print(filter_month, filter_year)
     
-    # Prepare available years for the dropdown
-    current_year = datetime.now().year
-    available_years = [current_year, current_year + 1]
+    # Prepare available years for the dropdown based on ForecastResult
+    available_years = list(
+        ForecastResult.objects.order_by('forecast_year')
+        .values_list('forecast_year', flat=True).distinct()
+    )
     if not available_years:
         available_years = [timezone.now().year]
             
@@ -370,6 +379,8 @@ def forecast(request):
                 total_forecasted_kg=Sum('forecasted_amount_kg')
             )
             
+            print(forecast_results)
+            
             # Populate the dictionary for your map
             for result in forecast_results:
                 muni_id = result['municipality_id']
@@ -416,18 +427,32 @@ def forecast_bycommodity(request):
     now_dt = datetime.now()
     current_year = now_dt.year
     current_month = now_dt.month
-    available_years = [current_year, current_year + 1]
+    available_years = list(
+        ForecastResult.objects.order_by('forecast_year')
+        .values_list('forecast_year', flat=True).distinct()
+    )
+    if not available_years:
+        available_years = [timezone.now().year]
 
-    if filter_year and int(filter_year) == current_year:
-        months = months.filter(number__gt=current_month)
+    # if filter_year and int(filter_year) == current_year:
+    #     months = months.filter(number__gt=current_month)
 
+    months = Month.objects.order_by('number')
+    
     forecast_summary = None
     forecast_summary_chart = None
 
-    if filter_month and filter_year:
+    latest_batch = None
+    try:
+        latest_batch = ForecastBatch.objects.latest('generated_at')
+    except ForecastBatch.DoesNotExist:
+        latest_batch = None
+
+    if filter_month and filter_year and latest_batch:
         filter_month = int(filter_month)
         filter_year = int(filter_year)
         forecast_qs = ForecastResult.objects.filter(
+            batch=latest_batch,
             forecast_month__number=filter_month,
             forecast_year=filter_year
         )
@@ -890,70 +915,70 @@ def commoditytype_collect(request):
 
 
 # function to get the choropleth 2d map data
-def get_choropleth_data(selected_commodity_id, filter_month, filter_year):
-    """
-    Returns a dict: {municipality_id: forecasted_kg, ...}
-    """
-    model_dir = 'prophet_models'
-    data = {}
+# def get_choropleth_data(selected_commodity_id, filter_month, filter_year):
+#     """
+#     Returns a dict: {municipality_id: forecasted_kg, ...}
+#     """
+#     model_dir = 'prophet_models'
+#     data = {}
 
-    # Get all municipalities except the "Overall" one (usually pk=14)
-    municipalities = MunicipalityName.objects.exclude(pk=14)
+#     # Get all municipalities except the "Overall" one (usually pk=14)
+#     municipalities = MunicipalityName.objects.exclude(pk=14)
     
-    now = datetime.now()
-    if not filter_month:
-        filter_month = str(now.month)
-    if not filter_year:
-        filter_year = str(now.year)
+#     now = datetime.now()
+#     if not filter_month:
+#         filter_month = str(now.month)
+#     if not filter_year:
+#         filter_year = str(now.year)
 
-    for muni in municipalities:
-        model_filename = f"prophet_{selected_commodity_id}_{muni.municipality_id}.joblib"
-        model_path = os.path.join(model_dir, model_filename)
+#     for muni in municipalities:
+#         model_filename = f"prophet_{selected_commodity_id}_{muni.municipality_id}.joblib"
+#         model_path = os.path.join(model_dir, model_filename)
 
-        if not os.path.exists(model_path):
-            data[muni.municipality_id] = None  # or 0, or "No data"
-            continue
+#         if not os.path.exists(model_path):
+#             data[muni.municipality_id] = None  # or 0, or "No data"
+#             continue
 
-        # Load the trained Prophet model
-        model = joblib.load(model_path)
+#         # Load the trained Prophet model
+#         model = joblib.load(model_path)
 
-        # Get the last date in the training data for this muni/commodity
-        qs = VerifiedHarvestRecord.objects.filter(
-            commodity_id=selected_commodity_id,
-            municipality_id=muni.municipality_id
-        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+#         # Get the last date in the training data for this muni/commodity
+#         qs = VerifiedHarvestRecord.objects.filter(
+#             commodity_id=selected_commodity_id,
+#             municipality_id=muni.municipality_id
+#         ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
 
-        if not qs.exists():
-            data[muni.municipality_id] = None
-            continue
+#         if not qs.exists():
+#             data[muni.municipality_id] = None
+#             continue
 
-        df = pd.DataFrame(list(qs))
-        df['ds'] = pd.to_datetime(df['harvest_date'])
-        last_date = df['ds'].max()
+#         df = pd.DataFrame(list(qs))
+#         df['ds'] = pd.to_datetime(df['harvest_date'])
+#         last_date = df['ds'].max()
 
-        # Generate future dataframe up to the requested month/year
-        # Find how many months ahead the requested (filter_year, filter_month) is from last_date
-        months_ahead = (int(filter_year) - last_date.year) * 12 + (int(filter_month) - last_date.month)
-        if months_ahead < 1:
-            # If the requested month is in the past or current, just return None or 0
-            data[muni.municipality_id] = None
-            continue
+#         # Generate future dataframe up to the requested month/year
+#         # Find how many months ahead the requested (filter_year, filter_month) is from last_date
+#         months_ahead = (int(filter_year) - last_date.year) * 12 + (int(filter_month) - last_date.month)
+#         if months_ahead < 1:
+#             # If the requested month is in the past or current, just return None or 0
+#             data[muni.municipality_id] = None
+#             continue
 
-        future = model.make_future_dataframe(periods=months_ahead, freq='M')
-        forecast = model.predict(future)
+#         future = model.make_future_dataframe(periods=months_ahead, freq='M')
+#         forecast = model.predict(future)
 
-        # Find the forecast row for the requested month/year
-        forecast['month'] = forecast['ds'].dt.month
-        forecast['year'] = forecast['ds'].dt.year
-        row = forecast[(forecast['month'] == int(filter_month)) & (forecast['year'] == int(filter_year))]
-        if not row.empty:
-            # You can use yhat, or yhat_boosted if you apply a boost for in-season months
-            value = max(0, round(row.iloc[0]['yhat']))  # or row.iloc[0]['yhat_boosted'] if you use boosting
-            data[muni.municipality_id] = value
-        else:
-            data[muni.municipality_id] = None
+#         # Find the forecast row for the requested month/year
+#         forecast['month'] = forecast['ds'].dt.month
+#         forecast['year'] = forecast['ds'].dt.year
+#         row = forecast[(forecast['month'] == int(filter_month)) & (forecast['year'] == int(filter_year))]
+#         if not row.empty:
+#             # You can use yhat, or yhat_boosted if you apply a boost for in-season months
+#             value = max(0, round(row.iloc[0]['yhat']))  # or row.iloc[0]['yhat_boosted'] if you use boosting
+#             data[muni.municipality_id] = value
+#         else:
+#             data[muni.municipality_id] = None
 
-    return data
+#     return data
 
 
 # def add_commodity(request):
