@@ -203,15 +203,14 @@ def forecast(request):
     available_years = [current_year, current_year + 1]
     months = Month.objects.order_by('number')
     
-    # Get in-season months for the selected commodity
-    in_season_months = set()
-    if selected_commodity_obj:
-        in_season_months = set(m.number for m in selected_commodity_obj.seasonal_months.all())
+    
+    filter_month = request.GET.get('filter_month')
+    filter_year = request.GET.get('filter_year')
 
     # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
     
     # Get historical data
-    print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id))
+    print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id), ':', selected_municipality_id)
 
     qs = VerifiedHarvestRecord.objects.filter(
         commodity_id=selected_commodity_id,
@@ -343,8 +342,6 @@ def forecast(request):
     #         choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
 
 
-    filter_month = request.GET.get('filter_month')
-    filter_year = request.GET.get('filter_year')
     
     choropleth_data = get_choropleth_data(selected_commodity_id, filter_month, filter_year)
        
