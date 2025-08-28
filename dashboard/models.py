@@ -98,9 +98,9 @@ class ForecastResult(models.Model):
     municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.CASCADE)
     # barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
     forecasted_amount_kg = models.FloatField()
-    forecasted_count_units = models.FloatField(null=True, blank=True)
-    seasonal_boost_applied = models.BooleanField(default=False)
-    source_data_last_updated = models.DateTimeField()
+    # forecasted_count_units = models.FloatField(null=True, blank=True)
+    # seasonal_boost_applied = models.BooleanField(default=False)
+    source_data_last_updated = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):

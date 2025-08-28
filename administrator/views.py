@@ -729,8 +729,8 @@ def generate_all_forecasts(request):
                         
                         # Get historical data to determine the forecast start date
                         last_hist_record = VerifiedHarvestRecord.objects.filter(
-                            commodity=commodity, 
-                            municipality=municipality
+                            commodity_id=commodity.commodity_id,
+                            municipality_id=municipality.municipality_id
                         ).order_by('harvest_date').last()
                         
                         if not last_hist_record:
