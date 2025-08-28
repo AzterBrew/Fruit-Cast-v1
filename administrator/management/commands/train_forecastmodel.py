@@ -65,3 +65,5 @@ class Command(BaseCommand):
                 model_path = os.path.join(model_dir, model_filename)
                 joblib.dump(m, model_path)
                 self.stdout.write(f"Trained and saved model for {muni} - {comm}")
+                
+                # run : python manage.py train_forecastmodel
