@@ -166,6 +166,7 @@ def forecast(request):
     selected_municipality_id = request.GET.get('municipality_id')
     selected_commodity_obj = None
     selected_municipality_obj = None
+    
 
     if selected_commodity_id:
         try:
@@ -288,6 +289,10 @@ def forecast(request):
     #     for res in results:
     #         choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
 
+
+    filter_month = request.GET.get('filter_month')
+    filter_year = request.GET.get('filter_year')
+    
     choropleth_data = get_choropleth_data(selected_commodity_id, filter_month, filter_year)
        
         # for row in results:
