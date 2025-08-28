@@ -366,7 +366,7 @@ def forecast(request):
         'filter_year': filter_year,
         'available_years': available_years,
         'months': months,
-        'choropleth_data' : choropleth_data
+        'choropleth_data' : json.dumps(choropleth_data),
     }
     return render(request, 'forecasting/forecast.html', context)
 
@@ -861,41 +861,60 @@ def get_choropleth_data(selected_commodity_id, filter_month, filter_year):
     """
     Returns a dict: {municipality_id: forecasted_kg, ...}
     """
-    choropleth_data = {}
-    if not (selected_commodity_id and filter_month and filter_year):
-        return choropleth_data
+    model_dir = 'prophet_models'
+    data = {}
 
-    for muni in MunicipalityName.objects.exclude(pk=14):
-        model_path = Path('prophet_models') / f'prophet_{selected_commodity_id}_{muni.municipality_id}.joblib'
-        if not model_path.exists():
-            choropleth_data[muni.municipality_id] = 0
+    # Get all municipalities except the "Overall" one (usually pk=14)
+    municipalities = MunicipalityName.objects.exclude(pk=14)
+
+    for muni in municipalities:
+        model_filename = f"prophet_{selected_commodity_id}_{muni.municipality_id}.joblib"
+        model_path = os.path.join(model_dir, model_filename)
+
+        if not os.path.exists(model_path):
+            data[muni.municipality_id] = None  # or 0, or "No data"
             continue
 
+        # Load the trained Prophet model
         model = joblib.load(model_path)
-        # Get last date in training data for this muni/commodity
+
+        # Get the last date in the training data for this muni/commodity
         qs = VerifiedHarvestRecord.objects.filter(
             commodity_id=selected_commodity_id,
             municipality_id=muni.municipality_id
-        ).values('harvest_date').order_by('harvest_date')
+        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+
         if not qs.exists():
-            choropleth_data[muni.municipality_id] = 0
+            data[muni.municipality_id] = None
             continue
-        last_hist_date = pd.to_datetime(qs.last()['harvest_date'])
-        target_date = pd.Timestamp(year=int(filter_year), month=int(filter_month), day=1)
-        months_ahead = (target_date.year - last_hist_date.year) * 12 + (target_date.month - last_hist_date.month)
+
+        df = pd.DataFrame(list(qs))
+        df['ds'] = pd.to_datetime(df['harvest_date'])
+        last_date = df['ds'].max()
+
+        # Generate future dataframe up to the requested month/year
+        # Find how many months ahead the requested (filter_year, filter_month) is from last_date
+        months_ahead = (int(filter_year) - last_date.year) * 12 + (int(filter_month) - last_date.month)
         if months_ahead < 1:
-            months_ahead = 1
+            # If the requested month is in the past or current, just return None or 0
+            data[muni.municipality_id] = None
+            continue
+
         future = model.make_future_dataframe(periods=months_ahead, freq='M')
         forecast = model.predict(future)
+
+        # Find the forecast row for the requested month/year
         forecast['month'] = forecast['ds'].dt.month
         forecast['year'] = forecast['ds'].dt.year
         row = forecast[(forecast['month'] == int(filter_month)) & (forecast['year'] == int(filter_year))]
         if not row.empty:
-            forecasted_kg = max(row.iloc[0]['yhat'], 0)
+            # You can use yhat, or yhat_boosted if you apply a boost for in-season months
+            value = max(0, round(row.iloc[0]['yhat']))  # or row.iloc[0]['yhat_boosted'] if you use boosting
+            data[muni.municipality_id] = value
         else:
-            forecasted_kg = 0
-        choropleth_data[muni.municipality_id] = round(forecasted_kg, 2)
-    return choropleth_data
+            data[muni.municipality_id] = None
+
+    return data
 
 
 # def add_commodity(request):
