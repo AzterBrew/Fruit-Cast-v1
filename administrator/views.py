@@ -136,6 +136,9 @@ def verify_accounts(request):
     if municipality_filter:
         accounts_query = accounts_query.filter(userinfo_id__municipality_id__municipality=municipality_filter)
 
+
+    accounts_query = accounts_query.annotate(record_count=Count('recordtransaction'))
+
     # Determine sort field and order
     if sort_by == 'name':
         sort_field = 'userinfo_id__lastname'
@@ -148,8 +151,6 @@ def verify_accounts(request):
         sort_field = '-' + sort_field
 
     all_accounts = accounts_query.order_by(sort_field)
-    accounts_query = AccountsInformation.objects.filter(account_type_id=1).select_related('userinfo_id', 'account_type_id', 'acc_status_id')
-    accounts_query = accounts_query.annotate(record_count=Count('recordtransaction'))
     
     if request.method == 'POST':
         selected_ids = [sid for sid in request.POST.getlist('selected_records') if sid]
