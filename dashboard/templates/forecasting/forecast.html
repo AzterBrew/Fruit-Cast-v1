@@ -37,6 +37,9 @@ Fruit Cast | Forecast
                             </option>
                         {% endfor %}
                     </select>
+                    <input type="hidden" name="mapcommodity_id" value="{{ request.GET.mapcommodity_id }}">
+                    <input type="hidden" name="filter_month" value="{{ request.GET.filter_month }}">
+                    <input type="hidden" name="filter_year" value="{{ request.GET.filter_year }}">
                 </form>
                 {% if forecast_data %}
                     <canvas id="forecastChart" style="height: 55vh;"></canvas>
@@ -78,10 +81,10 @@ Fruit Cast | Forecast
                 {% comment %} {% if forecast_data %} {% endcomment %}
 
                 <form method="get" class="mb-4" id="choropleth-filter-form">
-                    <label for="commodity_type" class="form-label">Commodity:</label>
-                    <select class="form-select w-auto d-inline-block" name="commodity_id" id="commodity_type" onchange="this.form.submit()">
+                    <label for="mapcommodity_type" class="form-label">Commodity:</label>
+                    <select class="form-select w-auto d-inline-block" name="mapcommodity_id" id="mapcommodity_type" onchange="this.form.submit()">
                         {% for commodity in commodity_types %}
-                            <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_commodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
+                            <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_mapcommodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
                         {% endfor %}
                     </select>
                     <label for="filter_month" class="form-label ms-3">Month:</label>
@@ -96,6 +99,8 @@ Fruit Cast | Forecast
                             <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
+                    <input type="hidden" name="commodity_id" value="{{ request.GET.commodity_id }}">
+                    <input type="hidden" name="municipality_id" value="{{ request.GET.municipality_id }}">
                 </form>
 
 
@@ -428,7 +433,8 @@ document.addEventListener('DOMContentLoaded', function() {
           y: { title: { display: true, text: 'Amount (kg)' } }
         }
       },
-      plugins: [ChartDataLabels]
+      // removing yung labels
+      // plugins: [ChartDataLabels]
     });
     {% else %}
         console.log("No forecast data available for chart.");

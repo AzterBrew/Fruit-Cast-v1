@@ -163,8 +163,10 @@ def forecast(request):
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
     
     selected_commodity_id = request.GET.get('commodity_id')
+    selected_mapcommodity_id = request.GET.get('mapcommodity_id')
     selected_municipality_id = request.GET.get('municipality_id')
     selected_commodity_obj = None
+    selected_mapcommodity_obj = None
     selected_municipality_obj = None
 
     if selected_commodity_id == "1":
@@ -178,6 +180,18 @@ def forecast(request):
     else:
         selected_commodity_obj = commodity_types.first()
         selected_commodity_id = selected_commodity_obj.commodity_id if selected_commodity_obj else None
+    
+    if selected_mapcommodity_id == "1":
+        selected_mapcommodity_obj = None
+        selected_mapcommodity_id = None
+    elif selected_mapcommodity_id:
+        try:
+            selected_mapcommodity_obj = CommodityType.objects.get(pk=selected_mapcommodity_id)
+        except CommodityType.DoesNotExist:
+            selected_mapcommodity_obj = None
+    else:
+        selected_mapcommodity_obj = commodity_types.first()
+        selected_mapcommodity_id = selected_mapcommodity_obj.commodity_id if selected_mapcommodity_obj else None
 
     if selected_municipality_id:
         try:
@@ -372,7 +386,7 @@ def forecast(request):
             # for the selected batch, commodity, month, and year.
             forecast_results = ForecastResult.objects.filter(
                 batch=latest_batch,
-                commodity_id=selected_commodity_id,
+                commodity_id=selected_mapcommodity_id,
                 forecast_month__number=filter_month,
                 forecast_year=filter_year
             ).values('municipality_id').annotate(
@@ -495,16 +509,10 @@ def forecast_csv(request):
     response = HttpResponse(content_type='text/csv')
     writer = csv.writer(response)
     municipality_id = request.GET.get('municipality_id')
+    municipality_name = None
     commodity_id = request.GET.get('commodity_id')
     commodity_name = None
     batch_id = request.GET.get('batch_id')
-    
-    if commodity_id:
-        try:
-            commodity = CommodityType.objects.get(pk=commodity_id)
-            commodity_name = commodity.name
-        except CommodityType.DoesNotExist:
-            commodity_name = None
 
     forecast_combined_raw = request.GET.get('forecast_combined')
     print("forecast_combined_raw:", forecast_combined_raw)  # Debug print
@@ -525,48 +533,66 @@ def forecast_csv(request):
     print("commodity_id:", commodity_id)
     print("forecast_combined:", forecast_combined)
     
-    
     if csv_type == 'by_month':
-        if municipality_id == "14":
-            # Parse the JSON string to get the data
-            # combined = json.loads(forecast_combined)
-            writer.writerow(['Commodity Type','Municipality','Month/Year', 'Forecasted Amount (kg)'])
-            for month_year, forecast_kg in forecast_combined:
-                writer.writerow([commodity_name, "All of Bataan", month_year, f"{float(forecast_kg):.2f}"])
-            response['Content-Disposition'] = 'attachment; filename="overall_forecast.csv"'
-            return response
+        commodity_name = None
+        municipality_name = None
+        if commodity_id:
+            try:
+                commodity = CommodityType.objects.get(pk=commodity_id)
+                commodity_name = commodity.name
+            except CommodityType.DoesNotExist:
+                commodity_name = commodity_id
+                
+        if municipality_id and municipality_id != "14":
+            try:
+                municipality = MunicipalityName.objects.get(pk=municipality_id)
+                municipality_name = municipality.municipality
+            except MunicipalityName.DoesNotExist:
+                municipality_name = municipality_id
+        else:
+            municipality_name = "All of Bataan"
         
-        else : 
-            if batch_id is not None and batch_id != "None":
-                # Download for forecast.html (by month, by batch or filters)
-                batch_id = request.GET.get('batch_id')
-                commodity_id = request.GET.get('commodity_id')
-                municipality_id = request.GET.get('municipality_id')
-                # You may want to filter by batch_id if you use batches
-                results = ForecastResult.objects.filter(
-                    batch_id=batch_id,
-                    commodity_id=commodity_id
-                )
-                if municipality_id and municipality_id != "14":
-                    results = results.filter(municipality_id=municipality_id)
-                results = results.order_by('forecast_year', 'forecast_month__number')
-                response['Content-Disposition'] = 'attachment; filename="forecast_by_month.csv"'
-                writer.writerow(['Commodity', 'Municipality', 'Month & Year', 'Forecasted Amount (kg)', 'Forecasted Count (units)'])
-                for r in results:
-                    writer.writerow([
-                        r.commodity.name,
-                        r.municipality.municipality,
-                        f"{r.forecast_month.name} {r.forecast_year}",
-                        round(r.forecasted_amount_kg,2) or 0,
-                        r.forecasted_count_units
-                    ])
+        filename = f"forecast-by-month_{commodity_name.lower() or 'all'}_{municipality_name.lower() or 'all'}.csv"
+        filename = filename.replace(" ", "-")
+        
+        writer.writerow(['Commodity:', commodity_name])
+        writer.writerow(['Municipality:', municipality_name])
+        writer.writerow([])  # blank row
+        writer.writerow(['Month & Year', 'Forecasted Amount (kg)'])
+
+        # Write forecast data
+        for row in forecast_combined:
+            # row: [month_year, forecast_kg, month_num, year]
+            month_year, forecast_kg, month_num, year = row
+            writer.writerow([month_year, f"{float(forecast_kg):.2f}"])
+
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
                 
     elif csv_type == 'by_commodity':
         # Download for forecast_bycommodity.html (summary by commodity)
         filter_month = request.GET.get('filter_month')
         filter_year = request.GET.get('filter_year')
         municipality_id = request.GET.get('municipality_id')
+        
         response['Content-Disposition'] = 'attachment; filename="forecast_by_commodity.csv"'
+        
+        if municipality_id and municipality_id != "14":
+            try:
+                municipality = MunicipalityName.objects.get(pk=municipality_id)
+                municipality_name = municipality.municipality
+            except MunicipalityName.DoesNotExist:
+                municipality_name = municipality_id
+        else:
+            municipality_name = "All of Bataan"
+        
+        filename = f"forecast-by-commodity_{municipality_name.lower() or 'all'}_{filter_year}-{filter_month.lower()}.csv"
+        filename = filename.replace(" ", "-")
+            
+        writer.writerow(['Month:', filter_month])
+        writer.writerow(['Year:', filter_year])
+        writer.writerow(['Municipality:', municipality_name])
+        writer.writerow([])  # blank row
         writer.writerow(['Commodity', 'Forecasted Amount (kg)'])
         commodities = CommodityType.objects.exclude(pk=1)
         for commodity in commodities:
