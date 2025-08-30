@@ -21,8 +21,7 @@ Verified Harvest Records
                             <th>ID</th>
                             <th>Harvest Date</th>
                             <th>Commodity</th>
-                            <th>Municipality</th>
-                            <th>Barangay</th>
+                            <th>Location</th>
                             <th>Total Weight (kg)</th>
                             <th>Unit Weight (kg)</th>
                             <th>Remarks</th>
@@ -36,8 +35,7 @@ Verified Harvest Records
                             <td>{{ rec.pk }}</td>
                             <td>{{ rec.harvest_date }}</td>
                             <td>{{ rec.commodity_id.name }}</td>
-                            <td>{{ rec.municipality.municipality }}</td>
-                            <td>{{ rec.barangay.barangay }}</td>
+                            <td>{{ rec.municipality.municipality }} - {{ rec.barangay.barangay }}</td>
                             <td>{{ rec.total_weight_kg }}</td>
                             <td>{{ rec.weight_per_unit_kg }}</td>
                             <td>{{ rec.remarks|default:"-" }}</td>

@@ -62,7 +62,7 @@ Fruit Cast | {% block page_title %}{% endblock %}
                         <tbody>
                             {% for account in accounts %}
                             <tr>
-                                <td><input type="checkbox" name="selected_records" value="{{ rec.pk }}"></td>
+                                <td><input type="checkbox" name="selected_records" value="{{ account.pk }}"></td>
                                 <td>{{ account.account_register_date}}</td>
                                 <td>{{ account.userinfo_id.lastname }}, {{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename|slice:":1" }}.</td>
                                 <td>{{ account.userinfo_id.user_email }}</td>

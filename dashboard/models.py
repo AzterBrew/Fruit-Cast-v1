@@ -48,8 +48,8 @@ class VerifiedHarvestRecord(models.Model):
 class VerifiedPlantRecord(models.Model):
     plant_date = models.DateField()
     commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
-    min_expected_harvest = models.IntegerField()
-    max_expected_harvest = models.IntegerField()
+    min_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
+    max_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
     average_harvest_units = models.DecimalField(max_digits=10,decimal_places=2)    #count toh, not weight
     estimated_weight_kg = models.DecimalField(max_digits=10,decimal_places=2, null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)

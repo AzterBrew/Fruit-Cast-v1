@@ -59,7 +59,7 @@ Fruit Cast | Plant and Harvest Records
                                 <th>Plant Date</th>
                                 <th>Commodity</th>
                                 <th>Location</th>
-                                <th>Expected Harvest</th>
+                                <th>Expected Harvest (kg)</th>
                                 <th>Remarks</th>
                                 <th>Current Status</th>
                                 <th>Verified by</th>
@@ -93,7 +93,7 @@ Fruit Cast | Plant and Harvest Records
                                 <td>{{ rec.record_status.acc_status }}</td>
                                 <td>
                                     {% if rec.verified_by %}
-                                        {{ rec.verified_by.account_type }} : {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
+                                        {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
                                     {% else %}
                                         Not yet verified
                                     {% endif %}
