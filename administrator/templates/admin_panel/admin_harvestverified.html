@@ -43,7 +43,7 @@ Verified Harvest Records
                             <td>{{ rec.remarks|default:"-" }}</td>
                             <td>
                                 {% if rec.verified_by %}
-                                    {{ rec.verified_by.account_type }} : {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
+                                    {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
                                 {% else %}
                                     N/A
                                 {% endif %}

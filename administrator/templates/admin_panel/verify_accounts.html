@@ -43,57 +43,69 @@ Fruit Cast | {% block page_title %}{% endblock %}
                     </div>
                 </form>
                 {% if accounts %}
-                <table class="table table-bordered table-hover">
-                    <thead class="table-success">
-                        <tr>
-                            <th>{% sort_header "date" "Date Registered" current_sort current_order current_status %}</th>
-                            <th>{% sort_header "name" "Full Name" current_sort current_order current_status %}</th>
-                            <th>Email</th>
-                            <th>Contact Number</th>
-                            <th>Municipality</th>
-                            <th>Status</th>
-                            {% comment %} <th>Barangay</th>
-                            <th>Municipality</th>
-                            <th>Account Type</th>
-                            <th>Registered Date</th> {% endcomment %}
-                            <th>Verified By</th>
-                            <th> Action </th>
-                            <th> Update </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for account in accounts %}
-                        <tr>
-                            <td>{{ account.account_register_date}}</td>
-                            <td>{{ account.userinfo_id.lastname }}, {{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename|slice:":1" }}.</td>
-                            <td>{{ account.userinfo_id.user_email }}</td>
-                            <td>{{ account.userinfo_id.contact_number }}</td>
-                            <td>{{ account.userinfo_id.municipality_id.municipality }}</td>
-                            {% comment %} SHOULD MAKE A CONDITION WHERE THE SHOWN FARMER ACCOUNTS ARE ONLY MATCHING WITH THEIR ASSIGNED MUNICIPALITY {% endcomment %}
-
-                            <td>{{ account.acc_status_id.acc_status }}</td>
-                            <td>{{ account.account_verified_by_id.userinfo_id.lastname }}</td>
-                            <td>
-                                <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}">
-                                    {% csrf_token %}
-                                        <select name="new_status" class="form-select form-select-sm">
-                                            {% for status in status_choices %}
-                                                <option value="{{ status.pk }}" {% if account.acc_status_id.pk == status.pk %}selected{% endif %}>
-                                                    {{ status.acc_status }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                </form>
-
-                            </td>
-                            <td>
-                                                            <button type="submit" class="btn btn-primary btn-sm mt-1">Update</button>
-
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Select</th>
+                                <th>{% sort_header "date" "Date Registered" current_sort current_order current_status %}</th>
+                                <th>{% sort_header "name" "Name" current_sort current_order current_status %}</th>
+                                <th>Email</th>
+                                <th>Contact No.</th>
+                                <th>Location</th>
+                                <th>Account Status</th>
+                                <th>Total Records</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in accounts %}
+                            <tr>
+                                <td><input type="checkbox" name="selected_records" value="{{ rec.pk }}"></td>
+                                <td>{{ account.account_register_date}}</td>
+                                <td>{{ account.userinfo_id.lastname }}, {{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename|slice:":1" }}.</td>
+                                <td>{{ account.userinfo_id.user_email }}</td>
+                                <td>{{ account.userinfo_id.contact_number }}</td>
+                                <td>{{ account.userinfo_id.municipality_id.municipality }} - {{account.userinfo_id.barangay_id.barangay}}</td>
+                                {% comment %} SHOULD MAKE A CONDITION WHERE THE SHOWN FARMER ACCOUNTS ARE ONLY MATCHING WITH THEIR ASSIGNED MUNICIPALITY {% endcomment %}
+                                <td>{{ account.acc_status_id.acc_status }}</td>
+                                <td>{{account.record_count}}</td>
+                                {% comment %} <td>{{ account.account_verified_by_id.userinfo_id.lastname }}</td> {% endcomment %}
+                                {% comment %} <td>
+                                    <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}">
+                                        {% csrf_token %}
+                                            <select name="new_status" class="form-select form-select-sm">
+                                                {% for status in status_choices %}
+                                                    <option value="{{ status.pk }}" {% if account.acc_status_id.pk == status.pk %}selected{% endif %}>
+                                                        {{ status.acc_status }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                    </form>
+                                </td> {% endcomment %}
+                                <td>
+                                    {% comment %} change this to an anchor tag {% endcomment %}
+                                    <a href="" class="btn btn-primary btn-sm mt-1">View Details</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="row g-2 align-items-end mt-2">
+                        <div class="col-md-4">
+                            <label for="new_status" class="form-label mb-0">Set selected to:</label>
+                            <select name="new_status" id="new_status" class="form-select form-select-sm" required>
+                                {% for status in status_choices %}
+                                    <option value="{{ status.pk }}">{{ status.acc_status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success btn-sm">Update Selected</button>
+                        </div>
+                    </div>
+                </form>
             {% else %}
                 <p>No accounts found.</p>
             {% endif %}
@@ -104,5 +116,14 @@ Fruit Cast | {% block page_title %}{% endblock %}
         </div>
     </div>
 </div>
+<script>
+    // Select/Deselect all checkboxes
+    document.getElementById('select-all').addEventListener('change', function() {
+        var checkboxes = document.querySelectorAll('input[name="selected_accounts"]');
+        for (var cb of checkboxes) {
+            cb.checked = this.checked;
+        }
+    });
+</script>
 
 {% endblock %}

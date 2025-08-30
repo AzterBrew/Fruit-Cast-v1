@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord, VerifiedPlantRecord
 from prophet import Prophet
 import pandas as pd
-from django.db.models import Q
+from django.db.models import Q, Count
 from datetime import datetime
 from calendar import monthrange
 from shapely.geometry import shape
@@ -148,7 +148,25 @@ def verify_accounts(request):
         sort_field = '-' + sort_field
 
     all_accounts = accounts_query.order_by(sort_field)
-
+    accounts_query = AccountsInformation.objects.filter(account_type_id=1).select_related('userinfo_id', 'account_type_id', 'acc_status_id')
+    accounts_query = accounts_query.annotate(record_count=Count('recordtransaction'))
+    
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_records')
+        new_status_id = request.POST.get('new_status')
+        admin_info = AdminInformation.objects.filter(userinfo_id=request.user.userinformation).first()
+        if selected_ids and new_status_id and admin_info:
+            for acc in AccountsInformation.objects.filter(pk__in=selected_ids):
+                acc.acc_status_id_id = new_status_id
+                acc.account_verified_by = admin_info
+                if int(new_status_id) == 2:  # 2 = Verified
+                    acc.account_isverified = True
+                else:
+                    acc.account_isverified = False
+                acc.save()
+            messages.success(request, f"Updated {len(selected_ids)} account(s).")
+            return redirect('administrator:verify_accounts')
+    
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()
     municipalities = MunicipalityName.objects.all()
@@ -163,20 +181,20 @@ def verify_accounts(request):
         'current_order': order,
     })
 
-@admin_or_agriculturist_required
-def verify_account_action(request, account_id):
-    if request.method == 'POST':
-        account = get_object_or_404(AccountsInformation, pk=account_id)
-        active_status = get_object_or_404(AccountStatus, pk=3)  # 3 = Pending
-        admin_user = AdminInformation.objects.get(admin_user=request.user)  # Assuming this links to auth user
+# @admin_or_agriculturist_required
+# def verify_account_action(request, account_id):
+#     if request.method == 'POST':
+#         account = get_object_or_404(AccountsInformation, pk=account_id)
+#         active_status = get_object_or_404(AccountStatus, pk=3)  # 3 = Pending
+#         admin_user = AdminInformation.objects.get(admin_user=request.user)  # Assuming this links to auth user
 
-        account.acc_status_id = active_status
-        account.account_verified_date = now()
-        account.account_isverified = True
-        account.account_verified_by = admin_user
-        account.save()
+#         account.acc_status_id = active_status
+#         account.account_verified_date = now()
+#         account.account_isverified = True
+#         account.account_verified_by = admin_user
+#         account.save()
 
-        return redirect('verify_accounts')
+#         return redirect('verify_accounts')
 
 @admin_or_agriculturist_required
 def show_allaccounts(request):
@@ -216,6 +234,21 @@ def show_allaccounts(request):
 
     all_accounts = accounts_query.order_by(sort_field)
     
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_records')
+        new_status_id = request.POST.get('new_status')
+        admin_info = AdminInformation.objects.filter(userinfo_id=request.user.userinformation).first()
+        if selected_ids and new_status_id and admin_info:
+            for acc in AccountsInformation.objects.filter(pk__in=selected_ids):
+                acc.acc_status_id_id = new_status_id
+                acc.account_verified_by = admin_info
+                if int(new_status_id) == 2:  # 2 = Verified
+                    acc.account_isverified = True
+                else:
+                    acc.account_isverified = False
+                acc.save()
+            messages.success(request, f"Updated {len(selected_ids)} account(s).")
+            return redirect('administrator:show_allaccounts')
 
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()

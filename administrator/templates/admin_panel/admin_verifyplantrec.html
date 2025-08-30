@@ -53,15 +53,13 @@ Fruit Cast | Plant and Harvest Records
                     <table class="table table-bordered table-hover">
                         <thead class="table-success">
                             <tr>
-                                <th>[]</th>
+                                <th>Select</th>
                                 <th>ID</th>
                                 <th>Farmer</th>
                                 <th>Plant Date</th>
                                 <th>Commodity</th>
-                                <th>Municipality</th>
-                                <th>Barangay</th>
-                                <th>Minimum Expected Harvest</th>
-                                <th>Maximum Expected Harvest</th>
+                                <th>Location</th>
+                                <th>Expected Harvest</th>
                                 <th>Remarks</th>
                                 <th>Current Status</th>
                                 <th>Verified by</th>
@@ -83,34 +81,25 @@ Fruit Cast | Plant and Harvest Records
                                 </td>
                                 <td>
                                     {% if rec.transaction.farm_land %}
-                                        {{ rec.transaction.farm_land.municipality.municipality }}
+                                        {{ rec.transaction.farm_land.municipality.municipality }} - {{ rec.transaction.farm_land.barangay.barangay }}
                                     {% elif rec.transaction.manual_municipality %}
-                                        {{ rec.transaction.manual_municipality.municipality }}
+                                        {{ rec.transaction.manual_municipality.municipality }} - {{ rec.transaction.manual_barangay.barangay }}
                                     {% else %}
                                         N/A
                                     {% endif %}
                                 </td>
-                                <td>
-                                    {% if rec.transaction.farm_land %}
-                                        {{ rec.transaction.farm_land.barangay.barangay }}
-                                    {% elif rec.transaction.manual_barangay %}
-                                        {{ rec.transaction.manual_barangay.barangay }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
-                                <td>{{ rec.min_expected_harvest }}</td>
-                                <td>{{ rec.max_expected_harvest }}</td>
+                                <td>{{ rec.min_expected_harvest }} - {{ rec.max_expected_harvest }}</td>
                                 <td>{{ rec.remarks|default:"-" }}</td>
                                 <td>{{ rec.record_status.acc_status }}</td>
                                 <td>
                                     {% if rec.verified_by %}
                                         {{ rec.verified_by.account_type }} : {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
                                     {% else %}
-                                        not yet verified
+                                        Not yet verified
                                     {% endif %}
                                 </td>
                             </tr>
+                            
                             {% endfor %}
                         </tbody>
                     </table>

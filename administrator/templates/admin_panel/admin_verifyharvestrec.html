@@ -52,14 +52,14 @@ Fruit Cast | Plant and Harvest Records
                     <table class="table table-bordered table-hover">
                         <thead class="table-success">
                             <tr>
-                                <th>[]</th>
+                                <th>Select</th>
                                 <th>ID</th>
                                 <th>Harvest Date</th>
                                 <th>Commodity</th>
                                 <th>Municipality</th>
                                 <th>Barangay</th>
                                 <th>Total Weight</th>
-                                <th>Unit</th>
+                                <th>Weight per Unit</th>
                                 <th>Remarks</th>
                                 <th>Current Status</th>
                                 <th>Verified by</th>
@@ -96,8 +96,8 @@ Fruit Cast | Plant and Harvest Records
                                         N/A
                                     {% endif %}
                                 </td>
-                                <td>{{ rec.total_weight_kg }}</td>
-                                <td>{{ rec.weight_per_unit_kg }}</td>
+                                <td>{{ rec.total_weight }}</td>
+                                <td>{{ rec.weight_per_unit }}</td>
                                 <td>{{ rec.remarks|default:"-" }}</td>
                                 <td>
                                     {% if rec.record_status %}

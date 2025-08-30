@@ -311,7 +311,7 @@ def forecast(request):
         for label, value, month_number, year in forecast_data['combined']:
             # label is like "July 2025"
             month_name, year_str = label.split()
-            if int(filter_year) == int(year_str) and int(filter_month) == datetime.strptime(month_name, "%B").month:
+            if int(filter_year) == int(year_str) and int(filter_month) == datetime.strptime(month_name, "%b").month:
                 forecast_value_for_selected_month = value
                 break
     
