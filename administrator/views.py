@@ -152,7 +152,7 @@ def verify_accounts(request):
     accounts_query = accounts_query.annotate(record_count=Count('recordtransaction'))
     
     if request.method == 'POST':
-        selected_ids = request.POST.getlist('selected_records')
+        selected_ids = [sid for sid in request.POST.getlist('selected_records') if sid]
         new_status_id = request.POST.get('new_status')
         admin_info = AdminInformation.objects.filter(userinfo_id=request.user.userinformation).first()
         if selected_ids and new_status_id and admin_info:
@@ -235,7 +235,7 @@ def show_allaccounts(request):
     all_accounts = accounts_query.order_by(sort_field)
     
     if request.method == 'POST':
-        selected_ids = request.POST.getlist('selected_records')
+        selected_ids = [sid for sid in request.POST.getlist('selected_records') if sid]
         new_status_id = request.POST.get('new_status')
         admin_info = AdminInformation.objects.filter(userinfo_id=request.user.userinformation).first()
         if selected_ids and new_status_id and admin_info:
