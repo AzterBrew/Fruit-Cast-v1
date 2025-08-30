@@ -109,13 +109,18 @@ Fruit Cast | Plant and Harvest Records
                             {{ message }}
                         </div>
                     {% endif %}
-                    <div>
-                        <select name="new_status" class="form-select form-select-sm" required>
-                            {% for status in status_choices %}
-                                <option value="{{ status.pk }}">{{ status.acc_status }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-success btn-sm">Update Selected</button>
+                    <div class="row g-2 align-items-end mt-2">
+                        <div class="col-md-4">
+                            <label for="new_status" class="form-label mb-0">Set selected to:</label>
+                            <select name="new_status" id="new_status" class="form-select form-select-sm" required>
+                                {% for status in status_choices %}
+                                    <option value="{{ status.pk }}">{{ status.acc_status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success btn-sm">Update Selected</button>
+                        </div>
                     </div>
                 </form>
                 {% else %}
