@@ -63,29 +63,38 @@ def get_alternative_recommendations():
             """
             
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(prompt)
+                land_type_recommendations = {
+                    "Clay Soil": "Good for root crops.",
+                    "Sandy Loam": "Retains moisture well.",
+                    "Loam Soil": "Ideal for most fruits.",
+                    "Volcanic Soil": "Rich in minerals.",
+                    "Peat Soil": "Needs drainage improvement."
+                }
+                # testing out og
+                # model = genai.GenerativeModel('gemini-1.5-flash')
+                # response = model.generate_content(prompt)
                 
-                # Clean and parse the JSON response
-                # Sometimes the API adds markdown `json` to the output.
-                raw_text = response.text.replace("```json", "").replace("```", "").strip()
-                land_type_recommendations = json.loads(raw_text)
+                # # Clean and parse the JSON response
+                # # Sometimes the API adds markdown `json` to the output.
+                # raw_text = response.text.replace("```json", "").replace("```", "").strip()
+                # land_type_recommendations = json.loads(raw_text)
                 
-                # Check if it's a short-term or long-term recommendation
-                is_long_term = years_to_mature >= 1
+                # # Check if it's a short-term or long-term recommendation
+                # is_long_term = years_to_mature >= 1
                 
-                if is_long_term:
-                    recommendations['long_term'].append({
-                        'commodity_name': commodity.name,
-                        'estimated_maturity': f"{years_to_mature} years",
-                        'land_recommendations': land_type_recommendations
-                    })
-                else:
-                    recommendations['short_term'].append({
-                        'commodity_name': commodity.name,
-                        'estimated_maturity': f"{int(years_to_mature * 12)} months",
-                        'land_recommendations': land_type_recommendations
-                    })
+                # if is_long_term:
+                #     recommendations['long_term'].append({
+                #         'commodity_name': commodity.name,
+                #         'estimated_maturity': f"{years_to_mature} years",
+                #         'land_recommendations': land_type_recommendations
+                #     })
+                # else:
+                #     recommendations['short_term'].append({
+                #         'commodity_name': commodity.name,
+                #         'estimated_maturity': f"{int(years_to_mature * 12)} months",
+                #         'land_recommendations': land_type_recommendations
+                #     })
+                    # end of og 
 
             except Exception as e:
                 print(f"Error getting Gemini recommendation for {commodity.name}: {e}")
