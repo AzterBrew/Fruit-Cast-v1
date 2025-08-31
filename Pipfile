@@ -18,6 +18,7 @@ cmdstanpy = "*"
 pillow = "*"
 colorama = "*"
 joblib = "*"
+google-generativeai = "*"
 
 [dev-packages]
 

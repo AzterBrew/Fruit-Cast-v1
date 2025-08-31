@@ -934,9 +934,16 @@ def register_email(request):
             request.session["reg_code"] = verification_code
             request.session['verification_code_time'] = int(time.time())  # Store timestamp
             # Send email
+            subject="Fruit Cast Verification Code"
+            message= (
+                "Hello Farmer,\n"
+                "Thank you for registering with Fruit Cast! To complete your application, please verify your account using the code below:\n"
+                f"<b>Your verification code is: {verification_code}</b>\n"
+            )
+
             send_mail(
-                "Your Fruit Cast Verification Code",
-                f"Your verification code is: {verification_code}",
+                subject,
+                message,
                 "noreply@fruitcast.com",  # Change to your sender email
                 [email],
                 fail_silently=False,
