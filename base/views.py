@@ -21,7 +21,7 @@ import random
 from .models import *
 from dashboard.models import *
 from .forms import RegistrationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
-
+from .utils import get_alternative_recommendations
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
 
@@ -39,9 +39,17 @@ def home(request):
             userinfo = UserInformation.objects.get(pk=userinfo_id)
             accinfo = AccountsInformation.objects.get(account_id=account_id)
             print(accinfo.account_type_id.account_type_id)
+            
+            
+            # --- NEW CODE FOR RECOMMENDATIONS ---
+                # Call the utility function to get recommendations
+            alternative_recommendations = get_alternative_recommendations()
+                
+                
             context = {
                 'user_firstname' : userinfo.firstname,
-                'user_role_id' : accinfo.account_type_id.account_type_id
+                'user_role_id' : accinfo.account_type_id.account_type_id,
+                'alternative_recommendations' : alternative_recommendations,
             }
             return render(request, 'loggedin/home.html', context)
         

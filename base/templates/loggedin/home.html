@@ -45,6 +45,51 @@ Fruit Cast | Home
                 </div>
             </div>
         </div>
+        <div class="col-lg-10 mt-4">
+            <div class="card shadow-sm rounded-4 p-4" style="background: #fffefc;">
+                <h2 class="mb-4 text-success fw-bold text-center"><i class="bi bi-lightbulb-fill me-2"></i>Recommended Crops to Plant</h2>
+                
+                {% if alternative_recommendations.short_term or alternative_recommendations.long_term %}
+                    {% if alternative_recommendations.short_term %}
+                    <div class="mb-4">
+                        <h4 class="text-success"><i class="bi bi-hourglass-split me-2"></i>Short-Term (Matures in months)</h4>
+                        <div class="row g-3">
+                            {% for rec in alternative_recommendations.short_term %}
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title fw-bold">{{ rec.commodity_name }}</h5>
+                                        <p class="card-text">{{ rec.reason }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if alternative_recommendations.long_term %}
+                    <div>
+                        <h4 class="text-success"><i class="bi bi-tree-fill me-2"></i>Long-Term (Matures in years)</h4>
+                        <div class="row g-3">
+                            {% for rec in alternative_recommendations.long_term %}
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title fw-bold">{{ rec.commodity_name }}</h5>
+                                        <p class="card-text">{{ rec.reason }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <p class="lead text-muted text-center">No new planting recommendations at this time.</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock content %}
