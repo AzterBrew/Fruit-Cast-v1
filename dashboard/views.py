@@ -224,7 +224,6 @@ def forecast(request):
     # Always show all months
     months = Month.objects.order_by('number')
     
-    
     filter_month = request.GET.get('filter_month')
     filter_year = request.GET.get('filter_year')
     
