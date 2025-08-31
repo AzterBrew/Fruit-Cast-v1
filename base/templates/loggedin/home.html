@@ -45,51 +45,91 @@ Fruit Cast | Home
                 </div>
             </div>
         </div>
-        <div class="col-lg-10 mt-4">
-            <div class="card shadow-sm rounded-4 p-4" style="background: #fffefc;">
-                <h2 class="mb-4 text-success fw-bold text-center"><i class="bi bi-lightbulb-fill me-2"></i>Recommended Crops to Plant</h2>
-                
-                {% if alternative_recommendations.short_term or alternative_recommendations.long_term %}
-                    {% if alternative_recommendations.short_term %}
-                    <div class="mb-4">
-                        <h4 class="text-success"><i class="bi bi-hourglass-split me-2"></i>Short-Term (Matures in months)</h4>
-                        <div class="row g-3">
-                            {% for rec in alternative_recommendations.short_term %}
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title fw-bold">{{ rec.commodity_name }}</h5>
-                                        <p class="card-text">{{ rec.reason }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if alternative_recommendations.long_term %}
-                    <div>
-                        <h4 class="text-success"><i class="bi bi-tree-fill me-2"></i>Long-Term (Matures in years)</h4>
-                        <div class="row g-3">
-                            {% for rec in alternative_recommendations.long_term %}
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title fw-bold">{{ rec.commodity_name }}</h5>
-                                        <p class="card-text">{{ rec.reason }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                {% else %}
-                    <p class="lead text-muted text-center">No new planting recommendations at this time.</p>
-                {% endif %}
+        <div class="main-user py-5">
+    <div class="col-lg-10 mt-4">
+        <div class="card shadow-sm rounded-4 p-4" style="background: #fffefc;">
+            <h2 class="mb-4 text-success fw-bold text-center"><i class="bi bi-lightbulb-fill me-2"></i>Recommended Crops to Plant</h2>
+            <div id="recommendations-container" class="text-center">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Fetching recommendations. This may take a moment...</p>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const recommendationsContainer = document.getElementById('recommendations-container');
+
+    // Make an asynchronous request to the new API endpoint
+    fetch('/api/get-recommendations/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                // Display an error message if the API call failed
+                recommendationsContainer.innerHTML = '<p class="text-danger">Failed to load recommendations. Please try again later.</p>';
+                console.error('API Error:', data.error);
+            } else {
+                // Build the HTML for the recommendations
+                let html = '';
+
+                if (data.short_term && data.short_term.length > 0) {
+                    html += `
+                        <div class="mb-4">
+                            <h4 class="text-success"><i class="bi bi-hourglass-split me-2"></i>Short-Term (Matures in months)</h4>
+                            <div class="row g-3">
+                    `;
+                    data.short_term.forEach(rec => {
+                        html += `
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title fw-bold">${rec.commodity_name}</h5>
+                                        <p class="card-text">${rec.reason}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
+
+                if (data.long_term && data.long_term.length > 0) {
+                    html += `
+                        <div>
+                            <h4 class="text-success"><i class="bi bi-tree-fill me-2"></i>Long-Term (Matures in years)</h4>
+                            <div class="row g-3">
+                    `;
+                    data.long_term.forEach(rec => {
+                        html += `
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title fw-bold">${rec.commodity_name}</h5>
+                                        <p class="card-text">${rec.reason}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
+                
+                // If no recommendations are available
+                if (html === '') {
+                    html = '<p class="lead text-muted">No new planting recommendations at this time.</p>';
+                }
+                
+                recommendationsContainer.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            // Handle network or other fetch-related errors
+            recommendationsContainer.innerHTML = '<p class="text-danger">A network error occurred. Please check your connection.</p>';
+            console.error('Fetch Error:', error);
+        });
+});
+</script>
 {% endblock content %}

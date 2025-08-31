@@ -43,13 +43,11 @@ def home(request):
             
             # --- NEW CODE FOR RECOMMENDATIONS ---
                 # Call the utility function to get recommendations
-            alternative_recommendations = get_alternative_recommendations()
                 
                 
             context = {
                 'user_firstname' : userinfo.firstname,
                 'user_role_id' : accinfo.account_type_id.account_type_id,
-                'alternative_recommendations' : alternative_recommendations,
             }
             return render(request, 'loggedin/home.html', context)
         
@@ -58,7 +56,25 @@ def home(request):
             return redirect('base:home')         
     else:        
         return render(request, 'home.html', {})
-     
+
+
+def get_recommendations_api(request):
+    """
+    API endpoint to fetch fruit recommendations asynchronously.
+    """
+    if request.user.is_authenticated:
+        try:
+            # Call the utility function to get recommendations
+            # It's good practice to handle potential errors here
+            recommendations = get_alternative_recommendations()
+            return JsonResponse(recommendations)
+        except Exception as e:
+            # Return an error message if the API call fails
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    # If not authenticated, return a forbidden status
+    return JsonResponse({"error": "Unauthorized"}, status=403)
+
 
 def forecast(request):
     print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
