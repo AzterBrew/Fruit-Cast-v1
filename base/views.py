@@ -12,16 +12,15 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
-from django.core.mail import send_mail
-import json, time
+import json
 #from .forms import CustomUserCreationForm  # make sure this is imported
 from django.http import JsonResponse
 from django.db import transaction
-import random
+
 from .models import *
 from dashboard.models import *
-from .forms import RegistrationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
-from .utils import get_alternative_recommendations
+from .forms import UserContactAndAccountForm, CustomUserInformationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
+
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
 
@@ -39,15 +38,10 @@ def home(request):
             userinfo = UserInformation.objects.get(pk=userinfo_id)
             accinfo = AccountsInformation.objects.get(account_id=account_id)
             print(accinfo.account_type_id.account_type_id)
-            
-            
-            # --- NEW CODE FOR RECOMMENDATIONS ---
-                # Call the utility function to get recommendations
-                
-                
             context = {
                 'user_firstname' : userinfo.firstname,
                 'user_role_id' : accinfo.account_type_id.account_type_id,
+                'now': timezone.now(),
             }
             return render(request, 'loggedin/home.html', context)
         
@@ -56,25 +50,7 @@ def home(request):
             return redirect('base:home')         
     else:        
         return render(request, 'home.html', {})
-
-
-def get_recommendations_api(request):
-    """
-    API endpoint to fetch fruit recommendations asynchronously.
-    """
-    if request.user.is_authenticated:
-        try:
-            # Call the utility function to get recommendations
-            # It's good practice to handle potential errors here
-            recommendations = get_alternative_recommendations()
-            return JsonResponse(recommendations)
-        except Exception as e:
-            # Return an error message if the API call fails
-            return JsonResponse({"error": str(e)}, status=500)
-    
-    # If not authenticated, return a forbidden status
-    return JsonResponse({"error": "Unauthorized"}, status=403)
-
+     
 
 def forecast(request):
     print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
@@ -912,134 +888,50 @@ def login_success(request):
     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
 
     if request.user.is_authenticated:
-        try:
-            userinfo = request.user.userinformation
-            account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
-            print(f"Account Type ID: {account_info.account_type_id.pk}")  # Debugging log
-            if account_info.account_type_id.pk == 2 or account_info.account_type_id.pk == 3:
-                return redirect('administrator:admin_dashboard')
-            else:
-                return redirect('base:home') 
-        except Exception as e:
-            print("Login redirect error:", e)
-            return redirect('base:home')
-    else:
+        # return render(request, 'loggedin/home.html', {})
         return redirect('base:home')
+    else:        
+        return render('home.html')
+    # return redirect("base:home")  
+    # Redirect to home *manually*
 
 def get_barangays(request, municipality_id):
     barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('barangay_id', 'barangay')
     return JsonResponse([{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays], safe=False)
-
-def register_email(request):
-    email_error = None
-    password_error = None
-    if request.method == "GET":
-        # User is starting over, clear any previous registration session data
-        for key in ['verification_code', 'verification_email', 'verification_password', 'verification_code_time', 'email_verified']:
-            if key in request.session:
-                del request.session[key]
-    if request.method == "POST":
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        confirm_password = request.POST.get("confirm_password")
-        
-        # Check if email already exists
-        if AuthUser.objects.filter(email=email).exists():
-            return render(request, "registration/register_email.html", {"email_error": "Email already registered."})
-        # Generate verification code
-        
-        if password != confirm_password:
-            password_error = "Passwords do not match."
-        else:
-            # Save email and password to session, send verification code, etc.
-            request.session["reg_email"] = email
-            request.session["reg_password"] = password
-            verification_code = str(random.randint(100000, 999999))
-            request.session["reg_code"] = verification_code
-            request.session['verification_code_time'] = int(time.time())  # Store timestamp
-            # Send email
-            subject="Fruit Cast Verification Code"
-            message= (
-                "Hello Farmer,\n"
-                "Thank you for registering with Fruit Cast! To complete your application, please verify your account using the code below:\n"
-                f"<b>Your verification code is: {verification_code}</b>\n"
-            )
-
-            send_mail(
-                subject,
-                message,
-                "noreply@fruitcast.com",  # Change to your sender email
-                [email],
-                fail_silently=False,
-            )
-        # MODIFY THIS EMAIL PAGKA OKS NA
-        return redirect("base:register_verify_code")
-    return render(request, "registration/register_email.html", {"email_error": email_error,"password_error": password_error,})
-
-
-def register_verify_code(request):
-    if not request.session.get("reg_email") or not request.session.get("reg_code"):
-        # User hasn't started registration properly
-        return redirect("base:register_email")
-    code_error = None
-    if request.method == "POST":
-        input_code = request.POST.get("code")
-        session_code = request.session.get("reg_code")
-        if input_code == session_code:
-            request.session["reg_verified"] = True
-            return redirect("base:register_step1")
-        else:
-            code_error = "Invalid verification code. Please check your email and try again."
-        
-        code_time = request.session.get('verification_code_time')
-        if not code_time or (int(time.time()) - code_time > 600):  # 600 seconds = 10 minutes
-            code_error = "Verification code has expired. Please request a new one."
-            # Optionally clear session here
-            return render(request, 'registration/register_verify.html', {'code_error': code_error})
-    return render(request, "registration/register_verify.html", {"code_error": code_error})
-
     
 def register_step1(request):
     if request.user.is_authenticated: 
-        return redirect('base:home')
-    reg_email = request.session.get('reg_email')
-    reg_password = request.session.get('reg_password') 
-    
-    if not reg_email:
-        return redirect('base:register_email')
+        return render(request, 'loggedin/home.html', {})
 
-    if request.method == "POST":
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    # Create AuthUser
-                    auth_user = AuthUser.objects.create_user(email=reg_email, password=reg_password)
-                    # Prepare UserInformation
-                    user_info = form.save(commit=False)
-                    user_info.auth_user = auth_user
-                    user_info.user_email = reg_email  # Set email from session
-                    user_info.save()
-                    # Create AccountsInformation (Pending, Farmer by default)
-                    account_type_instance = AccountType.objects.get(account_type__iexact="Farmer")
-                    item_status_instance = AccountStatus.objects.get(acc_status__iexact="Verified")
-                    AccountsInformation.objects.create(
-                        userinfo_id=user_info,
-                        account_type_id=account_type_instance,
-                        acc_status_id=item_status_instance,
-                        account_register_date=timezone.now()
-                    )
-                    # Optionally: clear session registration vars
-                    for key in ['reg_email', 'reg_code', 'reg_password', 'reg_verified']:
-                        if key in request.session:
-                            del request.session[key]
-                    return redirect('base:login')
-            except Exception as e:
-                print("Exception during registration:", str(e))
-                form.add_error(None, "Something went wrong during registration. Please try again.")
     else:
-        form = RegistrationForm()
-    return render(request, 'registration/register_step1.html', {'form': form})
+        if request.method == "POST":
+            form = CustomUserInformationForm(request.POST)
+            if form.is_valid():
+                step1_data = form.cleaned_data.copy()
+
+                if isinstance(step1_data.get("birthdate"), date):
+                    step1_data["birthdate"] = step1_data["birthdate"].isoformat()
+
+                barangay_obj = step1_data.get("barangay_id")
+                municipality_obj = step1_data.get("municipality_id")
+
+                step1_data["barangay_id"] = barangay_obj.pk if barangay_obj else None
+                step1_data["municipality_id"] = municipality_obj.pk if municipality_obj else None
+
+                request.session['step1_data'] = step1_data
+                
+                return redirect('base:register_step2')
+        else:
+            step1_data = request.session.get('step1_data')
+            if step1_data:
+                # Convert stored PKs back into objects
+                if step1_data.get("barangay_id"):
+                    step1_data["barangay_id"] = BarangayName.objects.get(pk=step1_data["barangay_id"])
+                if step1_data.get("municipality_id"):
+                    step1_data["municipality_id"] = MunicipalityName.objects.get(pk=step1_data["municipality_id"])
+            form = CustomUserInformationForm(initial=request.session.get('step1_data'))
+
+        return render(request, 'registration/register_step1.html', {'form': form})
 
 
 def register_step2(request):
@@ -1049,12 +941,10 @@ def register_step2(request):
         return redirect('base:register_step1')  # magredirect sa unang page so users wouldnt skip p1
     
     if request.method == "POST":
-        form = RegistrationForm(request.POST)
+        form = UserContactAndAccountForm(request.POST)
         if form.is_valid():
             try:
                 with transaction.atomic():  # Everything inside here must succeed or nothing will be saved
-                    
-                    
                     auth_user = AuthUser.objects.create_user(
                         email=form.cleaned_data['user_email'],
                         password=form.cleaned_data['password1']
@@ -1098,7 +988,7 @@ def register_step2(request):
                 print("Exception:", str(e))  # <-- Add this to see the real issue
                 form.add_error(None, "Something went wrong during registration. Please try again.")
     else:
-        form = RegistrationForm()
+        form = UserContactAndAccountForm()
 
     return render(request, 'registration/register_step2.html', {'form': form})
 
@@ -1120,50 +1010,6 @@ def custom_login(request):
                 user = authenticate(request, username=contact, password=password)  
 
             if user is not None:
-                
-                if user.is_superuser:
-                    # Check if UserInformation exists for this user
-                    if not UserInformation.objects.filter(auth_user=user).exists():
-                        admin_type = AccountType.objects.get(account_type='Administrator')
-                        active_status = AccountStatus.objects.get(pk=2)  # Adjust if needed
-                        barangay = BarangayName.objects.get(pk=1)
-                        municipality = MunicipalityName.objects.get(pk=1)
-                        municipality_assigned = MunicipalityName.objects.get(pk=14)  # Adjust if needed
-
-                        userinfo = UserInformation.objects.create(
-                            auth_user=user,
-                            firstname='Admin',
-                            lastname='User',
-                            middlename='',
-                            nameextension='',
-                            sex='',
-                            contact_number='',
-                            user_email=user.email,
-                            birthdate='1950-01-01',
-                            emergency_contact_person='',
-                            emergency_contact_number='',
-                            address_details='',
-                            barangay_id=barangay,
-                            municipality_id=municipality,
-                            religion='None',
-                            civil_status='Single',
-                        )
-
-                        account_info = AccountsInformation.objects.create(
-                            userinfo_id=userinfo,
-                            account_type_id=admin_type,
-                            acc_status_id=active_status,
-                            account_isverified=True,
-                            account_register_date=timezone.now(),
-                        )
-
-                        admin_info = AdminInformation.objects.create(
-                            userinfo_id=userinfo,
-                            municipality_incharge=municipality_assigned,
-                        )
-                
-                
-                        
                 login(request, user)
                 
                 try:
@@ -1183,11 +1029,8 @@ def custom_login(request):
                 except AccountsInformation.DoesNotExist:
                     print("no acc info record for this user")
                     messages.error(request, 'Account not registered')  
-
-                if account_info.account_type_id == 2 or account_info.account_type_id == 3:
-                    return redirect('administrator:admin_dashboard')
-                else:                    
-                    return redirect('base:home')
+                    
+                return redirect('base:home')
             else:
                 messages.error(request, 'Invalid email/phone or password.')  
                 print("🔥 Login failed...")  # Debugging log
