@@ -5,7 +5,7 @@ from .models import CommodityType, ForecastResult, ForecastBatch
 import json, calendar, os, joblib
 from django.db import models
 
-client = genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def get_alternative_recommendations():
     """
@@ -93,8 +93,8 @@ def get_alternative_recommendations():
     return recommendations
 
 def samplegen():
-    response = client.models.generate_content_stream(
-        model="gemini-1.5-flash", 
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content(
         prompt="Whats the current state of the philippine government?"
         )
     
