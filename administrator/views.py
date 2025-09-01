@@ -762,7 +762,7 @@ def generate_all_forecasts(request):
                         if not last_hist_record:
                             continue
 
-                        df = pd.DataFrame(list(qs))
+                        df = pd.DataFrame(list(last_hist_record))
                         df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                         df['ds'] = pd.to_datetime(df['ds'])
                         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
