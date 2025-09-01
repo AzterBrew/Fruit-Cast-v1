@@ -964,9 +964,9 @@ def register_email(request):
             # Send email
             subject="Fruit Cast Verification Code"
             message= (
-                "Hello Farmer,\n"
-                "Thank you for registering with Fruit Cast! To complete your application, please verify your account using the code below:\n"
-                f"<b>Your verification code is: {verification_code}</b>\n"
+                "Hello Farmer,\n\n"
+                "Thank you for registering with Fruit Cast!\nTo complete your application, please verify your account using the code below:\n"
+                f"Your verification code is: {verification_code}\n"
             )
 
             send_mail(
