@@ -162,7 +162,6 @@ def forecast(request):
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
     
     selected_commodity_id = request.GET.get('commodity_id')
-    selected_mapcommodity_id = request.GET.get('mapcommodity_id')
     selected_municipality_id = request.GET.get('municipality_id')
     selected_commodity_obj = None
     selected_mapcommodity_obj = None
@@ -226,17 +225,26 @@ def forecast(request):
     
     filter_month = request.GET.get('filter_month')
     filter_year = request.GET.get('filter_year')
-    
+    selected_mapcommodity_id = request.GET.get('mapcommodity_id')
+    print("Selected commodity:", selected_commodity_id)
+    print("Filter month/year:", filter_month, filter_year)
+    print("Selected map commodity:", selected_mapcommodity_id)
 
     # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
     
     # Get historical data
     print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id), ':', selected_municipality_id)
 
-    qs = VerifiedHarvestRecord.objects.filter(
-        commodity_id=selected_commodity_id,
-        municipality_id=selected_municipality_id
-    ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+    if selected_municipality_id == "14" or selected_municipality_id == 14:
+        # "Overall" selected: do not filter by municipality, sum all
+        qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id=selected_commodity_id,
+        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+    else:
+        qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id=selected_commodity_id,
+            municipality_id=selected_municipality_id
+        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
 
     if not qs.exists():
         forecast_data = None
@@ -378,7 +386,7 @@ def forecast(request):
     choropleth_data = {}
 
     # Check if all required filters and a batch exist
-    if latest_batch and selected_commodity_id and filter_month and filter_year:
+    if latest_batch and selected_mapcommodity_id and filter_month and filter_year:
         try:
             print("latest_batch and selected_commodity_id and filter_month and filter_year")
             # Query the database to get the total forecasted amount for each municipality
@@ -391,6 +399,7 @@ def forecast(request):
             ).values('municipality_id').annotate(
                 total_forecasted_kg=Sum('forecasted_amount_kg')
             )
+            
             
             print(forecast_results)
             
@@ -430,10 +439,12 @@ def forecast(request):
 
 def forecast_bycommodity(request):
     # Get filter params
-    filter_month = request.GET.get('filter_month')
-    filter_year = request.GET.get('filter_year')
+    filter_month = request.GET.get('filter_month') or str(timezone.now().month)
+    filter_year = request.GET.get('filter_year') or str(timezone.now().year)
     selected_municipality_id = request.GET.get('municipality_id')
-
+    
+    print("Bar graph filters:", filter_month, filter_year, selected_municipality_id)
+    
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
     months = Month.objects.order_by('number')
@@ -465,14 +476,18 @@ def forecast_bycommodity(request):
     if filter_month and filter_year and latest_batch:
         filter_month = int(filter_month)
         filter_year = int(filter_year)
+        
         forecast_qs = ForecastResult.objects.filter(
             batch=latest_batch,
             forecast_month__number=filter_month,
             forecast_year=filter_year
         )
+        
         if selected_municipality_id and selected_municipality_id != "14":
             forecast_qs = forecast_qs.filter(municipality__municipality_id=selected_municipality_id)
         summary_dict = OrderedDict()
+        
+        
         for commodity in commodity_types:
             total = forecast_qs.filter(commodity=commodity).aggregate(
                 total_kg=Sum('forecasted_amount_kg')
@@ -489,6 +504,7 @@ def forecast_bycommodity(request):
             'labels': list(summary_dict.keys()),
             'values': list(summary_dict.values())
         }
+    print("Forecast results count:", forecast_qs.count())
 
     context = {
         'commodity_types': commodity_types,
