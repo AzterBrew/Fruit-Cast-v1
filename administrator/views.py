@@ -754,15 +754,15 @@ def generate_all_forecasts(request):
                     for municipality in municipalities:
                         
                         # Get historical data to determine the forecast start date
-                        last_hist_record = VerifiedHarvestRecord.objects.filter(
+                        qs = VerifiedHarvestRecord.objects.filter(
                             commodity_id=commodity,
-                            municipality_id=municipality
-                        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date').last()
-                        
-                        if not last_hist_record:
+                            municipality=municipality
+                        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+
+                        if not qs:
                             continue
 
-                        df = pd.DataFrame(list(last_hist_record))
+                        df = pd.DataFrame(list(qs))
                         df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                         df['ds'] = pd.to_datetime(df['ds'])
                         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
