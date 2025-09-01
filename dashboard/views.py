@@ -151,7 +151,6 @@ fruit_seasons = {
 
 
 
-
 def forecast(request):
     account_id = request.session.get('account_id')
     userinfo_id = request.session.get('userinfo_id')
@@ -224,6 +223,7 @@ def forecast(request):
     # Always show all months
     months = Month.objects.order_by('number')
     
+    
     filter_month = request.GET.get('filter_month')
     filter_year = request.GET.get('filter_year')
     
@@ -233,20 +233,11 @@ def forecast(request):
     # Get historical data
     print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id), ':', selected_municipality_id)
 
-    
+    qs = VerifiedHarvestRecord.objects.filter(
+        commodity_id=selected_commodity_id,
+        municipality_id=selected_municipality_id
+    ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
 
-    
-    if selected_municipality_id == "14" or selected_municipality_id == 14:
-        # "Overall" selected: do not filter by municipality, sum all
-        qs = VerifiedHarvestRecord.objects.filter(
-            commodity_id=selected_commodity_id,
-        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-    else:
-        qs = VerifiedHarvestRecord.objects.filter(
-            commodity_id=selected_commodity_id,
-            municipality_id=selected_municipality_id
-        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-        
     if not qs.exists():
         forecast_data = None
     else:
