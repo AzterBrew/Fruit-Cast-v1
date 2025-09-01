@@ -740,63 +740,73 @@ def generate_all_forecasts(request):
             messages.error(request, f"Failed to create forecast batch: {e}")
             return redirect('administrator:admin_forecast')
             
+        model_dir = os.path.join('prophet_models')
         commodities = CommodityType.objects.exclude(pk=1)
         municipalities = MunicipalityName.objects.exclude(pk=14)
-        
-        model_dir = 'prophet_models'
-        saved_forecasts_count = 0
+        months = {m.number: m for m in Month.objects.all()}
+        today = timezone.now()
+        current_month_start = today.replace(day=1)
         
         try:
             # Wrap the entire process in a transaction to ensure atomicity
             with transaction.atomic():
                 for commodity in commodities:
                     for municipality in municipalities:
-                        model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
-                        model_path = os.path.join(model_dir, model_filename)
-
-                        if not os.path.exists(model_path):
-                            print(f"No model found for {commodity.name} in {municipality.municipality}. Skipping.")
-                            continue
-                        
-                        # Load the pre-trained model
-                        model = joblib.load(model_path)
                         
                         # Get historical data to determine the forecast start date
                         last_hist_record = VerifiedHarvestRecord.objects.filter(
-                            commodity_id=commodity.commodity_id,
-                            municipality_id=municipality.municipality_id
-                        ).order_by('harvest_date').last()
+                            commodity_id=commodity,
+                            municipality_id=municipality
+                        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date').last()
                         
                         if not last_hist_record:
                             continue
 
-                        # Generate a 12-month forecast using the loaded model
-                        future = model.make_future_dataframe(periods=12, freq='M')
-                        forecast_df = model.predict(future)
+                        df = pd.DataFrame(list(qs))
+                        df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+                        df['ds'] = pd.to_datetime(df['ds'])
+                        df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+                        df = df.groupby('ds', as_index=False)['y'].sum()
 
-                        # Filter for the forecasted period (data points after the last historical entry)
-                        forecast_only = forecast_df[forecast_df['ds'] > pd.to_datetime(last_hist_record.harvest_date)]
+                        # Load trained model
+                        model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
+                        model_path = os.path.join(model_dir, model_filename)
+                        if not os.path.exists(model_path):
+                            continue
 
-                        # 2. Iterate and save each forecasted month's data as a ForecastResult object
+                        m = joblib.load(model_path)
+                        last_hist_date = df['ds'].max()
+                        # Start forecasting from the month after the last historical data
+                        start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
+                        # End at current date + 12 months
+                        end_date = (current_month_start + pd.offsets.MonthBegin(12)).replace(day=1)
+                        future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
+                        if len(future_months) == 0:
+                            continue
+                        future = pd.DataFrame({'ds': future_months})
+                        forecast = m.predict(future)
+                        forecast_only = forecast[forecast['ds'] > last_hist_date]
+
+                        # Save each forecasted month to ForecastResult
                         for _, row in forecast_only.iterrows():
-                            # You need to fetch the Month object using its number
-                            forecast_month_obj = Month.objects.get(number=row['ds'].month)
-                            
-                            forecasted_value = max(0, round(row['yhat'], 2))
-
-                            ForecastResult.objects.create(
+                            forecast_month = months.get(row['ds'].month)
+                            if not forecast_month:
+                                continue
+                            ForecastResult.objects.update_or_create(
                                 batch=batch,
                                 commodity=commodity,
                                 municipality=municipality,
-                                forecasted_amount_kg=forecasted_value,
-                                forecast_month=forecast_month_obj,
+                                forecast_month=forecast_month,
                                 forecast_year=row['ds'].year,
-                                source_data_last_updated=last_hist_record.harvest_date,
-                                notes="Bulk auto-generated"
+                                defaults={
+                                    'forecasted_amount_kg': float(row['yhat']),
+                                    'source_data_last_updated': timezone.now(),
+                                }
                             )
-                            saved_forecasts_count += 1
+                        
+                        
             
-            messages.success(request, f"Successfully generated and saved {saved_forecasts_count} new forecasts under Batch {batch.batch_id}.")
+            messages.success(request, "All forecasts generated and saved.")
             return redirect('administrator:admin_forecast')
             
         except Exception as e:

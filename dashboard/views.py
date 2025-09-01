@@ -233,11 +233,20 @@ def forecast(request):
     # Get historical data
     print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id), ':', selected_municipality_id)
 
-    qs = VerifiedHarvestRecord.objects.filter(
-        commodity_id=selected_commodity_id,
-        municipality_id=selected_municipality_id
-    ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+    
 
+    
+    if selected_municipality_id == "14" or selected_municipality_id == 14:
+        # "Overall" selected: do not filter by municipality, sum all
+        qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id=selected_commodity_id,
+        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+    else:
+        qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id=selected_commodity_id,
+            municipality_id=selected_municipality_id
+        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+        
     if not qs.exists():
         forecast_data = None
     else:
@@ -440,6 +449,7 @@ def forecast_bycommodity(request):
     now_dt = datetime.now()
     current_year = now_dt.year
     current_month = now_dt.month
+    
     available_years = list(
         ForecastResult.objects.order_by('forecast_year')
         .values_list('forecast_year', flat=True).distinct()
