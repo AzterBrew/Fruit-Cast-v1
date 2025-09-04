@@ -184,7 +184,7 @@ def forecast(request):
         selected_municipality_id = request.GET.get('municipality_id')
         selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
     else:
-        selected_municipality_id = all_municipalities.first().municipality_id if all_municipalities.exists() else None
+        selected_municipality_id = 14 if all_municipalities.exists() else None
         selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
     
     
@@ -292,6 +292,7 @@ def forecast(request):
     months =  Month.objects.order_by('number')
     if filter_year and int(filter_year) == current_year:
         months = months.filter(number__gt=now_dt.month)
+        
     print(filter_month, filter_year)
     
     # Prepare available years for the dropdown based on ForecastResult
@@ -365,7 +366,11 @@ def forecast(request):
 
     
     try:
-        latest_batch = ForecastBatch.objects.latest('generated_at')
+        # latest_batch = ForecastBatch.objects.latest('generated_at')
+        latest_result = ForecastResult.objects.filter(
+            commodity_id=selected_mapcommodity_id  # or selected_commodity_id
+        ).order_by('-batch__generated_at').first()
+        latest_batch = latest_result.batch if latest_result else None
     except ForecastBatch.DoesNotExist:
         latest_batch = None
     
@@ -389,7 +394,7 @@ def forecast(request):
                 total_forecasted_kg=Sum('forecasted_amount_kg')
             )
             
-            print(forecast_results)
+            print(f"Map commodity : ", selected_mapcommodity_obj, "\nForecast res : ",forecast_results)
             
             # Populate the dictionary for your map
             for result in forecast_results:
@@ -455,9 +460,12 @@ def forecast_bycommodity(request):
     forecast_summary = None
     forecast_summary_chart = None
 
-    latest_batch = None
     try:
-        latest_batch = ForecastBatch.objects.latest('generated_at')
+        # latest_batch = ForecastBatch.objects.latest('generated_at')
+        latest_result = ForecastResult.objects.filter(
+            commodity_id=selected_municipality_id  # or selected_commodity_id
+        ).order_by('-batch__generated_at').first()
+        latest_batch = latest_result.batch if latest_result else None
     except ForecastBatch.DoesNotExist:
         latest_batch = None
 
