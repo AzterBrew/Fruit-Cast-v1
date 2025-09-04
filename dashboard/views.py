@@ -260,7 +260,7 @@ def forecast(request):
         if not os.path.exists(model_path):
             forecast_labels = []
             forecast_values = []
-            combined = []
+            combined_data = []
             forecast_data = None
             print("No trained model found.")
         else:
@@ -321,7 +321,7 @@ def forecast(request):
                 'hist_values': hist_values,
                 'forecast_labels': forecast_labels,
                 'forecast_values': forecast_values,
-                'combined': combined,
+                'combined': combined_list,
             }
             
     now = datetime.now()
