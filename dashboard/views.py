@@ -161,41 +161,31 @@ def forecast(request):
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
     
-    selected_commodity_id = request.GET.get('commodity_id')
-    selected_municipality_id = request.GET.get('municipality_id')
-    selected_commodity_obj = None
-    selected_mapcommodity_obj = None
-    selected_municipality_obj = None
+    selected_commodity_id = None
+    selected_municipality_id = None
+    selected_mapcommodity_id = None
 
-    if selected_commodity_id == "1":
-        selected_commodity_obj = None
-        selected_commodity_id = None
-    elif selected_commodity_id:
-        try:
-            selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
-        except CommodityType.DoesNotExist:
-            selected_commodity_obj = None
-    else:
-        selected_commodity_obj = commodity_types.first()
-        selected_commodity_id = selected_commodity_obj.commodity_id if selected_commodity_obj else None
+    if request.GET.get('mapcommodity_id'):
+        selected_mapcommodity_id = request.GET.get('mapcommodity_id')
+        selected_mapcommodity_obj = CommodityType.objects.get(pk=selected_mapcommodity_id)
+    else : 
+        selected_mapcommodity_id = commodity_types.first().commodity_id if commodity_types.exists() else None
+        selected_mapcommodity_obj = CommodityType.objects.get(pk=selected_mapcommodity_id)
+        
     
-    if selected_mapcommodity_id == "1":
-        selected_mapcommodity_obj = None
-        selected_mapcommodity_id = None
-    elif selected_mapcommodity_id:
-        try:
-            selected_mapcommodity_obj = CommodityType.objects.get(pk=selected_mapcommodity_id)
-        except CommodityType.DoesNotExist:
-            selected_mapcommodity_obj = None
+    if request.GET.get('commodity_id'):
+        selected_commodity_id = request.GET.get('commodity_id')
+        selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
+    else :
+        selected_commodity_id = commodity_types.first().commodity_id if commodity_types.exists() else None
+        selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
+        
+    if request.GET.get('municipality_id'):
+        selected_municipality_id = request.GET.get('municipality_id')
+        selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
     else:
-        selected_mapcommodity_obj = commodity_types.first()
-        selected_mapcommodity_id = selected_mapcommodity_obj.commodity_id if selected_mapcommodity_obj else None
-
-    if selected_municipality_id:
-        try:
-            selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
-        except MunicipalityName.DoesNotExist:
-            selected_municipality_obj = None
+        selected_municipality_id = all_municipalities.first().municipality_id if all_municipalities.exists() else None
+        selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
     
     
     # Only show municipalities with at least 2 months of data for the selected commodity
@@ -225,7 +215,6 @@ def forecast(request):
     
     filter_month = request.GET.get('filter_month')
     filter_year = request.GET.get('filter_year')
-    selected_mapcommodity_id = request.GET.get('mapcommodity_id')
     print("Selected commodity:", selected_commodity_id)
     print("Filter month/year:", filter_month, filter_year)
     print("Selected map commodity:", selected_mapcommodity_id)
@@ -399,7 +388,6 @@ def forecast(request):
             ).values('municipality_id').annotate(
                 total_forecasted_kg=Sum('forecasted_amount_kg')
             )
-            
             
             print(forecast_results)
             
