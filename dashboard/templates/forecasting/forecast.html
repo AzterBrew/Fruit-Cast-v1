@@ -42,7 +42,7 @@ Fruit Cast | Forecast
                     <input type="hidden" name="filter_year" value="{{ request.GET.filter_year }}">
                 </form>
                 {% if forecast_data %}
-                    <canvas id="forecastChart" style="height: 55vh;"></canvas>
+                    <canvas id="forecastChart" style="height: 400px; max-height: 400px;"></canvas>
                     <h3 class="mt-5">Monthly Forecast Data</h3>
                     <table class="table table-striped">
                         <thead>
@@ -429,7 +429,8 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
+                aspectRatio: 2.5,  // Width to height ratio (makes it wider and shorter)
                 interaction: {
                     intersect: false,
                     mode: 'index'
@@ -440,7 +441,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     y: { 
                         title: { display: true, text: 'Amount (kg)' },
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            maxTicksLimit: 8  // Limit the number of Y-axis labels
+                        }
                     }
                 },
                 plugins: {
