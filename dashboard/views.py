@@ -247,6 +247,8 @@ def forecast(request):
         df['ds'] = pd.to_datetime(df['ds'])
         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
         df = df.groupby('ds', as_index=False)['y'].sum()
+        
+        
         hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
         hist_values = [float(v) for v in df['y'].tolist()]
 
@@ -263,19 +265,52 @@ def forecast(request):
             print("No trained model found.")
         else:
             m = joblib.load(model_path)
-            last_hist_date = df['ds'].max()
-            today = datetime.now().replace(day=1)
-            start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
-            end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
-            future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
+            
+            # FORECAST OLD
+            # last_hist_date = df['ds'].max()
+            # today = datetime.now().replace(day=1)
+            # start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
+            # end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
+            # future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
+            
+            
+            # Define the backtesting period
+            # Let's use the last 12 months for testing
+            last_historical_date = df['ds'].max()
+            backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+            
+            # Define the end date for your forecast (e.g., 12 months into the future)
+            future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
+
+            # Create a 'future' DataFrame that includes the backtesting period
+            # and the future forecast period.
+            future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
+            future = pd.DataFrame({'ds': future_months})
+        
             future = pd.DataFrame({'ds': future_months})
             forecast = m.predict(future)
-            forecast_only = forecast[forecast['ds'] > last_hist_date]
-            forecast_labels = forecast_only['ds'].dt.strftime('%b %Y').tolist()
-            forecast_values = forecast_only['yhat'].round(2).tolist()
-            combined = list(zip(forecast_labels, forecast_values,
-                                forecast_only['ds'].dt.month.tolist(),
-                                forecast_only['ds'].dt.year.tolist()))
+            
+            # forecast_only = forecast[forecast['ds'] > last_hist_date]
+            forecast_labels = forecast['ds'].dt.strftime('%b %Y').tolist()
+            forecast_values = forecast['yhat'].round(2).tolist()
+            
+            # combined = list(zip(forecast_labels, forecast_values,
+            #                     forecast['ds'].dt.month.tolist(),
+            #                     forecast['ds'].dt.year.tolist()))
+            
+            # Combine the data for your template
+            combined_data = forecast.copy()
+            combined_data['ds_str'] = combined_data['ds'].dt.strftime('%b %Y')
+            combined_data['ds_month'] = combined_data['ds'].dt.month
+            combined_data['ds_year'] = combined_data['ds'].dt.year
+            
+            # This is where we create the combined list for your template
+            combined_list = list(zip(
+                combined_data['ds_str'].tolist(),
+                combined_data['yhat'].round(2).tolist(),
+                combined_data['ds_month'].tolist(),
+                combined_data['ds_year'].tolist()
+            ))
 
             print("Forecast data only:", forecast_labels, forecast_values)
             print("Historical data only:", hist_labels, hist_values)
@@ -385,7 +420,7 @@ def forecast(request):
     # Check if all required filters and a batch exist
     if latest_batch and selected_mapcommodity_id and filter_month and filter_year:
         try:
-            print("latest_batch and selected_commodity_id and filter_month and filter_year")
+            print("latest_batch",latest_batch," and selected_commodity_id and filter_month and filter_year")
             # Query the database to get the total forecasted amount for each municipality
             # for the selected batch, commodity, month, and year.
             forecast_results = ForecastResult.objects.filter(
@@ -465,48 +500,34 @@ def forecast_bycommodity(request):
     forecast_summary = None
     forecast_summary_chart = None
 
-    try:
-        # latest_batch = ForecastBatch.objects.latest('generated_at')
-        latest_result = ForecastResult.objects.filter(
-            commodity_id=selected_municipality_id  # or selected_commodity_id
-        ).order_by('-batch__generated_at').first()
-        latest_batch = latest_result.batch if latest_result else None
-    except ForecastBatch.DoesNotExist:
-        latest_batch = None
+    forecast_qs = ForecastResult.objects.filter(
+        forecast_month__number=filter_month,
+        forecast_year=filter_year
+    )
+    if selected_municipality_id != "14":
+        forecast_qs = forecast_qs.filter(municipality__municipality_id=selected_municipality_id)
+    # Get the latest batch among these results
+    latest_batch = forecast_qs.order_by('-batch__generated_at').values_list('batch', flat=True).first()
+    if latest_batch:
+        forecast_qs = forecast_qs.filter(batch=latest_batch)
+    else:
+        forecast_qs = ForecastResult.objects.none()
 
-    if filter_month and filter_year and latest_batch:
-        filter_month = int(filter_month)
-        filter_year = int(filter_year)
-        
-        forecast_qs = ForecastResult.objects.filter(
-            batch=latest_batch,
-            forecast_month__number=filter_month,
-            forecast_year=filter_year
-        )
-        
-        if selected_municipality_id and selected_municipality_id != "14":
-            forecast_qs = forecast_qs.filter(municipality__municipality_id=selected_municipality_id)
-        summary_dict = OrderedDict()
-        
-        
-        for commodity in commodity_types:
-            total = forecast_qs.filter(commodity=commodity).aggregate(
-                total_kg=Sum('forecasted_amount_kg')
-            )['total_kg']
-            if total is not None:
-                total_kg = round(total, 2)
-            else:
-                total_kg = 0
-            summary_dict[commodity.name] = total_kg
-            
-        forecast_summary = [
-            {'commodity': k, 'forecasted_kg': v} for k, v in summary_dict.items()
-        ]
-        forecast_summary_chart = {
-            'labels': list(summary_dict.keys()),
-            'values': list(summary_dict.values())
-        }
-        print("Forecast results count:", forecast_qs.count())
+    summary_dict = OrderedDict()
+    for commodity in commodity_types:
+        total = forecast_qs.filter(commodity=commodity).aggregate(
+            total_kg=Sum('forecasted_amount_kg')
+        )['total_kg']
+        summary_dict[commodity.name] = round(total, 2) if total else 0
+
+    forecast_summary = [
+        {'commodity': k, 'forecasted_kg': v} for k, v in summary_dict.items()
+    ]
+    forecast_summary_chart = {
+        'labels': list(summary_dict.keys()),
+        'values': list(summary_dict.values())
+    } if forecast_summary else None
+    print("Forecast results count:", forecast_qs.count())
 
     context = {
         'commodity_types': commodity_types,
