@@ -392,6 +392,11 @@ document.addEventListener('DOMContentLoaded', function() {
 */
     // Render line chart for forecast_data if present
     {% if forecast_data %}
+        console.log("Forecast data available, creating chart...");
+        console.log("Labels:", {{ forecast_data.all_labels|safe }});
+        console.log("Historical values:", {{ forecast_data.hist_values|safe }});
+        console.log("Forecast values:", {{ forecast_data.forecast_values|safe }});
+        
         var forecastChart = new Chart(document.getElementById('forecastChart'), {
             type: 'line',
             data: {
@@ -450,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+        console.log("Chart created successfully!");
     {% else %}
         console.log("No forecast data available for chart.");
         // You can also show a message in the chart area

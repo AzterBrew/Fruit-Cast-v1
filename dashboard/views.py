@@ -284,8 +284,8 @@ def forecast(request):
             
             # Build aligned arrays for Chart.js
             all_labels = [d.strftime('%b %Y') for d in all_dates]
-            hist_values = [float(hist_dict.get(d, None)) if d in hist_dict else None for d in all_dates]
-            forecast_values = [float(forecast_dict.get(d, None)) if d in forecast_dict else None for d in all_dates]
+            hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
+            forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
             
             # Combined data for CSV/table (only future forecasts)
             future_forecast = forecast[forecast['ds'] > last_historical_date]
@@ -301,9 +301,9 @@ def forecast(request):
             print("Overlapping timeline created with", len(all_labels), "labels")
 
             forecast_data = {
-                'all_labels': all_labels,
-                'hist_values': hist_values,
-                'forecast_values': forecast_values,
+                'all_labels': json.dumps(all_labels),
+                'hist_values': json.dumps(hist_values),
+                'forecast_values': json.dumps(forecast_values),
                 'combined': combined_list,
             }
             
