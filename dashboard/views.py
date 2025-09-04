@@ -168,6 +168,7 @@ def forecast(request):
     if request.GET.get('mapcommodity_id'):
         selected_mapcommodity_id = request.GET.get('mapcommodity_id')
         selected_mapcommodity_obj = CommodityType.objects.get(pk=selected_mapcommodity_id)
+        
     else : 
         selected_mapcommodity_id = commodity_types.first().commodity_id if commodity_types.exists() else None
         selected_mapcommodity_obj = CommodityType.objects.get(pk=selected_mapcommodity_id)
@@ -421,6 +422,8 @@ def forecast(request):
         'selected_commodity_id': selected_commodity_id,
         'selected_municipality_obj': selected_municipality_obj,
         'selected_municipality': selected_municipality_id,
+        'selected_mapcommodity_obj': selected_mapcommodity_obj,
+        'selected_mapcommodity_id': selected_mapcommodity_id,
         'filter_month': filter_month,
         'filter_year': filter_year,
         'available_years': available_years,
@@ -493,6 +496,7 @@ def forecast_bycommodity(request):
             else:
                 total_kg = 0
             summary_dict[commodity.name] = total_kg
+            
         forecast_summary = [
             {'commodity': k, 'forecasted_kg': v} for k, v in summary_dict.items()
         ]
@@ -500,7 +504,7 @@ def forecast_bycommodity(request):
             'labels': list(summary_dict.keys()),
             'values': list(summary_dict.values())
         }
-    print("Forecast results count:", forecast_qs.count())
+        print("Forecast results count:", forecast_qs.count())
 
     context = {
         'commodity_types': commodity_types,
