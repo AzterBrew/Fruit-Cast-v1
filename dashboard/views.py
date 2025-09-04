@@ -247,83 +247,59 @@ def forecast(request):
         df['ds'] = pd.to_datetime(df['ds'])
         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
         df = df.groupby('ds', as_index=False)['y'].sum()
-        
-        
-        hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
-        hist_values = [float(v) for v in df['y'].tolist()]
 
         # Prepare forecast data (from trained model)
         model_dir = os.path.join('prophet_models')
         if selected_municipality_id == "14" or selected_municipality_id == 14:
-        # For "Overall", use the specially trained aggregated model
             model_filename = f"prophet_{selected_commodity_id}_14.joblib"
         else:
             model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
         model_path = os.path.join(model_dir, model_filename)
 
         if not os.path.exists(model_path):
-            forecast_labels = []
-            forecast_values = []
-            combined = []
             forecast_data = None
             print("No trained model found.")
         else:
             m = joblib.load(model_path)
             
-            # FORECAST OLD
-            # last_hist_date = df['ds'].max()
-            # today = datetime.now().replace(day=1)
-            # start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
-            # end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
-            # future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
-            
-            
-            # Define the backtesting period
-            # Let's use the last 12 months for testing
+            # Define forecast period (e.g., 12 months into future)
             last_historical_date = df['ds'].max()
-            backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
-            
-            # Define the end date for your forecast (e.g., 12 months into the future)
             future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
-
-            # Create a 'future' DataFrame that includes the backtesting period
-            # and the future forecast period.
-            future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
-            future = pd.DataFrame({'ds': future_months})
-        
+            
+            # Create future dataframe starting from first historical date to 12 months in future
+            future_start_date = df['ds'].min()
+            future_months = pd.date_range(start=future_start_date, end=future_end_date, freq='MS')
             future = pd.DataFrame({'ds': future_months})
             forecast = m.predict(future)
             
-            # forecast_only = forecast[forecast['ds'] > last_hist_date]
-            forecast_labels = forecast['ds'].dt.strftime('%b %Y').tolist()
-            forecast_values = forecast['yhat'].round(2).tolist()
+            # Create a comprehensive timeline that includes both historical and forecast periods
+            all_dates = pd.date_range(start=df['ds'].min(), end=future_end_date, freq='MS')
             
-            # combined = list(zip(forecast_labels, forecast_values,
-            #                     forecast['ds'].dt.month.tolist(),
-            #                     forecast['ds'].dt.year.tolist()))
+            # Create dictionaries for easy lookup
+            hist_dict = dict(zip(df['ds'], df['y']))
+            forecast_dict = dict(zip(forecast['ds'], forecast['yhat']))
             
-            # Combine the data for your template
-            combined_data = forecast.copy()
-            combined_data['ds_str'] = combined_data['ds'].dt.strftime('%b %Y')
-            combined_data['ds_month'] = combined_data['ds'].dt.month
-            combined_data['ds_year'] = combined_data['ds'].dt.year
+            # Build aligned arrays for Chart.js
+            all_labels = [d.strftime('%b %Y') for d in all_dates]
+            hist_values = [float(hist_dict.get(d, None)) if d in hist_dict else None for d in all_dates]
+            forecast_values = [float(forecast_dict.get(d, None)) if d in forecast_dict else None for d in all_dates]
             
-            # This is where we create the combined list for your template
+            # Combined data for CSV/table (only future forecasts)
+            future_forecast = forecast[forecast['ds'] > last_historical_date]
             combined_list = list(zip(
-                combined_data['ds_str'].tolist(),
-                combined_data['yhat'].round(2).tolist(),
-                combined_data['ds_month'].tolist(),
-                combined_data['ds_year'].tolist()
+                future_forecast['ds'].dt.strftime('%b %Y').tolist(),
+                future_forecast['yhat'].round(2).tolist(),
+                future_forecast['ds'].dt.month.tolist(),
+                future_forecast['ds'].dt.year.tolist()
             ))
 
-            print("Forecast data only:", forecast_labels, forecast_values)
-            print("Historical data only:", hist_labels, hist_values)
+            print("Historical data points:", sum(1 for v in hist_values if v is not None))
+            print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
+            print("Overlapping timeline created with", len(all_labels), "labels")
 
-            # Combine for Chart.js: historical line, then forecast line
             forecast_data = {
-                'hist_labels': hist_labels,
+                'all_labels': all_labels,
                 'hist_values': hist_values,
-                'forecast_labels': forecast_labels,
                 'forecast_values': forecast_values,
                 'combined': combined_list,
             }

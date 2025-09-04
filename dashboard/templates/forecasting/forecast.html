@@ -395,46 +395,42 @@ document.addEventListener('DOMContentLoaded', function() {
         var forecastChart = new Chart(document.getElementById('forecastChart'), {
         type: 'line',
         data: {
-            labels: {{ forecast_data.hist_labels|safe }}.concat({{ forecast_data.forecast_labels|safe }}),
+            labels: {{ forecast_data.all_labels|safe }},
             datasets: [
             {
                 label: 'Historical Data (kg)',
                 data: {{ forecast_data.hist_values|safe }},
                 borderColor: '#14763d',
+                backgroundColor: 'rgba(20, 118, 61, 0.1)',
                 fill: false,
-                tension: 0.1
+                tension: 0.1,
+                pointRadius: 4,
+                pointHoverRadius: 6
             },
             {
                 label: 'Forecasted Data (kg)',
-                data: Array({{ forecast_data.hist_values|length }}).fill(null).concat({{ forecast_data.forecast_values|safe }}),
+                data: {{ forecast_data.forecast_values|safe }},
                 borderColor: '#40ca7aff',
+                backgroundColor: 'rgba(64, 202, 122, 0.1)',
                 fill: false,
-                tension: 0.1
+                tension: 0.1,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                borderDash: [5, 5]  // Dashed line for forecast
             }
             ]
         },
-      options: {
+    options: {
         responsive: true,
-        /** 
-        plugins: {
-            datalabels: {
-                align: 'top',
-                anchor: 'end',
-                color: '#14763d',
-                font: { weight: 'bold' },
-                formatter: function(value) {
-                return value;
-                }
-            }
+        interaction: {
+            intersect: false,
+            mode: 'index'
         },
-        **/
         scales: {
-          x: { title: { display: true, text: 'Month' } },
-          y: { title: { display: true, text: 'Amount (kg)' } }
+        x: { title: { display: true, text: 'Month' } },
+        y: { title: { display: true, text: 'Amount (kg)' } }
         }
-      },
-      // removing yung labels
-      // plugins: [ChartDataLabels]
+    }
     });
     {% else %}
         console.log("No forecast data available for chart.");
