@@ -254,13 +254,17 @@ def forecast(request):
 
         # Prepare forecast data (from trained model)
         model_dir = os.path.join('prophet_models')
-        model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
+        if selected_municipality_id == "14" or selected_municipality_id == 14:
+        # For "Overall", use the specially trained aggregated model
+            model_filename = f"prophet_{selected_commodity_id}_14.joblib"
+        else:
+            model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
         model_path = os.path.join(model_dir, model_filename)
 
         if not os.path.exists(model_path):
             forecast_labels = []
             forecast_values = []
-            combined_data = []
+            combined = []
             forecast_data = None
             print("No trained model found.")
         else:
