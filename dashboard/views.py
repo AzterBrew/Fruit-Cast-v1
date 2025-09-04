@@ -230,12 +230,14 @@ def forecast(request):
         qs = VerifiedHarvestRecord.objects.filter(
             commodity_id=selected_commodity_id,
         ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+        print("Overall selected, not filtering by municipality.", qs)
     else:
         qs = VerifiedHarvestRecord.objects.filter(
             commodity_id=selected_commodity_id,
             municipality_id=selected_municipality_id
         ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-
+        print("Filtered by municipality:", selected_municipality_id, qs)
+        
     if not qs.exists():
         forecast_data = None
     else:
