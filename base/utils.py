@@ -1,5 +1,6 @@
+
 import google.generativeai as genai
-from datetime import date, timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 from .models import CommodityType, ForecastResult, ForecastBatch
 import json, calendar, os, joblib
@@ -7,25 +8,18 @@ from django.db import models
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-import google.generativeai as genai
-from datetime import timedelta
-from django.utils import timezone
-from .models import CommodityType, ForecastResult, ForecastBatch
-import json, calendar, os, joblib
-from django.db import models
-
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-def get_alternative_recommendations():
+def get_alternative_recommendations(selected_month=None, selected_year=None):
     """
     Generates alternative fruit recommendations based on future low-supply trends.
     Combines multiple prompts into a single API call for efficiency.
     """
     low_supply_threshold = 100000  # in kg
-    today = timezone.now()
+    if selected_month and selected_year:
+        base_date = datetime(int(selected_year), int(selected_month), 1)
+    else:
+        base_date = timezone.now()
+
     all_commodities = CommodityType.objects.exclude(pk=1)
-    
-    # List to store commodities with low supply
     low_supply_commodities = []
 
     try:
@@ -36,8 +30,8 @@ def get_alternative_recommendations():
     # Step 1: Collect all low-supply commodities first
     for commodity in all_commodities:
         years_to_mature = commodity.years_to_mature if commodity.years_to_mature is not None else 1
-        future_date = today + timedelta(days=float(years_to_mature) * 365.25)
-        
+        future_date = base_date + timedelta(days=float(years_to_mature) * 365.25)
+
         predicted_month_num = future_date.month
         predicted_year = future_date.year
         

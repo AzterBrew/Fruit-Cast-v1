@@ -40,15 +40,22 @@ def home(request):
             accinfo = AccountsInformation.objects.get(account_id=account_id)
             print(accinfo.account_type_id.account_type_id)
             
-            
+            now = timezone.now()
+            current_year = now.year
+
+            # Define the year range for the dropdown
+            year_range = range(current_year - 1, current_year + 3) # Example: past year to next two years
+
             # --- NEW CODE FOR RECOMMENDATIONS ---
                 # Call the utility function to get recommendations
                 
                 
             context = {
-                'user_firstname' : userinfo.firstname,
-                'user_role_id' : accinfo.account_type_id.account_type_id,
-                'now' : timezone.now(),
+                'user_firstname': userinfo.firstname,
+                'user_role_id': accinfo.account_type_id.account_type_id,
+                'now': now,
+                'months': Month.objects.all(),
+                'years': year_range,
             }
             return render(request, 'loggedin/home.html', context)
         
@@ -64,16 +71,17 @@ def get_recommendations_api(request):
     API endpoint to fetch fruit recommendations asynchronously.
     """
     if request.user.is_authenticated:
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+        if not (month and year):
+          return JsonResponse({"error": "Month and year parameters are required."}, status=400)
+
         try:
-            # Call the utility function to get recommendations
-            # It's good practice to handle potential errors here
-            recommendations = get_alternative_recommendations()
+            recommendations = get_alternative_recommendations(month=int(month), year=int(year))
             return JsonResponse(recommendations)
         except Exception as e:
-            # Return an error message if the API call fails
             return JsonResponse({"error": str(e)}, status=500)
     
-    # If not authenticated, return a forbidden status
     return JsonResponse({"error": "Unauthorized"}, status=403)
 
 

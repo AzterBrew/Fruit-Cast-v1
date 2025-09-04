@@ -48,8 +48,21 @@ Fruit Cast | Home
                     <div class="col-lg-10 mt-4">
                         <h2 class="mb-4 text-success fw-bold text-center">
                             <i class="bi bi-lightbulb-fill me-2"></i>
-                            Recommended Fruits to Plant this {{ now|date:"F Y" }}
+                            Recommended Fruits to Plant on {{ now|date:"F Y" }}
                         </h2>
+                        <form id="recommendations-form" class="d-flex">
+                            <select id="month-select" class="form-select me-2">
+                            {% for month in months %}
+                                <option value="{{ month.number }}" {% if month.number == now.month %}selected{% endif %}>{{ month.name }}</option>
+                            {% endfor %}
+                            </select>
+                            <select id="year-select" class="form-select me-2">
+                            {% for year in years %}
+                                <option value="{{ year }}" {% if year == now.year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-success">Apply Filter</button>
+                        </form>
                         <div id="recommendations-container" class="text-center mx-auto" style="max-width: 900px;">
                             <div class="spinner-border text-success" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -64,75 +77,101 @@ Fruit Cast | Home
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const recommendationsForm = document.getElementById('recommendations-form');
     const recommendationsContainer = document.getElementById('recommendations-container');
+    const monthSelect = document.getElementById('month-select');
+    const yearSelect = document.getElementById('year-select');
 
-    // Make an asynchronous request to the new API endpoint
-    fetch('/api/get-recommendations/')
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                // Display an error message if the API call failed
-                recommendationsContainer.innerHTML = '<p class="text-danger">Failed to load recommendations. Please try again later.</p>';
-                console.error('API Error:', data.error);
-            } else {
-                // Build the HTML for the recommendations
-                let html = '';
+    function fetchRecommendations() {
+        const selectedMonth = monthSelect.value;
+        const selectedYear = yearSelect.value;
+        const url = `/api/get-recommendations/?month=${selectedMonth}&year=${selectedYear}`;
 
-                if (data.short_term && data.short_term.length > 0) {
-                    html += `
-                        <div class="mb-4">
-                            <h4 class="text-success"><i class="bi bi-hourglass-split me-2"></i>Short-Term (Matures in months)</h4>
-                            <div class="row g-3">
-                    `;
-                    data.short_term.forEach(rec => {
+        recommendationsContainer.innerHTML = `
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Fetching recommendations. This may take a moment...</p>
+        `;
+
+        // Make an asynchronous request to the new API endpoint
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    // Display an error message if the API call failed
+                    recommendationsContainer.innerHTML = '<p class="text-danger">Failed to load recommendations. Please try again later.</p>';
+                    console.error('API Error:', data.error);
+                } else {
+                    // Build the HTML for the recommendations
+                    let html = '';
+
+                    if (data.short_term && data.short_term.length > 0) {
                         html += `
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title fw-bold">${rec.commodity_name}</h5>
-                                        <p class="card-text">${rec.reason}</p>
+                            <div class="mb-4">
+                                <h4 class="text-success"><i class="bi bi-hourglass-split me-2"></i>Short-Term (Matures in months)</h4>
+                                <div class="row g-3">
+                        `;
+                        data.short_term.forEach(rec => {
+                            html += `
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title fw-bold">${rec.commodity_name}</h5>
+                                            <p class="card-text">${rec.reason}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
-                    });
-                    html += `</div></div>`;
-                }
+                            `;
+                        });
+                        html += `</div></div>`;
+                    }
 
-                if (data.long_term && data.long_term.length > 0) {
-                    html += `
-                        <div>
-                            <h4 class="text-success"><i class="bi bi-tree-fill me-2"></i>Long-Term (Matures in years)</h4>
-                            <div class="row g-3">
-                    `;
-                    data.long_term.forEach(rec => {
+                    if (data.long_term && data.long_term.length > 0) {
                         html += `
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title fw-bold">${rec.commodity_name}</h5>
-                                        <p class="card-text">${rec.reason}</p>
+                            <div>
+                                <h4 class="text-success"><i class="bi bi-tree-fill me-2"></i>Long-Term (Matures in years)</h4>
+                                <div class="row g-3">
+                        `;
+                        data.long_term.forEach(rec => {
+                            html += `
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title fw-bold">${rec.commodity_name}</h5>
+                                            <p class="card-text">${rec.reason}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
-                    });
-                    html += `</div></div>`;
+                            `;
+                        });
+                        html += `</div></div>`;
+                    }
+                    
+                    // If no recommendations are available
+                    if (html === '') {
+                        html = '<p class="lead text-muted">No new planting recommendations at this time.</p>';
+                    }
+                    
+                    recommendationsContainer.innerHTML = html;
                 }
-                
-                // If no recommendations are available
-                if (html === '') {
-                    html = '<p class="lead text-muted">No new planting recommendations at this time.</p>';
-                }
-                
-                recommendationsContainer.innerHTML = html;
-            }
-        })
-        .catch(error => {
-            // Handle network or other fetch-related errors
-            recommendationsContainer.innerHTML = '<p class="text-danger">A network error occurred. Please check your connection.</p>';
-            console.error('Fetch Error:', error);
+            })
+            .catch(error => {
+                // Handle network or other fetch-related errors
+                recommendationsContainer.innerHTML = '<p class="text-danger">A network error occurred. Please check your connection.</p>';
+                console.error('Fetch Error:', error);
+            });
+            
+        // Initial fetch on page load
+        fetchRecommendations();
+
+        // Event listener for the form submission
+        recommendationsForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+            fetchRecommendations();
         });
+    }    
 });
+
 </script>
 {% endblock content %}
