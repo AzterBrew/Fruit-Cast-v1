@@ -264,11 +264,14 @@ def forecast(request):
             
             # Define forecast period (e.g., 12 months into future)
             last_historical_date = df['ds'].max()
-            future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
+            backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
             
-            # Create future dataframe starting from first historical date to 12 months in future
-            future_start_date = df['ds'].min()
-            future_months = pd.date_range(start=future_start_date, end=future_end_date, freq='MS')
+            # Define the end date for your forecast (e.g., 12 months into the future)
+            future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
+
+            # Create a 'future' DataFrame that includes the backtesting period
+            # and the future forecast period.
+            future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
             future = pd.DataFrame({'ds': future_months})
             forecast = m.predict(future)
             

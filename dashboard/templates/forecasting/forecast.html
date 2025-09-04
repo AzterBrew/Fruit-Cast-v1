@@ -393,48 +393,67 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render line chart for forecast_data if present
     {% if forecast_data %}
         var forecastChart = new Chart(document.getElementById('forecastChart'), {
-        type: 'line',
-        data: {
-            labels: {{ forecast_data.all_labels|safe }},
-            datasets: [
-            {
-                label: 'Historical Data (kg)',
-                data: {{ forecast_data.hist_values|safe }},
-                borderColor: '#14763d',
-                backgroundColor: 'rgba(20, 118, 61, 0.1)',
-                fill: false,
-                tension: 0.1,
-                pointRadius: 4,
-                pointHoverRadius: 6
+            type: 'line',
+            data: {
+                labels: {{ forecast_data.all_labels|safe }},
+                datasets: [
+                    {
+                        label: 'Historical Data (kg)',
+                        data: {{ forecast_data.hist_values|safe }},
+                        borderColor: '#14763d',
+                        backgroundColor: 'rgba(20, 118, 61, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        spanGaps: false  // Don't connect null values
+                    },
+                    {
+                        label: 'Forecasted Data (kg)',
+                        data: {{ forecast_data.forecast_values|safe }},
+                        borderColor: '#40ca7aff',
+                        backgroundColor: 'rgba(64, 202, 122, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        borderDash: [5, 5],  // Dashed line for forecast
+                        spanGaps: false  // Don't connect null values
+                    }
+                ]
             },
-            {
-                label: 'Forecasted Data (kg)',
-                data: {{ forecast_data.forecast_values|safe }},
-                borderColor: '#40ca7aff',
-                backgroundColor: 'rgba(64, 202, 122, 0.1)',
-                fill: false,
-                tension: 0.1,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                borderDash: [5, 5]  // Dashed line for forecast
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                scales: {
+                    x: { 
+                        title: { display: true, text: 'Month' }
+                    },
+                    y: { 
+                        title: { display: true, text: 'Amount (kg)' },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
             }
-            ]
-        },
-    options: {
-        responsive: true,
-        interaction: {
-            intersect: false,
-            mode: 'index'
-        },
-        scales: {
-        x: { title: { display: true, text: 'Month' } },
-        y: { title: { display: true, text: 'Amount (kg)' } }
-        }
-    }
-    });
+        });
     {% else %}
         console.log("No forecast data available for chart.");
-
+        // You can also show a message in the chart area
+        document.getElementById('forecastChart').style.display = 'none';
     {% endif %}
 </script>
 
