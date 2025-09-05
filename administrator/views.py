@@ -800,6 +800,7 @@ def generate_all_forecasts(request):
                         if not os.path.exists(model_path):
                             continue
 
+
                         m = joblib.load(model_path)
                         last_hist_date = df['ds'].max()
                         # Start forecasting from the month after the last historical data

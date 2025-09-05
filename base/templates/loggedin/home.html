@@ -46,7 +46,7 @@ Fruit Cast | Home
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-lg-10 mt-4">
-                        <h2 class="mb-4 text-success fw-bold text-center">
+                        <h2 id="recommendations-heading" class="mb-4 text-success fw-bold text-center">
                             <i class="bi bi-lightbulb-fill me-2"></i>
                             Recommended Fruits to Plant on {{ now|date:"F Y" }}
                         </h2>
@@ -93,6 +93,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <p class="mt-2 text-muted">Fetching recommendations. This may take a moment...</p>
         `;
+
+        const heading = document.getElementById('recommendations-heading');
+        const selectedMonthIndex = parseInt(monthSelect.value, 10) - 1;
+        const selectedYear = yearSelect.value;
+        const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+        heading.innerHTML = `<i class="bi bi-lightbulb-fill me-2"></i>Recommended Fruits to Plant on ${monthName} ${selectedYear}`;
 
         // Make an asynchronous request to the new API endpoint
         fetch(url)

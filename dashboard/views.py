@@ -7,6 +7,7 @@ from django.forms import inlineformset_factory
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.utils import timezone
 from django.utils.timezone import now
@@ -267,7 +268,8 @@ def forecast(request):
             backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
             
             # Define the end date for your forecast (e.g., 12 months into the future)
-            future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
+            # future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
+            future_end_date = datetime.today() + relativedelta(months=+12)
 
             # Create a 'future' DataFrame that includes the backtesting period
             # and the future forecast period.
