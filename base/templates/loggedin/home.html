@@ -50,13 +50,13 @@ Fruit Cast | Home
                             <i class="bi bi-lightbulb-fill me-2"></i>
                             Recommended Fruits to Plant on {{ now|date:"F Y" }}
                         </h2>
-                        <form id="recommendations-form" class="d-flex">
-                            <select id="month-select" class="form-select me-2">
+                        <form id="recommendations-form" class="mb-4">
+                            <select id="month-select" class="form-select w-auto d-inline-block">
                             {% for month in months %}
                                 <option value="{{ month.number }}" {% if month.number == now.month %}selected{% endif %}>{{ month.name }}</option>
                             {% endfor %}
                             </select>
-                            <select id="year-select" class="form-select me-2">
+                            <select id="year-select" class="form-select w-auto d-inline-block">
                             {% for year in years %}
                                 <option value="{{ year }}" {% if year == now.year %}selected{% endif %}>{{ year }}</option>
                             {% endfor %}
@@ -161,16 +161,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 recommendationsContainer.innerHTML = '<p class="text-danger">A network error occurred. Please check your connection.</p>';
                 console.error('Fetch Error:', error);
             });
-            
-        // Initial fetch on page load
-        fetchRecommendations();
+    }
+    
+    // Initial fetch on page load
+    fetchRecommendations();
 
-        // Event listener for the form submission
-        recommendationsForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent the default form submission
-            fetchRecommendations();
-        });
-    }    
+    // Event listener for the form submission
+    recommendationsForm.addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+        fetchRecommendations();
+    });
 });
 
 </script>
