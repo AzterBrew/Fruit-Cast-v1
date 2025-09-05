@@ -214,63 +214,79 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     
 {% if forecast_data %}
-    {% comment %} var forecastChart = new Chart(document.getElementById('forecastChart'), {
-      type: 'line',
-      data: {
-        labels: {{ forecast_data.labels|safe }},
-        datasets: [{
-          label: 'Forecasted Amount (kg)',
-          data: {{ forecast_data.forecasted_count|safe }},
-          borderColor: '#40ca7aff',
-          fill: false
-        }]
-      }, {% endcomment %}
-
-      {% comment %} TESTING FORECAST w/ separate line {% endcomment %}
-      var forecastChart = new Chart(document.getElementById('forecastChart'), {
-        type: 'line',
-        data: {
-            labels: {{ forecast_data.hist_labels|safe }}.concat({{ forecast_data.forecast_labels|safe }}),
-            datasets: [
-            {
-                label: 'Historical Data (kg)',
-                data: {{ forecast_data.hist_values|safe }},
-                borderColor: '#14763d',
-                fill: false,
-                tension: 0.1
+        console.log("Forecast data available, creating chart...");
+        console.log("Labels:", {{ forecast_data.all_labels|safe }});
+        console.log("Historical values:", {{ forecast_data.hist_values|safe }});
+        console.log("Forecast values:", {{ forecast_data.forecast_values|safe }});
+        
+        var forecastChart = new Chart(document.getElementById('forecastChart'), {
+            type: 'line',
+            data: {
+                labels: {{ forecast_data.all_labels|safe }},
+                datasets: [
+                    {
+                        label: 'Historical Data (kg)',
+                        data: {{ forecast_data.hist_values|safe }},
+                        borderColor: '#14763d',
+                        backgroundColor: 'rgba(20, 118, 61, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        spanGaps: false  // Don't connect null values
+                    },
+                    {
+                        label: 'Forecasted Data (kg)',
+                        data: {{ forecast_data.forecast_values|safe }},
+                        borderColor: '#40ca7aff',
+                        backgroundColor: 'rgba(64, 202, 122, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        borderDash: [5, 5],  // Dashed line for forecast
+                        spanGaps: false  // Don't connect null values
+                    }
+                ]
             },
-            {
-                label: 'Forecasted Data (kg)',
-                data: Array({{ forecast_data.hist_values|length }}).fill(null).concat({{ forecast_data.forecast_values|safe }}),
-                borderColor: '#40ca7aff',
-                fill: false,
-                tension: 0.1
-            }
-            ]
-        },
-      options: {
-        responsive: true,
-        /** 
-        plugins: {
-            datalabels: {
-                align: 'top',
-                anchor: 'end',
-                color: '#14763d',
-                font: { weight: 'bold' },
-                formatter: function(value) {
-                return value;
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2.5,  // Width to height ratio (makes it wider and shorter)
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                scales: {
+                    x: { 
+                        title: { display: true, text: 'Month' }
+                    },
+                    y: { 
+                        title: { display: true, text: 'Amount (kg)' },
+                        beginAtZero: true,
+                        ticks: {
+                            maxTicksLimit: 8  // Limit the number of Y-axis labels
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
                 }
             }
-        },
-        **/
-        scales: {
-          x: { title: { display: true, text: 'Month' } },
-          y: { title: { display: true, text: 'Amount (kg)' } }
-        }
-      },
-      //plugins: [ChartDataLabels]
-    });
-{% endif %}
+        });
+        console.log("Chart created successfully!");
+    {% else %}
+        console.log("No forecast data available for chart.");
+        // You can also show a message in the chart area
+        document.getElementById('forecastChart').style.display = 'none';
+    {% endif %}
 
 </script>
 {% endblock content %}

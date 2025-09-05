@@ -74,10 +74,10 @@ def get_recommendations_api(request):
         month = request.GET.get('month')
         year = request.GET.get('year')
         if not (month and year):
-          return JsonResponse({"error": "Month and year parameters are required."}, status=400)
+            return JsonResponse({"error": "Missing month or year"}, status=400)
 
         try:
-            recommendations = get_alternative_recommendations(month=int(month), year=int(year))
+            recommendations = get_alternative_recommendations(selected_month=month, selected_year=year)
             return JsonResponse(recommendations)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)

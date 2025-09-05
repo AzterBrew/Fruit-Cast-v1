@@ -399,30 +399,22 @@ def admin_forecast(request):
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
 
-    selected_commodity_id = request.GET.get('commodity_id')
-    selected_municipality_id = request.GET.get('municipality_id')
-    selected_commodity_obj = None
-    selected_municipality_obj = None
-    filter_month = request.GET.get('filter_month')
-    filter_year = request.GET.get('filter_year')
-    
-    if selected_commodity_id == "1":
-        selected_commodity_obj = None
-        selected_commodity_id = None
-    elif selected_commodity_id:
-        try:
-            selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
-        except CommodityType.DoesNotExist:
-            selected_commodity_obj = None
-    else:
-        selected_commodity_obj = commodity_types.first()
-        selected_commodity_id = selected_commodity_obj.commodity_id if selected_commodity_obj else None
+    selected_commodity_id = None
+    selected_municipality_id = None
 
-    if selected_municipality_id:
-        try:
-            selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
-        except MunicipalityName.DoesNotExist:
-            selected_municipality_obj = None
+    if request.GET.get('commodity_id'):
+        selected_commodity_id = request.GET.get('commodity_id')
+        selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
+    else :
+        selected_commodity_id = commodity_types.first().commodity_id if commodity_types.exists() else None
+        selected_commodity_obj = CommodityType.objects.get(pk=selected_commodity_id)
+        
+    if request.GET.get('municipality_id'):
+        selected_municipality_id = request.GET.get('municipality_id')
+        selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
+    else:
+        selected_municipality_id = 14 if all_municipalities.exists() else None
+        selected_municipality_obj = MunicipalityName.objects.get(pk=selected_municipality_id)
     
     
     # Only show municipalities with at least 2 months of data for the selected commodity
@@ -439,24 +431,40 @@ def admin_forecast(request):
 
     now_dt = datetime.now()
     current_year = now_dt.year
-    available_years = [current_year, current_year + 1]
+    available_years = list(
+    ForecastResult.objects.order_by('forecast_year')
+        .values_list('forecast_year', flat=True).distinct()
+    )
+    if not available_years:
+        available_years = [timezone.now().year]
+
+    # Always show all months
     months = Month.objects.order_by('number')
     
-    # Get in-season months for the selected commodity
-    in_season_months = set()
-    if selected_commodity_obj:
-        in_season_months = set(m.number for m in selected_commodity_obj.seasonal_months.all())
+    
+    filter_month = request.GET.get('filter_month')
+    filter_year = request.GET.get('filter_year')
+    print("Selected commodity:", selected_commodity_id)
+    print("Filter month/year:", filter_month, filter_year)
 
     # TESTING FORECAST W/ SEPARATING HISTORICAL AND FORECAST
     
     # Get historical data
-    print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id))
+    print(type(selected_commodity_id), " : ", selected_commodity_id, type(selected_municipality_id), ':', selected_municipality_id)
 
-    qs = VerifiedHarvestRecord.objects.filter(
-        commodity_id=selected_commodity_id,
-        municipality_id=selected_municipality_id
-    ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-
+    if selected_municipality_id == "14" or selected_municipality_id == 14:
+        # "Overall" selected: do not filter by municipality, sum all
+        qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id=selected_commodity_id,
+        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+        print("Overall selected, not filtering by municipality.", qs)
+    else:
+        qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id=selected_commodity_id,
+            municipality_id=selected_municipality_id
+        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+        print("Filtered by municipality:", selected_municipality_id, qs)
+        
     if not qs.exists():
         forecast_data = None
     else:
@@ -466,46 +474,64 @@ def admin_forecast(request):
         df['ds'] = pd.to_datetime(df['ds'])
         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
         df = df.groupby('ds', as_index=False)['y'].sum()
-        hist_labels = df['ds'].dt.strftime('%b %Y').tolist()
-        hist_values = [float(v) for v in df['y'].tolist()]
 
         # Prepare forecast data (from trained model)
         model_dir = os.path.join('prophet_models')
-        model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
+        if selected_municipality_id == "14" or selected_municipality_id == 14:
+            model_filename = f"prophet_{selected_commodity_id}_14.joblib"
+        else:
+            model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
         model_path = os.path.join(model_dir, model_filename)
 
         if not os.path.exists(model_path):
-            forecast_labels = []
-            forecast_values = []
-            combined = []
             forecast_data = None
             print("No trained model found.")
         else:
             m = joblib.load(model_path)
-            last_hist_date = df['ds'].max()
-            today = datetime.now().replace(day=1)
-            start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
-            end_date = (today + pd.offsets.MonthBegin(12)).replace(day=1)
-            future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
+            
+            # Define forecast period (e.g., 12 months into future)
+            last_historical_date = df['ds'].max()
+            backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+            
+            # Define the end date for your forecast (e.g., 12 months into the future)
+            future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
+
+            # Create a 'future' DataFrame that includes the backtesting period
+            # and the future forecast period.
+            future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
             future = pd.DataFrame({'ds': future_months})
             forecast = m.predict(future)
-            forecast_only = forecast[forecast['ds'] > last_hist_date]
-            forecast_labels = forecast_only['ds'].dt.strftime('%b %Y').tolist()
-            forecast_values = forecast_only['yhat'].round(2).tolist()
-            combined = list(zip(forecast_labels, forecast_values,
-                                forecast_only['ds'].dt.month.tolist(),
-                                forecast_only['ds'].dt.year.tolist()))
+            
+            # Create a comprehensive timeline that includes both historical and forecast periods
+            all_dates = pd.date_range(start=df['ds'].min(), end=future_end_date, freq='MS')
+            
+            # Create dictionaries for easy lookup
+            hist_dict = dict(zip(df['ds'], df['y']))
+            forecast_dict = dict(zip(forecast['ds'], forecast['yhat']))
+            
+            # Build aligned arrays for Chart.js
+            all_labels = [d.strftime('%b %Y') for d in all_dates]
+            hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
+            forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
+            
+            # Combined data for CSV/table (only future forecasts)
+            future_forecast = forecast[forecast['ds'] > last_historical_date]
+            combined_list = list(zip(
+                future_forecast['ds'].dt.strftime('%b %Y').tolist(),
+                future_forecast['yhat'].round(2).tolist(),
+                future_forecast['ds'].dt.month.tolist(),
+                future_forecast['ds'].dt.year.tolist()
+            ))
 
-            print("Forecast data only:", forecast_labels, forecast_values)
-            print("Historical data only:", hist_labels, hist_values)
+            print("Historical data points:", sum(1 for v in hist_values if v is not None))
+            print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
+            print("Overlapping timeline created with", len(all_labels), "labels")
 
-            # Combine for Chart.js: historical line, then forecast line
             forecast_data = {
-                'hist_labels': hist_labels,
-                'hist_values': hist_values,
-                'forecast_labels': forecast_labels,
-                'forecast_values': forecast_values,
-                'combined': combined,
+                'all_labels': json.dumps(all_labels),
+                'hist_values': json.dumps(hist_values),
+                'forecast_values': json.dumps(forecast_values),
+                'combined': combined_list,
             }
     
     
@@ -691,14 +717,14 @@ def admin_forecast(request):
     context = {
         'user_firstname': userinfo.firstname,
         'forecast_data': forecast_data,
+        'forecast_combined_json': json.dumps(forecast_data['combined']) if forecast_data else '[]',
+        
         'commodity_types': commodity_types,
         'municipalities': municipalities,
-        'selected_commodity': selected_commodity_id,
-        'selected_municipality': selected_municipality_id,
-        # 'map_data': map_data,
         'selected_commodity_obj': selected_commodity_obj,
         'selected_commodity_id': selected_commodity_id,
         'selected_municipality_obj': selected_municipality_obj,
+        'selected_municipality': selected_municipality_id,
         'filter_month': filter_month,
         'filter_year': filter_year,
         'available_years': available_years,
