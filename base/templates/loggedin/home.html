@@ -120,7 +120,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('API Error:', data.error);
                 } else {
                     let html = '';
-                    
+
+                    // Short-Term Recommendations
                     if (data.short_term && data.short_term.length > 0) {
                         html += `
                             <div class="mb-4">
@@ -140,8 +141,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             `;
                         });
                         html += `</div></div>`;
+                    } else {
+                        html += `
+                            <div class="mb-4">
+                                <h4 class="text-success"><i class="bi bi-hourglass-split me-2"></i>Short-Term (Matures in months)</h4>
+                                <p>Currently no recommended fruits to plant for short term</p>
+                            </div>
+                        `;
                     }
 
+                    // Long-Term Recommendations
                     if (data.long_term && data.long_term.length > 0) {
                         html += `
                             <div>
@@ -161,12 +170,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             `;
                         });
                         html += `</div></div>`;
+                    } else {
+                        html += `
+                            <div>
+                                <h4 class="text-success"><i class="bi bi-tree-fill me-2"></i>Long-Term (Matures in years)</h4>
+                                <p>Currently no recommended fruits to plant for long term</p>
+                            </div>
+                        `;
                     }
-                    
+
                     if (html === '') {
                         html = '<p class="lead text-muted">No new planting recommendations at this time.</p>';
                     }
-                    
+
                     recommendationsContainer.innerHTML = html;
                 }
             })
