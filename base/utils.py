@@ -12,7 +12,7 @@ from prophet import Prophet
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-def get_alternative_recommendations(selected_month=None, selected_year=None):
+def get_alternative_recommendations(selected_month=None, selected_year=None, selected_municipality_id=None):
     """
     Generates alternative fruit recommendations based on future low-supply trends.
     Combines multiple prompts into a single API call for efficiency.
@@ -41,7 +41,7 @@ def get_alternative_recommendations(selected_month=None, selected_year=None):
     amounts_per_commodity = ForecastResult.objects.filter(
         batch=latest_batch,
         forecast_year__gte=base_date.year,
-        municipality_id=selected_municipality_id
+        municipality=selected_municipality_id
     ).values('commodity').annotate(total_kg=models.Sum('forecasted_amount_kg'))
     
     forecasted_values = [item['total_kg'] for item in amounts_per_commodity]
@@ -79,7 +79,7 @@ def get_alternative_recommendations(selected_month=None, selected_year=None):
                 commodity=commodity,
                 forecast_month__number=predicted_month_num,
                 forecast_year=predicted_year,
-                municipality_id=selected_municipality_id
+                municipality=selected_municipality_id
             ).aggregate(total=models.Sum('forecasted_amount_kg'))['total']
             
             total_forecasted_kg = total_forecasted_kg if total_forecasted_kg is not None else 0
