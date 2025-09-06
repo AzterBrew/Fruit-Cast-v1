@@ -45,7 +45,7 @@ def home(request):
 
             # Define the year range for the dropdown
             year_range = range(current_year - 1, current_year + 3) # Example: past year to next two years
-
+            municipalities = MunicipalityName.objects.exclude(pk=14)
             # --- NEW CODE FOR RECOMMENDATIONS ---
                 # Call the utility function to get recommendations
                 
@@ -56,6 +56,7 @@ def home(request):
                 'now': now,
                 'months': Month.objects.all(),
                 'years': year_range,
+                'municipalities': municipalities,   
             }
             return render(request, 'loggedin/home.html', context)
         
@@ -73,11 +74,20 @@ def get_recommendations_api(request):
     if request.user.is_authenticated:
         month = request.GET.get('month')
         year = request.GET.get('year')
+        municipality_id_str = request.GET.get('municipality_id')
+
         if not (month and year):
             return JsonResponse({"error": "Missing month or year"}, status=400)
-
+        
         try:
-            recommendations = get_alternative_recommendations(selected_month=month, selected_year=year)
+            # Handle potential missing municipality_id
+            municipality_id = int(municipality_id_str) if municipality_id_str else None
+            
+            recommendations = get_alternative_recommendations(
+                selected_month=month, 
+                selected_year=year,
+                selected_municipality_id=municipality_id
+            )
             return JsonResponse(recommendations)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)

@@ -45,33 +45,39 @@ Fruit Cast | Home
                 </div>
                 <hr>
                 <div class="row justify-content-center">
-                    <div class="col-lg-10 mt-4">
-                        <h2 id="recommendations-heading" class="mb-4 text-success fw-bold text-center">
-                            <i class="bi bi-lightbulb-fill me-2"></i>
-                            Recommended Fruits to Plant on {{ now|date:"F Y" }}
-                        </h2>
-                        <form id="recommendations-form" class="mb-4">
-                            <select id="month-select" class="form-select w-auto d-inline-block">
+                <div class="col-lg-10 mt-4">
+                    <h2 id="recommendations-heading" class="mb-4 text-success fw-bold text-center">
+                        <i class="bi bi-lightbulb-fill me-2"></i>
+                        Recommended Fruits to Plant on {{ now|date:"F Y" }}
+                    </h2>
+                    <form id="recommendations-form" class="mb-4 d-flex justify-content-center align-items-center flex-wrap">
+                        <select id="month-select" class="form-select w-auto me-2">
                             {% for month in months %}
                                 <option value="{{ month.number }}" {% if month.number == now.month %}selected{% endif %}>{{ month.name }}</option>
                             {% endfor %}
-                            </select>
-                            <select id="year-select" class="form-select w-auto d-inline-block">
+                        </select>
+                        <select id="year-select" class="form-select w-auto me-2">
                             {% for year in years %}
                                 <option value="{{ year }}" {% if year == now.year %}selected{% endif %}>{{ year }}</option>
                             {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-success">Apply Filter</button>
-                        </form>
-                        <div id="recommendations-container" class="text-center mx-auto" style="max-width: 900px;">
-                            <div class="spinner-border text-success" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-2 text-muted">Fetching recommendations. This may take a moment...</p>
+                        </select>
+                        <select id="municipality-select" class="form-select w-auto me-2">
+                            <option value="14">All Municipalities</option>
+                            {% for municipality in municipalities %}
+                                <option value="{{ municipality.municipality_id }}">{{ municipality.municipality }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-success">Apply Filter</button>
+                    </form>
+                    <div id="recommendations-container" class="text-center mx-auto" style="max-width: 900px;">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
                         </div>
+                        <p class="mt-2 text-muted">Fetching recommendations. This may take a moment...</p>
                     </div>
                 </div>
             </div>
+        </div>
         {% comment %} </div> {% endcomment %}
 </div>
 
@@ -81,11 +87,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const recommendationsContainer = document.getElementById('recommendations-container');
     const monthSelect = document.getElementById('month-select');
     const yearSelect = document.getElementById('year-select');
+    const municipalitySelect = document.getElementById('municipality-select');
 
     function fetchRecommendations() {
         const selectedMonth = monthSelect.value;
         const selectedYear = yearSelect.value;
-        const url = `/api/get-recommendations/?month=${selectedMonth}&year=${selectedYear}`;
+        const selectedMunicipality = municipalitySelect.value;
+        const url = `/api/get-recommendations/?month=${selectedMonth}&year=${selectedYear}&municipality_id=${selectedMunicipality}`;
 
         recommendationsContainer.innerHTML = `
             <div class="spinner-border text-success" role="status">
@@ -95,23 +103,24 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         const heading = document.getElementById('recommendations-heading');
-        const selectedMonthIndex = parseInt(monthSelect.value, 10) - 1;
-        const selectedYear = yearSelect.value;
         const monthName = monthSelect.options[monthSelect.selectedIndex].text;
-        heading.innerHTML = `<i class="bi bi-lightbulb-fill me-2"></i>Recommended Fruits to Plant on ${monthName} ${selectedYear}`;
+        const municipalityName = municipalitySelect.options[municipalitySelect.selectedIndex].text;
+        
+        let headingText = `Recommended Fruits to Plant on ${monthName} ${yearSelect.value}`;
+        if (municipalityName !== 'All Municipalities') {
+            headingText += ` in ${municipalityName}`;
+        }
+        heading.innerHTML = `<i class="bi bi-lightbulb-fill me-2"></i>${headingText}`;
 
-        // Make an asynchronous request to the new API endpoint
         fetch(url)
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    // Display an error message if the API call failed
                     recommendationsContainer.innerHTML = '<p class="text-danger">Failed to load recommendations. Please try again later.</p>';
                     console.error('API Error:', data.error);
                 } else {
-                    // Build the HTML for the recommendations
                     let html = '';
-
+                    
                     if (data.short_term && data.short_term.length > 0) {
                         html += `
                             <div class="mb-4">
@@ -154,7 +163,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         html += `</div></div>`;
                     }
                     
-                    // If no recommendations are available
                     if (html === '') {
                         html = '<p class="lead text-muted">No new planting recommendations at this time.</p>';
                     }
@@ -163,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                // Handle network or other fetch-related errors
                 recommendationsContainer.innerHTML = '<p class="text-danger">A network error occurred. Please check your connection.</p>';
                 console.error('Fetch Error:', error);
             });
@@ -174,10 +181,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Event listener for the form submission
     recommendationsForm.addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent the default form submission
+        event.preventDefault();
         fetchRecommendations();
     });
 });
-
 </script>
 {% endblock content %}
