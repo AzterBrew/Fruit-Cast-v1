@@ -30,6 +30,7 @@ from pathlib import Path
 from django.core.management import call_command
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, redirect
+from dateutil.relativedelta import relativedelta 
 
 def admin_login(request):
     if request.method == 'POST':
@@ -761,85 +762,144 @@ def generate_all_forecasts(request):
         # 1. Create a single ForecastBatch object to track this generation run.
         #    This is the most crucial step for the new architecture.
         try:
-            batch = ForecastBatch.objects.create(generated_by=admin_info, notes="Bulk auto-generated forecast")
+            batch = ForecastBatch.objects.create(generated_by=admin_info, notes="Bulk generated forecast - All commodities and municipalities for the next 12 months.")
         except Exception as e:
             messages.error(request, f"Failed to create forecast batch: {e}")
             return redirect('administrator:admin_forecast')
             
         model_dir = os.path.join('prophet_models')
         commodities = CommodityType.objects.exclude(pk=1)
-        municipalities = MunicipalityName.objects.exclude(pk=14)
-        months = {m.number: m for m in Month.objects.all()}
-        today = timezone.now()
-        current_month_start = today.replace(day=1)
+        municipalities = MunicipalityName.objects.all()
+        months = Month.objects.all().order_by('number')
+        # today = timezone.now()
+        # current_month_start = today.replace(day=1)
+        
+        results_created = 0
+        errors = []
         
         try:
             # Wrap the entire process in a transaction to ensure atomicity
             with transaction.atomic():
                 for commodity in commodities:
                     for municipality in municipalities:
-                        
-                        # Get historical data to determine the forecast start date
-                        qs = VerifiedHarvestRecord.objects.filter(
-                            commodity_id=commodity,
-                            municipality=municipality
-                        ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-
-                        if not qs:
-                            continue
-
-                        df = pd.DataFrame(list(qs))
-                        df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
-                        df['ds'] = pd.to_datetime(df['ds'])
-                        df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
-                        df = df.groupby('ds', as_index=False)['y'].sum()
-
-                        # Load trained model
-                        model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
-                        model_path = os.path.join(model_dir, model_filename)
-                        if not os.path.exists(model_path):
-                            continue
-
-
-                        m = joblib.load(model_path)
-                        last_hist_date = df['ds'].max()
-                        # Start forecasting from the month after the last historical data
-                        start_date = (last_hist_date + pd.offsets.MonthBegin(1)).replace(day=1)
-                        # End at current date + 12 months
-                        end_date = (current_month_start + pd.offsets.MonthBegin(12)).replace(day=1)
-                        future_months = pd.date_range(start=start_date, end=end_date, freq='MS')
-                        if len(future_months) == 0:
-                            continue
-                        future = pd.DataFrame({'ds': future_months})
-                        forecast = m.predict(future)
-                        forecast_only = forecast[forecast['ds'] > last_hist_date]
-
-                        # Save each forecasted month to ForecastResult
-                        for _, row in forecast_only.iterrows():
-                            forecast_month = months.get(row['ds'].month)
-                            if not forecast_month:
+                        try:
+                            # Determine model filename
+                            model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
+                            model_path = os.path.join(model_dir, model_filename)
+                            
+                            # Skip if model doesn't exist
+                            if not os.path.exists(model_path):
+                                errors.append(f"Model not found: {commodity.name} - {municipality.municipality}")
                                 continue
-                            ForecastResult.objects.update_or_create(
-                                batch=batch,
-                                commodity=commodity,
-                                municipality=municipality,
-                                forecast_month=forecast_month,
-                                forecast_year=row['ds'].year,
-                                defaults={
-                                    'forecasted_amount_kg': float(row['yhat']),
-                                    'source_data_last_updated': timezone.now(),
-                                }
-                            )
+                            
+                            # Load the trained model
+                            m = joblib.load(model_path)
+                            
+                            # Get historical data to determine date ranges
+                            if municipality.municipality_id == 14:  # Overall
+                                # For "Overall", aggregate data from all municipalities except 14
+                                qs = VerifiedHarvestRecord.objects.filter(
+                                    commodity_id=commodity
+                                ).exclude(municipality_id=14).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+                            else:
+                                # For specific municipality
+                                qs = VerifiedHarvestRecord.objects.filter(
+                                    commodity_id=commodity,
+                                    municipality=municipality
+                                ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+                            
+                            if not qs.exists():
+                                errors.append(f"No historical data: {commodity.name} - {municipality.municipality}")
+                                continue
+                            
+                            # Create DataFrame from historical data
+                            df = pd.DataFrame(list(qs))
+                            df['ds'] = pd.to_datetime(df['harvest_date'])
+                            df['y'] = df['total_weight_kg'].astype(float)
+                            
+                            # Group by month and sum
+                            if municipality.municipality_id == 14:
+                                # For Overall, data is already aggregated in the query
+                                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                            else:
+                                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                            
+                            df['ds'] = df['ds'].dt.to_timestamp()
+                            
+                            # Define forecast period (same logic as dashboard forecast view)
+                            last_historical_date = df['ds'].max()
+                            backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+                            
+                            # Forecast up to 12 months from today
+                            future_end_date = datetime.today() + relativedelta(months=+12)
+                            
+                            # Create future DataFrame from backtest start to 12 months from today
+                            future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
+                            future = pd.DataFrame({'ds': future_months})
+                            
+                            # Generate forecast
+                            forecast = m.predict(future)
+                            
+                            # Save forecast results to database (only future dates, not historical backtest)
+                            today = datetime.today().replace(day=1)  # First day of current month
+                            
+                            for _, row in forecast.iterrows():
+                                forecast_date = row['ds']
+                                forecasted_amount = max(0, row['yhat'])  # Ensure non-negative
+                                
+                                # Only save future forecasts (from current month onwards)
+                                if forecast_date >= today:
+                                    month_num = forecast_date.month
+                                    year = forecast_date.year
+                                    
+                                    try:
+                                        month_obj = months.get(number=month_num)
+                                        
+                                        # Create or update forecast result
+                                        forecast_result, created = ForecastResult.objects.get_or_create(
+                                            batch=batch,
+                                            commodity=commodity,
+                                            forecast_month=month_obj,
+                                            forecast_year=year,
+                                            municipality=municipality,
+                                            defaults={
+                                                'forecasted_amount_kg': forecasted_amount,
+                                                'notes': f"Generated from Prophet model with backtest period"
+                                            }
+                                        )
+                                        
+                                        if not created:
+                                            # Update existing record
+                                            forecast_result.forecasted_amount_kg = forecasted_amount
+                                            forecast_result.notes = f"Updated from Prophet model with backtest period"
+                                            forecast_result.save()
+                                        
+                                        results_created += 1
+                                        
+                                    except Month.DoesNotExist:
+                                        errors.append(f"Month {month_num} not found in database")
+                                        continue
                         
-                        
-            
-            messages.success(request, "All forecasts generated and saved.")
-            return redirect('administrator:admin_forecast')
-            
+                        except Exception as e:
+                            errors.append(f"Error processing {commodity.name} - {municipality.municipality}: {str(e)}")
+                            continue
+                
+                # Success message
+                if results_created > 0:
+                    messages.success(
+                        request, 
+                        f"Successfully generated {results_created} forecast records in batch {batch.batch_id}. "
+                        f"Errors: {len(errors)}"
+                    )
+                    if errors:
+                        messages.warning(request, f"Some errors occurred: {'; '.join(errors[:5])}")
+                else:
+                    messages.error(request, f"No forecasts were generated. Errors: {'; '.join(errors[:5])}")
+                
         except Exception as e:
-            messages.error(request, f"Error during forecast generation: {e}")
-            # If an error occurs, the transaction will be rolled back, preventing partial data saves
-            return redirect('administrator:admin_forecast')
+            messages.error(request, f"Failed to generate forecasts: {str(e)}")
+        
+        return redirect('administrator:admin_forecast')
     else:
         return redirect('administrator:admin_forecast')
 
