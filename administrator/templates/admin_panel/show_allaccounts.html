@@ -80,7 +80,15 @@ Fruit Cast | {% block page_title %}{% endblock %}
                                 <td><input type="checkbox" name="selected_records" value="{{ account.pk }}"></td>
                                 <td>{{ account.account_register_date|date:"M d, Y" }}</td>
                                 <td>{{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename }} {{ account.userinfo_id.lastname }} {{ account.userinfo_id.nameextension }}</td>
-                                <td>{{ account.admin_id.municipality_incharge.municipality }}</td>
+                                <td>
+                                    {% with admin_info=account.userinfo_id.admininformation_set.first %}
+                                        {% if admin_info %}
+                                            {{ admin_info.municipality_incharge.municipality }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
                                 <td>
                                     {% if account.account_type_id.account_type == "Agriculturist" %}
                                         <form method="POST" action="{% url 'administrator:change_account_type' account.account_id %}">
@@ -94,7 +102,6 @@ Fruit Cast | {% block page_title %}{% endblock %}
                                         {{ account.account_type_id.account_type }}
                                     {% endif %}
                                 </td>
-                                <td>{{ account.acc_status_id.acc_status }}</td>
                                 <td>
                                     {% if account.account_type_id.account_type == "Agriculturist" %}
                                         <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}">

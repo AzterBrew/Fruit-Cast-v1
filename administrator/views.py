@@ -769,7 +769,7 @@ def generate_all_forecasts(request):
             
         model_dir = os.path.join('prophet_models')
         commodities = CommodityType.objects.exclude(pk=1)
-        municipalities = MunicipalityName.objects.all()
+        municipalities = MunicipalityName.objects.exclude(pk=14)
         months = Month.objects.all().order_by('number')
         # today = timezone.now()
         # current_month_start = today.replace(day=1)
@@ -796,18 +796,13 @@ def generate_all_forecasts(request):
                             m = joblib.load(model_path)
                             
                             # Get historical data to determine date ranges
-                            if municipality.municipality_id == 14:  # Overall
-                                # For "Overall", aggregate data from all municipalities except 14
-                                qs = VerifiedHarvestRecord.objects.filter(
-                                    commodity_id=commodity
-                                ).exclude(municipality_id=14).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-                            else:
-                                # For specific municipality
-                                qs = VerifiedHarvestRecord.objects.filter(
-                                    commodity_id=commodity,
-                                    municipality=municipality
-                                ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
                             
+                            # For specific municipality
+                            qs = VerifiedHarvestRecord.objects.filter(
+                                commodity_id=commodity,
+                                municipality=municipality
+                            ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
+                        
                             if not qs.exists():
                                 errors.append(f"No historical data: {commodity.name} - {municipality.municipality}")
                                 continue
@@ -818,12 +813,7 @@ def generate_all_forecasts(request):
                             df['y'] = df['total_weight_kg'].astype(float)
                             
                             # Group by month and sum
-                            if municipality.municipality_id == 14:
-                                # For Overall, data is already aggregated in the query
-                                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                            else:
-                                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                            
+                            df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
                             df['ds'] = df['ds'].dt.to_timestamp()
                             
                             # Define forecast period (same logic as dashboard forecast view)
