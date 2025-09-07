@@ -703,15 +703,15 @@ def monitor(request):
     monthly_values = [float(data['total_weight']) for data in monthly_harvest_data]
     
     # --- b-a: Total Harvested Weight by Commodity ---
-    harvest_by_commodity = harvest_records.values('commodity__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity__name')
-    commodity_labels = [data['commodity__name'] for data in harvest_by_commodity]
+    harvest_by_commodity = harvest_records.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity_id__name')
+    commodity_labels = [data['commodity_id__name'] for data in harvest_by_commodity]
     commodity_values = [float(data['total_weight']) for data in harvest_by_commodity]
 
     # --- b-b & Li-a: Harvested Weight by Municipality & Top Municipalities ---
-    harvest_by_municipality = harvest_records.values('municipality__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
+    harvest_by_municipality = harvest_records.values('municipality_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
     top_municipalities = list(harvest_by_municipality[:5])
-    
-    municipality_labels = [data['municipality__name'] for data in harvest_by_municipality]
+
+    municipality_labels = [data['municipality_id__name'] for data in harvest_by_municipality]
     municipality_values = [float(data['total_weight']) for data in harvest_by_municipality]
     
     # --- Li-b: Commodities List ---
