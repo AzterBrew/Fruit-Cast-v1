@@ -718,7 +718,7 @@ def monitor(request):
     all_commodities = CommodityType.objects.all()
     commodities_list = []
     for c in all_commodities:
-        years_to_bear = float(c.years_to_bear_fruit)
+        years_to_bear = float(c.years_to_bearfruit)
         years_full = int(years_to_bear)
         months_full = int((years_to_bear - years_full) * 12)
         info_string = f"{years_full} year(s)"
