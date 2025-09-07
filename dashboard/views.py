@@ -664,7 +664,7 @@ def monitor(request):
         available_years = VerifiedPlantRecord.objects.annotate(year=ExtractYear('plant_date')).values_list('year', flat=True).distinct().order_by('year')
 
     # Get available municipalities for the filter
-    municipalities = MunicipalityName.objects.all().order_by('name')
+    municipalities = MunicipalityName.objects.all().order_by('municipality')
 
     # Get filter values from the request
     selected_year = request.GET.get('year')
