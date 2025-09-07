@@ -14,7 +14,7 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
-from django.db.models import Sum, Avg, Max
+from django.db.models import Sum, Avg, Max, Count, Q
 from django.http import JsonResponse
 from prophet import Prophet
 import pandas as pd
@@ -642,217 +642,117 @@ COLORS = [
     'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'
 ]
     
+# Helper function to get location names
+def get_location_name(model_instance):
+    if model_instance.municipality:
+        return model_instance.municipality.name
+    return "Unknown"
+
+# Helper function for dynamic colors
+COLORS = ['#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF', '#FF9F40', '#007BFF', '#28A745', '#17A2B8', '#DC3545', '#FD7E14']
+
 def monitor(request):
-    print("🔥 DEBUG: monitor view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
-        account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
-        userinfo = UserInformation.objects.get(pk=userinfo_id)
+    if not request.user.is_authenticated:
+        return redirect('home')
         
-        if userinfo_id and account_id:
-            
-            # FOR FILTER
-            
-            
-            selected_month = request.GET.get('month')  # expected format: '2025-04'                
-            harvest_records = VerifiedHarvestRecord.objects.all()            
-            selected_year = request.GET.get('year')
-            
-            # if selected_year:
-            #     harvest_records = harvest_records.filter(harvest_date__year=selected_year)
-            #     print(harvest_records)
-            
-            available_months = []
-            if selected_year:
-                months = (
-                    VerifiedHarvestRecord.objects
-                    .filter(harvest_date__year=selected_year)
-                    .annotate(month=ExtractMonth('harvest_date'))
-                    .values_list('month', flat=True)
-                    .distinct()
-                    .order_by('month')
-                )
-                available_months = [(f"{selected_year}-{str(month).zfill(2)}", calendar.month_name[month]) for month in months]
-                
-                
-            years = (VerifiedHarvestRecord.objects
-                .annotate(year=ExtractYear('harvest_date'))  # or your date field
-                .values_list('year', flat=True)
-                .distinct()
-                .order_by('year')
-                )
-            
-            if selected_month:
-                # Parse and filter to the selected month
-                try:
-                    year, month = map(int, selected_month.split('-'))
-                    harvest_records = harvest_records.filter(harvest_date__year=year, harvest_date__month=month)
-                except:
-                    pass  
-                
-            if selected_year:
-                harvest_records = harvest_records.filter(harvest_date__year=selected_year)
+    userinfo_id = request.session.get('userinfo_id')
+    userinfo = UserInformation.objects.get(pk=userinfo_id)
 
-            if selected_month:
-                try:
-                    year, month = map(int, selected_month.split('-'))
-                    harvest_records = harvest_records.filter(harvest_date__year=year, harvest_date__month=month)
-                except:
-                    pass  
-            
-            
-            print(harvest_records)
+    # Get available years for the filter
+    available_years = VerifiedHarvestRecord.objects.annotate(year=ExtractYear('harvest_date')).values_list('year', flat=True).distinct().order_by('year')
+    if not available_years: # Fallback if no harvest data
+        available_years = VerifiedPlantRecord.objects.annotate(year=ExtractYear('plant_date')).values_list('year', flat=True).distinct().order_by('year')
 
-            # Group and sum by month
-            harvest_data = (
-                harvest_records
-                .annotate(month=TruncMonth('harvest_date'))
-                .values('month')
-                .annotate(total_weight=Sum('total_weight_kg'))
-                .order_by('month')
-            )
+    # Get available municipalities for the filter
+    municipalities = MunicipalityName.objects.all().order_by('name')
 
-            # Prepare labels and values FOR Chart.js
-            
-            labels = [data['month'].strftime('%B %Y') for data in harvest_data]
-            weights = [float(data['total_weight']) for data in harvest_data]
+    # Get filter values from the request
+    selected_year = request.GET.get('year')
+    selected_municipality = request.GET.get('municipality', 'all')
+    selected_municipality_name = 'All Municipalities'
 
-            harvest_df = pd.DataFrame(list(VerifiedHarvestRecord.objects.values('id', 'harvest_date', 'total_weight_kg', 'weight_per_unit_kg', 'commodity_id','municipality', 'barangay')))
-            plant_df = pd.DataFrame(list(VerifiedPlantRecord.objects.values('id', 'plant_date', 'commodity_id', 'min_expected_harvest', 'max_expected_harvest','average_harvest_units', 'estimated_weight_kg', 'remarks', 'municipality', 'barangay')))
-            
-            
-            chart_data = defaultdict(dict)
+    # Filter QuerySets based on selected filters
+    harvest_records = VerifiedHarvestRecord.objects.all()
+    plant_records = VerifiedPlantRecord.objects.all()
 
-            if not harvest_df.empty and 'commodity_id' in harvest_df.columns:
-                harvest_df['harvest_date'] = pd.to_datetime(harvest_df['harvest_date'])
-                harvest_df['month'] = harvest_df['harvest_date'].dt.strftime('%B')
-                
-                record_ids = harvest_df['id'].tolist()
-                records = VerifiedHarvestRecord.objects.in_bulk(record_ids)
-                harvest_df['harvest_municipality'] = [get_verified_record_location(records[rid])[0] if rid in records else None for rid in record_ids]
-                
-                # Harvest weight per commodity
-                hc = harvest_df.groupby('commodity_id')['total_weight_kg'].sum()
-                harvest_weights_bycomm_json = [float(weight) for weight in hc.values.tolist()]
-                harvest_commodity_ids = list(hc.index)
-                harvest_commodity_names = [CommodityType.objects.get(pk=cid).name for cid in harvest_commodity_ids]
-                chart_data['harvest_commodity'] = {
-                    'labels': harvest_commodity_names,
-                    'values': harvest_weights_bycomm_json
-                }
+    if selected_year and selected_year.isdigit():
+        harvest_records = harvest_records.filter(harvest_date__year=selected_year)
+        plant_records = plant_records.filter(plant_date__year=selected_year)
+    else:
+        # Default to the most recent year if no year is selected
+        if available_years:
+            selected_year = str(available_years.last())
+            harvest_records = harvest_records.filter(harvest_date__year=selected_year)
+            plant_records = plant_records.filter(plant_date__year=selected_year)
 
-                # Monthly harvest trends
-                mh = harvest_df.groupby('month')['total_weight_kg'].sum()
-                harvest_weights_json = [float(weight) for weight in mh.values.tolist()]  #converting from decimal to float since di kwan sa javascript
-                
-                chart_data['monthly_harvest'] = {
-                    'labels': mh.index.tolist(),
-                    'values': harvest_weights_json
-                }
+    if selected_municipality != 'all' and selected_municipality.isdigit():
+        harvest_records = harvest_records.filter(municipality=selected_municipality)
+        plant_records = plant_records.filter(municipality=selected_municipality)
+        selected_municipality_name = MunicipalityName.objects.get(pk=selected_municipality).municipality
+    
+    # --- KPI Cards (c-4) ---
+    total_plantings = plant_records.aggregate(total=Count('id'))['total'] or 0
+    total_harvests = harvest_records.aggregate(total=Count('id'))['total'] or 0
+    most_abundant_fruit = harvest_records.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight').first()
+    most_abundant_fruit = most_abundant_fruit['commodity_id__name'] if most_abundant_fruit else None
+    total_users = AccountsInformation.objects.count()
 
-                # Average weight per unit by commodity
-                avgw = harvest_df.groupby('commodity_id')['weight_per_unit_kg'].mean()
-                harvest_avg_weights_json = [float(weight) for weight in avgw.values.tolist()]
-                
-                chart_data['avg_weight'] = {
-                    'labels': avgw.index.tolist(),
-                    'values': harvest_avg_weights_json
-                }
+    # --- L-a: Total Harvested Weight for every month ---
+    monthly_harvest_data = harvest_records.annotate(month=TruncMonth('harvest_date')).values('month').annotate(total_weight=Sum('total_weight_kg')).order_by('month')
+    monthly_labels = [data['month'].strftime('%b %Y') for data in monthly_harvest_data]
+    monthly_values = [float(data['total_weight']) for data in monthly_harvest_data]
+    
+    # --- b-a: Total Harvested Weight by Commodity ---
+    harvest_by_commodity = harvest_records.values('commodity__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity__name')
+    commodity_labels = [data['commodity__name'] for data in harvest_by_commodity]
+    commodity_values = [float(data['total_weight']) for data in harvest_by_commodity]
 
-                # Harvest count per location
-                # locs = harvest_df['harvest_location'].value_counts()
-                # chart_data['harvest_location'] = {
-                #     'labels': locs.index.tolist(),
-                #     'values': locs.values.tolist(),
-                #     'colors': random.choices(COLORS, k=len(locs))
-                # }
-                
-                locs = harvest_df.groupby('harvest_municipality')['total_weight_kg'].sum()
-                harvest_weight_byloc_json = [float(weight) for weight in locs.values.tolist()]
-                chart_data['harvest_municipality'] = {
-                    'labels': locs.index.tolist(),
-                    'values': harvest_weight_byloc_json,
-                    'colors': random.choices(COLORS, k=len(locs))
-                }
+    # --- b-b & Li-a: Harvested Weight by Municipality & Top Municipalities ---
+    harvest_by_municipality = harvest_records.values('municipality__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
+    top_municipalities = list(harvest_by_municipality[:5])
+    
+    municipality_labels = [data['municipality__name'] for data in harvest_by_municipality]
+    municipality_values = [float(data['total_weight']) for data in harvest_by_municipality]
+    
+    # --- Li-b: Commodities List ---
+    all_commodities = CommodityType.objects.all()
+    commodities_list = []
+    for c in all_commodities:
+        years_to_bear = float(c.years_to_bear_fruit)
+        years_full = int(years_to_bear)
+        months_full = int((years_to_bear - years_full) * 12)
+        info_string = f"{years_full} year(s)"
+        if months_full > 0:
+            info_string += f" and {months_full} month(s)"
+        commodities_list.append({
+            'name': c.name,
+            'info': info_string
+        })
+    
+    # Consolidate all data into a single dictionary
+    chart_data = {
+        'monthly_harvest': {'labels': monthly_labels, 'values': monthly_values},
+        'harvest_commodity': {'labels': commodity_labels, 'values': commodity_values},
+        'harvest_municipality': {'labels': municipality_labels, 'values': municipality_values},
+    }
 
-            if not plant_df.empty and 'commodity_id' in plant_df.columns:
-                plant_df['plant_date'] = pd.to_datetime(plant_df['plant_date'])
-                plant_df['month'] = plant_df['plant_date'].dt.strftime('%B')
-                
-                record_ids = plant_df['id'].tolist()
-                records = VerifiedPlantRecord.objects.in_bulk(record_ids)
-                plant_df['plant_municipality'] = [get_verified_record_location(records[rid])[0] if rid in records else None for rid in record_ids]
-
-                # Count per commodity
-                pc = plant_df['commodity_id'].value_counts()
-                plant_commodity_ids = pc.index.tolist()
-                plant_commodity_names = [CommodityType.objects.get(pk=cid).name for cid in plant_commodity_ids]
-                chart_data['plant_commodity'] = {
-                    'labels': plant_commodity_names,
-                    'values': pc.values.tolist()
-                }
-
-                # Estimated weight per commodity
-                ew = plant_df.groupby('commodity_id')['estimated_weight_kg'].sum()
-                ew_ids = ew.index.tolist()
-                ew_names = [CommodityType.objects.get(pk=cid).name for cid in ew_ids]
-                estimated_weight_json = [float(weight) for weight in ew.values.tolist()]
-                chart_data['estimated_weight'] = {
-                    'labels': ew_names,
-                    'values': estimated_weight_json
-                }
-
-                # Avg land area per commodity
-                if 'land_area' in plant_df.columns:
-                    la = plant_df.groupby('commodity_id')['land_area'].mean()
-                    la_ids = la.index.tolist()
-                    la_names = [CommodityType.objects.get(pk=cid).name for cid in la_ids]
-                    chart_data['avg_land_area'] = {
-                        'labels': la_names,
-                        'values': la.values.tolist()
-                    }
-
-                # Plantings per month
-                pm = plant_df['month'].value_counts()
-                plant_weights_json = [float(weight) for weight in pm.values.tolist()]
-                
-                chart_data['monthly_plantings'] = {
-                    'labels': pm.index.tolist(),
-                    'values': plant_weights_json
-                }
-                
-                # plant count per location
-                pl = plant_df['plant_municipality'].value_counts()
-                chart_data['plant_by_location'] = {
-                    'labels' : pl.index.tolist(),
-                    'values': pl.values.tolist()
-                    
-                }
-                
-                # print(chart_data['estimated_weight'])
-                 
-            context = {
-                'user_firstname' : userinfo.firstname,
-                'chart_data': chart_data,
-                'harvest_labels': labels,
-                'harvest_weights': weights,
-                'selected_month': selected_month or '',
-                'years': years,
-                'selected_year': selected_year,
-                'available_months': available_months,
-
-            }
-
-            return render(request, 'monitoring/overall_dashboard.html', context)
-        
-        else:
-            print("⚠️ account_id missing in session!")
-            return redirect('home')                
-            
-    else :
-        return render(request, 'home.html', {})  
-
+    context = {
+        'user_firstname': userinfo.firstname,
+        'chart_data': chart_data,
+        'selected_year': selected_year,
+        'selected_municipality': selected_municipality,
+        'selected_municipality_name': selected_municipality_name,
+        'available_years': available_years,
+        'municipalities': municipalities,
+        'total_plantings': total_plantings,
+        'total_harvests': total_harvests,
+        'most_abundant_fruit': most_abundant_fruit,
+        'total_users': total_users,
+        'top_municipalities': top_municipalities,
+        'commodities_list': commodities_list,
+    }
+    
+    return render(request, 'monitoring/overall_dashboard.html', context)
 
 def get_verified_record_location(record):
     # record: VerifiedHarvestRecord or VerifiedPlantRecord

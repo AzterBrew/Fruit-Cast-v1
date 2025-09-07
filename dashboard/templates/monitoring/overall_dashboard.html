@@ -1,5 +1,5 @@
 {% extends "monitoring/layout.html" %}
-{%load static%}
+{% load static %}
 
 {% block title %}
 Fruit Cast | Monitor
@@ -9,107 +9,182 @@ Fruit Cast | Monitor
     {% include "loggedin/navbar.html" %}
 {% endblock navbar %}
 
-
-
 {% block content %}
 <div class="main-user py-5">
-        <div class="row main-user-content justify-content-center">
-            <div class="card shadow-sm rounded-4 p-4 mb-4">
-                <h1 class="mb-4 text-success fw-bold text-center">
-                    <i class="bi bi-bar-chart-line"></i> Monitoring Dashboard
-                </h1>
-                <!-- Tabs -->
-                <ul class="nav nav-tabs mb-4" id="monitorTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active link-success" id="harvest-tab" data-bs-toggle="tab" data-bs-target="#harvest" type="button" role="tab" aria-controls="harvest" aria-selected="true">
-                            Harvest Data
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link link-success" id="plant-tab" data-bs-toggle="tab" data-bs-target="#plant" type="button" role="tab" aria-controls="plant" aria-selected="false">
-                            Plant Data
-                        </button>
-                    </li>
-                </ul>
+    <div class="container-fluid">
+        <div class="card shadow-sm rounded-4 p-4 mb-4">
+            <h1 class="mb-4 text-success fw-bold text-center">
+                <i class="bi bi-bar-chart-line"></i> Monitoring Dashboard
+            </h1>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label for="yearFilter" class="form-label">Select Year</label>
+                    <select class="form-select" id="yearFilter">
+                        {% for year in available_years %}
+                            <option value="{{ year }}" {% if selected_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="municipalityFilter" class="form-label">Select Municipality</label>
+                    <select class="form-select" id="municipalityFilter">
+                        <option value="all">All Municipalities</option>
+                        {% for municipality in municipalities %}
+                            <option value="{{ municipality.id }}" {% if selected_municipality == municipality.id|stringformat:"s" %}selected{% endif %}>{{ municipality.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
 
-                <div class="tab-content" id="monitorTabsContent">
-                    <!-- HARVEST TAB -->
-                    <div class="tab-pane fade show active" id="harvest" role="tabpanel" aria-labelledby="harvest-tab">
-                        <div class="row g-4">
-                            <div class="col-lg-6">
-                                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                    <h5 class="card-title text-center mb-3">Total Harvested Weight by Month</h5>
-                                    {% if chart_data.monthly_harvest %}
-                                        <canvas id="harvestMonthlyChart" height="300"></canvas>
-                                    {% else %}
-                                        <div class="alert alert-info">No monthly harvest data available.</div>
-                                    {% endif %}
-                                </div>
+            <div class="row g-4 mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="card bg-success text-white text-center rounded-4 shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Plantings This Year</h5>
+                            <h2 class="card-text fw-bold">{{ total_plantings|default:0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card bg-info text-white text-center rounded-4 shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Harvests This Year</h5>
+                            <h2 class="card-text fw-bold">{{ total_harvests|default:0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card bg-warning text-dark text-center rounded-4 shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Most Abundant Fruit</h5>
+                            <h2 class="card-text fw-bold">{{ most_abundant_fruit|default:"N/A" }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card bg-secondary text-white text-center rounded-4 shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Users</h5>
+                            <h2 class="card-text fw-bold">{{ total_users|default:0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="monitorTabsContent">
+                <div class="tab-pane fade show active" id="harvest" role="tabpanel" aria-labelledby="harvest-tab">
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                                <h5 class="card-title text-center mb-3">Total Harvested Weight per Month <br/> <small>({{ selected_municipality_name }})</small></h5>
+                                {% if chart_data.monthly_harvest %}
+                                    <canvas id="harvestMonthlyChart" height="300"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info text-center">No monthly harvest data available.</div>
+                                {% endif %}
                             </div>
-                            <div class="col-lg-6">
-                                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                    <h5 class="card-title text-center mb-3">Total Harvested Weight by Commodity</h5>
-                                    {% if chart_data.harvest_commodity %}
-                                        <canvas id="harvestWeightChart" height="300"></canvas>
-                                    {% else %}
-                                        <div class="alert alert-info">No commodity harvest data available.</div>
-                                    {% endif %}
-                                </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                                <h5 class="card-title text-center mb-3">Total Harvested Weight by Commodity</h5>
+                                {% if chart_data.harvest_commodity %}
+                                    <canvas id="harvestWeightChart" height="300"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info text-center">No commodity harvest data available.</div>
+                                {% endif %}
                             </div>
-                            <div class="col-lg-6">
-                                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                    <h5 class="card-title text-center mb-3">Total Harvested Weight by Municipality</h5>
-                                    {% if chart_data.harvest_municipality %}
-                                        <canvas id="harvestLocationChart" height="75"></canvas>
-                                    {% else %}
-                                        <div class="alert alert-info">No harvest location data available.</div>
-                                    {% endif %}
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4 h-100">
+                                <h5 class="card-title text-center mb-3">Commodities Catalog</h5>
+                                <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                                    {% for commodity in commodities_list %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>{{ commodity.name }}</span>
+                                            <small class="text-muted">{{ commodity.info }}</small>
+                                        </div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- PLANT TAB -->
-                    <div class="tab-pane fade" id="plant" role="tabpanel" aria-labelledby="plant-tab">
-                        <div class="row g-4">
-                            <div class="col-lg-6">
-                                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                    <h5 class="card-title text-center mb-3">Number of Plantings per Commodity</h5>
-                                    {% if chart_data.plant_commodity %}
-                                        <canvas id="plantCommodityChart" height="200"></canvas>
-                                    {% else %}
-                                        <div class="alert alert-info">No plant commodity data available.</div>
-                                    {% endif %}
+                        <div class="col-lg-8">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4 h-100">
+                                <h5 class="card-title text-center mb-3">Total Harvested Weight by Municipality</h5>
+                                {% if chart_data.harvest_municipality %}
+                                    <canvas id="harvestLocationChart" height="200"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info text-center">No harvest location data available.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                                <h5 class="card-title text-center mb-3">Top-Performing Municipalities 🏆</h5>
+                                <div class="row">
+                                    {% for municipality in top_municipalities %}
+                                    <div class="col-md-4">
+                                        <div class="card text-center bg-light border-0 shadow-sm mb-3">
+                                            <div class="card-body">
+                                                <h4 class="card-title fw-bold">{{ forloop.counter }}. {{ municipality.name }}</h4>
+                                                <p class="card-text text-muted">Total Harvest: {{ municipality.total_weight|floatformat:"2" }} kg</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="alert alert-info text-center">No top-performing municipalities found for this period.</div>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            <div class="col-lg-6">
-                                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                    <h5 class="card-title text-center mb-3">Estimated Harvest Weight per Commodity</h5>
-                                    {% if chart_data.estimated_weight.values %}
-                                        <canvas id="plantEstimatedWeightChart" height="200"></canvas>
-                                    {% else %}
-                                        <div class="alert alert-info">No estimated weight data available.</div>
-                                    {% endif %}
-                                </div>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="plant" role="tabpanel" aria-labelledby="plant-tab">
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                                <h5 class="card-title text-center mb-3">Number of Plantings per Commodity</h5>
+                                {% if chart_data.plant_commodity %}
+                                    <canvas id="plantCommodityChart" height="200"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info">No plant commodity data available.</div>
+                                {% endif %}
                             </div>
-                            <div class="col-lg-6">
-                                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                    <h5 class="card-title text-center mb-3">Average Land Area per Commodity</h5>
-                                    {% if chart_data.avg_land_area.values %}
-                                        <canvas id="plantLandAreaChart" height="100"></canvas>
-                                    {% else %}
-                                        <div class="alert alert-info">No land area data available.</div>
-                                    {% endif %}
-                                </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                                <h5 class="card-title text-center mb-3">Estimated Harvest Weight per Commodity</h5>
+                                {% if chart_data.estimated_weight.values %}
+                                    <canvas id="plantEstimatedWeightChart" height="200"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info">No estimated weight data available.</div>
+                                {% endif %}
                             </div>
-                            <div class="col-lg-6">
-                                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                    <h5 class="card-title text-center mb-3">Number of Plantings per Municipality</h5>
-                                    {% if chart_data.plant_by_location.values %}
-                                        <canvas id="plantLocationChart" height="100"></canvas>
-                                    {% else %}
-                                        <div class="alert alert-info">No location data available.</div>
-                                    {% endif %}
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                                <h5 class="card-title text-center mb-3">Average Land Area per Commodity</h5>
+                                {% if chart_data.avg_land_area.values %}
+                                    <canvas id="plantLandAreaChart" height="100"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info">No land area data available.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                                <h5 class="card-title text-center mb-3">Number of Plantings per Municipality</h5>
+                                {% if chart_data.plant_by_location.values %}
+                                    <canvas id="plantLocationChart" height="100"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info">No location data available.</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -119,355 +194,131 @@ Fruit Cast | Monitor
     </div>
 </div>
 
-<!-- Chart.js and Dynamic Data Injection -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
 <script>
-    // HARVEST CHARTS
-    const harvest_months = {{ chart_data.monthly_harvest.labels|safe }};
-    const harvest_weights_by_month = {{ chart_data.monthly_harvest.values|safe }};
+    document.addEventListener('DOMContentLoaded', function() {
 
-    const harvest_commodities = {{ chart_data.harvest_commodity.labels|safe }};
-    const harvest_weights_by_commodity = {{ chart_data.harvest_commodity.values|safe }};
+        // Get filter elements
+        const yearFilter = document.getElementById('yearFilter');
+        const municipalityFilter = document.getElementById('municipalityFilter');
 
-    const harvest_municipality = {{ chart_data.harvest_municipality.labels|safe }};
-    const harvest_weights_by_location = {{ chart_data.harvest_municipality.values|safe }};
+        // Add event listeners for filter changes
+        if (yearFilter) {
+            yearFilter.addEventListener('change', updateDashboard);
+        }
+        if (municipalityFilter) {
+            municipalityFilter.addEventListener('change', updateDashboard);
+        }
 
-    // PLANT CHARTS
-    const plant_commodities = {{ chart_data.plant_commodity.labels|safe }};
-    const plant_units_by_commodity = {{ chart_data.plant_commodity.values|safe }};
-    const plant_estimated_labels = {{ chart_data.estimated_weight.labels|safe }};
-    const plant_estimated_values = {{ chart_data.estimated_weight.values|safe }};
+        // Function to update the URL and reload the page with new filters
+        function updateDashboard() {
+            const selectedYear = yearFilter.value;
+            const selectedMunicipality = municipalityFilter.value;
+            const newUrl = `${window.location.pathname}?year=${selectedYear}&municipality=${selectedMunicipality}`;
+            window.location.href = newUrl;
+        }
 
-    // since walang data neto na collected (but pede iutilize yung sa farmland owned)
-    //const plant_land_area_labels = {{ chart_data.avg_land_area.labels|safe }};
-    //const plant_land_area_values = {{ chart_data.avg_land_area.values|safe }};
+        // Generate random colors for the charts
+        function getRandomColors(count) {
+            const colors = [];
+            const predefinedColors = [
+                '#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF', '#FF9F40', '#007BFF', '#28A745', '#17A2B8', '#DC3545'
+            ];
+            for (let i = 0; i < count; i++) {
+                colors.push(predefinedColors[i % predefinedColors.length]);
+            }
+            return colors;
+        }
 
-    const plant_location_labels = {{ chart_data.plant_by_location.labels|safe }};
-    const plant_location_values = {{ chart_data.plant_by_location.values|safe }};
+        // --- HARVEST CHARTS ---
+        const harvest_monthly_labels = {{ chart_data.monthly_harvest.labels|safe }};
+        const harvest_monthly_values = {{ chart_data.monthly_harvest.values|safe }};
+        const harvest_commodity_labels = {{ chart_data.harvest_commodity.labels|safe }};
+        const harvest_commodity_values = {{ chart_data.harvest_commodity.values|safe }};
+        const harvest_municipality_labels = {{ chart_data.harvest_municipality.labels|safe }};
+        const harvest_municipality_values = {{ chart_data.harvest_municipality.values|safe }};
 
-document.addEventListener('DOMContentLoaded', function() {
-
-    const harvestMonthlyChart = new Chart(document.getElementById('harvestMonthlyChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: harvest_months,
-                datasets: [{
-                    label: 'Total Harvested Weight (Kg)',
-                    data: harvest_weights_by_month,
-                    borderColor: 'rgb(75, 192, 192)',
-                    fill: false,
-                }],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return tooltipItem.raw + " Kg";
-                            }
-                        }
+        // L-a: Total Harvested Weight by Month (Line Graph)
+        if (document.getElementById('harvestMonthlyChart')) {
+            new Chart(document.getElementById('harvestMonthlyChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: harvest_monthly_labels,
+                    datasets: [{
+                        label: 'Total Harvested Weight (Kg)',
+                        data: harvest_monthly_values,
+                        borderColor: 'rgb(75, 192, 192)',
+                        fill: false,
+                        tension: 0.1
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { callbacks: { label: function (tooltipItem) { return tooltipItem.raw + " Kg"; } } }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // HARVEST BY COMMODITY CHART
-        const harvestWeightChart = new Chart(document.getElementById('harvestWeightChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: harvest_commodities,
-                datasets: [{
-                    label: 'Harvested Weight by Commodity (Kg)',
-                    data: harvest_weights_by_commodity,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgb(75, 192, 192)',
-                    borderWidth: 1
-                }],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
+        // B-a: Total Harvested Weight by Commodity (Bar Graph)
+        if (document.getElementById('harvestWeightChart')) {
+            const barColors = getRandomColors(harvest_commodity_labels.length);
+            new Chart(document.getElementById('harvestWeightChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: harvest_commodity_labels,
+                    datasets: [{
+                        label: 'Harvested Weight (Kg)',
+                        data: harvest_commodity_values,
+                        backgroundColor: barColors.map(color => `${color}80`), // Add transparency
+                        borderColor: barColors,
+                        borderWidth: 1
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { callbacks: { label: function (tooltipItem) { return tooltipItem.raw + " Kg"; } } }
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return tooltipItem.raw + " Kg";
-                            }
-                        }
+                    scales: {
+                        y: { beginAtZero: true }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // HARVEST BY MUNICIPALITY CHART
-        const harvestLocationChart = new Chart(document.getElementById('harvestLocationChart').getContext('2d'), {
-            type: 'pie',
-            data: {
-                labels: harvest_municipality,
-                datasets: [{
-                    label: 'Harvested Weight by Municipality (Kg)',
-                    data: harvest_weights_by_location,
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
-                    borderColor: '#fff',
-                    borderWidth: 1
-                }],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
+        // B-b: Total Harvested Weight by Municipality (Bar Graph)
+        if (document.getElementById('harvestLocationChart')) {
+            const barColors = getRandomColors(harvest_municipality_labels.length);
+            new Chart(document.getElementById('harvestLocationChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: harvest_municipality_labels,
+                    datasets: [{
+                        label: 'Harvested Weight (Kg)',
+                        data: harvest_municipality_values,
+                        backgroundColor: barColors.map(color => `${color}80`),
+                        borderColor: barColors,
+                        borderWidth: 1
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y', // Make it a horizontal bar chart for better readability
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { callbacks: { label: function (tooltipItem) { return tooltipItem.raw + " Kg"; } } }
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return tooltipItem.raw + " Kg";
-                            }
-                        }
+                    scales: {
+                        x: { beginAtZero: true }
                     }
                 }
-            }
-        });
-
-        // PLANT CHARTS
-
-        // PLANT COMMODITIES CHART
-        const plantCommodityChart = new Chart(document.getElementById('plantCommodityChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: plant_commodities,
-                datasets: [{
-                    label: 'Number of Plantings',
-                    data: plant_units_by_commodity,
-                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    borderWidth: 1
-                }],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return tooltipItem.raw + " units";
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // ESTIMATED WEIGHT CHART
-        
-        const plantEstimatedWeightChart = new Chart(document.getElementById('plantEstimatedWeightChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: plant_estimated_labels,
-                datasets: [{
-                    label: 'Estimated Weight by Commodity (Kg)',
-                    data: plant_estimated_values,
-                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                    borderColor: 'rgba(255, 159, 64, 1)',
-                    borderWidth: 1
-                }],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return tooltipItem.raw + " Kg";
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-
-        // AVERAGE LAND AREA CHART
-        /*
-        const plantLandAreaChart = new Chart(document.getElementById('plantLandAreaChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: plant_land_area_labels,
-                datasets: [{
-                    label: 'Average Land Area by Commodity (sq. meters)',
-                    data: plant_land_area_values,
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return tooltipItem.raw + " sq. meters";
-                            }
-                        }
-                    }
-                }
-            }
-        });
-*/
-        // PLANT BY LOCATION CHART
-        const plantLocationChart = new Chart(document.getElementById('plantLocationChart').getContext('2d'), {
-            type: 'pie',
-            data: {
-                labels: plant_location_labels,
-                datasets: [{
-                    label: 'Plantings by Location',
-                    data: plant_location_values,
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
-                    borderColor: '#fff',
-                    borderWidth: 1
-                }],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return tooltipItem.raw + " plantings";
-                            }
-                        }
-                    }
-                }
-            }
-        });
-});
-
-
-
+            });
+        }
+    });
 </script>
-{% comment %} <script src="{% static 'js/monitoring.js' %}"></script> {% endcomment %}
 
 {% endblock %}
-
-{% comment %} 
-HARVEST
- Monthly Harvest Trend (Line Chart
- Top Harvest Locations (Bar/Horizontal Chart)
- Total Harvest Summary (Cards)
-
-PLANT
- Estimated Future Harvests (Line or Bar Chart)
- Recent Plantings Table
- 
-FILTER & INTERACTION TOOLS
- Dynamic Filters with AJAX (Optional for Later)
-
-INSIGHTS / ALERTS (Optional, Advanced)
- Low Planting Warning
- Harvest Delay Detection
-
-
- THESIS2
-
- 1. For All Users (General Overview)
-Total Harvested Weight by Commodity (Bar/Donut Chart)
-
-Shows which crops are most productive overall.
-Total Harvested Weight by Municipality (Map or Bar Chart)
-
-Visualizes which areas are producing the most.
-Monthly Harvest Trends (Line Chart)
-
-Shows seasonality and trends over time for all commodities or a selected one.
-2. For Farmers (Personal/Account-Specific)
-My Plantings and Harvests Timeline (Gantt or Calendar View)
-
-Shows when their crops were planted and harvested.
-Expected Harvest Dates (Table or Timeline)*
-
-Lists their plantings with expected harvest windows (using years_to_mature and seasonal_months).*
-My Best Performing Commodity (Summary Card)
-
-Highlights which crop gave them the most yield.
-3. For Administrators/Agriculturists
-Top Commodities by Municipality (Heatmap or Table)
-
-Shows which crops are most common/productive in each area.
-Harvest Forecast by Municipality and Commodity (Bar/Line Chart)
-
-Uses your forecast model to show expected yields for planning.
-Planting Density Map
-
-Number of plantings per barangay/municipality (choropleth map).
-Verification Status Overview (Pie/Bar Chart)
-
-Shows how many records are verified, pending, rejected, etc.
-Recent Activity Feed
-
-List of latest plantings, harvests, and verifications.
-4. Useful Filters for All Dashboards
-Filter by Year/Month
-
-See trends or totals for a specific period.
-Filter by Commodity
-
-Focus on a specific crop.
-Filter by Municipality/Barangay
-
-Focus on a specific area.
-5. Advanced/Actionable Insights
-Yield per Hectare by Commodity (Bar Chart)
-
-Average yield per unit area, helps identify best practices.
-Seasonal Forecast Alerts
-
-Highlight months with expected high/low yields for each commodity.
-Low Planting Warning
-
-Alert if a municipality has unusually low planting activity.
-Harvest Delay Detection
-
-Flag plantings that are overdue for harvest based on expected maturity.
-Example Dashboard Layout
-A. Summary Cards
-Total Harvested (kg)
-Total Plantings
-Most Productive Municipality
-Most Popular Commodity
-B. Charts
-Bar: Harvested Weight by Commodity
-Line: Monthly Harvest Trend (with year filter)
-Pie: Plantings by Municipality
-Map: Harvest/Planting Density Map
-C. Tables
-Expected Harvests (Upcoming)
-Recent Plantings/Harvests
-D. Filters
-Year, Month, Commodity, Municipality
-
-
-For easier mapping ng plan or explanation idk??
-Chart title = 'Harvested Weight by Commodity', 'Harvested Weight by Municipality', 'Monthly Harvest Trend', 'Plantings by Commodity', 'Plantings by Municipality', 'Average Yield per Hectare by Commodity', 'Verification Status Distribution', 'Forecasted Harvest Next Month'
-x-axis/labels = 'Commodity Name', 'Municipality Name', 'Month/Year', 'Commodity Name', 'Municipality Name', 'Commodity Name', 'Municipality Name', 'Commodity Name', 'Status', 'Commodity Name'
-y-axis/labels = 'Total Weight (kg)', 'Total Weight (kg)', 'Total Weight (kg)', 'Number of Plantings', 'Number of Plantings', 'Yield per Hectare', 'Count', 'Forecasted Weight (kg)'
-filters = 'Year, Municipality', 'Year, Commodity', 'Commodity, Municipality', 'Year, Municipality', 'Year, Commodity', 'Year, Municipality', 'Year, Municipality', 'Municipality'
-
- {% endcomment %}
