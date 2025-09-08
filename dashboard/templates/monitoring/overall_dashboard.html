@@ -38,60 +38,60 @@ Fruit Cast | Monitor
             </div>
 
             <div class="row g-4 mb-4">
-                <div class="w-50 row">
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card bg-success text-white text-center rounded-4 shadow-sm h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Plantings This Year</h5>
-                                <h2 class="card-text fw-bold">{{ total_plantings|default:0 }}</h2>
+                <div class="col-lg-6">
+                    <div class="row g-4">
+                        <div class="col-6">
+                            <div class="card bg-success text-white text-center rounded-4 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Plantings This Year</h5>
+                                    <h2 class="card-text fw-bold">{{ total_plantings|default:0 }}</h2>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card bg-info text-white text-center rounded-4 shadow-sm h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Harvests This Year</h5>
-                                <h2 class="card-text fw-bold">{{ total_harvests|default:0 }}</h2>
+                        <div class="col-6">
+                            <div class="card bg-info text-white text-center rounded-4 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Harvests This Year</h5>
+                                    <h2 class="card-text fw-bold">{{ total_harvests|default:0 }}</h2>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="w-100"></div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card bg-warning text-dark text-center rounded-4 shadow-sm h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Most Abundant Fruit</h5>
-                                <h2 class="card-text fw-bold">{{ most_abundant_fruit|default:"N/A" }}</h2>
+                        <div class="col-6">
+                            <div class="card bg-warning text-dark text-center rounded-4 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Most Abundant Fruit</h5>
+                                    <h2 class="card-text fw-bold">{{ most_abundant_fruit|default:"N/A" }}</h2>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card bg-secondary text-white text-center rounded-4 shadow-sm h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Users</h5>
-                                <h2 class="card-text fw-bold">{{ total_users|default:0 }}</h2>
+                        <div class="col-6">
+                            <div class="card bg-secondary text-white text-center rounded-4 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Users</h5>
+                                    <h2 class="card-text fw-bold">{{ total_users|default:0 }}</h2>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="w-50 row">
-                    <div class="col-lg-3 col-md-6">
-                            <div class="card shadow-sm rounded-4 p-4 mb-4">
-                                <h5 class="card-title text-center mb-3">Total Harvested Weight per Month <br/> <small>({{ selected_municipality_name }})</small></h5>
-                                {% if chart_data.monthly_harvest %}
-                                    <canvas id="harvestMonthlyChart" height="300"></canvas>
-                                {% else %}
-                                    <div class="alert alert-info text-center">No monthly harvest data available.</div>
-                                {% endif %}
-                            </div>
-                        </div>
+                
+                <div class="col-lg-6">
+                    <div class="card shadow-sm rounded-4 p-4 mb-4 h-100">
+                        <h5 class="card-title text-center mb-3">Total Harvested Weight per Month <br/> <small>({{ selected_municipality_name }})</small></h5>
+                        {% if chart_data.monthly_harvest %}
+                            <canvas id="harvestMonthlyChart" height="300"></canvas>
+                        {% else %}
+                            <div class="alert alert-info text-center">No monthly harvest data available.</div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
             <div class="tab-content" id="monitorTabsContent">
                 <div class="tab-pane fade show active" id="harvest" role="tabpanel" aria-labelledby="harvest-tab">
-                    <div class="row g-4">
+                    <div class="row g-4 mb-4">
                         <div class="col-lg-8">
-                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                            <div class="card shadow-sm rounded-4 p-4 h-100">
                                 <h5 class="card-title text-center mb-3">Total Harvested Weight by Commodity</h5>
                                 {% if chart_data.harvest_commodity %}
                                     <canvas id="harvestWeightChart" height="300"></canvas>
@@ -100,9 +100,9 @@ Fruit Cast | Monitor
                                 {% endif %}
                             </div>
                         </div>
-                        
+
                         <div class="col-lg-4">
-                            <div class="card shadow-sm rounded-4 p-4 mb-4 h-100">
+                            <div class="card shadow-sm rounded-4 p-4 h-100">
                                 <h5 class="card-title text-center mb-3">Commodities Catalog</h5>
                                 <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
                                     {% for commodity in commodities_list %}
@@ -114,13 +114,26 @@ Fruit Cast | Monitor
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-8">
+                            <div class="card shadow-sm rounded-4 p-4 h-100">
+                                <h5 class="card-title text-center mb-3">Total Harvested Weight by Municipality</h5>
+                                {% if chart_data.harvest_municipality %}
+                                    <canvas id="harvestLocationChart" height="200"></canvas>
+                                {% else %}
+                                    <div class="alert alert-info text-center">No harvest location data available.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
                         <div class="col-lg-4">
-                            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                            <div class="card shadow-sm rounded-4 p-4 h-100">
                                 <h5 class="card-title text-center mb-3">Top-Performing Municipalities 🏆</h5>
-                                <div class="row">
+                                <div class="row g-2">
                                     {% for municipality in top_municipalities %}
-                                    <div class="col-md-4">
+                                    <div class="col-12">
                                         <div class="card text-center bg-light border-0 shadow-sm mb-3">
                                             <div class="card-body">
                                                 <h4 class="card-title fw-bold">{{ forloop.counter }}. {{ municipality.name }}</h4>
@@ -132,16 +145,6 @@ Fruit Cast | Monitor
                                     <div class="alert alert-info text-center">No top-performing municipalities found for this period.</div>
                                     {% endfor %}
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-8">
-                            <div class="card shadow-sm rounded-4 p-4 mb-4 h-100">
-                                <h5 class="card-title text-center mb-3">Total Harvested Weight by Municipality</h5>
-                                {% if chart_data.harvest_municipality %}
-                                    <canvas id="harvestLocationChart" height="200"></canvas>
-                                {% else %}
-                                    <div class="alert alert-info text-center">No harvest location data available.</div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
