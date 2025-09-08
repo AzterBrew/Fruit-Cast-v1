@@ -11,7 +11,7 @@ Fruit Cast | Monitor
 
 {% block content %}
 <div class="main-user py-5">
-    <div class="container-fluid">
+    <div class="row main-user-content justify-content-center">
         <div class="card shadow-sm rounded-4 p-4 mb-4">
             <h1 class="mb-4 text-success fw-bold text-center">
                 <i class="bi bi-bar-chart-line"></i> Monitoring Dashboard
@@ -31,7 +31,7 @@ Fruit Cast | Monitor
                     <select class="form-select" id="municipalityFilter">
                         <option value="all">All Municipalities</option>
                         {% for municipality in municipalities %}
-                            <option value="{{ municipality.id }}" {% if selected_municipality == municipality.id|stringformat:"s" %}selected{% endif %}>{{ municipality.name }}</option>
+                            <option value="{{ municipality.municipality_id }}" {% if selected_municipality == municipality.municipality_id|stringformat:"s" %}selected{% endif %}>{{ municipality.municipality }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -54,6 +54,7 @@ Fruit Cast | Monitor
                         </div>
                     </div>
                 </div>
+                <div class="w-100"></div>
                 <div class="col-lg-3 col-md-6">
                     <div class="card bg-warning text-dark text-center rounded-4 shadow-sm h-100">
                         <div class="card-body">
