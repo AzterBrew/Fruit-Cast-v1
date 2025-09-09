@@ -786,39 +786,49 @@ def monitor(request):
             plant_records = plant_records.filter(plant_date__year=selected_year)
 
     # Create different filtered datasets for different cards
-    # Municipality filter affects: c4-a, c4-b, c4-c, L-a, b-a (NOT b-b, Li-a)
-    harvest_records_muni_filtered = harvest_records
-    plant_records_muni_filtered = plant_records
+    
+    # For c4-a, c4-b, c4-c, L-a: Apply both municipality AND commodity filters
+    harvest_records_muni_commodity_filtered = harvest_records
+    plant_records_muni_commodity_filtered = plant_records
     
     if selected_municipality != 'all' and selected_municipality.isdigit():
-        harvest_records_muni_filtered = harvest_records.filter(municipality=selected_municipality)
-        plant_records_muni_filtered = plant_records.filter(municipality=selected_municipality)
+        harvest_records_muni_commodity_filtered = harvest_records_muni_commodity_filtered.filter(municipality=selected_municipality)
+        plant_records_muni_commodity_filtered = plant_records_muni_commodity_filtered.filter(municipality=selected_municipality)
         selected_municipality_name = MunicipalityName.objects.get(pk=selected_municipality).municipality
     
-    # Commodity filter affects: L-a, b-b, Li-a (NOT c4-a, c4-b, c4-c, b-a)
-    harvest_records_commodity_filtered = harvest_records
     if selected_commodity != 'all' and selected_commodity.isdigit():
-        harvest_records_commodity_filtered = harvest_records.filter(commodity_id=selected_commodity)
+        harvest_records_muni_commodity_filtered = harvest_records_muni_commodity_filtered.filter(commodity_id=selected_commodity)
+        plant_records_muni_commodity_filtered = plant_records_muni_commodity_filtered.filter(commodity_id=selected_commodity)
     
-    # --- KPI Cards (c4-a, c4-b, c4-c) - affected by municipality filter only ---
-    total_plantings = plant_records_muni_filtered.aggregate(total=Count('id'))['total'] or 0
-    total_harvests = harvest_records_muni_filtered.aggregate(total=Count('id'))['total'] or 0
-    most_abundant_fruit = harvest_records_muni_filtered.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight').first()
+    # For b-a: Apply municipality filter only
+    harvest_records_muni_only = harvest_records
+    if selected_municipality != 'all' and selected_municipality.isdigit():
+        harvest_records_muni_only = harvest_records.filter(municipality=selected_municipality)
+    
+    # For b-b, Li-a: Apply commodity filter only
+    harvest_records_commodity_only = harvest_records
+    if selected_commodity != 'all' and selected_commodity.isdigit():
+        harvest_records_commodity_only = harvest_records.filter(commodity_id=selected_commodity)
+    
+    # --- KPI Cards (c4-a, c4-b, c4-c) - affected by municipality AND commodity filters ---
+    total_plantings = plant_records_muni_commodity_filtered.aggregate(total=Count('id'))['total'] or 0
+    total_harvests = harvest_records_muni_commodity_filtered.aggregate(total=Count('id'))['total'] or 0
+    most_abundant_fruit = harvest_records_muni_commodity_filtered.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight').first()
     most_abundant_fruit = most_abundant_fruit['commodity_id__name'] if most_abundant_fruit else None
     total_users = AccountsInformation.objects.count()
 
-    # --- L-a: Total Harvested Weight for every month - affected by municipality filter ---
-    monthly_harvest_data = harvest_records_muni_filtered.annotate(month=TruncMonth('harvest_date')).values('month').annotate(total_weight=Sum('total_weight_kg')).order_by('month')
+    # --- L-a: Total Harvested Weight for every month - affected by municipality AND commodity filters ---
+    monthly_harvest_data = harvest_records_muni_commodity_filtered.annotate(month=TruncMonth('harvest_date')).values('month').annotate(total_weight=Sum('total_weight_kg')).order_by('month')
     monthly_labels = [data['month'].strftime('%b %Y') for data in monthly_harvest_data]
     monthly_values = [float(data['total_weight']) for data in monthly_harvest_data]
     
-    # --- b-a: Total Harvested Weight by Commodity - affected by municipality filter ---
-    harvest_by_commodity = harvest_records_muni_filtered.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity_id__name')
+    # --- b-a: Total Harvested Weight by Commodity - affected by municipality filter only ---
+    harvest_by_commodity = harvest_records_muni_only.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity_id__name')
     commodity_labels = [data['commodity_id__name'] for data in harvest_by_commodity]
     commodity_values = [float(data['total_weight']) for data in harvest_by_commodity]
 
-    # --- b-b & Li-a: Harvested Weight by Municipality & Top Municipalities - affected by commodity filter ---
-    harvest_by_municipality = harvest_records_commodity_filtered.values('municipality__municipality').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
+    # --- b-b & Li-a: Harvested Weight by Municipality & Top Municipalities - affected by commodity filter only ---
+    harvest_by_municipality = harvest_records_commodity_only.values('municipality__municipality').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
     
     # Fix the top municipalities to show names properly
     top_municipalities = []
