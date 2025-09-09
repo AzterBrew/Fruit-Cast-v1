@@ -227,8 +227,8 @@ class RecordTransactionCreate(forms.ModelForm):
             self.fields['farm_land'].queryset = FarmLand.objects.filter(userinfo_id__auth_user=user)
 
 class PlantRecordCreate(forms.ModelForm):
-    min_expected_harvest = forms.DecimalField(label="Min Expected Harvest (grams) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder':'0'}))
-    max_expected_harvest = forms.DecimalField(label="Max Expected Harvest (grams) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder':'0'}))
+    min_expected_harvest = forms.DecimalField(label="Min Expected Harvest (kg) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder':'0'}))
+    max_expected_harvest = forms.DecimalField(label="Max Expected Harvest (kg) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder':'0'}))
 
     class Meta:
         model = initPlantRecord
