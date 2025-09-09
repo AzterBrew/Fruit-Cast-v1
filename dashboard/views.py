@@ -649,6 +649,13 @@ def forecast_pdf(request):
         filter_year = request.GET.get('filter_year')
         municipality_id = request.GET.get('municipality_id')
         
+        municipality_name = "All of Bataan"
+        if municipality_id and municipality_id != "14":
+            try:
+                municipality_name = MunicipalityName.objects.get(pk=municipality_id).municipality
+            except MunicipalityName.DoesNotExist:
+                pass
+                
         forecast_summary = []
         commodities = CommodityType.objects.exclude(pk=1)
         for commodity in commodities:
@@ -667,6 +674,8 @@ def forecast_pdf(request):
         context = {
             'forecast_summary': forecast_summary,
             'municipality_name': municipality_name,
+            "filter_month": filter_month,
+            "filter_year": filter_year,
             'report_title': f"Forecast by Commodity for {municipality_name}"
         }
         filename = f"forecast-by-commodity_{municipality_name.lower()}_{filter_year}-{filter_month}.pdf"
@@ -698,6 +707,8 @@ def forecast_pdf(request):
             'forecast_data': forecast_combined,
             'report_title': f"Forecast by Month for {commodity_name}",
             'commodity_name': commodity_name,
+            "filter_month": filter_month,
+            "filter_year": filter_year,
             'municipality_name': municipality_name,
         }
         filename = f"forecast-by-month_{commodity_name.lower() or 'all'}_{municipality_name.lower() or 'all'}.pdf"
