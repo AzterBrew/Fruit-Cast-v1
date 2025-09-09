@@ -37,13 +37,14 @@ Fruit Cast | Monitor
                 </div>
                 <div class="col-md-3">
                     <label for="commodityFilter" class="form-label">Select Commodity</label>
-                    <small class="text-muted d-block">Applies to: monthly chart, top municipalities</small>
                     <select class="form-select" id="commodityFilter">
                         <option value="all">All Commodities</option>
                         {% for commodity in commodities %}
                             <option value="{{ commodity.commodity_id }}" {% if selected_commodity == commodity.commodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
                         {% endfor %}
                     </select>
+                    <small class="text-muted d-block">Applies to: monthly chart, top municipalities</small>
+
                 </div>
             </div>
 

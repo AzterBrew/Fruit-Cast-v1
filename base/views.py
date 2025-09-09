@@ -389,59 +389,45 @@ def solo_harvest_record_view(request):
     if request.method == "POST":
         harvest_form = HarvestRecordCreate(request.POST, user=request.user)
         transaction_form = RecordTransactionCreate(request.POST, user=request.user)
+        manual_municipality_id = request.POST.get('manual_municipality')
+        if manual_municipality_id:
+            transaction_form.fields['manual_barangay'].queryset = BarangayName.objects.filter(municipality_id=manual_municipality_id)
+        else:
+            transaction_form.fields['manual_barangay'].queryset = BarangayName.objects.none()
+
         if harvest_form.is_valid() and transaction_form.is_valid():
-            # try:
-                # Create and save the transaction first
+            try:
                 transaction = transaction_form.save(commit=False)
                 transaction.account_id = accountinfo
-                
-                manual_municipality_id = request.POST.get('manual_municipality')
-                if manual_municipality_id:
-                    transaction_form.fields['manual_barangay'].queryset = BarangayName.objects.filter(municipality_id=manual_municipality_id)
-                else:
-                    transaction_form.fields['manual_barangay'].queryset = BarangayName.objects.none()
+                if transaction.location_type == "manual":
+                    transaction.manual_municipality = transaction_form.cleaned_data.get('manual_municipality')
+                    transaction.manual_barangay = transaction_form.cleaned_data.get('manual_barangay')
+                elif transaction.location_type == "farm_land":
+                    transaction.farm_land = transaction_form.cleaned_data.get('farm_land')
+                transaction.save()
+                harvest_record = harvest_form.save(commit=False)
+                harvest_record.transaction = transaction
+                harvest_record.record_status = pending_status
+                harvest_record.save()
+                return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
+            except Exception as e:
+                print(f"❌ Error saving solo harvest record: {e}")
+                messages.error(request, f"Error saving record: {str(e)}")
+        # If form is invalid, fall through to re-render with errors
+    else:
+        print("❌ Form validation failed")
+        print("Harvest form errors:", harvest_form.errors)
+        print("Transaction form errors:", transaction_form.errors)
+        harvest_form = HarvestRecordCreate(user=request.user)
+        transaction_form = RecordTransactionCreate(user=request.user)
 
-                if harvest_form.is_valid() and transaction_form.is_valid():
-                    try:
-                        transaction = transaction_form.save(commit=False)
-                        transaction.account_id = accountinfo
-
-                        if transaction.location_type == "manual":
-                            transaction.manual_municipality = transaction_form.cleaned_data.get('manual_municipality')
-                            transaction.manual_barangay = transaction_form.cleaned_data.get('manual_barangay')
-                        elif transaction.location_type == "farm_land":
-                            transaction.farm_land = transaction_form.cleaned_data.get('farm_land')
-
-                        transaction.save()
-
-                        harvest_record = harvest_form.save(commit=False)
-                        harvest_record.transaction = transaction
-                        harvest_record.record_status = pending_status
-                        harvest_record.save()
-                        
-                        print("✅ Solo harvest record saved successfully")
-                        return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
-                    
-                    except Exception as e:
-                        print(f"❌ Error saving solo harvest record: {e}")
-                        # Add error message to display to user
-                        messages.error(request, f"Error saving record: {str(e)}")
-                else:
-                    print("❌ Form validation failed")
-                    print("Harvest form errors:", harvest_form.errors)
-                    print("Transaction form errors:", transaction_form.errors)
-        else:
-            print("📝 Displaying solo harvest record form")
-            harvest_form = HarvestRecordCreate(user=request.user)
-            transaction_form = RecordTransactionCreate(user=request.user)
-
-        context = {
-            'user_firstname': userinfo.firstname,
-            'view_to_show': 'harvest',
-            'form': harvest_form,
-            'transaction_form': transaction_form,
-        }
-        return render(request, 'loggedin/transaction/transaction.html', context)
+    context = {
+        'user_firstname': userinfo.firstname,
+        'view_to_show': 'harvest',
+        'form': harvest_form,
+        'transaction_form': transaction_form,
+    }
+    return render(request, 'loggedin/transaction/transaction.html', context)
 
 
 @login_required
