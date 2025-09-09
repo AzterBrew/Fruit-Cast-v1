@@ -390,26 +390,39 @@ def solo_harvest_record_view(request):
         harvest_form = HarvestRecordCreate(request.POST, user=request.user)
         transaction_form = RecordTransactionCreate(request.POST, user=request.user)
         if harvest_form.is_valid() and transaction_form.is_valid():
-            transaction = transaction_form.save(commit=False)
-            transaction.account_id = accountinfo
-            transaction.harvest_status = pending_status
-            transaction.item_status_id = AccountStatus.objects.get(acc_stat_id=3)  # Pending
+            try:
+                # Create and save the transaction first
+                transaction = transaction_form.save(commit=False)
+                transaction.account_id = accountinfo
+                
+                # Handle location data properly
+                if transaction.location_type == "manual":
+                    transaction.manual_municipality = transaction_form.cleaned_data.get('manual_municipality')
+                    transaction.manual_barangay = transaction_form.cleaned_data.get('manual_barangay')
+                elif transaction.location_type == "farm_land":
+                    transaction.farm_land = transaction_form.cleaned_data.get('farm_land')
+                
+                transaction.save()
+
+                # Create and save the harvest record
+                harvest_record = harvest_form.save(commit=False)
+                harvest_record.transaction = transaction
+                harvest_record.record_status = pending_status
+                harvest_record.save()
+                
+                print("✅ Solo harvest record saved successfully")
+                return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
             
-            if transaction.location_type == "manual":
-                transaction.manual_municipality = transaction_form.cleaned_data.get('manual_municipality')
-                transaction.manual_barangay = transaction_form.cleaned_data.get('manual_barangay')
-            elif transaction.location_type == "farm_land":
-                transaction.farm_land_id = transaction_form.cleaned_data.get('farm_land')
-            transaction.save()
-
-            harvest_record = harvest_form.save(commit=False)
-            harvest_record.transaction = transaction
-            harvest_record.save()
-            print("may nasave pala")
-
-            return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
+            except Exception as e:
+                print(f"❌ Error saving solo harvest record: {e}")
+                # Add error message to display to user
+                messages.error(request, f"Error saving record: {str(e)}")
+        else:
+            print("❌ Form validation failed")
+            print("Harvest form errors:", harvest_form.errors)
+            print("Transaction form errors:", transaction_form.errors)
     else:
-        print("Walang nasave na harvest record")
+        print("📝 Displaying solo harvest record form")
         harvest_form = HarvestRecordCreate(user=request.user)
         transaction_form = RecordTransactionCreate(user=request.user)
 

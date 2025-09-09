@@ -70,6 +70,13 @@ Fruit Cast | Forecast
                         {% comment %} <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|escapejs }}'> {% endcomment %}
                         <button type="submit" class="btn btn-outline-success mb-3">Download CSV for this Forecast</button>
                     </form>
+
+                    <form method="get" action="{% url 'dashboard:forecast_pdf' %}" target="_blank">
+                        <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
+                        <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
+                        <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
+                        <button type="submit" class="btn btn-outline-info mb-3">Download PDF for this Forecast</button>
+                    </form>
                     {% if user_role_id == 2 or user_role_id == 3 %}
                         <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-success mb-3">View All Forecast Batches</a>
                     {% endif %}

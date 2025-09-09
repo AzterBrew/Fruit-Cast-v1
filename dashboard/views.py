@@ -29,7 +29,9 @@ from shapely.geometry import shape
 # from dashboard.utils import generate_notifications, get_current_month
 from calendar import monthrange
 from pathlib import Path
-
+from django.template.loader import get_template
+from weasyprint import HTML, CSS
+from django.conf import settings
 #from .forms import CustomUserCreationForm  # make sure this is imported
 
 from base.models import *
@@ -636,6 +638,88 @@ def forecast_csv(request):
     return response
 
 
+def forecast_pdf(request):
+    commodity_id = request.GET.get('commodity_id')
+    municipality_id = request.GET.get('municipality_id')
+    forecast_combined_raw = request.GET.get('forecast_combined')
+    pdf_type = request.GET.get('pdf_type')
+    
+    if pdf_type == 'by_commodity':
+        filter_month = request.GET.get('filter_month')
+        filter_year = request.GET.get('filter_year')
+        municipality_id = request.GET.get('municipality_id')
+        
+        forecast_summary = []
+        commodities = CommodityType.objects.exclude(pk=1)
+        for commodity in commodities:
+            qs = ForecastResult.objects.filter(
+                commodity_id=commodity.commodity_id,
+                forecast_month__number=filter_month,
+                forecast_year=filter_year
+            )
+            if municipality_id and municipality_id != "14":
+                qs = qs.filter(municipality_id=municipality_id)
+            agg = qs.aggregate(total=Sum('forecasted_amount_kg'))
+            total_kg = agg['total'] if agg['total'] is not None else 0
+            forecast_summary.append({'commodity': commodity.name, 'forecasted_kg': round(total_kg, 2)})
+            
+        # Update context and filename for this type of PDF
+        context = {
+            'forecast_summary': forecast_summary,
+            'municipality_name': municipality_name,
+            'report_title': f"Forecast by Commodity for {municipality_name}"
+        }
+        filename = f"forecast-by-commodity_{municipality_name.lower()}_{filter_year}-{filter_month}.pdf"
+    else: 
+        forecast_combined = []
+        if forecast_combined_raw:
+            try:
+                forecast_combined = json.loads(forecast_combined_raw)
+            except Exception as e:
+                print("Error decoding forecast_combined for PDF:", e)
+                forecast_combined = []
+
+        commodity_name = "Overall"
+        if commodity_id:
+            try:
+                commodity_name = CommodityType.objects.get(pk=commodity_id).name
+            except CommodityType.DoesNotExist:
+                pass
+                
+        municipality_name = "All of Bataan"
+        if municipality_id and municipality_id != "14":
+            try:
+                municipality_name = MunicipalityName.objects.get(pk=municipality_id).municipality
+            except MunicipalityName.DoesNotExist:
+                pass
+
+        # Data to pass to the PDF template
+        context = {
+            'forecast_data': forecast_combined,
+            'report_title': f"Forecast by Month for {commodity_name}",
+            'commodity_name': commodity_name,
+            'municipality_name': municipality_name,
+        }
+        filename = f"forecast-by-month_{commodity_name.lower() or 'all'}_{municipality_name.lower() or 'all'}.pdf"
+
+    filename = filename.replace(" ", "-")
+
+    # Render the HTML template for the PDF
+    template_name = 'dashboard/forecasting/forecast_by_commodity_pdf_template.html' if pdf_type == 'by_commodity' else 'dashboard/forecasting/forecast_pdf_template.html'
+    template = get_template(template_name)
+    html_content = template.render(context)
+    
+    # Generate the PDF from the rendered HTML
+    pdf = HTML(string=html_content, base_url=request.build_absolute_uri('/')).write_pdf()
+
+    # Create an HttpResponse with the PDF
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    return response
+
+
+
 COLORS = [
     'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)',
     'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)',
@@ -664,11 +748,15 @@ def monitor(request):
         available_years = VerifiedPlantRecord.objects.annotate(year=ExtractYear('plant_date')).values_list('year', flat=True).distinct().order_by('year')
 
     # Get available municipalities for the filter
-    municipalities = MunicipalityName.objects.all().order_by('municipality')
+    municipalities = MunicipalityName.objects.exclude(pk=14).order_by('municipality')
+
+    # Get available commodities for the filter
+    commodities = CommodityType.objects.exclude(pk=1).order_by('name')
 
     # Get filter values from the request
     selected_year = request.GET.get('year')
     selected_municipality = request.GET.get('municipality', 'all')
+    selected_commodity = request.GET.get('commodity', 'all')
     selected_municipality_name = 'All Municipalities'
 
     # Filter QuerySets based on selected filters
@@ -685,37 +773,44 @@ def monitor(request):
             harvest_records = harvest_records.filter(harvest_date__year=selected_year)
             plant_records = plant_records.filter(plant_date__year=selected_year)
 
+    harvest_records_municipality_filtered = harvest_records
+    plant_records_municipality_filtered = plant_records
+    
     if selected_municipality != 'all' and selected_municipality.isdigit():
         harvest_records = harvest_records.filter(municipality=selected_municipality)
         plant_records = plant_records.filter(municipality=selected_municipality)
         selected_municipality_name = MunicipalityName.objects.get(pk=selected_municipality).municipality
     
+    harvest_records_commodity_filtered = harvest_records
+    if selected_commodity != 'all' and selected_commodity.isdigit():
+        harvest_records_commodity_filtered = harvest_records.filter(commodity_id=selected_commodity)
+    
     # --- KPI Cards (c-4) ---
-    total_plantings = plant_records.aggregate(total=Count('id'))['total'] or 0
-    total_harvests = harvest_records.aggregate(total=Count('id'))['total'] or 0
-    most_abundant_fruit = harvest_records.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight').first()
+    total_plantings = plant_records_municipality_filtered.aggregate(total=Count('id'))['total'] or 0
+    total_harvests = harvest_records_municipality_filtered.aggregate(total=Count('id'))['total'] or 0
+    most_abundant_fruit = harvest_records_municipality_filtered.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight').first()
     most_abundant_fruit = most_abundant_fruit['commodity_id__name'] if most_abundant_fruit else None
     total_users = AccountsInformation.objects.count()
 
     # --- L-a: Total Harvested Weight for every month ---
-    monthly_harvest_data = harvest_records.annotate(month=TruncMonth('harvest_date')).values('month').annotate(total_weight=Sum('total_weight_kg')).order_by('month')
+    monthly_harvest_data = harvest_records_commodity_filtered.annotate(month=TruncMonth('harvest_date')).values('month').annotate(total_weight=Sum('total_weight_kg')).order_by('month')
     monthly_labels = [data['month'].strftime('%b %Y') for data in monthly_harvest_data]
     monthly_values = [float(data['total_weight']) for data in monthly_harvest_data]
     
     # --- b-a: Total Harvested Weight by Commodity ---
-    harvest_by_commodity = harvest_records.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity_id__name')
+    harvest_by_commodity = harvest_records_municipality_filtered.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity_id__name')
     commodity_labels = [data['commodity_id__name'] for data in harvest_by_commodity]
     commodity_values = [float(data['total_weight']) for data in harvest_by_commodity]
 
     # --- b-b & Li-a: Harvested Weight by Municipality & Top Municipalities ---
-    harvest_by_municipality = harvest_records.values('municipality_id__municipality').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
+    harvest_by_municipality = harvest_records_commodity_filtered.values('municipality__municipality').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
     top_municipalities = list(harvest_by_municipality[:5])
 
-    municipality_labels = [data['municipality_id__municipality'] for data in harvest_by_municipality]
+    municipality_labels = [data['municipality__municipality'] for data in harvest_by_municipality]
     municipality_values = [float(data['total_weight']) for data in harvest_by_municipality]
     
     # --- Li-b: Commodities List ---
-    all_commodities = CommodityType.objects.all()
+    all_commodities = CommodityType.objects.exclude(pk=1)
     commodities_list = []
     for c in all_commodities:
         # Handle years_to_mature
@@ -770,9 +865,11 @@ def monitor(request):
         'chart_data': chart_data,
         'selected_year': selected_year,
         'selected_municipality': selected_municipality,
+        'selected_commodity': selected_commodity,
         'selected_municipality_name': selected_municipality_name,
         'available_years': available_years,
         'municipalities': municipalities,
+        'commodities': commodities,
         'total_plantings': total_plantings,
         'total_harvests': total_harvests,
         'most_abundant_fruit': most_abundant_fruit,

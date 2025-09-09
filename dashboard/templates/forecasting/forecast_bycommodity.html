@@ -74,6 +74,13 @@ Forecast by Commodity
                 <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
                 <button type="submit" class="btn btn-outline-success mb-3">Download CSV for this Summary</button>
             </form>
+            <form method="get" action="{% url 'dashboard:forecast_pdf' %}" class="d-inline-block">
+                <input type="hidden" name="pdf_type" value="by_commodity">
+                <input type="hidden" name="filter_month" value="{{ filter_month }}">
+                <input type="hidden" name="filter_year" value="{{ filter_year }}">
+                <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
+                <button type="submit" class="btn btn-outline-danger mb-3">Download PDF for this Summary</button>
+            </form>
             {% endif %}
         </div>
     </div>

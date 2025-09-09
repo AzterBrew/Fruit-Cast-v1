@@ -18,7 +18,7 @@ Fruit Cast | Monitor
             </h1>
             
             <div class="row mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="yearFilter" class="form-label">Select Year</label>
                     <select class="form-select" id="yearFilter">
                         {% for year in available_years %}
@@ -26,12 +26,22 @@ Fruit Cast | Monitor
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="municipalityFilter" class="form-label">Select Municipality</label>
                     <select class="form-select" id="municipalityFilter">
                         <option value="all">All Municipalities</option>
                         {% for municipality in municipalities %}
                             <option value="{{ municipality.municipality_id }}" {% if selected_municipality == municipality.municipality_id|stringformat:"s" %}selected{% endif %}>{{ municipality.municipality }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="commodityFilter" class="form-label">Select Commodity</label>
+                    <small class="text-muted d-block">Applies to: monthly chart, top municipalities</small>
+                    <select class="form-select" id="commodityFilter">
+                        <option value="all">All Commodities</option>
+                        {% for commodity in commodities %}
+                            <option value="{{ commodity.commodity_id }}" {% if selected_commodity == commodity.commodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -212,6 +222,8 @@ Fruit Cast | Monitor
         // Get filter elements
         const yearFilter = document.getElementById('yearFilter');
         const municipalityFilter = document.getElementById('municipalityFilter');
+        const commodityFilter = document.getElementById('commodityFilter');
+
 
         // Add event listeners for filter changes
         if (yearFilter) {
@@ -220,12 +232,16 @@ Fruit Cast | Monitor
         if (municipalityFilter) {
             municipalityFilter.addEventListener('change', updateDashboard);
         }
+        if (commodityFilter) {
+            commodityFilter.addEventListener('change', updateDashboard);
+}
 
         // Function to update the URL and reload the page with new filters
         function updateDashboard() {
             const selectedYear = yearFilter.value;
             const selectedMunicipality = municipalityFilter.value;
-            const newUrl = `${window.location.pathname}?year=${selectedYear}&municipality=${selectedMunicipality}`;
+            const selectedCommodity = commodityFilter.value;
+            const newUrl = `${window.location.pathname}?year=${selectedYear}&municipality=${selectedMunicipality}&commodity=${selectedCommodity}`;
             window.location.href = newUrl;
         }
 
