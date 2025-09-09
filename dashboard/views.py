@@ -718,15 +718,44 @@ def monitor(request):
     all_commodities = CommodityType.objects.all()
     commodities_list = []
     for c in all_commodities:
-        years_to_bear = float(c.years_to_bearfruit)
-        years_full = int(years_to_bear)
-        months_full = int((years_to_bear - years_full) * 12)
-        info_string = f"{years_full} year(s)"
-        if months_full > 0:
-            info_string += f" and {months_full} month(s)"
+        # Handle years_to_mature
+        mature_info = ""
+        if c.years_to_mature:
+            years = int(c.years_to_mature)
+            months = int((c.years_to_mature - years) * 12)
+            
+            if years > 0 and months > 0:
+                mature_info = f"{years} year{'s' if years > 1 else ''}, {months} month{'s' if months > 1 else ''}"
+            elif years > 0:
+                mature_info = f"{years} year{'s' if years > 1 else ''}"
+            elif months > 0:
+                mature_info = f"{months} month{'s' if months > 1 else ''}"
+            else:
+                mature_info = "Not specified"
+        else:
+            mature_info = "Not specified"
+        
+        # Handle years_to_bearfruit
+        bearfruit_info = ""
+        if c.years_to_bearfruit:
+            years = int(c.years_to_bearfruit)
+            months = int((c.years_to_bearfruit - years) * 12)
+            
+            if years > 0 and months > 0:
+                bearfruit_info = f"{years} year{'s' if years > 1 else ''}, {months} month{'s' if months > 1 else ''}"
+            elif years > 0:
+                bearfruit_info = f"{years} year{'s' if years > 1 else ''}"
+            elif months > 0:
+                bearfruit_info = f"{months} month{'s' if months > 1 else ''}"
+            else:
+                bearfruit_info = "Not specified"
+        else:
+            bearfruit_info = "Not specified"
+        
         commodities_list.append({
             'name': c.name,
-            'info': info_string
+            'mature_info': mature_info,
+            'bearfruit_info': bearfruit_info
         })
     
     # Consolidate all data into a single dictionary
