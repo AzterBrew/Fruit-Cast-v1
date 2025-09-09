@@ -409,15 +409,18 @@ def solo_harvest_record_view(request):
                 harvest_record.transaction = transaction
                 harvest_record.record_status = pending_status
                 harvest_record.save()
+                print("✅ Solo harvest record saved successfully")
                 return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
             except Exception as e:
                 print(f"❌ Error saving solo harvest record: {e}")
                 messages.error(request, f"Error saving record: {str(e)}")
+        else:
+            print("❌ Form validation failed")
+            print("Harvest form errors:", harvest_form.errors)
+            print("Transaction form errors:", transaction_form.errors)
         # If form is invalid, fall through to re-render with errors
     else:
-        print("❌ Form validation failed")
-        print("Harvest form errors:", harvest_form.errors)
-        print("Transaction form errors:", transaction_form.errors)
+        print("📝 Displaying solo harvest record form")
         harvest_form = HarvestRecordCreate(user=request.user)
         transaction_form = RecordTransactionCreate(user=request.user)
 
