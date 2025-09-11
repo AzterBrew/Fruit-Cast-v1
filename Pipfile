@@ -20,6 +20,8 @@ colorama = "*"
 joblib = "*"
 google-generativeai = "*"
 weasyprint = "*"
+celery = "*"
+redis = "*"
 
 [dev-packages]
 

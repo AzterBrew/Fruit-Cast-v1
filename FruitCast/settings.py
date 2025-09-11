@@ -203,3 +203,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'eloisamariemsumbad@gmail.com'
 EMAIL_HOST_PASSWORD = 'kzgz vyop djqc bpld'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
