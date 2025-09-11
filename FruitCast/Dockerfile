@@ -1,35 +1,31 @@
-# Use official Python image
+# Use an official Python image
 FROM python:3.11
 
-# Set work directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Install dependencies
-# COPY requirements.txt .
-
-# Install pipenv
-RUN pip install pipenv
-
-# Copy Pipfile and Pipfile.lock
+# Copy Pipfile and Pipfile.lock first to leverage Docker's build cache
 COPY Pipfile Pipfile.lock ./
 
-# Install dependencies using pipenv
+# Install project dependencies
 RUN pipenv install --deploy --ignore-pipfile
 
-# Set the path so pipenv's virtualenv is used
+# Set the environment variables for pipenv's virtual environment
 ENV PIPENV_VENV_IN_PROJECT=1
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy project files
+# **Correct step: Copy all project files into the container**
+# This must happen before any commands that use your project code.
 COPY . .
 
-# Collect static files (optional)
+# Now, with the code in place, run Django management commands
 RUN python manage.py collectstatic --noinput
-
-# Run migrations (optional)
 RUN python manage.py migrate
-
 RUN pipenv run python manage.py train_forecastmodel
 
-# Default command
-CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "fruitcast.wsgi"]
+# Expose the port your app will run on
+EXPOSE 8000
+
+# Specify the command to run the application
+# This should match your Procfile
+CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "fruitcast.wsgi:application"]
