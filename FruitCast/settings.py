@@ -58,7 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'FruitCast.urls'
+ROOT_URLCONF = 'fruitcast.urls'
 
 TEMPLATES = [
     {
@@ -78,7 +78,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'FruitCast.wsgi.application'
+WSGI_APPLICATION = 'fruitcast.wsgi.application'
 
 
 # Database

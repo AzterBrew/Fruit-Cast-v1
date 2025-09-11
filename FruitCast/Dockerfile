@@ -32,4 +32,4 @@ RUN python manage.py migrate
 RUN pipenv run python manage.py train_forecastmodel
 
 # Default command
-CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "FruitCast.wsgi"]
+CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "fruitcast.wsgi"]
