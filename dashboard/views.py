@@ -89,7 +89,8 @@ def schedule_harvest_notification(plant_record):
         expected_harvest_date, datetime.min.time()
     ).replace(hour=8, tzinfo=timezone.get_current_timezone()) - timedelta(days=14)
 
-    min_notify_time = timezone.now() + timedelta(minutes=2)
+    min_notify_time = timezone.now() + timedelta(seconds=3)
+    
     if notify_datetime < min_notify_time:
         notify_datetime = min_notify_time
 
@@ -644,11 +645,11 @@ def forecast_pdf(request):
     forecast_combined_raw = request.GET.get('forecast_combined')
     pdf_type = request.GET.get('pdf_type')
     
+    # Initialize filter_month and filter_year for all PDF types
+    filter_month = request.GET.get('filter_month')
+    filter_year = request.GET.get('filter_year')
+    
     if pdf_type == 'by_commodity':
-        filter_month = request.GET.get('filter_month')
-        filter_year = request.GET.get('filter_year')
-        municipality_id = request.GET.get('municipality_id')
-        
         municipality_name = "All of Bataan"
         if municipality_id and municipality_id != "14":
             try:
@@ -679,6 +680,7 @@ def forecast_pdf(request):
             'report_title': f"Forecast by Commodity for {municipality_name}"
         }
         filename = f"forecast-by-commodity_{municipality_name.lower()}_{filter_year}-{filter_month}.pdf"
+        template_name = 'forecasting/forecast_by_commodity_pdf_template.html'
     else: 
         forecast_combined = []
         if forecast_combined_raw:
@@ -712,11 +714,11 @@ def forecast_pdf(request):
             'municipality_name': municipality_name,
         }
         filename = f"forecast-by-month_{commodity_name.lower() or 'all'}_{municipality_name.lower() or 'all'}.pdf"
+        template_name = 'forecasting/forecast_pdf_template.html'
 
     filename = filename.replace(" ", "-")
 
     # Render the HTML template for the PDF
-    template_name = 'dashboard/forecasting/forecast_by_commodity_pdf_template.html' if pdf_type == 'by_commodity' else 'dashboard/forecasting/forecast_pdf_template.html'
     template = get_template(template_name)
     html_content = template.render(context)
     
