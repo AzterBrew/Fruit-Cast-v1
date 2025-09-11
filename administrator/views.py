@@ -28,6 +28,8 @@ from django.core.paginator import Paginator
 from collections import OrderedDict
 from pathlib import Path
 from django.core.management import call_command
+from .tasks import retrain_and_generate_forecasts_task
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, redirect
 from dateutil.relativedelta import relativedelta 
@@ -741,8 +743,9 @@ def admin_forecast(request):
 @staff_member_required
 def retrain_forecast_model(request):
     if request.method == "POST":
-        call_command('train_forecastmodel')
-        messages.success(request, "Forecast models retrained successfully!")
+        # Call the Celery task asynchronously
+        retrain_and_generate_forecasts_task.delay()
+        messages.success(request, "Forecast models are being retrained in the background!")
         return redirect('administrator:admin_forecast')
     return HttpResponseForbidden()
 
@@ -752,146 +755,11 @@ def retrain_forecast_model(request):
 @csrf_protect
 def generate_all_forecasts(request):
     if request.method == 'POST':
-        user = request.user
-        userinfo = UserInformation.objects.get(auth_user=user)
-        admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
-        if not admin_info:
-            messages.error(request, "Admin information not found.")
-            return redirect('administrator:admin_forecast')
-        
-        # 1. Create a single ForecastBatch object to track this generation run.
-        #    This is the most crucial step for the new architecture.
-        try:
-            batch = ForecastBatch.objects.create(generated_by=admin_info, notes="Bulk generated forecast - All commodities and municipalities for the next 12 months.")
-        except Exception as e:
-            messages.error(request, f"Failed to create forecast batch: {e}")
-            return redirect('administrator:admin_forecast')
-            
-        model_dir = os.path.join('prophet_models')
-        commodities = CommodityType.objects.exclude(pk=1)
-        municipalities = MunicipalityName.objects.exclude(pk=14)
-        months = Month.objects.all().order_by('number')
-        # today = timezone.now()
-        # current_month_start = today.replace(day=1)
-        
-        results_created = 0
-        errors = []
-        
-        try:
-            # Wrap the entire process in a transaction to ensure atomicity
-            with transaction.atomic():
-                for commodity in commodities:
-                    for municipality in municipalities:
-                        try:
-                            # Determine model filename
-                            model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
-                            model_path = os.path.join(model_dir, model_filename)
-                            
-                            # Skip if model doesn't exist
-                            if not os.path.exists(model_path):
-                                errors.append(f"Model not found: {commodity.name} - {municipality.municipality}")
-                                continue
-                            
-                            # Load the trained model
-                            m = joblib.load(model_path)
-                            
-                            # Get historical data to determine date ranges
-                            
-                            # For specific municipality
-                            qs = VerifiedHarvestRecord.objects.filter(
-                                commodity_id=commodity,
-                                municipality=municipality
-                            ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-                        
-                            if not qs.exists():
-                                errors.append(f"No historical data: {commodity.name} - {municipality.municipality}")
-                                continue
-                            
-                            # Create DataFrame from historical data
-                            df = pd.DataFrame(list(qs))
-                            df['ds'] = pd.to_datetime(df['harvest_date'])
-                            df['y'] = df['total_weight_kg'].astype(float)
-                            
-                            # Group by month and sum
-                            df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                            df['ds'] = df['ds'].dt.to_timestamp()
-                            
-                            # Define forecast period (same logic as dashboard forecast view)
-                            last_historical_date = df['ds'].max()
-                            backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
-                            
-                            # Forecast up to 12 months from today
-                            future_end_date = datetime.today() + relativedelta(months=+12)
-                            
-                            # Create future DataFrame from backtest start to 12 months from today
-                            future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
-                            future = pd.DataFrame({'ds': future_months})
-                            
-                            # Generate forecast
-                            forecast = m.predict(future)
-                            
-                            # Save forecast results to database (only future dates, not historical backtest)
-                            today = datetime.today().replace(day=1)  # First day of current month
-                            
-                            for _, row in forecast.iterrows():
-                                forecast_date = row['ds']
-                                forecasted_amount = max(0, row['yhat'])  # Ensure non-negative
-                                
-                                # Only save future forecasts (from current month onwards)
-                                if forecast_date >= today:
-                                    month_num = forecast_date.month
-                                    year = forecast_date.year
-                                    
-                                    try:
-                                        month_obj = months.get(number=month_num)
-                                        
-                                        # Create or update forecast result
-                                        forecast_result, created = ForecastResult.objects.get_or_create(
-                                            batch=batch,
-                                            commodity=commodity,
-                                            forecast_month=month_obj,
-                                            forecast_year=year,
-                                            municipality=municipality,
-                                            defaults={
-                                                'forecasted_amount_kg': forecasted_amount,
-                                                'notes': f"Generated from Prophet model with backtest period"
-                                            }
-                                        )
-                                        
-                                        if not created:
-                                            # Update existing record
-                                            forecast_result.forecasted_amount_kg = forecasted_amount
-                                            forecast_result.notes = f"Updated from Prophet model with backtest period"
-                                            forecast_result.save()
-                                        
-                                        results_created += 1
-                                        
-                                    except Month.DoesNotExist:
-                                        errors.append(f"Month {month_num} not found in database")
-                                        continue
-                        
-                        except Exception as e:
-                            errors.append(f"Error processing {commodity.name} - {municipality.municipality}: {str(e)}")
-                            continue
-                
-                # Success message
-                if results_created > 0:
-                    messages.success(
-                        request, 
-                        f"Successfully generated {results_created} forecast records in batch {batch.batch_id}. "
-                        f"Errors: {len(errors)}"
-                    )
-                    if errors:
-                        messages.warning(request, f"Some errors occurred: {'; '.join(errors[:5])}")
-                else:
-                    messages.error(request, f"No forecasts were generated. Errors: {'; '.join(errors[:5])}")
-                
-        except Exception as e:
-            messages.error(request, f"Failed to generate forecasts: {str(e)}")
-        
+        # This view is now redundant since the task combines both steps.
+        # You can remove this view and its corresponding URL.
+        messages.warning(request, "This function is now automated as part of the model retraining process.")
         return redirect('administrator:admin_forecast')
-    else:
-        return redirect('administrator:admin_forecast')
+    return redirect('administrator:admin_forecast')
 
 
 @csrf_exempt
@@ -1223,26 +1091,35 @@ def admin_verifyharvestrec(request):
                 rec.verified_by = admin_info
             rec.save()
             # Only create VerifiedHarvestRecord if status is "Verified" and not already created
-            if new_status_pk == verified_status_pk:
+            if new_status_pk == verified_status_pk and selected_ids:
                 if not VerifiedHarvestRecord.objects.filter(prev_record=rec).exists():
-                    if rec.transaction.farm_land:
-                        municipality = rec.transaction.farm_land.municipality
-                        barangay = rec.transaction.farm_land.barangay
-                    else:
-                        municipality = rec.transaction.manual_municipality
-                        barangay = rec.transaction.manual_barangay
+                    
+                    try : 
+                        if rec.transaction.farm_land:
+                            municipality = rec.transaction.farm_land.municipality
+                            barangay = rec.transaction.farm_land.barangay
+                        else:
+                            municipality = rec.transaction.manual_municipality
+                            barangay = rec.transaction.manual_barangay
 
-                    VerifiedHarvestRecord.objects.create(
-                        harvest_date=rec.harvest_date,
-                        commodity_id=rec.commodity_id,
-                        total_weight_kg=rec.total_weight,
-                        weight_per_unit_kg=rec.weight_per_unit,
-                        remarks=rec.remarks,
-                        municipality=municipality,
-                        barangay=barangay,
-                        verified_by=admin_info,  # set this to the current admin
-                        prev_record=rec,
-                    )
+                        VerifiedHarvestRecord.objects.create(
+                            harvest_date=rec.harvest_date,
+                            commodity_id=rec.commodity_id,
+                            total_weight_kg=rec.total_weight,
+                            weight_per_unit_kg=rec.weight_per_unit,
+                            remarks=rec.remarks,
+                            municipality=municipality,
+                            barangay=barangay,
+                            verified_by=admin_info,  # set this to the current admin
+                            prev_record=rec,
+                        )
+                        
+                        retrain_and_generate_forecasts_task.delay()
+                    
+                        messages.success(request, "Records verified. Forecast models are being updated in the background.")
+                    
+                    except Exception as e:
+                        messages.error(request, f"An error occurred during verification: {e}")
                         
                 # for rec in records.filter(pk__in=selected_ids):
                 #     rec.record_status = new_status
