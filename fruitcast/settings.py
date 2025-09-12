@@ -212,27 +212,26 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # Celery Configuration
-# The broker URL for Celery to connect to Redis.
-# Use the environment variable for Celery, with SSL options for rediss://
-# Fallback to a local URL for local development
 BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 BACKEND_URL = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
-if BROKER_URL.startswith('rediss://'):
-    CELERY_BROKER_URL = f"{BROKER_URL}?ssl_cert_reqs=CERT_NONE"
-else:
-    CELERY_BROKER_URL = BROKER_URL
+CELERY_BROKER_URL = BROKER_URL
+CELERY_RESULT_BACKEND = BACKEND_URL
 
-if BACKEND_URL.startswith('rediss://'):
-    CELERY_RESULT_BACKEND = f"{BACKEND_URL}?ssl_cert_reqs=CERT_NONE"
-else:
-    CELERY_RESULT_BACKEND = BACKEND_URL
+# For rediss:// connections, explicitly set SSL options
+if CELERY_BROKER_URL.startswith('rediss://'):
+    CELERY_BROKER_USE_SSL = {
+        'ssl_cert_reqs': ssl.CERT_NONE,
+    }
 
-# ... Celery Configuration
+if CELERY_RESULT_BACKEND.startswith('rediss://'):
+    CELERY_RESULT_BACKEND_USE_SSL = {
+        'ssl_cert_reqs': ssl.CERT_NONE,
+    }
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Manila'
-
 
 # redis-broker string : rediss://default:AVNS_da_lrGLHGi0GOTJrpdv@redis-broker-do-user-24835869-0.e.db.ondigitalocean.com:25061

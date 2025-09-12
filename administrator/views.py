@@ -1118,28 +1118,22 @@ def admin_verifyharvestrec(request):
                             prev_record=rec,
                         )
                         
-                        try:
-        # ...
-                            logger.info("Attempting to delay Celery task...")
-                            logger.info(f"Using broker URL: {settings.CELERY_BROKER_URL}") # This will show the URL Celery sees
-                            retrain_and_generate_forecasts_task.delay()
-                            messages.success(request, "log1 : Records verified. Forecast models are being updated in the background.")
-                        except Exception as e:
-                            logger.error(f"Error during verification: {e}")
-                            messages.error(request, f"log 1 : An error occurred during verification: {e}")
-                        
+                        # ...
+                        logger.info("Attempting to delay Celery task...")
+                        logger.info(f"Using broker URL: {settings.CELERY_BROKER_URL}") # This will show the URL Celery sees
                         retrain_and_generate_forecasts_task.delay()
-                    
-                        messages.success(request, "log2 : Records verified. Forecast models are being updated in the background.")
-                    
-                    except Exception as e:
-                        messages.error(request, f" log 2 : An error occurred during verification: {e}")
+                        messages.success(request, "log1 : Records verified. Forecast models are being updated in the background.")
                         
-                # for rec in records.filter(pk__in=selected_ids):
-                #     rec.record_status = new_status
-                #     if not rec.verified_by:
-                #         rec.verified_by = admin_info
-                #     rec.save()
+                    except Exception as e:
+                        logger.error(f"Error during verification: {e}")
+                        messages.error(request, f"log 1 : An error occurred during verification: {e}")
+
+
+                       # for rec in records.filter(pk__in=selected_ids):
+                       #     rec.record_status = new_status
+                       #     if not rec.verified_by:
+                       #         rec.verified_by = admin_info
+                       #     rec.save()
                 messages.success(request, "Selected records updated successfully.")
             else:
                 messages.error(request, "No records selected or status not chosen.")
