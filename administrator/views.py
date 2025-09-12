@@ -12,7 +12,7 @@ from django.utils.timezone import now
 from .forms import AssignAdminAgriForm, CommodityTypeForm, VerifiedHarvestRecordForm
 from django.db import transaction
 from django.core.mail import send_mail
-from django.contrib import messages
+from django.conf import settings
 from django.utils.crypto import get_random_string
 from .decorators import admin_or_agriculturist_required, superuser_required
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
@@ -23,12 +23,16 @@ from django.db.models import Q, Count
 from datetime import datetime
 from calendar import monthrange
 from shapely.geometry import shape
-import csv, io, joblib, json, os
+import csv, io, joblib, json, os, logging
 from django.core.paginator import Paginator
 from collections import OrderedDict
 from pathlib import Path
 from django.core.management import call_command
 from .tasks import retrain_and_generate_forecasts_task
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, redirect
@@ -1114,12 +1118,22 @@ def admin_verifyharvestrec(request):
                             prev_record=rec,
                         )
                         
+                        try:
+        # ...
+                            logger.info("Attempting to delay Celery task...")
+                            logger.info(f"Using broker URL: {settings.CELERY_BROKER_URL}") # This will show the URL Celery sees
+                            retrain_and_generate_forecasts_task.delay()
+                            messages.success(request, "log1 : Records verified. Forecast models are being updated in the background.")
+                        except Exception as e:
+                            logger.error(f"Error during verification: {e}")
+                            messages.error(request, f"log 1 : An error occurred during verification: {e}")
+                        
                         retrain_and_generate_forecasts_task.delay()
                     
-                        messages.success(request, "Records verified. Forecast models are being updated in the background.")
+                        messages.success(request, "log2 : Records verified. Forecast models are being updated in the background.")
                     
                     except Exception as e:
-                        messages.error(request, f"An error occurred during verification: {e}")
+                        messages.error(request, f" log 2 : An error occurred during verification: {e}")
                         
                 # for rec in records.filter(pk__in=selected_ids):
                 #     rec.record_status = new_status
@@ -1130,6 +1144,8 @@ def admin_verifyharvestrec(request):
             else:
                 messages.error(request, "No records selected or status not chosen.")
 
+    
+    
     context = {
         'municipalities': municipalities,
         'commodities': commodities,

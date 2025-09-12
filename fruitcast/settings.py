@@ -11,9 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 
-import os
+import os, ssl
 from urllib.parse import urlparse
 from pathlib import Path
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -232,5 +233,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Manila'
+
 
 # redis-broker string : rediss://default:AVNS_da_lrGLHGi0GOTJrpdv@redis-broker-do-user-24835869-0.e.db.ondigitalocean.com:25061
