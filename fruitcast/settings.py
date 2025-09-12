@@ -130,9 +130,13 @@ else:
         }
     }
 
-#digiocean
+#digitalocean
 
-
+# redis-broker db for async operation for training models 
+# username = default
+# password : AVNS_da_lrGLHGi0GOTJrpdv
+# host = redis-broker-do-user-24835869-0.e.db.ondigitalocean.com
+# port = 25061
 
 AUTH_USER_MODEL = 'base.AuthUser'
 
