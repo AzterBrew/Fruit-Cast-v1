@@ -212,9 +212,11 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Celery Configuration
 # The broker URL for Celery to connect to Redis.
-CELERY_BROKER_URL = 'redis://localhost:6379/0' # Use 'redis://127.0.0.1:6379/0' for local setups.
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0' # Backend to store task results.
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Manila' # Set to your timezone
+
+# redis-broker string : rediss://default:AVNS_da_lrGLHGi0GOTJrpdv@redis-broker-do-user-24835869-0.e.db.ondigitalocean.com:25061
