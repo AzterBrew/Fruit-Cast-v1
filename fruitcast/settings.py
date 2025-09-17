@@ -219,15 +219,15 @@ CELERY_BROKER_URL = BROKER_URL
 CELERY_RESULT_BACKEND = BACKEND_URL
 
 # For rediss:// connections, explicitly set SSL options
-if CELERY_BROKER_URL.startswith('rediss://'):
-    CELERY_BROKER_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_NONE,
-    }
+# if CELERY_BROKER_URL.startswith('rediss://'):
+#     CELERY_BROKER_USE_SSL = {
+#         'ssl_cert_reqs': ssl.CERT_NONE,
+#     }
 
-if CELERY_RESULT_BACKEND.startswith('rediss://'):
-    CELERY_RESULT_BACKEND_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_NONE,
-    }
+# if CELERY_RESULT_BACKEND.startswith('rediss://'):
+#     CELERY_RESULT_BACKEND_USE_SSL = {
+#         'ssl_cert_reqs': ssl.CERT_NONE,
+#     }
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
