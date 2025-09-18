@@ -28,52 +28,45 @@ from .utils import get_alternative_recommendations
 
 def schedule_monthly_fruit_recommendations(account, municipality_id):
     """
-    Schedule monthly fruit recommendation notifications for a specific municipality
+    Schedule monthly fruit recommendations for a specific account and municipality.
+    Avoids duplicate notifications and dynamically adjusts for the current month.
     """
-    try:
-        # Get recommendations for the next month
-        next_month = timezone.now() + relativedelta(months=1)
-        recommendations = get_alternative_recommendations(
-            selected_month=next_month.month,
-            selected_year=next_month.year,
-            selected_municipality_id=municipality_id
-        )
-        
-        # Get municipality name for the message
-        municipality = MunicipalityName.objects.get(pk=municipality_id)
-        
-        # Create notifications for both short-term and long-term recommendations
-        all_recommendations = recommendations.get('short_term', []) + recommendations.get('long_term', [])
-        
-        if all_recommendations:
-            # Create a combined message for all recommendations for this municipality
-            fruit_names = [rec['commodity_name'] for rec in all_recommendations]
-            message = f"Monthly Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names[:3])}{'...' if len(fruit_names) > 3 else ''} based on forecasted low supply trends."
-            
-            # Schedule for the 1st of next month at 8 AM
-            scheduled_datetime = next_month.replace(day=1, hour=8, minute=0, second=0, microsecond=0)
-            
-            # Check if a similar notification already exists for this month and municipality
-            existing_notification = Notification.objects.filter(
-                account=account,
-                notification_type="fruit_recommendation",
-                scheduled_for__month=scheduled_datetime.month,
-                scheduled_for__year=scheduled_datetime.year,
-                message__icontains=municipality.municipality
-            ).first()
-            
-            if not existing_notification:
-                Notification.objects.create(
-                    account=account,
-                    message=message,
-                    notification_type="fruit_recommendation",
-                    scheduled_for=scheduled_datetime,
-                    redirect_url=reverse('base:home'),
-                )
-                print(f"Scheduled fruit recommendation notification for {municipality.municipality} on {scheduled_datetime}")
-        
-    except Exception as e:
-        print(f"Error scheduling fruit recommendations for municipality {municipality_id}: {e}")
+    from django.utils.timezone import now
+
+    # Get the current date and time
+    current_datetime = now()
+    current_month = current_datetime.month
+    current_year = current_datetime.year
+
+    # Check if a notification already exists for the current month and year
+    existing_notification = Notification.objects.filter(
+        account=account,
+        municipality_id=municipality_id,
+        scheduled_datetime__year=current_year,
+        scheduled_datetime__month=current_month
+    ).exists()
+
+    if existing_notification:
+        # Skip creating a duplicate notification
+        return False
+
+    # Determine the scheduled datetime for the notification
+    if current_datetime.day == 1:
+        # If it's the first day of the month, schedule for the next month
+        scheduled_datetime = current_datetime.replace(day=1) + relativedelta(months=1)
+    else:
+        # Otherwise, schedule for the current datetime
+        scheduled_datetime = current_datetime
+
+    # Create the notification
+    Notification.objects.create(
+        account=account,
+        municipality_id=municipality_id,
+        scheduled_datetime=scheduled_datetime,
+        message=f"Fruit recommendations for {scheduled_datetime.strftime('%B %Y')}"
+    )
+
+    return True
 
 
 def schedule_immediate_fruit_recommendations(account, municipality_id):
@@ -148,6 +141,9 @@ def home(request):
                 for municipality_id in distinct_municipality_ids:
                     schedule_monthly_fruit_recommendations(accinfo, municipality_id)
 
+            else : 
+                print("No farmland records found for user; skipping fruit recommendation scheduling.")
+            
             # Define the year range for the dropdown
             year_range = range(current_year - 1, current_year + 3) # Example: past year to next two years
             municipalities = MunicipalityName.objects.exclude(pk=14)
@@ -1291,7 +1287,6 @@ def custom_login(request):
                             userinfo_id=userinfo,
                             account_type_id=admin_type,
                             acc_status_id=active_status,
-                            account_isverified=True,
                             account_register_date=timezone.now(),
                         )
 
