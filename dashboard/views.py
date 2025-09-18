@@ -253,7 +253,7 @@ def forecast(request):
         df = df.groupby('ds', as_index=False)['y'].sum()
 
         # Prepare forecast data (from trained model)
-        model_dir = os.path.join('prophet_models')
+        model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
         if selected_municipality_id == "14" or selected_municipality_id == 14:
             model_filename = f"prophet_{selected_commodity_id}_14.joblib"
         else:
