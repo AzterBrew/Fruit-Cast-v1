@@ -1,9 +1,8 @@
 from celery import shared_task
 from django.conf import settings
 from django.db import transaction
-import os
+import os, joblib
 import pandas as pd
-import joblib # Added back in
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from base.models import CommodityType, MunicipalityName, Month
@@ -39,8 +38,8 @@ def retrain_and_generate_forecasts_task():
         all_records_df = pd.DataFrame(list(all_records_qs))
         
         # Directory to save models (optional but good practice to keep them)
-        model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
-        os.makedirs(model_dir, exist_ok=True)
+        # model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
+        # os.makedirs(model_dir, exist_ok=True)
         
         with transaction.atomic():
             # Process each individual municipality and commodity

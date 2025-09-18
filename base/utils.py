@@ -90,7 +90,6 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
             # Scenario B: Forecast is too far in the future. Generate it on-demand.
             try:
                 # Load the appropriate Prophet model for the specific municipality
-                model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
 
                 model_filename = f"prophet_{commodity.commodity_id}_{selected_municipality_id}.joblib"
                 bucket_path = f"prophet_models/{model_filename}"
@@ -104,14 +103,14 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                     with default_storage.open(bucket_path, 'rb') as f:
                         m = joblib.load(f)
 
-                # Create a future dataframe for the specific date
-                future_df = pd.DataFrame({'ds': [future_date]})
-                
-                # Predict the amount
-                forecasted_amount_series = m.predict(future_df)['yhat']
-                
-                # Extract the single value
-                total_forecasted_kg = forecasted_amount_series.iloc[0] if not forecasted_amount_series.empty else 0
+                    # Create a future dataframe for the specific date
+                    future_df = pd.DataFrame({'ds': [future_date]})
+                    
+                    # Predict the amount
+                    forecasted_amount_series = m.predict(future_df)['yhat']
+                    
+                    # Extract the single value
+                    total_forecasted_kg = forecasted_amount_series.iloc[0] if not forecasted_amount_series.empty else 0
                 
             except Exception as e:
                 print(f"Error generating on-demand forecast for {commodity.name} in Municipality {selected_municipality_id}: {e}")
