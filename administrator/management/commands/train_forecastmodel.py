@@ -5,6 +5,7 @@ from prophet import Prophet
 import pandas as pd
 import os
 import joblib
+from django.conf import settings
 
 class Command(BaseCommand):
     help = 'Train Prophet models for each municipality and commodity combination'

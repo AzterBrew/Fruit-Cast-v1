@@ -8,7 +8,7 @@ from django.db import models
 import numpy as np
 import pandas as pd
 from prophet import Prophet
-
+from django.conf import settings
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
