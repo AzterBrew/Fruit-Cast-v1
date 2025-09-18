@@ -1,83 +1,86 @@
 from celery import shared_task
-from django.core.management import call_command
+from django.conf import settings
 from django.db import transaction
-from django.contrib import messages
 import os
 import pandas as pd
-import joblib
+import joblib # Added back in
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from base.models import CommodityType, MunicipalityName, Month
-from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord # Adjust based on your actual app names
+from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord
 from prophet import Prophet
 
 @shared_task
 def retrain_and_generate_forecasts_task():
     """
-    Asynchronously retrains Prophet models and generates forecasts.
-    This task combines the logic from train_forecastmodel.py and generate_all_forecasts.
+    Asynchronously trains Prophet models in memory and generates forecasts,
+    saving the results to the database.
     """
-    
-    # 1. Run the model retraining logic
-    try:
-        call_command('train_forecastmodel')
-        print("Model training completed successfully.")
-    except Exception as e:
-        print(f"Error during model training: {e}")
-        return False # Indicate task failure
-    
-    # 2. Run the forecast generation logic
     try:
         # Create a single ForecastBatch object to track this generation run.
-        # This will be created by a separate process (Celery worker).
-        batch = ForecastBatch.objects.create(notes="Bulk generated forecast - All commodities and municipalities for the next 12 months.")
-
-        model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
-        os.makedirs(model_dir, exist_ok=True)
-        commodities = CommodityType.objects.exclude(pk=1)
+        batch = ForecastBatch.objects.create(notes="Bulk generated forecast - All commodities and municipalities.")
+        
         municipalities = MunicipalityName.objects.exclude(pk=14)
+        commodities = CommodityType.objects.exclude(pk=1)
         months = Month.objects.all().order_by('number')
+        
+        print("Starting model training and forecast generation...")
         
         results_created = 0
         
+        # We need to get all historical data once, for both individual and overall models
+        all_records_qs = VerifiedHarvestRecord.objects.filter(
+            commodity_id__in=commodities,
+            municipality__in=municipalities
+        ).values('harvest_date', 'total_weight_kg', 'commodity_id', 'municipality_id').order_by('harvest_date')
+        
+        all_records_df = pd.DataFrame(list(all_records_qs))
+        
+        # Directory to save models (optional but good practice to keep them)
+        model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
+        os.makedirs(model_dir, exist_ok=True)
+        
         with transaction.atomic():
-            for commodity in commodities:
-                for municipality in municipalities:
-                    # Determine model filename
-                    model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
-                    model_path = os.path.join(model_dir, model_filename)
+            # Process each individual municipality and commodity
+            for muni in municipalities:
+                for comm in commodities:
+                    # Filter the main DataFrame for the specific combination
+                    df = all_records_df[
+                        (all_records_df['municipality_id'] == muni.pk) & 
+                        (all_records_df['commodity_id'] == comm.pk)
+                    ].copy()
                     
-                    if not os.path.exists(model_path):
-                        print(f"Model file not found: {model_path}")
-                    else:
-                        print(f"Model file found: {model_path}")
-                    
-                    if not os.path.exists(model_path):
+                    if len(df) < 2:
+                        print(f"Skipping {comm.name} - {muni.municipality}: not enough data.")
                         continue
                     
-                    m = joblib.load(model_path)
-                    
-                    qs = VerifiedHarvestRecord.objects.filter(
-                        commodity_id=commodity,
-                        municipality=municipality
-                    ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
-                    
-                    if not qs.exists():
-                        continue
-                        
-                    df = pd.DataFrame(list(qs))
+                    # Group and clean the data for Prophet
                     df['ds'] = pd.to_datetime(df['harvest_date'])
                     df['y'] = df['total_weight_kg'].astype(float)
                     df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
                     df['ds'] = df['ds'].dt.to_timestamp()
                     
-                    last_historical_date = df['ds'].max()
-                    backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
-                    future_end_date = datetime.today() + relativedelta(months=+12)
+                    if len(df) >= 4:
+                        q_low = df['y'].quantile(0.05)
+                        q_high = df['y'].quantile(0.95)
+                        df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
+                    df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
                     
-                    future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
-                    future = pd.DataFrame({'ds': future_months})
+                    if df['y'].notna().sum() < 2:
+                        print(f"Skipping {comm.name} - {muni.municipality}: not enough data after cleaning.")
+                        continue
+                        
+                    # Train model
+                    m = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.05, seasonality_prior_scale=1, daily_seasonality=False, weekly_seasonality=False)
+                    m.fit(df[['ds', 'y']])
                     
+                    # Save the trained model to disk
+                    model_filename = f"prophet_{comm.commodity_id}_{muni.municipality_id}.joblib"
+                    model_path = os.path.join(model_dir, model_filename)
+                    joblib.dump(m, model_path)
+                    
+                    # Generate forecast
+                    future = m.make_future_dataframe(periods=12, freq='MS') # Changed to 'MS' for month start
                     forecast = m.predict(future)
                     
                     today = datetime.today().replace(day=1)
@@ -86,33 +89,82 @@ def retrain_and_generate_forecasts_task():
                         forecast_date = row['ds']
                         if forecast_date >= today:
                             forecasted_amount = max(0, row['yhat'])
-                            
-                            month_num = forecast_date.month
+                            month_obj = months.get(number=forecast_date.month)
                             year = forecast_date.year
                             
-                            try:
-                                month_obj = months.get(number=month_num)
-                                
-                                # Use update_or_create to avoid conflicts
-                                ForecastResult.objects.update_or_create(
-                                    batch=batch,
-                                    commodity=commodity,
-                                    forecast_month=month_obj,
-                                    forecast_year=year,
-                                    municipality=municipality,
-                                    defaults={
-                                        'forecasted_amount_kg': forecasted_amount,
-                                        'notes': f"Generated from Prophet model"
-                                    }
-                                )
-                                results_created += 1
-                                
-                            except Month.DoesNotExist:
-                                continue
+                            ForecastResult.objects.update_or_create(
+                                batch=batch,
+                                commodity=comm,
+                                forecast_month=month_obj,
+                                forecast_year=year,
+                                municipality=muni,
+                                defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Generated from Prophet model"}
+                            )
+                            results_created += 1
 
+            # Process "Overall" models for each commodity
+            for comm in commodities:
+                # Filter the main DataFrame for the specific commodity across all municipalities
+                df = all_records_df[all_records_df['commodity_id'] == comm.pk].copy()
+                
+                if len(df) < 2:
+                    print(f"Skipping Overall {comm.name}: not enough data.")
+                    continue
+                
+                # Group by month and sum across all municipalities
+                df['ds'] = pd.to_datetime(df['harvest_date'])
+                df['y'] = df['total_weight_kg'].astype(float)
+                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
+                df['ds'] = df['ds'].dt.to_timestamp()
+
+                if len(df) >= 4:
+                    q_low = df['y'].quantile(0.05)
+                    q_high = df['y'].quantile(0.95)
+                    df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
+                df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
+
+                if df['y'].notna().sum() < 2:
+                    print(f"Skipping Overall {comm.name}: not enough data after cleaning.")
+                    continue
+                
+                # Train model
+                m = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.05, seasonality_prior_scale=1, daily_seasonality=False, weekly_seasonality=False)
+                m.fit(df[['ds', 'y']])
+                
+                # Save "Overall" model with special naming convention
+                model_filename = f"prophet_{comm.commodity_id}_14.joblib" 
+                model_path = os.path.join(model_dir, model_filename)
+                joblib.dump(m, model_path)
+
+                # Generate forecast
+                future = m.make_future_dataframe(periods=12, freq='MS') # Changed to 'MS' for month start
+                forecast = m.predict(future)
+                
+                today = datetime.today().replace(day=1)
+                
+                for _, row in forecast.iterrows():
+                    forecast_date = row['ds']
+                    if forecast_date >= today:
+                        forecasted_amount = max(0, row['yhat'])
+                        month_obj = months.get(number=forecast_date.month)
+                        year = forecast_date.year
+                        
+                        overall_muni = MunicipalityName.objects.get(pk=14)
+                        ForecastResult.objects.update_or_create(
+                            batch=batch,
+                            commodity=comm,
+                            forecast_month=month_obj,
+                            forecast_year=year,
+                            municipality=overall_muni,
+                            defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Overall forecast generated by Prophet"}
+                        )
+                        results_created += 1
+                        
         print(f"Successfully generated {results_created} forecast records in batch {batch.batch_id}.")
-        return True # Indicate task success
+        return True
 
     except Exception as e:
-        print(f"Error during forecast generation: {e}")
-        return False # Indicate task failure
+        # Log the error to the Celery worker logs
+        print(f"An error occurred during the forecast task: {e}")
+        # In a real-world scenario, you might want to log this to an external service or a Django model.
+        return False
