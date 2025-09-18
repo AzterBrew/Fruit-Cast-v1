@@ -91,13 +91,16 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                 model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
 
                 model_filename = f"prophet_{commodity.commodity_id}_{selected_municipality_id}.joblib"
-                model_path = os.path.join(model_dir, model_filename)
+                bucket_path = f"prophet_models/{model_filename}"
 
-                if not os.path.exists(model_path):
-                    print(f"Prophet model not found for {commodity.name} in Municipality {selected_municipality_id}. Skipping.")
-                    continue
-                
-                m = joblib.load(model_path)
+                # Check if the model file exists in the Spaces bucket
+                if not default_storage.exists(bucket_path):
+                    forecast_data = None
+                    print("No trained model found.")
+                else:
+                    # Open the file from the bucket and load it with joblib
+                    with default_storage.open(bucket_path, 'rb') as f:
+                        m = joblib.load(f)
 
                 # Create a future dataframe for the specific date
                 future_df = pd.DataFrame({'ds': [future_date]})

@@ -76,8 +76,18 @@ def retrain_and_generate_forecasts_task():
                     
                     # Save the trained model to disk
                     model_filename = f"prophet_{comm.commodity_id}_{muni.municipality_id}.joblib"
-                    model_path = os.path.join(model_dir, model_filename)
-                    joblib.dump(m, model_path)
+                    
+                    bucket_path = f"prophet_models/{model_filename}"
+
+                    # Create an in-memory buffer to hold the model file
+                    buffer = BytesIO()
+                    joblib.dump(m, buffer)
+
+                    # Rewind the buffer to the beginning before saving
+                    buffer.seek(0)
+
+                    # Save the model directly to DigitalOcean Spaces
+                    default_storage.save(bucket_path, buffer)
                     
                     # Generate forecast
                     future = m.make_future_dataframe(periods=12, freq='MS') # Changed to 'MS' for month start
@@ -133,8 +143,17 @@ def retrain_and_generate_forecasts_task():
                 
                 # Save "Overall" model with special naming convention
                 model_filename = f"prophet_{comm.commodity_id}_14.joblib" 
-                model_path = os.path.join(model_dir, model_filename)
-                joblib.dump(m, model_path)
+                bucket_path = f"prophet_models/{model_filename}"
+
+                # Create an in-memory buffer to hold the model file
+                buffer = BytesIO()
+                joblib.dump(m, buffer)
+
+                # Rewind the buffer to the beginning before saving
+                buffer.seek(0)
+
+                # Save the model directly to DigitalOcean Spaces
+                default_storage.save(bucket_path, buffer)
 
                 # Generate forecast
                 future = m.make_future_dataframe(periods=12, freq='MS') # Changed to 'MS' for month start

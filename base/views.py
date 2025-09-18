@@ -23,6 +23,7 @@ from .models import *
 from dashboard.models import *
 from .forms import RegistrationForm, EditUserInformation, HarvestRecordCreate, PlantRecordCreate, RecordTransactionCreate, FarmlandRecordCreate
 from .utils import get_alternative_recommendations
+from django.core.files.storage import default_storage
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
 
@@ -38,7 +39,7 @@ def schedule_monthly_fruit_recommendations(account, municipality_id):
         # If it's past the 1st of the current month, target next month
         # If it's before or on the 1st, target current month
         if current_time.day > 1:
-            target_month = current_time + relativedelta(months=1)
+            target_month = current_time + relativedelta(seconds=2)
         else:
             target_month = current_time
             

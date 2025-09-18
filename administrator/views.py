@@ -29,6 +29,7 @@ from collections import OrderedDict
 from pathlib import Path
 from django.core.management import call_command
 from .tasks import retrain_and_generate_forecasts_task
+from django.core.files.storage import default_storage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -488,13 +489,17 @@ def admin_forecast(request):
             model_filename = f"prophet_{selected_commodity_id}_14.joblib"
         else:
             model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
-        model_path = os.path.join(model_dir, model_filename)
+        
+        bucket_path = f"prophet_models/{model_filename}"
 
-        if not os.path.exists(model_path):
+        # Check if the model file exists in the Spaces bucket
+        if not default_storage.exists(bucket_path):
             forecast_data = None
             print("No trained model found.")
         else:
-            m = joblib.load(model_path)
+            # Open the file from the bucket and load it with joblib
+            with default_storage.open(bucket_path, 'rb') as f:
+                m = joblib.load(f)
             
             # Define forecast period (e.g., 12 months into future)
             last_historical_date = df['ds'].max()

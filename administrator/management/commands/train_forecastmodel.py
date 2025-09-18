@@ -6,11 +6,14 @@ import pandas as pd
 import os
 import joblib
 from django.conf import settings
+from django.core.files.storage import default_storage
+from io import BytesIO
 
 class Command(BaseCommand):
     help = 'Train Prophet models for each municipality and commodity combination'
 
     def handle(self, *args, **options):
+        
         model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
         os.makedirs(model_dir, exist_ok=True)
 
@@ -63,8 +66,19 @@ class Command(BaseCommand):
 
                 # Save model (optionally, could also save last cleaned df for debugging)
                 model_filename = f"prophet_{comm.commodity_id}_{muni.municipality_id}.joblib"
-                model_path = os.path.join(model_dir, model_filename)
-                joblib.dump(m, model_path)
+                
+                bucket_path = f"prophet_models/{model_filename}"
+
+                # Create an in-memory buffer to hold the model file
+                buffer = BytesIO()
+                joblib.dump(m, buffer)
+
+                # Rewind the buffer to the beginning before saving
+                buffer.seek(0)
+
+                # Save the model directly to DigitalOcean Spaces
+                default_storage.save(bucket_path, buffer)
+                
                 self.stdout.write(f"Trained and saved model for {muni} - {comm}")
             
             
@@ -117,8 +131,19 @@ class Command(BaseCommand):
 
             # Save "Overall" model with special naming convention
             model_filename = f"prophet_{comm.commodity_id}_14.joblib"  # Use 14 for "Overall"
-            model_path = os.path.join(model_dir, model_filename)
-            joblib.dump(m, model_path)
+            
+            bucket_path = f"prophet_models/{model_filename}"
+
+            # Create an in-memory buffer to hold the model file
+            buffer = BytesIO()
+            joblib.dump(m, buffer)
+
+            # Rewind the buffer to the beginning before saving
+            buffer.seek(0)
+
+            # Save the model directly to DigitalOcean Spaces
+            default_storage.save(bucket_path, buffer)
+            
             self.stdout.write(f"Trained and saved Overall model for {comm}")
 
         self.stdout.write("Model training complete!")

@@ -22,6 +22,8 @@ google-generativeai = "*"
 weasyprint = "*"
 celery = "*"
 redis = "*"
+django-storages = "*"
+boto3 = "*"
 
 [dev-packages]
 
