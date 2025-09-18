@@ -1,310 +1,219 @@
 {%load static%}
 
-<header id="header" class="region">
-    {% comment %} <h1 class="heading">
-        <a href="/"><span>Archive of Our Own</span><sup> beta</sup><img alt="Archive of Our Own" class="logo" src="/images/ao3_logos/logo_42.png"></a>
-    </h1> {% endcomment %}
-    <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
-        <i class="bi bi-list" style="font-size: 1.5rem;"></i>
-    </button>
-    <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
-        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
-        <span class="fw-bold text-success">Fruit Cast</span>
-    </a>
-
-    <nav id="greeting" aria-label="User">
-        <ul class="user navigation actions">
-        <li class="dropdown" aria-haspopup="true">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Hi, 
-                {% if user_firstname %}
-                    {{ user_firstname }}
-                {% else %}
-                    {% if user_role_id == 1 %}
-                        Farmer
-                    {% elif user_role_id == 2 %}
-                        Administrator
-                    {% elif user_role_id == 3 %}
-                        Agriculturist
-                    {% else %}
-                        User
-                    {% endif %}
-                {% endif %}
-                !</a>
-            <ul class="menu dropdown-menu">
-            <li><a href="{% url 'base:account_info_panel' %}">My Account</a></li>
-                <li><a href="{% url 'base:farmland_record' %}">My Farm Lands</a></li>
-                {% if user_role_id == 3 or user_role_id == 2 %}
-                    <li><a href="{% url 'administrator:admin_dashboard' %}">Admin Panel</a></li>
-                {% endif %}
-            </ul>
-        </li>
-
-        {% comment %} <li class="dropdown" aria-haspopup="true">
-            <a href="/works/new" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Post</a>
-            <ul class="menu dropdown-menu">
-            <li><a href="/works/new">New Work</a></li>
-            <li><a href="/works/new?import=true">Import Work</a></li>
-            </ul>
-        </li> {% endcomment %}
-            <li>
-                <form action="{% url 'base:logout' %}" method="post" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit">Log out</button>
-                </form>
-            </li>
-        </ul>
-    </nav>
-    <nav aria-label="Site">
-        <ul class="primary navigation actions">
-            <li class="dropdown" aria-haspopup="true">
-                <a href="{% url 'dashboard:forecast' %}" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Forecast</a>
-                {% comment %} <ul class="menu dropdown-menu">
-                    <li><a href="/media">All Fandoms</a></li>
-                    <li id="medium_5"><a href="/media/Anime%20*a*%20Manga/fandoms">Anime &amp; Manga</a></li>
-                    <li id="medium_3"><a href="/media/Books%20*a*%20Literature/fandoms">Books &amp; Literature</a></li>
-                    <li id="medium_4"><a href="/media/Cartoons%20*a*%20Comics%20*a*%20Graphic%20Novels/fandoms">Cartoons &amp; Comics &amp; Graphic Novels</a></li>
-                    <li id="medium_7"><a href="/media/Celebrities%20*a*%20Real%20People/fandoms">Celebrities &amp; Real People</a></li>
-                </ul> {% endcomment %}
-            </li>
-            <li class="dropdown" aria-haspopup="true">
-                <a href="{% url 'dashboard:monitor' %}" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Monitor</a>
-            </li>
-            <li class="dropdown" aria-haspopup="true">
-                <a href="{% url 'base:newrecord' %}" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Create Record</a>
-            </li>
-
-
-    </nav>
-
-</header>
-
-{% comment %} NAVBAR SECTION {% endcomment %}
-{% comment %} <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+<header id="header" class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm fixed-top">
     <div class="container-fluid">
-        <!-- Offcanvas Toggle Button (always visible) -->
-        <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
-            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
-        </button>
-        <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
-            <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
-            <span class="fw-bold text-success">Fruit Cast</span>
-        </a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="{% url 'base:home' %}">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:forecast' %}">Forecast</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:monitor' %}">Monitor</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#notifPanel" aria-controls="notifPanel">
-                    <i class="bi bi-bell"></i> Notification
-                    {% if unread_count and unread_count > 0 %}
-                        <span class="badge bg-danger">{{ unread_count }}</span>
-                    {% endif %}
+        <!-- Sidebar Toggle and Logo -->
+        <div class="d-flex align-items-center">
+            <button class="btn btn-outline-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
+                <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+            </button>
+            <a class="navbar-brand d-flex align-items-center text-success" href="{% url 'base:home' %}">
+                <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+                <span class="fw-bold">Fruit Cast</span>
+            </a>
+        </div>
+
+        <!-- Main Navigation -->
+        <nav class="d-none d-lg-block" aria-label="Site">
+            <ul class="navbar-nav d-flex flex-row">
+                <li class="nav-item dropdown me-3">
+                    <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
+                        Forecast
                     </a>
                 </li>
-                <li class="nav-item dropdown me-2">
-                    <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person"></i> Account
+                <li class="nav-item dropdown me-3">
+                    <a href="{% url 'dashboard:monitor' %}" class="nav-link text-light">
+                        Monitor
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+                </li>
+                <li class="nav-item dropdown me-3">
+                    <a href="{% url 'base:newrecord' %}" class="nav-link text-light">
+                        Create Record
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- User Navigation -->
+        <nav class="ms-auto" aria-label="User">
+            <ul class="navbar-nav d-flex flex-row align-items-center">
+                <!-- Notifications -->
+                <li class="nav-item me-3">
+                    <a class="nav-link text-light position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#notifPanel" aria-controls="notifPanel">
+                        <i class="bi bi-bell fs-5"></i>
+                        {% if unread_count and unread_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ unread_count }}
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- User Dropdown -->
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle text-light d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle fs-5 me-2"></i>
+                        Hi, 
+                        {% if user_firstname %}
+                            {{ user_firstname }}
+                        {% else %}
+                            {% if user_role_id == 1 %}
+                                Farmer
+                            {% elif user_role_id == 2 %}
+                                Administrator
+                            {% elif user_role_id == 3 %}
+                                Agriculturist
+                            {% else %}
+                                User
+                            {% endif %}
+                        {% endif %}!
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'base:account_info_panel' %}">
+                            <i class="bi bi-person me-2"></i>My Account
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'base:farmland_record' %}">
+                            <i class="bi bi-geo-alt me-2"></i>My Farm Lands
+                        </a></li>
+                        {% if user_role_id == 3 or user_role_id == 2 %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'administrator:admin_dashboard' %}">
+                                <i class="bi bi-shield-check me-2"></i>Admin Panel
+                            </a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
                         <li>
-                        <a class="dropdown-item" href="{% url 'base:account_info_panel' %}">Account Page</a>
-                        </li>
-                        <li>
-                        <form action="{% url 'base:logout' %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="dropdown-item">Logout</button>
-                        </form>
+                            <form action="{% url 'base:logout' %}" method="post" class="d-inline w-100">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Log out
+                                </button>
+                            </form>
                         </li>
                     </ul>
-                    </li>
+                </li>
             </ul>
-        </div>
+        </nav>
     </div>
-</nav> {% endcomment %}
+</header>
 
-  
-{% comment %} AO3 HEADER {% endcomment %}
-{% comment %} <header id="header" class="region">
-
-  <h1 class="heading">
-    <a href="/"><span>Archive of Our Own</span><sup> beta</sup><img alt="Archive of Our Own" class="logo" src="/images/ao3_logos/logo_42.png"></a>
-  </h1>
-
-    <nav id="greeting" aria-label="User">
-    <ul class="user navigation actions">
-      <li class="dropdown" aria-haspopup="true">
-        <a href="/users/BoboDoggo" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Hi, BoboDoggo!</a>
-        <ul class="menu dropdown-menu">
-          <li><a href="/users/BoboDoggo">My Dashboard</a></li>
-            <li><a href="/users/BoboDoggo/subscriptions">My Subscriptions</a></li>
-            <li><a href="/users/BoboDoggo/works">My Works</a></li>
-            <li><a href="/users/BoboDoggo/bookmarks">My Bookmarks</a></li>
-            <li><a href="/users/BoboDoggo/readings">My History</a></li>
-          <li><a href="/users/BoboDoggo/preferences">My Preferences</a></li>
-        </ul>
-      </li>
-      <li class="dropdown" aria-haspopup="true">
-        <a href="/works/new" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Post</a>
-        <ul class="menu dropdown-menu">
-          <li><a href="/works/new">New Work</a></li>
-          <li><a href="/works/new?import=true">Import Work</a></li>
-        </ul>
-      </li>
-      <li><a rel="nofollow" data-method="delete" href="/users/logout">Log Out</a></li>
-    </ul>
-
-  <p class="icon"><a href="/users/BoboDoggo"><img alt="" class="icon" src="https://archiveofourown.org/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsiZGF0YSI6MTA4NTI0OCwicHVyIjoiYmxvYl9pZCJ9fQ==--79eb818f7ec257192c57ea2bef76f24e82276eea/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemVfdG9fbGltaXQiOlsxMDAsMTAwXSwibG9hZGVyIjp7Im4iOi0xfX0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--fb1da3623781351fb36c743584da71645585f6c4/original.jpg"></a></p>
-</nav>
-
-
-  <nav aria-label="Site">
-    <ul class="primary navigation actions">
-      <li class="dropdown" aria-haspopup="true">
-        <a href="/menu/fandoms" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Fandoms</a>
-        <ul class="menu dropdown-menu">
-  <li><a href="/media">All Fandoms</a></li>
-        <li id="medium_5"><a href="/media/Anime%20*a*%20Manga/fandoms">Anime &amp; Manga</a></li>
-        <li id="medium_3"><a href="/media/Books%20*a*%20Literature/fandoms">Books &amp; Literature</a></li>
-        <li id="medium_4"><a href="/media/Cartoons%20*a*%20Comics%20*a*%20Graphic%20Novels/fandoms">Cartoons &amp; Comics &amp; Graphic Novels</a></li>
-        <li id="medium_7"><a href="/media/Celebrities%20*a*%20Real%20People/fandoms">Celebrities &amp; Real People</a></li>
-        <li id="medium_2"><a href="/media/Movies/fandoms">Movies</a></li>
-        <li id="medium_6"><a href="/media/Music%20*a*%20Bands/fandoms">Music &amp; Bands</a></li>
-        <li id="medium_8"><a href="/media/Other%20Media/fandoms">Other Media</a></li>
-        <li id="medium_30198"><a href="/media/Theater/fandoms">Theater</a></li>
-        <li id="medium_1"><a href="/media/TV%20Shows/fandoms">TV Shows</a></li>
-        <li id="medium_476"><a href="/media/Video%20Games/fandoms">Video Games</a></li>
-        <li id="medium_9971"><a href="/media/Uncategorized%20Fandoms/fandoms">Uncategorized Fandoms</a></li>
-</ul>
-
-      </li>
-      <li class="dropdown" aria-haspopup="true">
-        <a href="/menu/browse" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Browse</a>
-        <ul class="menu dropdown-menu">
-  <li><a href="/works">Works</a></li>
-  <li><a href="/bookmarks">Bookmarks</a></li>
-  <li><a href="/tags">Tags</a></li>
-  <li><a href="/collections">Collections</a></li>
-</ul>
-
-      </li>
-      <li class="dropdown" aria-haspopup="true">
-        <a href="/menu/search" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Search</a>
-        <ul class="menu dropdown-menu">
-  <li><a href="/works/search">Works</a></li>
-  <li><a href="/bookmarks/search">Bookmarks</a></li>
-  <li><a href="/tags/search">Tags</a></li>
-  <li><a href="/people/search">People</a></li>
-</ul>
-
-      </li>
-      <li class="dropdown" aria-haspopup="true">
-        <a href="/menu/about" class="dropdown-toggle" data-toggle="dropdown" data-target="#">About</a>
-        <ul class="menu dropdown-menu">
-  <li><a href="/about">About Us</a></li>
-  <li><a href="/admin_posts">News</a></li>
-  <li><a href="/faq">FAQ</a></li>
-  <li><a href="/wrangling_guidelines">Wrangling Guidelines</a></li>
-  <li><a href="/donate">Donate or Volunteer</a></li>
-</ul>
-
-      </li>
-      <li class="search"><form class="search" id="search" role="search" aria-label="Work" action="/works/search" accept-charset="UTF-8" method="get">
-  <fieldset>
-    <p>
-      <label class="landmark" for="site_search">Work Search</label>
-      <input class="text" id="site_search" aria-describedby="site_search_tooltip" type="text" name="work_search[query]">
-      <span class="tip" role="tooltip" id="site_search_tooltip">tip: lex m/m (mature OR explicit)</span>
-      <span class="submit actions"><input type="submit" value="Search" class="button"></span>
-    </p>
-  </fieldset>
-</form></li>
-    </ul>
-  </nav>
-
-
-
-  <div class="clear"></div>
-
-</header> {% endcomment %}
-
-
-
-{% comment %} OFFCANVAS SECTION {% endcomment %}
-{% comment %} LEFT SIDE BAR {% endcomment %}
-
+<!-- Offcanvas Sidebar -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
-    <div class="offcanvas-header">
-      <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast | {{user_firstname}}</h5>
-      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    <div class="offcanvas-header bg-success text-white">
+        <h5 class="offcanvas-title" id="offcanvasExampleLabel">
+            <i class="bi bi-person-circle me-2"></i>Fruit Cast | {{user_firstname}}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-header">      
-        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto"style="max-height: 20vh; align-content : center;">
-
+    
+    <div class="offcanvas-header justify-content-center">      
+        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 15vh;">
     </div>
+    
     <div class="offcanvas-body d-flex flex-column h-100">  
-        <div class="list-group">
-          <a href="{% url 'base:plant_record' %}" class="list-group-item list-group-item-action w-75">Create New Record</a>        
+        <!-- Quick Actions -->
+        <div class="mb-4">
+            <h6 class="text-muted text-uppercase small fw-bold mb-3">Quick Actions</h6>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'base:plant_record' %}" class="list-group-item list-group-item-action border-0 rounded mb-2 bg-light">
+                    <i class="bi bi-plus-circle me-2 text-success"></i>Create New Record
+                </a>        
+            </div>
         </div>
-        <br>
-        <br>
-        <div class="list-group">
-            {% comment %} <a href="#" class="list-group-item list-group-item-action">Report History</a>
-            <a href="#" class="list-group-item list-group-item-action">Account Details</a> {% endcomment %}
-            <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action">Home</a>
-            <a href="{% url 'dashboard:forecast' %}" class="list-group-item list-group-item-action">Forecast</a>
-            <a href="{% url 'dashboard:monitor' %}" class="list-group-item list-group-item-action">Monitor</a>
-            <a href="{% url 'base:newrecord' %}?view=transaction_history" class="list-group-item list-group-item-action">Record History</a>
-            <a href="#" class="list-group-item list-group-item-action">Fruit Plant Suggestion</a>
-            <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a>
-            {% comment %} <a href="{% url 'dashboard:addcommodity' %}" class="list-group-item list-group-item-action">Add Commodity</a> {% endcomment %}
-            <!-- Collapsible Section -->
-              {% if user_role_id == 3 or user_role_id == 2 %}
 
-              <a href="{% url 'administrator:admin_dashboard' %}" class="list-group-item list-group-item-action">Admin Panel</a>
-
-            {% endif %}
-
-            
-        </div>
-        <br>
-        <div class="flex-grow-1"></div>
-        <hr>
-        <br>
-    </div>
-  </div>
-
-
-  {% comment %} NOTIF OFFCANVAS {% endcomment %}
-
-  <div class="offcanvas offcanvas-end" tabindex="-1" id="notifPanel" aria-labelledby="notifPanelLabel">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="notifPanelLabel">Notifications</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-  </div>
-  <div class="offcanvas-body">
-    {% if notifications %}
-      <ul class="list-group">
-        {% for notification in notifications %}
-            <li class="list-group-item{% if not notification.is_read %} fw-bold{% endif %}" id="notif-{{ notification.id }}">
-                <a href="{{ notification.redirect_url }}" class="notif-link link-success" data-notif-id="{{ notification.id }}">
-                    <div>{{ notification.message|truncatechars:75 }}</div>
-                    <small class="text-muted">{{ notification.created_at|date:"M d, Y H:i" }}</small>
+        <!-- Main Navigation -->
+        <div class="mb-4">
+            <h6 class="text-muted text-uppercase small fw-bold mb-3">Navigation</h6>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action border-0 py-2">
+                    <i class="bi bi-house me-2"></i>Home
                 </a>
-            </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <div class="text-muted">No notifications</div>
-    {% endif %}
-    <div class="mt-3 text-center">
-      <a href="{% url 'dashboard:notifications' %}" class="btn btn-outline-success btn-sm">View all notifications</a>
+                <a href="{% url 'dashboard:forecast' %}" class="list-group-item list-group-item-action border-0 py-2">
+                    <i class="bi bi-graph-up me-2"></i>Forecast
+                </a>
+                <a href="{% url 'dashboard:monitor' %}" class="list-group-item list-group-item-action border-0 py-2">
+                    <i class="bi bi-activity me-2"></i>Monitor
+                </a>
+                <a href="{% url 'base:newrecord' %}?view=transaction_history" class="list-group-item list-group-item-action border-0 py-2">
+                    <i class="bi bi-clock-history me-2"></i>Record History
+                </a>
+                <a href="#" class="list-group-item list-group-item-action border-0 py-2">
+                    <i class="bi bi-lightbulb me-2"></i>Fruit Plant Suggestion
+                </a>
+                <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action border-0 py-2">
+                    <i class="bi bi-info-circle me-2"></i>About Us
+                </a>
+                
+                {% if user_role_id == 3 or user_role_id == 2 %}
+                    <hr class="my-2">
+                    <a href="{% url 'administrator:admin_dashboard' %}" class="list-group-item list-group-item-action border-0 py-2 text-warning">
+                        <i class="bi bi-shield-check me-2"></i>Admin Panel
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Spacer -->
+        <div class="flex-grow-1"></div>
+        
+        <!-- Footer -->
+        <div class="text-center text-muted small">
+            <hr>
+            <p class="mb-0">© 2024 Fruit Cast</p>
+        </div>
     </div>
-  </div>
+</div>
+
+<!-- Notifications Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="notifPanel" aria-labelledby="notifPanelLabel">
+    <div class="offcanvas-header bg-primary text-white">
+        <h5 class="offcanvas-title" id="notifPanelLabel">
+            <i class="bi bi-bell me-2"></i>Notifications
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    
+    <div class="offcanvas-body">
+        {% if notifications %}
+            <div class="list-group list-group-flush">
+                {% for notification in notifications %}
+                    <div class="list-group-item{% if not notification.is_read %} border-start border-primary border-3{% endif %} p-3" id="notif-{{ notification.id }}">
+                        <a href="{{ notification.redirect_url }}" class="notif-link text-decoration-none" data-notif-id="{{ notification.id }}">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-bell-fill text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fw-bold text-dark{% if not notification.is_read %} fw-bold{% endif %}">
+                                        {{ notification.message|truncatechars:75 }}
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar3 me-1"></i>{{ notification.created_at|date:"M d, Y H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-bell-slash display-1 text-muted"></i>
+                <p class="mt-3">No notifications</p>
+            </div>
+        {% endif %}
+        
+        <div class="mt-3 text-center">
+            <a href="{% url 'dashboard:notifications' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-list me-1"></i>View all notifications
+            </a>
+        </div>
+    </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle notification clicks
     document.querySelectorAll('.notif-link').forEach(function(link) {
         link.addEventListener('click', function(e) {
             var notifId = this.getAttribute('data-notif-id');
@@ -318,45 +227,98 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: "notif_id=" + notifId
             }).then(response => {
                 if (response.ok) {
-                    // Remove the notification from the list
-                    var li = document.getElementById('notif-' + notifId);
-                    if (li) li.remove();
+                    // Update the notification styling
+                    var notifItem = document.getElementById('notif-' + notifId);
+                    if (notifItem) {
+                        notifItem.classList.remove('border-start', 'border-primary', 'border-3');
+                        var messageEl = notifItem.querySelector('.fw-bold');
+                        if (messageEl) {
+                            messageEl.classList.remove('fw-bold');
+                        }
+                    }
                 }
             });
             // Let the link continue to its href
         });
     });
+
+    // Add smooth animations for dropdowns
+    document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+            // Bootstrap handles this automatically, but we can add custom animations if needed
+        });
+    });
+
+    // Add active state to current page links
+    var currentPath = window.location.pathname;
+    document.querySelectorAll('.list-group-item-action[href]').forEach(function(link) {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
 });
 </script>
 
-<style> 
+<style>
+/* Custom navbar styles */
 #header {
-    font: 100%/1.125 'Lucida Grande', 'Lucida Sans Unicode', Verdana, Helvetica, sans-serif, 'GNU Unifont';
-    font-weight: inherit;
-    font-style: inherit;
-    font-family: inherit;
-    list-style: none;
-    color: #eee;
-    border-color: #222;
-    outline: #111;
-    box-shadow: none;
-    font-size: 0.875em;
-    margin: 0 0 1em;
-    padding: 0;
-    position: relative;
-    background: none;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-#greeting {
-    font: 100%/1.125 'Lucida Grande', 'Lucida Sans Unicode', Verdana, Helvetica, sans-serif, 'GNU Unifont';
-    font-weight: inherit;
-    font-style: inherit;
-    font-family: inherit;
-    list-style: none;
-    color: #eee;
-    font-size: 0.875em;
-    float: right;
-    margin-right: 0.375em;
+/* Notification badge pulse animation */
+.nav-link .badge {
+    animation: pulse 2s infinite;
 }
 
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Offcanvas improvements */
+.offcanvas-body .list-group-item-action:hover {
+    background-color: rgba(0,0,0,0.05);
+    transform: translateX(5px);
+    transition: all 0.2s ease;
+}
+
+/* Dropdown menu improvements */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+}
+
+.dropdown-item {
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(0,123,255,0.1);
+    transform: translateX(5px);
+}
+
+/* Notification styles */
+.notif-link:hover {
+    text-decoration: none !important;
+}
+
+.list-group-item.border-start {
+    background-color: rgba(0,123,255,0.02);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 991.98px) {
+    .d-none.d-lg-block {
+        display: none !important;
+    }
+}
+
+/* Logo hover effect */
+.navbar-brand:hover img {
+    transform: rotate(5deg) scale(1.05);
+    transition: transform 0.3s ease;
+}
 </style>
