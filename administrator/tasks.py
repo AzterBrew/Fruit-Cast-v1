@@ -18,6 +18,9 @@ def retrain_and_generate_forecasts_task():
     saving the results to the database.
     """
     try:
+        print(f"DEBUG: AWS_STORAGE_BUCKET_NAME is {os.environ.get('AWS_STORAGE_BUCKET_NAME')}")
+        print(f"DEBUG: AWS_S3_ENDPOINT_URL is {os.environ.get('AWS_S3_ENDPOINT_URL')}")
+        
         # Create a single ForecastBatch object to track this generation run.
         batch = ForecastBatch.objects.create(notes="Bulk generated forecast - All commodities and municipalities.")
         
