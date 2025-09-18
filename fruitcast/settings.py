@@ -212,22 +212,27 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # Celery Configuration
-BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-BACKEND_URL = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+# Get the URL from the environment variable
+BROKER_URL_RAW = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+BACKEND_URL_RAW = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
-CELERY_BROKER_URL = BROKER_URL
-CELERY_RESULT_BACKEND = BACKEND_URL
+# Parse the URL and reconstruct it without any query parameters
+parsed_url = urlparse(BROKER_URL_RAW)
+CELERY_BROKER_URL = parsed_url.scheme + '://' + parsed_url.netloc + parsed_url.path
+
+parsed_url = urlparse(BACKEND_URL_RAW)
+CELERY_RESULT_BACKEND = parsed_url.scheme + '://' + parsed_url.netloc + parsed_url.path
 
 # For rediss:// connections, explicitly set SSL options
-# if CELERY_BROKER_URL.startswith('rediss://'):
-#     CELERY_BROKER_USE_SSL = {
-#         'ssl_cert_reqs': ssl.CERT_NONE,
-#     }
+if CELERY_BROKER_URL.startswith('rediss://'):
+    CELERY_BROKER_USE_SSL = {
+        'ssl_cert_reqs': ssl.CERT_NONE,
+    }
 
-# if CELERY_RESULT_BACKEND.startswith('rediss://'):
-#     CELERY_RESULT_BACKEND_USE_SSL = {
-#         'ssl_cert_reqs': ssl.CERT_NONE,
-#     }
+if CELERY_RESULT_BACKEND.startswith('rediss://'):
+    CELERY_RESULT_BACKEND_USE_SSL = {
+        'ssl_cert_reqs': ssl.CERT_NONE,
+    }
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
