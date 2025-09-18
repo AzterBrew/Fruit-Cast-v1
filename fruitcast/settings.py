@@ -176,17 +176,22 @@ USE_I18N = True
 
 # digital ocean spaces settings for storing prophet models
 
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-# Securely get credentials from environment variables (best practice for DO App Platform)
-
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL')
-AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
-AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=86400',
+# Use the new STORAGES setting for modern Django versions
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ.get('AWS_STORAGE_BUCKET_NAME'),
+            "endpoint_url": os.environ.get('AWS_S3_ENDPOINT_URL'),
+            "access_key": os.environ.get('AWS_ACCESS_KEY_ID'),
+            "secret_key": os.environ.get('AWS_SECRET_ACCESS_KEY'),
+            "querystring_auth": False,
+            "file_overwrite": False,
+        }
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    }
 }
 
 # Static files (CSS, JavaScript, Images)
