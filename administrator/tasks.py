@@ -9,6 +9,8 @@ from dateutil.relativedelta import relativedelta
 from base.models import CommodityType, MunicipalityName, Month
 from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord
 from prophet import Prophet
+from django.core.files.storage import default_storage
+from io import BytesIO
 
 @shared_task
 def retrain_and_generate_forecasts_task():
