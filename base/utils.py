@@ -88,9 +88,11 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
             # Scenario B: Forecast is too far in the future. Generate it on-demand.
             try:
                 # Load the appropriate Prophet model for the specific municipality
+                model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
+
                 model_filename = f"prophet_{commodity.commodity_id}_{selected_municipality_id}.joblib"
-                model_path = os.path.join('prophet_models', model_filename)
-                
+                model_path = os.path.join(model_dir, model_filename)
+
                 if not os.path.exists(model_path):
                     print(f"Prophet model not found for {commodity.name} in Municipality {selected_municipality_id}. Skipping.")
                     continue
