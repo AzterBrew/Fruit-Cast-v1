@@ -27,13 +27,7 @@ class VerifiedHarvestRecord(models.Model):
     harvest_date = models.DateField()
     commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
     total_weight_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
-    weight_per_unit_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg
-    @property
-    def estimated_unit_count(self):
-        if self.weight_per_unit_kg:
-            return self.total_weight_kg / self.weight_per_unit_kg
-        return None
-    
+    weight_per_unit_kg = models.DecimalField(max_digits=10,decimal_places=2)  # Already converted to kg    
     municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)
     barangay = models.ForeignKey('base.BarangayName', on_delete=models.SET_NULL, null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
@@ -49,7 +43,6 @@ class VerifiedPlantRecord(models.Model):
     commodity_id = models.ForeignKey('base.CommodityType', on_delete=models.CASCADE)    # commodity_type = models.ForeignKey(CommodityType, on_delete=models.CASCADE)  REPLACE WITH THIS PAGKA NAMODIFY NA YUNG PAG RECORD BY COMMTYPE TABLE NA DROPDOWN
     min_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
     max_expected_harvest = models.DecimalField(max_digits=10, decimal_places=3)
-    average_harvest_units = models.DecimalField(max_digits=10,decimal_places=2)    #count toh, not weight
     estimated_weight_kg = models.DecimalField(max_digits=10,decimal_places=2, null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
     municipality = models.ForeignKey('base.MunicipalityName', on_delete=models.SET_NULL, null=True, blank=True)

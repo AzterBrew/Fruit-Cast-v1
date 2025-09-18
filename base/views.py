@@ -71,7 +71,7 @@ def schedule_monthly_fruit_recommendations(account, municipality_id):
         if all_recommendations:
             # Create a combined message for all recommendations for this municipality
             fruit_names = [rec['commodity_name'] for rec in all_recommendations]
-            message = f"🌱 Monthly Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names[:3])}{'...' if len(fruit_names) > 3 else ''} based on forecasted low supply trends."
+            message = f"🌱 {target_month.month} {target_month.year} Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names[:3])}{'...' if len(fruit_names) > 3 else ''} based on forecasted low supply trends."
             
             # Dynamic scheduling logic:
             # If target is current month and we're past the 1st, schedule immediately
