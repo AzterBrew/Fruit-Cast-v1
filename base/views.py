@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.http import HttpResponseForbidden
 from django.core.mail import send_mail
 import json, time
+from dateutil.relativedelta import relativedelta
 #from .forms import CustomUserCreationForm  # make sure this is imported
 from django.http import JsonResponse
 from django.db import transaction
@@ -24,6 +25,100 @@ from .forms import RegistrationForm, EditUserInformation, HarvestRecordCreate, P
 from .utils import get_alternative_recommendations
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
+
+def schedule_monthly_fruit_recommendations(account, municipality_id):
+    """
+    Schedule monthly fruit recommendation notifications for a specific municipality
+    """
+    try:
+        # Get recommendations for the next month
+        next_month = timezone.now() + relativedelta(months=1)
+        recommendations = get_alternative_recommendations(
+            selected_month=next_month.month,
+            selected_year=next_month.year,
+            selected_municipality_id=municipality_id
+        )
+        
+        # Get municipality name for the message
+        municipality = MunicipalityName.objects.get(pk=municipality_id)
+        
+        # Create notifications for both short-term and long-term recommendations
+        all_recommendations = recommendations.get('short_term', []) + recommendations.get('long_term', [])
+        
+        if all_recommendations:
+            # Create a combined message for all recommendations for this municipality
+            fruit_names = [rec['commodity_name'] for rec in all_recommendations]
+            message = f"Monthly Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names[:3])}{'...' if len(fruit_names) > 3 else ''} based on forecasted low supply trends."
+            
+            # Schedule for the 1st of next month at 8 AM
+            scheduled_datetime = next_month.replace(day=1, hour=8, minute=0, second=0, microsecond=0)
+            
+            # Check if a similar notification already exists for this month and municipality
+            existing_notification = Notification.objects.filter(
+                account=account,
+                notification_type="fruit_recommendation",
+                scheduled_for__month=scheduled_datetime.month,
+                scheduled_for__year=scheduled_datetime.year,
+                message__icontains=municipality.municipality
+            ).first()
+            
+            if not existing_notification:
+                Notification.objects.create(
+                    account=account,
+                    message=message,
+                    notification_type="fruit_recommendation",
+                    scheduled_for=scheduled_datetime,
+                    redirect_url=reverse('base:home'),
+                )
+                print(f"Scheduled fruit recommendation notification for {municipality.municipality} on {scheduled_datetime}")
+        
+    except Exception as e:
+        print(f"Error scheduling fruit recommendations for municipality {municipality_id}: {e}")
+
+
+def schedule_immediate_fruit_recommendations(account, municipality_id):
+    """
+    Schedule immediate fruit recommendation notifications for testing purposes
+    """
+    try:
+        # Get recommendations for current month
+        current_time = timezone.now()
+        recommendations = get_alternative_recommendations(
+            selected_month=current_time.month,
+            selected_year=current_time.year,
+            selected_municipality_id=municipality_id
+        )
+        
+        # Get municipality name for the message
+        municipality = MunicipalityName.objects.get(pk=municipality_id)
+        
+        # Create notifications for both short-term and long-term recommendations
+        all_recommendations = recommendations.get('short_term', []) + recommendations.get('long_term', [])
+        
+        if all_recommendations:
+            # Create a combined message for all recommendations for this municipality
+            fruit_names = [rec['commodity_name'] for rec in all_recommendations]
+            message = f"🌱 Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names[:3])}{'...' if len(fruit_names) > 3 else ''} based on forecasted low supply trends."
+            
+            # Schedule for immediate delivery (current time)
+            scheduled_datetime = current_time
+            
+            Notification.objects.create(
+                account=account,
+                message=message,
+                notification_type="fruit_recommendation",
+                scheduled_for=scheduled_datetime,
+                redirect_url=reverse('base:home'),
+            )
+            print(f"Created immediate fruit recommendation notification for {municipality.municipality}")
+            return True
+        else:
+            print(f"No recommendations available for {municipality.municipality}")
+            return False
+        
+    except Exception as e:
+        print(f"Error creating immediate fruit recommendations for municipality {municipality_id}: {e}")
+        return False
 
 
 def home(request):
@@ -42,6 +137,16 @@ def home(request):
             
             now = timezone.now()
             current_year = now.year
+
+            # Check if user has farmland records and get distinct municipalities
+            user_farmlands = FarmLand.objects.filter(userinfo_id=userinfo)
+            if user_farmlands.exists():
+                # Get distinct municipality IDs from user's farmlands
+                distinct_municipality_ids = user_farmlands.values_list('municipality_id', flat=True).distinct()
+                
+                # Schedule fruit recommendation notifications for each municipality
+                for municipality_id in distinct_municipality_ids:
+                    schedule_monthly_fruit_recommendations(accinfo, municipality_id)
 
             # Define the year range for the dropdown
             year_range = range(current_year - 1, current_year + 3) # Example: past year to next two years
