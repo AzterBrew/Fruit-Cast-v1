@@ -10,7 +10,7 @@ class Command(BaseCommand):
     help = 'Train Prophet models for each municipality and commodity combination'
 
     def handle(self, *args, **options):
-        model_dir = os.path.join('prophet_models')
+        model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
         os.makedirs(model_dir, exist_ok=True)
 
         municipalities = MunicipalityName.objects.exclude(pk=14)

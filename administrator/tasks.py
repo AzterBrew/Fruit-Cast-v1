@@ -32,7 +32,8 @@ def retrain_and_generate_forecasts_task():
         # This will be created by a separate process (Celery worker).
         batch = ForecastBatch.objects.create(notes="Bulk generated forecast - All commodities and municipalities for the next 12 months.")
 
-        model_dir = os.path.join('prophet_models')
+        model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
+        os.makedirs(model_dir, exist_ok=True)
         commodities = CommodityType.objects.exclude(pk=1)
         municipalities = MunicipalityName.objects.exclude(pk=14)
         months = Month.objects.all().order_by('number')
@@ -45,6 +46,11 @@ def retrain_and_generate_forecasts_task():
                     # Determine model filename
                     model_filename = f"prophet_{commodity.commodity_id}_{municipality.municipality_id}.joblib"
                     model_path = os.path.join(model_dir, model_filename)
+                    
+                    if not os.path.exists(model_path):
+                        print(f"Model file not found: {model_path}")
+                    else:
+                        print(f"Model file found: {model_path}")
                     
                     if not os.path.exists(model_path):
                         continue
