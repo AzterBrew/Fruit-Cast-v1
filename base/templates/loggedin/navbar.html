@@ -1,38 +1,94 @@
-{% load static %}
+{%load static%}
 
-<style>
-    /* Custom styles to match AO3's color and font */
-    .ao3-navbar {
-        background-color: #333 !important; /* A dark gray similar to AO3 */
-        border-bottom: 2px solid #900; /* A red border for branding */
-    }
-    .ao3-navbar .navbar-brand,
-    .ao3-navbar .nav-link,
-    .ao3-navbar .dropdown-item {
-        color: #fff !important;
-    }
-    .ao3-navbar .nav-link:hover,
-    .ao3-navbar .dropdown-item:hover {
-        background-color: #555 !important;
-    }
-    .ao3-navbar .dropdown-menu {
-        background-color: #444;
-        border: none;
-    }
-    .ao3-navbar .offcanvas-toggle {
-        color: #fff;
-    }
-</style>
+<header id="header" class="region">
+    {% comment %} <h1 class="heading">
+        <a href="/"><span>Archive of Our Own</span><sup> beta</sup><img alt="Archive of Our Own" class="logo" src="/images/ao3_logos/logo_42.png"></a>
+    </h1> {% endcomment %}
+    <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
+        <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+    </button>
+    <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
+        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+        <span class="fw-bold text-success">Fruit Cast</span>
+    </a>
 
-<nav class="navbar navbar-expand-lg ao3-navbar fixed-top shadow-sm">
+    <nav id="greeting" aria-label="User">
+        <ul class="user navigation actions">
+        <li class="dropdown" aria-haspopup="true">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Hi, 
+                {% if user_firstname %}
+                    {{ user_firstname }}
+                {% else %}
+                    {% if user_role_id == 1 %}
+                        Farmer
+                    {% elif user_role_id == 2 %}
+                        Administrator
+                    {% elif user_role_id == 3 %}
+                        Agriculturist
+                    {% else %}
+                        User
+                    {% endif %}
+                {% endif %}
+                !</a>
+            <ul class="menu dropdown-menu">
+            <li><a href="{% url 'base:account_info_panel' %}">My Account</a></li>
+                <li><a href="{% url 'base:farmland_record' %}">My Farm Lands</a></li>
+                {% if user_role_id == 3 or user_role_id == 2 %}
+                    <li><a href="{% url 'administrator:admin_dashboard' %}">Admin Panel</a></li>
+                {% endif %}
+            </ul>
+        </li>
+
+        {% comment %} <li class="dropdown" aria-haspopup="true">
+            <a href="/works/new" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Post</a>
+            <ul class="menu dropdown-menu">
+            <li><a href="/works/new">New Work</a></li>
+            <li><a href="/works/new?import=true">Import Work</a></li>
+            </ul>
+        </li> {% endcomment %}
+            <li>
+                <form action="{% url 'base:logout' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit">Log out</button>
+                </form>
+            </li>
+        </ul>
+    </nav>
+    <nav aria-label="Site">
+        <ul class="primary navigation actions">
+            <li class="dropdown" aria-haspopup="true">
+                <a href="{% url 'dashboard:forecast' %}" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Forecast</a>
+                {% comment %} <ul class="menu dropdown-menu">
+                    <li><a href="/media">All Fandoms</a></li>
+                    <li id="medium_5"><a href="/media/Anime%20*a*%20Manga/fandoms">Anime &amp; Manga</a></li>
+                    <li id="medium_3"><a href="/media/Books%20*a*%20Literature/fandoms">Books &amp; Literature</a></li>
+                    <li id="medium_4"><a href="/media/Cartoons%20*a*%20Comics%20*a*%20Graphic%20Novels/fandoms">Cartoons &amp; Comics &amp; Graphic Novels</a></li>
+                    <li id="medium_7"><a href="/media/Celebrities%20*a*%20Real%20People/fandoms">Celebrities &amp; Real People</a></li>
+                </ul> {% endcomment %}
+            </li>
+            <li class="dropdown" aria-haspopup="true">
+                <a href="{% url 'dashboard:monitor' %}" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Monitor</a>
+            </li>
+            <li class="dropdown" aria-haspopup="true">
+                <a href="{% url 'base:newrecord' %}" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Create Record</a>
+            </li>
+
+
+    </nav>
+
+</header>
+
+{% comment %} NAVBAR SECTION {% endcomment %}
+{% comment %} <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
-            <span class="fw-bold">Fruit Cast</span>
-        </a>
-        <button class="btn ao3-navbar offcanvas-toggle me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
-            <i class="bi bi-list"></i>
+        <!-- Offcanvas Toggle Button (always visible) -->
+        <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
+            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
         </button>
-
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
+            <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+            <span class="fw-bold text-success">Fruit Cast</span>
+        </a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="{% url 'base:home' %}">Home</a></li>
@@ -40,28 +96,267 @@
                 <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:monitor' %}">Monitor</a></li>
                 <li class="nav-item">
                     <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#notifPanel" aria-controls="notifPanel">
-                        Notifications
-                        {% if unread_count and unread_count > 0 %}
-                            <span class="badge bg-danger">{{ unread_count }}</span>
-                        {% endif %}
+                    <i class="bi bi-bell"></i> Notification
+                    {% if unread_count and unread_count > 0 %}
+                        <span class="badge bg-danger">{{ unread_count }}</span>
+                    {% endif %}
                     </a>
                 </li>
                 <li class="nav-item dropdown me-2">
                     <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Account
+                        <i class="bi bi-person"></i> Account
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
-                        <li><a class="dropdown-item" href="{% url 'base:account_info_panel' %}">Account Page</a></li>
-                        <li><hr class="dropdown-divider"></li>
                         <li>
-                            <form action="{% url 'base:logout' %}" method="post" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="dropdown-item">Logout</button>
-                            </form>
+                        <a class="dropdown-item" href="{% url 'base:account_info_panel' %}">Account Page</a>
+                        </li>
+                        <li>
+                        <form action="{% url 'base:logout' %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item">Logout</button>
+                        </form>
                         </li>
                     </ul>
-                </li>
+                    </li>
             </ul>
         </div>
     </div>
+</nav> {% endcomment %}
+
+  
+{% comment %} AO3 HEADER {% endcomment %}
+{% comment %} <header id="header" class="region">
+
+  <h1 class="heading">
+    <a href="/"><span>Archive of Our Own</span><sup> beta</sup><img alt="Archive of Our Own" class="logo" src="/images/ao3_logos/logo_42.png"></a>
+  </h1>
+
+    <nav id="greeting" aria-label="User">
+    <ul class="user navigation actions">
+      <li class="dropdown" aria-haspopup="true">
+        <a href="/users/BoboDoggo" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Hi, BoboDoggo!</a>
+        <ul class="menu dropdown-menu">
+          <li><a href="/users/BoboDoggo">My Dashboard</a></li>
+            <li><a href="/users/BoboDoggo/subscriptions">My Subscriptions</a></li>
+            <li><a href="/users/BoboDoggo/works">My Works</a></li>
+            <li><a href="/users/BoboDoggo/bookmarks">My Bookmarks</a></li>
+            <li><a href="/users/BoboDoggo/readings">My History</a></li>
+          <li><a href="/users/BoboDoggo/preferences">My Preferences</a></li>
+        </ul>
+      </li>
+      <li class="dropdown" aria-haspopup="true">
+        <a href="/works/new" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Post</a>
+        <ul class="menu dropdown-menu">
+          <li><a href="/works/new">New Work</a></li>
+          <li><a href="/works/new?import=true">Import Work</a></li>
+        </ul>
+      </li>
+      <li><a rel="nofollow" data-method="delete" href="/users/logout">Log Out</a></li>
+    </ul>
+
+  <p class="icon"><a href="/users/BoboDoggo"><img alt="" class="icon" src="https://archiveofourown.org/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsiZGF0YSI6MTA4NTI0OCwicHVyIjoiYmxvYl9pZCJ9fQ==--79eb818f7ec257192c57ea2bef76f24e82276eea/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemVfdG9fbGltaXQiOlsxMDAsMTAwXSwibG9hZGVyIjp7Im4iOi0xfX0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--fb1da3623781351fb36c743584da71645585f6c4/original.jpg"></a></p>
 </nav>
+
+
+  <nav aria-label="Site">
+    <ul class="primary navigation actions">
+      <li class="dropdown" aria-haspopup="true">
+        <a href="/menu/fandoms" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Fandoms</a>
+        <ul class="menu dropdown-menu">
+  <li><a href="/media">All Fandoms</a></li>
+        <li id="medium_5"><a href="/media/Anime%20*a*%20Manga/fandoms">Anime &amp; Manga</a></li>
+        <li id="medium_3"><a href="/media/Books%20*a*%20Literature/fandoms">Books &amp; Literature</a></li>
+        <li id="medium_4"><a href="/media/Cartoons%20*a*%20Comics%20*a*%20Graphic%20Novels/fandoms">Cartoons &amp; Comics &amp; Graphic Novels</a></li>
+        <li id="medium_7"><a href="/media/Celebrities%20*a*%20Real%20People/fandoms">Celebrities &amp; Real People</a></li>
+        <li id="medium_2"><a href="/media/Movies/fandoms">Movies</a></li>
+        <li id="medium_6"><a href="/media/Music%20*a*%20Bands/fandoms">Music &amp; Bands</a></li>
+        <li id="medium_8"><a href="/media/Other%20Media/fandoms">Other Media</a></li>
+        <li id="medium_30198"><a href="/media/Theater/fandoms">Theater</a></li>
+        <li id="medium_1"><a href="/media/TV%20Shows/fandoms">TV Shows</a></li>
+        <li id="medium_476"><a href="/media/Video%20Games/fandoms">Video Games</a></li>
+        <li id="medium_9971"><a href="/media/Uncategorized%20Fandoms/fandoms">Uncategorized Fandoms</a></li>
+</ul>
+
+      </li>
+      <li class="dropdown" aria-haspopup="true">
+        <a href="/menu/browse" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Browse</a>
+        <ul class="menu dropdown-menu">
+  <li><a href="/works">Works</a></li>
+  <li><a href="/bookmarks">Bookmarks</a></li>
+  <li><a href="/tags">Tags</a></li>
+  <li><a href="/collections">Collections</a></li>
+</ul>
+
+      </li>
+      <li class="dropdown" aria-haspopup="true">
+        <a href="/menu/search" class="dropdown-toggle" data-toggle="dropdown" data-target="#">Search</a>
+        <ul class="menu dropdown-menu">
+  <li><a href="/works/search">Works</a></li>
+  <li><a href="/bookmarks/search">Bookmarks</a></li>
+  <li><a href="/tags/search">Tags</a></li>
+  <li><a href="/people/search">People</a></li>
+</ul>
+
+      </li>
+      <li class="dropdown" aria-haspopup="true">
+        <a href="/menu/about" class="dropdown-toggle" data-toggle="dropdown" data-target="#">About</a>
+        <ul class="menu dropdown-menu">
+  <li><a href="/about">About Us</a></li>
+  <li><a href="/admin_posts">News</a></li>
+  <li><a href="/faq">FAQ</a></li>
+  <li><a href="/wrangling_guidelines">Wrangling Guidelines</a></li>
+  <li><a href="/donate">Donate or Volunteer</a></li>
+</ul>
+
+      </li>
+      <li class="search"><form class="search" id="search" role="search" aria-label="Work" action="/works/search" accept-charset="UTF-8" method="get">
+  <fieldset>
+    <p>
+      <label class="landmark" for="site_search">Work Search</label>
+      <input class="text" id="site_search" aria-describedby="site_search_tooltip" type="text" name="work_search[query]">
+      <span class="tip" role="tooltip" id="site_search_tooltip">tip: lex m/m (mature OR explicit)</span>
+      <span class="submit actions"><input type="submit" value="Search" class="button"></span>
+    </p>
+  </fieldset>
+</form></li>
+    </ul>
+  </nav>
+
+
+
+  <div class="clear"></div>
+
+</header> {% endcomment %}
+
+
+
+{% comment %} OFFCANVAS SECTION {% endcomment %}
+{% comment %} LEFT SIDE BAR {% endcomment %}
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast | {{user_firstname}}</h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-header">      
+        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto"style="max-height: 20vh; align-content : center;">
+
+    </div>
+    <div class="offcanvas-body d-flex flex-column h-100">  
+        <div class="list-group">
+          <a href="{% url 'base:plant_record' %}" class="list-group-item list-group-item-action w-75">Create New Record</a>        
+        </div>
+        <br>
+        <br>
+        <div class="list-group">
+            {% comment %} <a href="#" class="list-group-item list-group-item-action">Report History</a>
+            <a href="#" class="list-group-item list-group-item-action">Account Details</a> {% endcomment %}
+            <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action">Home</a>
+            <a href="{% url 'dashboard:forecast' %}" class="list-group-item list-group-item-action">Forecast</a>
+            <a href="{% url 'dashboard:monitor' %}" class="list-group-item list-group-item-action">Monitor</a>
+            <a href="{% url 'base:newrecord' %}?view=transaction_history" class="list-group-item list-group-item-action">Record History</a>
+            <a href="#" class="list-group-item list-group-item-action">Fruit Plant Suggestion</a>
+            <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a>
+            {% comment %} <a href="{% url 'dashboard:addcommodity' %}" class="list-group-item list-group-item-action">Add Commodity</a> {% endcomment %}
+            <!-- Collapsible Section -->
+              {% if user_role_id == 3 or user_role_id == 2 %}
+
+              <a href="{% url 'administrator:admin_dashboard' %}" class="list-group-item list-group-item-action">Admin Panel</a>
+
+            {% endif %}
+
+            
+        </div>
+        <br>
+        <div class="flex-grow-1"></div>
+        <hr>
+        <br>
+    </div>
+  </div>
+
+
+  {% comment %} NOTIF OFFCANVAS {% endcomment %}
+
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="notifPanel" aria-labelledby="notifPanelLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="notifPanelLabel">Notifications</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    {% if notifications %}
+      <ul class="list-group">
+        {% for notification in notifications %}
+            <li class="list-group-item{% if not notification.is_read %} fw-bold{% endif %}" id="notif-{{ notification.id }}">
+                <a href="{{ notification.redirect_url }}" class="notif-link link-success" data-notif-id="{{ notification.id }}">
+                    <div>{{ notification.message|truncatechars:75 }}</div>
+                    <small class="text-muted">{{ notification.created_at|date:"M d, Y H:i" }}</small>
+                </a>
+            </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="text-muted">No notifications</div>
+    {% endif %}
+    <div class="mt-3 text-center">
+      <a href="{% url 'dashboard:notifications' %}" class="btn btn-outline-success btn-sm">View all notifications</a>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.notif-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            var notifId = this.getAttribute('data-notif-id');
+            // Mark as read via AJAX
+            fetch("{% url 'dashboard:mark_notification_read' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "notif_id=" + notifId
+            }).then(response => {
+                if (response.ok) {
+                    // Remove the notification from the list
+                    var li = document.getElementById('notif-' + notifId);
+                    if (li) li.remove();
+                }
+            });
+            // Let the link continue to its href
+        });
+    });
+});
+</script>
+
+<style> 
+#header {
+    font: 100%/1.125 'Lucida Grande', 'Lucida Sans Unicode', Verdana, Helvetica, sans-serif, 'GNU Unifont';
+    font-weight: inherit;
+    font-style: inherit;
+    font-family: inherit;
+    list-style: none;
+    color: #eee;
+    border-color: #222;
+    outline: #111;
+    box-shadow: none;
+    font-size: 0.875em;
+    margin: 0 0 1em;
+    padding: 0;
+    position: relative;
+    background: none;
+}
+
+#greeting {
+    font: 100%/1.125 'Lucida Grande', 'Lucida Sans Unicode', Verdana, Helvetica, sans-serif, 'GNU Unifont';
+    font-weight: inherit;
+    font-style: inherit;
+    font-family: inherit;
+    list-style: none;
+    color: #eee;
+    font-size: 0.875em;
+    float: right;
+    margin-right: 0.375em;
+}
+
+</style>
