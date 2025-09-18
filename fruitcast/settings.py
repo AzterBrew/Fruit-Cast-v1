@@ -213,26 +213,46 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Celery Configuration
 # Get the URL from the environment variable
-BROKER_URL_RAW = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-BACKEND_URL_RAW = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
 
-# Parse the URL and reconstruct it without any query parameters
-parsed_url = urlparse(BROKER_URL_RAW)
-CELERY_BROKER_URL = parsed_url.scheme + '://' + parsed_url.netloc + parsed_url.path
+# Default to a local Redis for development if environment variables are not set
+if not CELERY_BROKER_URL:
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
-parsed_url = urlparse(BACKEND_URL_RAW)
-CELERY_RESULT_BACKEND = parsed_url.scheme + '://' + parsed_url.netloc + parsed_url.path
-
-# For rediss:// connections, explicitly set SSL options
+# Check if the URL is a secure rediss:// connection
 if CELERY_BROKER_URL.startswith('rediss://'):
-    CELERY_BROKER_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_NONE,
-    }
+    parsed_url = urlparse(CELERY_BROKER_URL)
+    query_params = parse_qs(parsed_url.query)
+
+    # If the URL already has the parameter, use it
+    if 'ssl_cert_reqs' in query_params:
+        cert_reqs = query_params['ssl_cert_reqs'][0]
+        if cert_reqs == 'CERT_NONE':
+            CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
+        elif cert_reqs == 'CERT_OPTIONAL':
+            CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_OPTIONAL}
+        elif cert_reqs == 'CERT_REQUIRED':
+            CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_REQUIRED}
+    else:
+        # If not, add the parameter using the recommended method
+        CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
 
 if CELERY_RESULT_BACKEND.startswith('rediss://'):
-    CELERY_RESULT_BACKEND_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_NONE,
-    }
+    parsed_url = urlparse(CELERY_RESULT_BACKEND)
+    query_params = parse_qs(parsed_url.query)
+    
+    if 'ssl_cert_reqs' in query_params:
+        cert_reqs = query_params['ssl_cert_reqs'][0]
+        if cert_reqs == 'CERT_NONE':
+            CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
+        elif cert_reqs == 'CERT_OPTIONAL':
+            CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_OPTIONAL}
+        elif cert_reqs == 'CERT_REQUIRED':
+            CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_REQUIRED}
+    else:
+        CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
