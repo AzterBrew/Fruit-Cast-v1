@@ -514,24 +514,79 @@ a:hover {
     border-radius: 1rem;
 }
 
+/* Enhanced card styling for forecast page */
+.card.border-0 {
+    border: none !important;
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease;
+}
+
+.card.border-0:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Improved badge styling */
+.badge.bg-success-subtle {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+}
+
+/* Form improvements */
+.form-select, .form-control {
+    border: 1px solid #dee2e6;
+    transition: all 0.15s ease-in-out;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Button improvements */
+.btn {
+    transition: all 0.15s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Table improvements */
+.table-hover tbody tr:hover {
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+/* Chart container improvements */
 .chart-container {
     width: 100%;
-    max-width: 900px;
+    max-width: 100%;
     margin: 0 auto;
+    position: relative;
+    height: 400px;
 }
 
 #forecastChart {
     width: 100% !important;
-    height: 350px !important;
-    max-height: 400px;
-    min-height: 250px;
+    height: 100% !important;
     display: block;
 }
 
+@media (max-width: 991.98px) {
+    .chart-container {
+        height: 350px;
+    }
+}
+
 @media (max-width: 767.98px) {
-    #forecastChart {
-        height: 280px !important;
-        min-height: 180px;
-        max-height: 320px;
+    .chart-container {
+        height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .chart-container {
+        height: 250px;
     }
 }
