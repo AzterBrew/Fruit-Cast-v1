@@ -4,14 +4,10 @@
 Fruit Cast | Home
 {% endblock title %}
 
-{% comment %} {% block navbar %}
-    {% include "loggedin/navbar.html" %}
-{% endblock navbar %} {% endcomment %}
-
 {% block content %}
-<div class="main-user py-5">
+<div class="main-user">
 
-    <div class="row main-user-content justify-content-center">
+    <div class="main-user-content justify-content-center">
         {% comment %} <div class="col-lg-8"> {% endcomment %}
             <div class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">
                 <h1 class="mb-3 text-success fw-bold">Welcome to Fruit Cast, {{ user_firstname }}</h1>
@@ -51,23 +47,23 @@ Fruit Cast | Home
                         Recommended Fruits to Plant on {{ now|date:"F Y" }}
                     </h2>
                     <form id="recommendations-form" class="mb-4 d-flex justify-content-center align-items-center flex-wrap">
-                        <select id="month-select" class="form-select w-auto me-2">
+                        <select id="month-select" class="form-select w-auto me-2 mb-2">
                             {% for month in months %}
                                 <option value="{{ month.number }}" {% if month.number == now.month %}selected{% endif %}>{{ month.name }}</option>
                             {% endfor %}
                         </select>
-                        <select id="year-select" class="form-select w-auto me-2">
+                        <select id="year-select" class="form-select w-auto me-2 mb-2">
                             {% for year in years %}
                                 <option value="{{ year }}" {% if year == now.year %}selected{% endif %}>{{ year }}</option>
                             {% endfor %}
                         </select>
-                        <select id="municipality-select" class="form-select w-auto me-2">
+                        <select id="municipality-select" class="form-select w-auto me-2 mb-2">
                             <option value="14">All Municipalities</option>
                             {% for municipality in municipalities %}
                                 <option value="{{ municipality.municipality_id }}">{{ municipality.municipality }}</option>
                             {% endfor %}
                         </select>
-                        <button type="submit" class="btn btn-success">Apply Filter</button>
+                        <button type="submit" class="btn btn-success mb-2">Apply Filter</button>
                     </form>
                     <div id="recommendations-container" class="text-center mx-auto" style="max-width: 900px;">
                         <div class="spinner-border text-success" role="status">

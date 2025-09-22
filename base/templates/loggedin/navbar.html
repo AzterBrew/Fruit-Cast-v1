@@ -44,7 +44,7 @@
                                 {% endif %}
                             {% endif %}!
                         </span>
-                        <i class="bi bi-chevron-down ms-1 d-md-none"></i>
+                        <i class="bi bi-chevron-down ms-1"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end mobile-dropdown">
                         <li><a class="dropdown-item" href="{% url 'base:account_info_panel' %}">
@@ -80,9 +80,9 @@
     <!-- Main Navigation - Always visible, no collapse -->
     <nav class="ps-3 d-block bg-green-fc border-top border-light border-opacity-25" aria-label="Site">
         <ul class="navbar-nav d-flex flex-row flex-wrap">
-            <li class="nav-item dropdown me-3">
+            <li class="nav-item dropdown">
                 <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-graph-up me-1 d-md-none"></i>
+                    <i class="bi bi-graph-up me-1"></i>
                     <span>Forecast</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-start mobile-dropdown">
@@ -94,15 +94,15 @@
                     </a></li>
                 </ul>
             </li>
-            <li class="nav-item me-3">
+            <li class="nav-item">
                 <a href="{% url 'dashboard:monitor' %}" class="nav-link text-light">
-                    <i class="bi bi-activity me-1 d-md-none"></i>
+                    <i class="bi bi-activity me-1"></i>
                     <span>Monitor</span>
                 </a>
             </li>
-            <li class="nav-item dropdown me-3">
+            <li class="nav-item dropdown">
                 <a href="{% url 'base:newrecord' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-plus-circle me-1 d-md-none"></i>
+                    <i class="bi bi-plus-circle me-1"></i>
                     <span>Create Record</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end mobile-dropdown">

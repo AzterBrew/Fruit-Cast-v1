@@ -499,15 +499,15 @@ a:hover {
 
 .main-user {
     display: flex;
-    margin-top: 4vh;
+    margin-top: 15vh;
     min-height: 100vh;
     background: #f7fff2;
 }
 
 .main-user-content {
     width: 100%;
-    min-width: 72vw;
-    max-width: 72vw;
+    /* min-width: 72vw; */
+    max-width: 85vw;
     min-height: 60vh;
     margin: 2rem auto;
     background: #f7fff2;

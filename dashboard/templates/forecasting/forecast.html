@@ -11,36 +11,41 @@ Fruit Cast | Forecast
 {% endblock navbar %} {% endcomment %}
 
 {% block content %}
-<div class="main-user py-5">
-        <div class="row main-user-content justify-content-center">
+<div class="main-user">
+        <div class="main-user-content justify-content-center">
             <div class="card shadow-sm rounded-4 p-4 mb-4">
                 <h1 class="mb-4 text-success fw-bold">
                     Forecast{% if selected_commodity_obj %}: {{ selected_commodity_obj.name }}{% endif %}
                 </h1>
-                <form method="get" class="mb-4" id="main-forecast-form">
-                    <label for="commodity_type" class="form-label">Select Commodity Type:</label>
-                    <select class="form-select w-auto d-inline-block" name="commodity_id" id="commodity_type">
-                        {% for commodity in commodity_types %}
-                            <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_commodity_id|stringformat:"s" %}selected{% endif %}>
-                                {{ commodity.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <label for="municipality" class="form-label ms-3">Select Municipality:</label>
-                    {% comment %} {{ forecast_data.labels|json_script:"forecast-labels" }}
-                    {{ forecast_data.forecasted_count|json_script:"forecast-values" }} {% endcomment %}
-                    <select class="form-select w-auto d-inline-block" name="municipality_id" id="municipality">
-                        <option value="14" {% if selected_municipality|stringformat:"s" == "14" %}selected{% endif %}>Overall</option>
-                        {% for muni in municipalities %}
-                            <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
-                                {{ muni.municipality }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                <form method="get">
+                    <div class="row mb-4 mx-1"> 
+                        <label for="commodity_type" class="col-sm-3 my-1 form-label align-middle">Select Commodity Type:</label>
+                        <select class="col-3 my-auto form-select w-auto d-inline-block" name="commodity_id" id="commodity_type">
+                            {% for commodity in commodity_types %}
+                                <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_commodity_id|stringformat:"s" %}selected{% endif %}>
+                                    {{ commodity.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <br class="d-none d-sm-block d-md-none">
+                        <label for="municipality" class="form-label col-sm-3 mt-3 align-middle">Select Municipality:</label>
+                        {% comment %} {{ forecast_data.labels|json_script:"forecast-labels" }}
+                        {{ forecast_data.forecasted_count|json_script:"forecast-values" }} {% endcomment %}
+                        <select class="col-3 my-auto form-select w-auto d-inline-block" name="municipality_id" id="municipality">
+                            <option value="14" {% if selected_municipality|stringformat:"s" == "14" %}selected{% endif %}>Overall</option>
+                            {% for muni in municipalities %}
+                                <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
+                                    {{ muni.municipality }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div> 
+                    
                     <input type="hidden" name="mapcommodity_id" value="{{ request.GET.mapcommodity_id }}">
                     <input type="hidden" name="filter_month" value="{{ request.GET.filter_month }}">
                     <input type="hidden" name="filter_year" value="{{ request.GET.filter_year }}">
-                    <button type="submit" class="btn btn-success ms-3">Apply Filter</button>
+                
+                    <button type="submit" class="btn btn-success ms-3 mt-3 w-25">Apply Filter</button>
                 </form>
                 {% if forecast_data %}
                     <canvas id="forecastChart" style="height: 400px; max-height: 400px;"></canvas>
@@ -88,25 +93,34 @@ Fruit Cast | Forecast
                 <h3 class="mb-4">by Forecasted Amount (kg)</h3>
                 {% comment %} {% if forecast_data %} {% endcomment %}
 
-                <form method="get" class="mb-4" id="choropleth-filter-form">
-                    <label for="mapcommodity_type" class="form-label">Commodity:</label>
-                    <select class="form-select w-auto d-inline-block" name="mapcommodity_id" id="mapcommodity_type">
-                        {% for commodity in commodity_types %}
-                            <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_mapcommodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <label for="filter_month" class="form-label ms-3">Month:</label>
-                    <select class="form-select w-auto d-inline-block" name="filter_month" id="filter_month">
-                        {% for m in months %}
-                            <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <label for="filter_year" class="form-label ms-3">Year:</label>
-                    <select class="form-select w-auto d-inline-block" name="filter_year" id="filter_year">
-                        {% for y in available_years %}
-                            <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
-                        {% endfor %}
-                    </select>
+                <form method="get" id="choropleth-filter-form">
+                    <div class="row mb-4 mx-1">
+                        <div class="col-sm-4">
+                            <label for="mapcommodity_type" class="form-label">Commodity:</label>
+                            <select class="form-select w-auto d-inline-block me-auto" name="mapcommodity_id" id="mapcommodity_type">
+                                {% for commodity in commodity_types %}
+                                    <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_mapcommodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="filter_month" class="form-label ms-3">Month:</label>
+                            <select class="form-select w-auto d-inline-block me-auto" name="filter_month" id="filter_month">
+                                {% for m in months %}
+                                    <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="filter_year" class="form-label ms-3">Year:</label>
+                            <select class="form-select w-auto d-inline-block me-auto" name="filter_year" id="filter_year">
+                                {% for y in available_years %}
+                                    <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                    </div>
                     <input type="hidden" name="commodity_id" value="{{ request.GET.commodity_id }}">
                     <input type="hidden" name="municipality_id" value="{{ request.GET.municipality_id }}">
                     <button type="submit" class="btn btn-success ms-3">Apply Filter</button>
