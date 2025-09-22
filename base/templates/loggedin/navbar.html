@@ -4,9 +4,6 @@
     <div class="container-fluid ">
         <!-- Sidebar Toggle and Logo -->
         <div class="d-flex align-items-center">
-            {% comment %} <button class="btn btn-outline-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
-                <i class="bi bi-list" style="font-size: 1.5rem;"></i>
-            </button> {% endcomment %}
             <a class="navbar-brand d-flex align-items-center text-white" href="{% url 'base:home' %}">
                 <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
                 <span class="fw-bold">Fruit Cast</span>
@@ -31,7 +28,7 @@
                 <li class="nav-item dropdown">
                     <a href="#" class="nav-link text-light d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle fs-5 me-2"></i>
-                        <span>
+                        <span class="d-none d-md-inline">
                             Hi, 
                             {% if user_firstname %}
                                 {{ user_firstname }}
@@ -47,8 +44,9 @@
                                 {% endif %}
                             {% endif %}!
                         </span>
+                        <i class="bi bi-chevron-down ms-1 d-md-none"></i>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    <ul class="dropdown-menu dropdown-menu-end mobile-dropdown">
                         <li><a class="dropdown-item" href="{% url 'base:account_info_panel' %}">
                             <i class="bi bi-person me-2"></i>My Account
                         </a></li>
@@ -79,40 +77,43 @@
         </nav>
     </div>
         
-        <!-- Main Navigation -->
-    <nav class="ps-3 d-block bg-green-fc" aria-label="Site">
-        <ul class="navbar-nav d-flex flex-row">
+    <!-- Main Navigation - Always visible, no collapse -->
+    <nav class="ps-3 d-block bg-green-fc border-top border-light border-opacity-25" aria-label="Site">
+        <ul class="navbar-nav d-flex flex-row flex-wrap">
             <li class="nav-item dropdown me-3">
                 <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
-                    Forecast
+                    <i class="bi bi-graph-up me-1 d-md-none"></i>
+                    <span>Forecast</span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-start">
+                <ul class="dropdown-menu dropdown-menu-start mobile-dropdown">
                     <li><a class="dropdown-item" href="{% url 'dashboard:forecast' %}">
-                        <i class="bi bi-person me-2"></i>by Month
+                        <i class="bi bi-calendar-month me-2"></i>by Month
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'dashboard:forecast_bycommodity' %}">
-                        <i class="bi bi-geo-alt me-2"></i>by Commodity
+                        <i class="bi bi-box-seam me-2"></i>by Commodity
                     </a></li>
                 </ul>
             </li>
-            <li class="nav-item dropdown me-3">
+            <li class="nav-item me-3">
                 <a href="{% url 'dashboard:monitor' %}" class="nav-link text-light">
-                    Monitor
+                    <i class="bi bi-activity me-1 d-md-none"></i>
+                    <span>Monitor</span>
                 </a>
             </li>
             <li class="nav-item dropdown me-3">
                 <a href="{% url 'base:newrecord' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
-                    Create Record
+                    <i class="bi bi-plus-circle me-1 d-md-none"></i>
+                    <span>Create Record</span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end">
+                <ul class="dropdown-menu dropdown-menu-end mobile-dropdown">
                     <li><a class="dropdown-item" href="{% url 'base:plant_record' %}">
-                        <i class="bi bi-plus-circle me-2"></i>New Plant Record
+                        <i class="bi bi-seedling me-2"></i>New Plant Record
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'base:solo_harvest_record' %}">
-                        <i class="bi bi-plus-circle me-2"></i>New Harvest Record
+                        <i class="bi bi-basket me-2"></i>New Harvest Record
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'base:farmland_record' %}">
-                        <i class="bi bi-plus-circle me-2"></i>New Farm Land Record
+                        <i class="bi bi-geo-alt me-2"></i>New Farm Land Record
                     </a></li>
                 </ul>
             </li>
@@ -265,19 +266,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Add smooth animations for dropdowns
-    document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
-        toggle.addEventListener('click', function(e) {
-            // Bootstrap handles this automatically, but we can add custom animations if needed
+    // Prevent dropdown menu from closing when clicking inside (optional)
+    document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
         });
     });
 
-    // Add active state to current page links
-    var currentPath = window.location.pathname;
-    document.querySelectorAll('.list-group-item-action[href]').forEach(function(link) {
-        if (link.getAttribute('href') === currentPath) {
-            link.classList.add('active');
-        }
+    // Custom dropdown positioning for mobile
+    document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+        toggle.addEventListener('shown.bs.dropdown', function() {
+            var dropdown = this.nextElementSibling;
+            if (dropdown && window.innerWidth <= 768) {
+                // Additional mobile-specific positioning if needed
+                dropdown.style.transform = 'none';
+            }
+        });
     });
 });
 </script>
@@ -287,6 +291,63 @@ document.addEventListener('DOMContentLoaded', function() {
 #header {
     transition: all 0.3s ease;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Prevent navbar expansion on mobile */
+.navbar-nav {
+    flex-direction: row !important;
+}
+
+.navbar-collapse {
+    display: block !important;
+}
+
+/* Mobile dropdown improvements */
+@media (max-width: 768px) {
+    /* Ensure dropdowns are positioned absolutely and don't affect navbar height */
+    .mobile-dropdown {
+        position: absolute !important;
+        transform: none !important;
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3) !important;
+        border-radius: 0.5rem;
+        max-width: 280px;
+        min-width: 200px;
+        z-index: 1050;
+        margin-top: 0.5rem;
+    }
+    
+    /* Make nav text smaller on mobile */
+    .nav-link span {
+        font-size: 0.9rem;
+    }
+    
+    /* Show icons on mobile for better UX */
+    .d-md-none {
+        display: inline !important;
+    }
+    
+    /* Adjust navbar padding on mobile */
+    .navbar .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Main navigation wrapping */
+    .navbar-nav.flex-wrap {
+        flex-wrap: wrap;
+    }
+    
+    /* User dropdown positioning */
+    .dropdown-menu-end {
+        right: 0 !important;
+        left: auto !important;
+    }
+    
+    .dropdown-menu-start {
+        left: 0 !important;
+        right: auto !important;
+    }
 }
 
 /* Notification badge pulse animation */
@@ -300,22 +361,17 @@ document.addEventListener('DOMContentLoaded', function() {
     100% { transform: scale(1); }
 }
 
-/* Offcanvas improvements */
-.offcanvas-body .list-group-item-action:hover {
-    background-color: rgba(0,0,0,0.05);
-    transform: translateX(5px);
-    transition: all 0.2s ease;
-}
-
 /* Dropdown menu improvements */
 .dropdown-menu {
     border: none;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     border-radius: 0.5rem;
+    z-index: 1050;
 }
 
 .dropdown-item {
     transition: all 0.2s ease;
+    padding: 0.75rem 1rem;
 }
 
 .dropdown-item:hover {
@@ -332,16 +388,31 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: rgba(0,123,255,0.02);
 }
 
-/* Mobile responsiveness */
-@media (max-width: 991.98px) {
-    .d-none.d-lg-block {
-        display: none !important;
-    }
-}
-
 /* Logo hover effect */
 .navbar-brand:hover img {
     transform: rotate(5deg) scale(1.05);
     transition: transform 0.3s ease;
+}
+
+/* Ensure main navigation is always visible */
+.navbar .container-fluid + nav {
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Fix for very small screens */
+@media (max-width: 480px) {
+    .navbar-brand span {
+        font-size: 1rem;
+    }
+    
+    .mobile-dropdown {
+        max-width: 250px;
+        min-width: 180px;
+    }
+    
+    .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
 }
 </style>
