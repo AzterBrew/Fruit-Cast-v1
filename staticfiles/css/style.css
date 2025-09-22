@@ -513,3 +513,25 @@ a:hover {
     background: #f7fff2;
     border-radius: 1rem;
 }
+
+.chart-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+#forecastChart {
+    width: 100% !important;
+    height: 350px !important;
+    max-height: 400px;
+    min-height: 250px;
+    display: block;
+}
+
+@media (max-width: 767.98px) {
+    #forecastChart {
+        height: 280px !important;
+        min-height: 180px;
+        max-height: 320px;
+    }
+}

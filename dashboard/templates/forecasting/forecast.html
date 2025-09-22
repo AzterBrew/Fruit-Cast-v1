@@ -48,24 +48,29 @@ Fruit Cast | Forecast
                     <button type="submit" class="btn btn-success ms-3 mb-2">Apply Filter</button>
                 </form>
                 {% if forecast_data %}
-                    <canvas id="forecastChart" style="height: 400px; max-height: 400px;"></canvas>
+                    <div class="chart-container mb-4">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
                     <h3 class="mt-5">Monthly Forecast Data</h3>
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Forecasted Amount (kg)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for label, value, month_number, year in forecast_data.combined %}
+                    <div class="table-responsive mb-3">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead>
                                 <tr>
-                                    <td>{{ label }}</td>
-                                    <td>{{ value }}</td>
+                                    <th>Month</th>
+                                    <th>Forecasted Amount (kg)</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for label, value, month_number, year in forecast_data.combined %}
+                                    <tr>
+                                        <td>{{ label }}</td>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
                     <form method="get" action="{% url 'dashboard:forecast_csv' %}">
                         <input type="hidden" name="csv_type" value="by_month">
                         <input type="hidden" name="batch_id" value="{{ batch_id }}">
