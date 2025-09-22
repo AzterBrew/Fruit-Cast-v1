@@ -60,7 +60,7 @@ div {
 }
 
 
-.nav a{
+/* .nav a{
     display: inline-flex;
     font-size: 2vmax;
     
@@ -82,6 +82,16 @@ div {
     background-color: #fffdfa;
     z-index: 3;
     min-width: 100vw;
+} */
+
+/* nav { */
+    /* padding: 1rem; */
+    /* background-color: #416e3f; */
+    /* color: white; */
+/* } */
+
+.bg-green-fc {
+    background-color: #416e3f;
 }
 
 .btn-transparent {
@@ -274,11 +284,7 @@ div {
 }
 
 
-nav {
-    padding: 1rem;
-    background-color: #416e3f;
-    /* color: white; */
-}
+
 
 main {
     flex-grow: 1;

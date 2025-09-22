@@ -1,9 +1,9 @@
 {%load static%}
 
-<header id="header" class="navbar navbar-expand-lg shadow-sm fixed-top d-block">
+<header id="header" class="navbar navbar-expand-lg shadow-sm fixed-top bg-green-fc">
     <div class="container-fluid">
         <!-- Sidebar Toggle and Logo -->
-        <div class="d-flex align-items-center">
+        <div class="bg-green-fc d-flex align-items-center">
             <button class="btn btn-outline-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
                 <i class="bi bi-list" style="font-size: 1.5rem;"></i>
             </button>
@@ -13,7 +13,7 @@
             </a>
         </div>
         <!-- User Navigation -->
-        <nav class="ms-auto" aria-label="User">
+        <nav class="ms-auto bg-green-fc" aria-label="User">
             <ul class="navbar-nav d-flex flex-row align-items-center">
                 <!-- Notifications -->
                 <li class="nav-item me-3">
@@ -50,6 +50,9 @@
                         <li><a class="dropdown-item" href="{% url 'base:account_info_panel' %}">
                             <i class="bi bi-person me-2"></i>My Account
                         </a></li>
+                        <li><a class="dropdown-item" href="{% url 'base:transaction_history' %}">
+                            <i class="bi bi-clock me-2"></i>My Transactions
+                        </a></li>
                         <li><a class="dropdown-item" href="{% url 'base:farmland_owned' %}">
                             <i class="bi bi-geo-alt me-2"></i>My Farm Lands
                         </a></li>
@@ -75,7 +78,7 @@
     </div>
         
         <!-- Main Navigation -->
-    <nav class="d-none d-lg-block" aria-label="Site">
+    <nav class="d-none d-lg-block bg-green-fc" aria-label="Site">
         <ul class="navbar-nav d-flex flex-row">
             <li class="nav-item dropdown me-3">
                 <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
@@ -96,9 +99,20 @@
                 </a>
             </li>
             <li class="nav-item dropdown me-3">
-                <a href="{% url 'base:newrecord' %}" class="nav-link text-light">
+                <a href="{% url 'base:newrecord' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
                     Create Record
                 </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'base:plant_record' %}">
+                        <i class="bi bi-plus-circle me-2"></i>New Plant Record
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'base:solo_harvest_record' %}">
+                        <i class="bi bi-plus-circle me-2"></i>New Harvest Record
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'base:farmland_record' %}">
+                        <i class="bi bi-plus-circle me-2"></i>New Farm Land Record
+                    </a></li>
+                </ul>
             </li>
         </ul>
     </nav>
@@ -173,7 +187,7 @@
 
 <!-- Notifications Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="notifPanel" aria-labelledby="notifPanelLabel">
-    <div class="offcanvas-header bg-success text-white">
+    <div class="offcanvas-header bg-green-fc text-white">
         <h5 class="offcanvas-title" id="notifPanelLabel">
             <i class="bi bi-bell me-2"></i>Notifications
         </h5>
