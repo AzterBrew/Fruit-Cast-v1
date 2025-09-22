@@ -1,12 +1,12 @@
 {%load static%}
 
-<header id="header" class="d-block navbar navbar-expand-lg shadow-sm fixed-top">
+<header id="header" class="d-block navbar navbar-expand-lg shadow-sm fixed-top bg-green-fc">
     <div class="container-fluid ">
         <!-- Sidebar Toggle and Logo -->
-        <div class="bg-green-fc d-flex align-items-center">
-            <button class="btn btn-outline-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
+        <div class="d-flex align-items-center">
+            {% comment %} <button class="btn btn-outline-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
                 <i class="bi bi-list" style="font-size: 1.5rem;"></i>
-            </button>
+            </button> {% endcomment %}
             <a class="navbar-brand d-flex align-items-center text-white" href="{% url 'base:home' %}">
                 <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
                 <span class="fw-bold">Fruit Cast</span>
@@ -31,20 +31,22 @@
                 <li class="nav-item dropdown">
                     <a href="#" class="nav-link text-light d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle fs-5 me-2"></i>
-                        Hi, 
-                        {% if user_firstname %}
-                            {{ user_firstname }}
-                        {% else %}
-                            {% if user_role_id == 1 %}
-                                Farmer
-                            {% elif user_role_id == 2 %}
-                                Administrator
-                            {% elif user_role_id == 3 %}
-                                Agriculturist
+                        <span>
+                            Hi, 
+                            {% if user_firstname %}
+                                {{ user_firstname }}
                             {% else %}
-                                User
-                            {% endif %}
-                        {% endif %}!
+                                {% if user_role_id == 1 %}
+                                    Farmer
+                                {% elif user_role_id == 2 %}
+                                    Administrator
+                                {% elif user_role_id == 3 %}
+                                    Agriculturist
+                                {% else %}
+                                    User
+                                {% endif %}
+                            {% endif %}!
+                        </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'base:account_info_panel' %}">
@@ -84,7 +86,7 @@
                 <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
                     Forecast
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end">
+                <ul class="dropdown-menu dropdown-menu-start">
                     <li><a class="dropdown-item" href="{% url 'dashboard:forecast' %}">
                         <i class="bi bi-person me-2"></i>by Month
                     </a></li>
@@ -119,7 +121,7 @@
 </header>
 
 <!-- Offcanvas Sidebar -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
+{% comment %} <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
     <div class="offcanvas-header bg-success text-white">
         <h5 class="offcanvas-title" id="offcanvasExampleLabel">
             <i class="bi bi-person-circle me-2"></i>Fruit Cast | {{user_firstname}}
@@ -183,7 +185,7 @@
             <p class="mb-0">© 2024 Fruit Cast</p>
         </div>
     </div>
-</div>
+</div> {% endcomment %}
 
 <!-- Notifications Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="notifPanel" aria-labelledby="notifPanelLabel">
