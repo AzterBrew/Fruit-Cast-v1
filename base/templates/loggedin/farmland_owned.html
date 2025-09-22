@@ -5,8 +5,8 @@
         {% if farmlands %}
             <div class="table-responsive mb-3">
                 <table class="table table-striped align-middle mb-0">
-                    <thead>
-                {% comment %} <thead class="table-success"> {% endcomment %}
+                    {% comment %} <thead> {% endcomment %}
+                    <thead class="table-success">
                         <tr>
                             <th>Name</th>
                             <th>Municipality</th>
@@ -33,12 +33,11 @@
             {% else %}
             <p>No farmlands recorded yet.</p>
             {% endif %}
-
-            <div>
-                <a href="{% url 'base:farmland_record' %}" class="btn btn-success">
-                    Add New Farmland
-                </a>
             </div>
+        <div>
+            <a href="{% url 'base:farmland_record' %}" class="btn btn-success">
+                Add New Farmland
+            </a>
         </div>
     </div>
 {% endblock content %}
