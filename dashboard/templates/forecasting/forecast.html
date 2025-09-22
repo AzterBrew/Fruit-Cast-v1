@@ -28,7 +28,7 @@ Fruit Cast | Forecast
                             {% endfor %}
                         </select>
                         <br class="d-none d-sm-block d-md-none">
-                        <label for="municipality" class="form-label col-sm-3 mt-3 align-middle">Select Municipality:</label>
+                        <label for="municipality" class="form-label col-sm-3 my-1 align-middle">Select Municipality:</label>
                         {% comment %} {{ forecast_data.labels|json_script:"forecast-labels" }}
                         {{ forecast_data.forecasted_count|json_script:"forecast-values" }} {% endcomment %}
                         <select class="col-3 my-auto form-select w-auto d-inline-block" name="municipality_id" id="municipality">
@@ -45,7 +45,7 @@ Fruit Cast | Forecast
                     <input type="hidden" name="filter_month" value="{{ request.GET.filter_month }}">
                     <input type="hidden" name="filter_year" value="{{ request.GET.filter_year }}">
                 
-                    <button type="submit" class="btn btn-success ms-3 mt-3 w-25">Apply Filter</button>
+                    <button type="submit" class="btn btn-success ms-3 mb-2">Apply Filter</button>
                 </form>
                 {% if forecast_data %}
                     <canvas id="forecastChart" style="height: 400px; max-height: 400px;"></canvas>

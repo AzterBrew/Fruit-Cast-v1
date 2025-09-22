@@ -80,7 +80,7 @@
     <!-- Main Navigation - Always visible, no collapse -->
     <nav class="ps-3 d-block bg-green-fc border-top border-light border-opacity-25" aria-label="Site">
         <ul class="navbar-nav d-flex flex-row flex-wrap">
-            <li class="nav-item dropdown">
+            <li class="nav-item mx-md-1 dropdown">
                 <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-graph-up me-1"></i>
                     <span>Forecast</span>
@@ -94,23 +94,23 @@
                     </a></li>
                 </ul>
             </li>
-            <li class="nav-item">
+            <li class="nav-item mx-md-1">
                 <a href="{% url 'dashboard:monitor' %}" class="nav-link text-light">
                     <i class="bi bi-activity me-1"></i>
                     <span>Monitor</span>
                 </a>
             </li>
-            <li class="nav-item dropdown">
+            <li class="nav-item mx-md-1 dropdown">
                 <a href="{% url 'base:newrecord' %}" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-plus-circle me-1"></i>
                     <span>Create Record</span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end mobile-dropdown">
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-sm-start mobile-dropdown">
                     <li><a class="dropdown-item" href="{% url 'base:plant_record' %}">
-                        <i class="bi bi-seedling me-2"></i>New Plant Record
+                        <i class="bi bi-plus-circle me-1"></i>New Plant Record
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'base:solo_harvest_record' %}">
-                        <i class="bi bi-basket me-2"></i>New Harvest Record
+                        <i class="bi bi-plus-circle me-1"></i>New Harvest Record
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'base:farmland_record' %}">
                         <i class="bi bi-geo-alt me-2"></i>New Farm Land Record
@@ -121,74 +121,6 @@
     </nav>
 </header>
 
-<!-- Offcanvas Sidebar -->
-{% comment %} <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
-    <div class="offcanvas-header bg-success text-white">
-        <h5 class="offcanvas-title" id="offcanvasExampleLabel">
-            <i class="bi bi-person-circle me-2"></i>Fruit Cast | {{user_firstname}}
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    
-    <div class="offcanvas-header justify-content-center">      
-        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 15vh;">
-    </div>
-    
-    <div class="offcanvas-body d-flex flex-column h-100">  
-        <!-- Quick Actions -->
-        <div class="mb-4">
-            <h6 class="text-muted text-uppercase small fw-bold mb-3">Quick Actions</h6>
-            <div class="list-group list-group-flush">
-                <a href="{% url 'base:plant_record' %}" class="list-group-item list-group-item-action border-0 rounded mb-2 bg-light">
-                    <i class="bi bi-plus-circle me-2 text-success"></i>Create New Record
-                </a>        
-            </div>
-        </div>
-
-        <!-- Main Navigation -->
-        <div class="mb-4">
-            <h6 class="text-muted text-uppercase small fw-bold mb-3">Navigation</h6>
-            <div class="list-group list-group-flush">
-                <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action border-0 py-2">
-                    <i class="bi bi-house me-2"></i>Home
-                </a>
-                <a href="{% url 'dashboard:forecast' %}" class="list-group-item list-group-item-action border-0 py-2">
-                    <i class="bi bi-graph-up me-2"></i>Forecast
-                </a>
-                <a href="{% url 'dashboard:monitor' %}" class="list-group-item list-group-item-action border-0 py-2">
-                    <i class="bi bi-activity me-2"></i>Monitor
-                </a>
-                <a href="{% url 'base:newrecord' %}?view=transaction_history" class="list-group-item list-group-item-action border-0 py-2">
-                    <i class="bi bi-clock-history me-2"></i>Record History
-                </a>
-                <a href="#" class="list-group-item list-group-item-action border-0 py-2">
-                    <i class="bi bi-lightbulb me-2"></i>Fruit Plant Suggestion
-                </a>
-                <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action border-0 py-2">
-                    <i class="bi bi-info-circle me-2"></i>About Us
-                </a>
-                
-                {% if user_role_id == 3 or user_role_id == 2 %}
-                    <hr class="my-2">
-                    <a href="{% url 'administrator:admin_dashboard' %}" class="list-group-item list-group-item-action border-0 py-2 text-warning">
-                        <i class="bi bi-shield-check me-2"></i>Admin Panel
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Spacer -->
-        <div class="flex-grow-1"></div>
-        
-        <!-- Footer -->
-        <div class="text-center text-muted small">
-            <hr>
-            <p class="mb-0">© 2024 Fruit Cast</p>
-        </div>
-    </div>
-</div> {% endcomment %}
-
-<!-- Notifications Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="notifPanel" aria-labelledby="notifPanelLabel">
     <div class="offcanvas-header bg-green-fc text-white">
         <h5 class="offcanvas-title" id="notifPanelLabel">

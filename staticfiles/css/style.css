@@ -378,7 +378,7 @@ a:hover {
 /* Fixed sidebar layout for transaction pages */
 .transaction-layout {
     display: flex;
-    margin-top: 4vh;
+    margin-top: 15vh;
     min-height: 100vh;
     background: #f7fff2;
 }
@@ -452,7 +452,7 @@ a:hover {
 /* Account panel layout */
 .account-layout {
     display: flex;
-    margin-top: 4vh;
+    margin-top: 15vh;
     min-height: 100vh;
     background: #f7fff2;
 }
