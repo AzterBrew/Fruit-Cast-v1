@@ -17,7 +17,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
-    {% block navbar %}{% endblock navbar %}
+    {% comment %} {% block navbar %}{% endblock navbar %} {% endcomment %}
+    {% include "loggedin/navbar.html" %}
+
     <main class="pt-5">
         {% block content %}{% endblock %}
         <script src="{% static 'js/bootstrap-js/bootstrap.bundle.min.js' %}"></script>
