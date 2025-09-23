@@ -499,7 +499,7 @@ a:hover {
 
 .main-user {
     display: flex;
-    margin-top: 15vh;
+    margin-top: 10vh;
     min-height: 100vh;
     background: #f7fff2;
 }
@@ -519,7 +519,6 @@ a:hover {
     .main-user-content {
         width: unset !important;
         min-width: unset !important;
-        max-width: unset !important;
     }
 }
 

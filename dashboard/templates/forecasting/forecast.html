@@ -7,17 +7,16 @@ Fruit Cast | Forecast
 
 {% block content %}
 
-<div class="pt-5">
     <div class="main-user row">
         <div class="main-user-content justify-content-center col-8 float-left">
             <div id="top-section" class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">
                 <!-- Header Section -->
-                <div id="header-section" class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="text-success fw-bold mb-0">
-                        <i class="bi bi-graph-up me-2"></i>
+                <div id="header-section" class="d-flex justify-content-between align-items-center mb-4 row">
+                    <h1 class="text-success fw-bold mb-0 col-md-8">
+                        <i class="bi bi-graph-up me-2"></i> 
                         Forecast{% if selected_commodity_obj %}: {{ selected_commodity_obj.name }}{% endif %}
                     </h1>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 col-md-4 justify-content-md-end">
                         <a href="{% url 'dashboard:forecast_bycommodity' %}" class="btn btn-outline-success">
                             <i class="bi bi-bar-chart me-1"></i>By Commodity
                         </a>
@@ -149,8 +148,8 @@ Fruit Cast | Forecast
                             <tbody>
                                 {% for label, value, month_number, year in forecast_data.combined %}
                                 <tr>
-                                    <td class="fw-medium py-3">{{ label }}</td>
-                                    <td class="py-3">
+                                    <td class="fw-medium py-1">{{ label }}</td>
+                                    <td class="py-1">
                                         <span class="badge bg-success-subtle text-success fs-6">
                                             {{ value|floatformat:0 }} kg
                                         </span>
@@ -375,7 +374,7 @@ Fruit Cast | Forecast
         </div>
 
         <!-- Desktop Navigation Sidebar -->
-        <div id="desktopnav-section" class="d-none d-lg-block col-4 float-right main-user-content" style="background: #f7fff2;">
+        <div id="desktopnav-section" class="d-none d-lg-block col-3 float-right main-user-content" style="background: #f7fff2;">
             <div class="card shadow-sm rounded-4 p-4 mb-4">
                 <div class="card-header bg-success text-white">
                     <h4 class="mb-0 text-center">
@@ -402,7 +401,6 @@ Fruit Cast | Forecast
             </div>
         </div>
     </div>
-</div>
 
 <!-- Chart.js and Leaflet -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -420,76 +418,78 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Render line chart for forecast_data if present
 {% if forecast_data %}
-    console.log("Forecast data available, creating chart...");
-    console.log("Labels:", {{ forecast_data.all_labels|safe }});
-    console.log("Historical values:", {{ forecast_data.hist_values|safe }});
-    console.log("Forecast values:", {{ forecast_data.forecast_values|safe }});
-    
-    var forecastChart = new Chart(document.getElementById('forecastChart'), {
-        type: 'line',
-        data: {
-            labels: {{ forecast_data.all_labels|safe }},
-            datasets: [
-                {
-                    label: 'Historical Data',
-                    data: {{ forecast_data.hist_values|safe }},
-                    borderColor: '#6c757d',
-                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#6c757d',
-                    pointBorderColor: '#6c757d',
-                    tension: 0.4,
-                    spanGaps: false
-                },
-                {
-                    label: 'Forecast',
-                    data: {{ forecast_data.forecast_values|safe }},
-                    borderColor: '#198754',
-                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#198754',
-                    pointBorderColor: '#198754',
-                    borderDash: [5, 5],
-                    tension: 0.4,
-                    spanGaps: false
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'index'
+        console.log("Forecast data available, creating chart...");
+        console.log("Labels:", {{ forecast_data.all_labels|safe }});
+        console.log("Historical values:", {{ forecast_data.hist_values|safe }});
+        console.log("Forecast values:", {{ forecast_data.forecast_values|safe }});
+        
+        var forecastChart = new Chart(document.getElementById('forecastChart'), {
+            type: 'line',
+            data: {
+                labels: {{ forecast_data.all_labels|safe }},
+                datasets: [
+                    {
+                        label: 'Historical Data (kg)',
+                        data: {{ forecast_data.hist_values|safe }},
+                        borderColor: '#14763d',
+                        backgroundColor: 'rgba(20, 118, 61, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        spanGaps: false  // Don't connect null values
+                    },
+                    {
+                        label: 'Forecasted Data (kg)',
+                        data: {{ forecast_data.forecast_values|safe }},
+                        borderColor: '#40ca7aff',
+                        backgroundColor: 'rgba(64, 202, 122, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        borderDash: [5, 5],  // Dashed line for forecast
+                        spanGaps: false  // Don't connect null values
+                    }
+                ]
             },
-            scales: {
-                x: { 
-                    title: { display: true, text: 'Month' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
                 },
-                y: {
-                    title: { display: true, text: 'Amount (kg)' },
-                    beginAtZero: true
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
+                scales: {
+                    x: { 
+                        title: { display: true, text: 'Month' }
+                    },
+                    y: { 
+                        title: { display: true, text: 'Amount (kg)' },
+                        beginAtZero: true,
+                        ticks: {
+                            maxTicksLimit: 8  // Limit the number of Y-axis labels
+                        }
+                    }
                 },
-                title: {
-                    display: true,
-                    text: 'Forecast vs Historical Data'
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
                 }
             }
-        }
-    });
-    console.log("Chart created successfully!");
-{% else %}
-    console.log("No forecast data available for chart.");
-    // You can also show a message in the chart area
-    if(document.getElementById('forecastChart')) {
+        });
+        console.log("Chart created successfully!");
+    {% else %}
+        console.log("No forecast data available for chart.");
+        // You can also show a message in the chart area
         document.getElementById('forecastChart').style.display = 'none';
-    }
-{% endif %}
+    {% endif %}
 </script>
 
 {% endblock content %}
