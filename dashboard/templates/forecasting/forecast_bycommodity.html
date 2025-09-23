@@ -7,229 +7,194 @@ Forecast by Commodity
 
 {% block content %}
 
-<div class="main-user row">
-    <div class="main-user-content justify-content-center col-8 float-left">
-        <div id="top-section" class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">
-            <!-- Header Section -->
-            <div id="header-section" class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="text-success fw-bold mb-0">
-                    <i class="bi bi-bar-chart me-2"></i>Forecasted Amount by Commodity
-                </h1>
-                <div class="d-flex gap-2">
-                    <a href="{% url 'dashboard:forecast' %}" class="btn btn-outline-success">
-                        <i class="bi bi-graph-up me-1"></i>Back to Forecast
-                    </a>
-                </div>
-            </div>
-
-            <!-- Mobile Navigation -->
-            <div id="mobilenav-section" class="card d-md-none rounded-4 shadow-sm mb-3">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-list-nested me-2"></i>Navigate
-                    </h5>
-                    <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarCollapse" aria-expanded="false" aria-controls="sidebarCollapse">
-                        <span class="d-none d-sm-inline">Show Sections</span> <i class="bi bi-chevron-down ms-1"></i>
-                    </button>
-                </div>
-                <div class="collapse d-md-block" id="sidebarCollapse">
-                    <div class="card-body p-2">
-                        <a href="#chart-section" class="btn btn-outline-success w-100 mb-2">Forecast Chart</a>
-                        <a href="#table-section" class="btn btn-outline-success w-100 mb-2">Summary Table</a>
-                        <a href="#export-section" class="btn btn-outline-success w-100">Export Options</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Filters Card -->
-            <div id="filter-card" class="card shadow-sm mb-4 border-0">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filters</h5>
-                </div>
-                <div class="card-body bg-light">
-                    <form method="get" id="summary-forecast-form">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label for="filter_month" class="form-label fw-medium">
-                                    <i class="bi bi-calendar me-1 text-success"></i>Month
-                                </label>
-                                <select class="form-select" name="filter_month" id="filter_month">
-                                    {% for m in months %}
-                                        <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>
-                                            {{ m.name }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="filter_year" class="form-label fw-medium">
-                                    <i class="bi bi-calendar-event me-1 text-success"></i>Year
-                                </label>
-                                <select class="form-select" name="filter_year" id="filter_year">
-                                    {% for y in available_years %}
-                                        <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="municipality" class="form-label fw-medium">
-                                    <i class="bi bi-geo-alt me-1 text-success"></i>Municipality
-                                </label>
-                                <select class="form-select" name="municipality_id" id="municipality">
-                                    <option value="14" {% if selected_municipality|stringformat:"s" == "14" %}selected{% endif %}>Overall</option>
-                                    {% for muni in all_municipalities %}
-                                        <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
-                                            {{ muni.municipality }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-12 d-flex justify-content-center">
-                                <button type="submit" class="btn btn-success px-4">
-                                    <i class="bi bi-search me-1"></i>Apply Filter
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {% if forecast_summary_chart %}
-                <!-- Chart Card -->
-                <div id="chart-section" class="card shadow-sm mb-4 border-0">
-                    <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
-                        <h5 class="mb-0 text-white">
-                            <i class="bi bi-bar-chart me-2"></i>Commodity Forecast Analysis
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="forecastSummaryBarChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            {% else %}
-                <!-- No Data State -->
-                <div class="card shadow-sm mb-4 border-0">
-                    <div class="card-body text-center py-5">
-                        <div class="text-muted mb-4">
-                            <i class="bi bi-bar-chart" style="font-size: 4rem; opacity: 0.6;"></i>
-                        </div>
-                        <h4 class="text-muted mb-3">No Forecast Data Available</h4>
-                        <p class="text-muted mb-4">No forecast data available for this commodity and municipality. Please contact your administrator.</p>
-                        <div class="alert alert-warning d-inline-block">
-                            <i class="bi bi-success-circle me-2"></i>
-                            Contact your administrator if you believe data should be available.
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if forecast_summary %}
-                <!-- Data Table Card -->
-                <div id="table-section" class="card shadow-sm mb-4 border-0">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0 text-success">
-                            <i class="bi bi-table me-2"></i>Commodity Summary Data
-                        </h5>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <form method="get" action="{% url 'dashboard:forecast_csv' %}">
-                                <input type="hidden" name="csv_type" value="by_commodity">
-                                <input type="hidden" name="filter_month" value="{{ filter_month }}">
-                                <input type="hidden" name="filter_year" value="{{ filter_year }}">
-                                <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
-                                <button type="submit" class="btn btn-outline-success btn-sm">
-                                    <i class="bi bi-file-earmark-excel me-1"></i>CSV
-                                </button>
-                            </form>
-                            <form method="get" action="{% url 'dashboard:forecast_pdf' %}" target="_blank">
-                                <input type="hidden" name="pdf_type" value="by_commodity">
-                                <input type="hidden" name="filter_month" value="{{ filter_month }}">
-                                <input type="hidden" name="filter_year" value="{{ filter_year }}">
-                                <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
-                                <button type="submit" class="btn btn-outline-warning btn-sm">
-                                    <i class="bi bi-file-pdf me-1"></i>PDF
-                                </button>
-                            </form>
-                            {% if user_role_id == 2 or user_role_id == 3 %}
-                                <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-secondary btn-sm">
-                                    <i class="bi bi-eye me-1"></i>All Batches
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover mb-0">
-                                <thead class="table-success">
-                                    <tr>
-                                        <th class="py-3"><i class="bi bi-box-seam me-1"></i>Commodity</th>
-                                        <th class="py-3"><i class="bi bi-graph-up me-1"></i>Forecasted Amount (kg)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for row in forecast_summary %}
-                                    <tr>
-                                        <td class="fw-medium py-3">{{ row.commodity }}</td>
-                                        <td class="py-3">
-                                            <span class="badge bg-success-subtle text-success fs-6">
-                                                {{ row.forecasted_kg|floatformat:2 }} kg
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+    <div class="main-user row">
+        <div class="main-user-content justify-content-center col-8 float-left">
+            <div id="top-section" class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">
+                <!-- Header Section -->
+                <div id="header-section" class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="text-success fw-bold mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>Forecasted Amount by Commodity
+                    </h1>
                 </div>
 
-                <!-- Export Section -->
-                <div id="export-section" class="card shadow-sm mb-4 border-0">
-                    <div class="card-header bg-success text-white">
+                <!-- Mobile Navigation -->
+                <div id="mobilenav-section" class="card d-md-none rounded-4 shadow-sm mb-3">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="bi bi-download me-2"></i>Export Options
+                            <i class="bi bi-list-nested me-2"></i>Navigate
                         </h5>
+                        <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarCollapse" aria-expanded="false" aria-controls="sidebarCollapse">
+                            <span class="d-none d-sm-inline">Show Sections</span> <i class="bi bi-chevron-down ms-1"></i>
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
+                    <div class="collapse d-md-block" id="sidebarCollapse">
+                        <div class="card-body p-2">
+                            <a href="#chart-section" class="btn btn-outline-success w-100 mb-2">Forecast Chart</a>
+                            <a href="#table-section" class="btn btn-outline-success w-100 mb-2">Summary Table</a>
+                            <a href="#export-section" class="btn btn-outline-success w-100">Export Options</a>
+                            <a href="{% url 'dashboard:forecast' %}" class="btn btn-secondary w-100">
+                                <i class="bi bi-graph-up me-2"></i>To Monthly Forecast
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters Card -->
+                <div id="filter-card" class="card shadow-sm mb-4 border-0">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filters</h5>
+                    </div>
+                    <div class="card-body bg-light">
+                        <form method="get" id="summary-forecast-form">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="filter_month" class="form-label fw-medium">
+                                        <i class="bi bi-calendar me-1 text-success"></i>Month
+                                    </label>
+                                    <select class="form-select" name="filter_month" id="filter_month">
+                                        {% for m in months %}
+                                            <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>
+                                                {{ m.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="filter_year" class="form-label fw-medium">
+                                        <i class="bi bi-calendar-event me-1 text-success"></i>Year
+                                    </label>
+                                    <select class="form-select" name="filter_year" id="filter_year">
+                                        {% for y in available_years %}
+                                            <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="municipality" class="form-label fw-medium">
+                                        <i class="bi bi-geo-alt me-1 text-success"></i>Municipality
+                                    </label>
+                                    <select class="form-select" name="municipality_id" id="municipality">
+                                        <option value="14" {% if selected_municipality|stringformat:"s" == "14" %}selected{% endif %}>Overall</option>
+                                        {% for muni in all_municipalities %}
+                                            <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
+                                                {{ muni.municipality }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12 d-flex justify-content-center">
+                                    <button type="submit" class="btn btn-success px-4">
+                                        <i class="bi bi-search me-1"></i>Apply Filter
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {% if forecast_summary_chart %}
+                    <!-- Chart Card -->
+                    <div id="chart-section" class="card shadow-sm mb-4 border-0">
+                        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                            <h5 class="mb-0 text-white">
+                                <i class="bi bi-bar-chart me-2"></i>Commodity Forecast Analysis
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="forecastSummaryBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- No Data State -->
+                    <div class="card shadow-sm mb-4 border-0">
+                        <div class="card-body text-center py-5">
+                            <div class="text-muted mb-4">
+                                <i class="bi bi-bar-chart" style="font-size: 4rem; opacity: 0.6;"></i>
+                            </div>
+                            <h4 class="text-muted mb-3">No Forecast Data Available</h4>
+                            <p class="text-muted mb-4">No forecast data available for this commodity and municipality. Please contact your administrator.</p>
+                            <div class="alert alert-warning d-inline-block">
+                                <i class="bi bi-success-circle me-2"></i>
+                                Contact your administrator if you believe data should be available.
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if forecast_summary %}
+                    <!-- Data Table Card -->
+                    <div id="table-section" class="card shadow-sm mb-4 border-0">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0 text-success">
+                                <i class="bi bi-table me-2"></i>Commodity Summary Data
+                            </h5>
+                            <div class="d-flex gap-2 flex-wrap">
                                 <form method="get" action="{% url 'dashboard:forecast_csv' %}">
                                     <input type="hidden" name="csv_type" value="by_commodity">
                                     <input type="hidden" name="filter_month" value="{{ filter_month }}">
                                     <input type="hidden" name="filter_year" value="{{ filter_year }}">
                                     <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
-                                    <button type="submit" class="btn btn-outline-success w-100">
-                                        <i class="bi bi-file-earmark-excel me-1"></i>Download CSV
+                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-file-earmark-excel me-1"></i>CSV
                                     </button>
                                 </form>
-                            </div>
-                            <div class="col-md-6">
                                 <form method="get" action="{% url 'dashboard:forecast_pdf' %}" target="_blank">
                                     <input type="hidden" name="pdf_type" value="by_commodity">
                                     <input type="hidden" name="filter_month" value="{{ filter_month }}">
                                     <input type="hidden" name="filter_year" value="{{ filter_year }}">
                                     <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
-                                    <button type="submit" class="btn btn-outline-warning w-100">
-                                        <i class="bi bi-file-pdf me-1"></i>Download PDF
+                                    <button type="submit" class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-file-pdf me-1"></i>PDF
                                     </button>
                                 </form>
+                                {% if user_role_id == 2 or user_role_id == 3 %}
+                                    <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-eye me-1"></i>All Batches
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0">
+                                    <thead class="table-success">
+                                        <tr>
+                                            <th class="py-3"><i class="bi bi-box-seam me-1"></i>Commodity</th>
+                                            <th class="py-3"><i class="bi bi-graph-up me-1"></i>Forecasted Amount (kg)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in forecast_summary %}
+                                        <tr>
+                                            <td class="fw-medium py-1">{{ row.commodity }}</td>
+                                            <td class="py-1">
+                                                <span class="badge bg-success-subtle text-success fs-6">
+                                                    {{ row.forecasted_kg|floatformat:2 }} kg
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-                </div>
-            {% endif %}
+
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Right Sidebar -->
-        <div class="col-4 d-none d-lg-block">
-            <div class="position-sticky" style="top: 1rem;">
+    <!-- Right Sidebar -->
+        <div class="d-none d-lg-block col-3 float-right main-user-content">
+            <div style="top: 1rem;">
                 <!-- Navigation Card -->
                 <div class="card shadow-sm mb-4 border-0">
                     <div class="card-header bg-success text-white">
-                        <h6 class="mb-0">
+                        <h6 class="mb-0 text-center">
                             <i class="bi bi-compass me-2"></i>Quick Navigation
                         </h6>
                     </div>
@@ -243,51 +208,7 @@ Forecast by Commodity
                                 <i class="bi bi-table text-success me-3"></i>
                                 <span>Data Table</span>
                             </a>
-                            <a href="#export-section" class="list-group-item list-group-item-action d-flex align-items-center py-3">
-                                <i class="bi bi-download text-success me-3"></i>
-                                <span>Export Options</span>
-                            </a>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Summary Card -->
-                <div class="card shadow-sm mb-4 border-0">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0 text-success">
-                            <i class="bi bi-success-circle me-2"></i>Forecast Summary
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="small text-muted mb-3">Current Filters Applied</div>
-                        <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-calendar text-success me-2"></i>
-                                <span class="small">
-                                    {% if filter_month and filter_year %}
-                                        {{ filter_month|date:"F" }} {{ filter_year }}
-                                    {% else %}
-                                        All Months
-                                    {% endif %}
-                                </span>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-geo-alt text-success me-2"></i>
-                                <span class="small">
-                                    {% if selected_municipality %}
-                                        {{ municipality_name }}
-                                    {% else %}
-                                        All Municipalities
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        {% if forecast_summary %}
-                        <hr class="my-3">
-                        <div class="small text-muted mb-2">Total Commodities</div>
-                        <div class="h4 text-success mb-0">{{ forecast_summary|length }}</div>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -309,7 +230,6 @@ Forecast by Commodity
             </div>
         </div>
     </div>
-</div>
 
 {% if forecast_summary_chart %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

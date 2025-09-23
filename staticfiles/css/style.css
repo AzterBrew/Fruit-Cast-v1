@@ -377,8 +377,8 @@ a:hover {
 
 /* Fixed sidebar layout for transaction pages */
 .transaction-layout {
-    display: flex;
-    margin-top: 15vh;
+    /* display: flex; */
+    margin-top: 10vh;
     min-height: 100vh;
     background: #f7fff2;
 }
