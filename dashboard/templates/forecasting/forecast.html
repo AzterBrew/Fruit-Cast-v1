@@ -117,7 +117,7 @@ Fruit Cast | Forecast
                             <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
                             <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
                             <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
-                            <button type="submit" class="btn btn-outline-success btn-sm">
+                            <button type="submit" class="btn bi-file-earmark-excel btn-sm">
                                 <i class="bi bi-download me-1"></i>CSV
                             </button>
                         </form>
@@ -125,7 +125,7 @@ Fruit Cast | Forecast
                             <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
                             <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
                             <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
-                            <button type="submit" class="btn btn-outline-info btn-sm">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
                                 <i class="bi bi-file-pdf me-1"></i>PDF
                             </button>
                         </form>
@@ -171,7 +171,7 @@ Fruit Cast | Forecast
                         <h4 class="text-muted mb-3">No Forecast Data Available</h4>
                         <p class="text-muted mb-4">Please select both a commodity and municipality to view forecast data.</p>
                         <div class="alert alert-warning d-inline-block">
-                            <i class="bi bi-info-circle me-2"></i>
+                            <i class="bi bi-success-circle me-2"></i>
                             Contact your administrator if you believe data should be available.
                         </div>
                     </div>
