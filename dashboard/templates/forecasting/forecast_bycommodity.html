@@ -5,15 +5,15 @@
 Forecast by Commodity
 {% endblock %}
 
-{% comment %} {% block navbar %}
-    {% include "loggedin/navbar.html" %}
-{% endblock navbar %} {% endcomment %}
-
 {% block content %}
-<div class="main-user">
-        <div class="main-user-content justify-content-center">
-            <div class="card shadow-sm rounded-4 p-4 mb-4">
-            <h1 class="mb-4 text-success fw-bold">Forecasted Amount by Commodity</h1>
+
+<div class="pt-5">
+    <div class="main-user row">
+        <div class="main-user-content justify-content-center col-8 float-left">
+            <div class="card shadow-sm rounded-4 p-4 mb-4" style="background: #fffefc;">
+                <h1 class="mb-4 text-success fw-bold">
+                    <i class="bi bi-bar-chart me-2"></i>Forecasted Amount by Commodity
+                </h1>
             <form method="get" class="mb-4" id="summary-forecast-form">
                 <label for="filter_month" class="form-label ms-3">Month:</label>
                 <select class="form-select w-auto d-inline-block" name="filter_month" id="filter_month">
@@ -131,6 +131,32 @@ Forecast by Commodity
 </script>
 {% endif%}
 
+            </div>
+        </div>
 
+        <!-- Desktop Navigation Sidebar -->
+        <div id="desktopnav-section" class="d-none d-lg-block col-4 float-right main-user-content" style="background: #f7fff2;">
+            <div class="card shadow-sm rounded-4 p-4 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0 text-center">
+                        <i class="bi bi-compass me-2"></i>Navigate
+                    </h4>
+                </div>
+                <div class="card-body bg-light">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'dashboard:forecast' %}" class="btn btn-success">
+                            <i class="bi bi-graph-up me-2"></i>Back to Forecast
+                        </a>
+                        <hr>
+                        <div class="text-muted small text-center">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Commodity Summary View
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
