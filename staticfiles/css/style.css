@@ -505,14 +505,24 @@ a:hover {
 }
 
 .main-user-content {
-    width: 100%;
-    /* min-width: 72vw; */
+    width: max-content;
+    min-width: 20vw;
     max-width: 85vw;
     min-height: 60vh;
     margin: 2rem auto;
     background: #f7fff2;
     border-radius: 1rem;
 }
+
+
+@media (min-width: 1024px) {
+    .main-user-content {
+        width: unset !important;
+        min-width: unset !important;
+        max-width: unset !important;
+    }
+}
+
 
 /* Enhanced card styling for forecast page */
 .card.border-0 {
