@@ -12,8 +12,8 @@ Fruit Cast | Forecast
 
 {% block content %}
 
-<div class="main-user">
-    <div class="main-user-content justify-content-center">
+<div class="main-user row">
+    <div class="main-user-content justify-content-center col-8 float-left">
         <div id="top-section" class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">
             <!-- Header Section -->
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -239,126 +239,7 @@ Fruit Cast | Forecast
             
 
 
-{% comment %} old forecast {% endcomment %}
 
-{% comment %} <div class="main-user">
-        <div class="main-user-content justify-content-center">
-            <div class="card shadow-sm rounded-4 p-4 mb-4">
-                <h1 class="mb-4 text-success fw-bold">
-                    Forecast{% if selected_commodity_obj %}: {{ selected_commodity_obj.name }}{% endif %}
-                </h1>
-                <form method="get">
-                    <div class="row mb-4 mx-1"> 
-                        <label for="commodity_type" class="col-sm-3 my-1 form-label align-middle">Select Commodity Type:</label>
-                        <select class="col-3 my-auto form-select w-auto d-inline-block" name="commodity_id" id="commodity_type">
-                            {% for commodity in commodity_types %}
-                                <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_commodity_id|stringformat:"s" %}selected{% endif %}>
-                                    {{ commodity.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <br class="d-none d-sm-block d-md-none">
-                        <label for="municipality" class="form-label col-sm-3 my-1 align-middle">Select Municipality:</label>
-                        <select class="col-3 my-auto form-select w-auto d-inline-block" name="municipality_id" id="municipality">
-                            <option value="14" {% if selected_municipality|stringformat:"s" == "14" %}selected{% endif %}>Overall</option>
-                            {% for muni in municipalities %}
-                                <option value="{{ muni.municipality_id }}" {% if muni.municipality_id|stringformat:"s" == selected_municipality|stringformat:"s" %}selected{% endif %}>
-                                    {{ muni.municipality }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div> 
-                    
-                    <input type="hidden" name="mapcommodity_id" value="{{ request.GET.mapcommodity_id }}">
-                    <input type="hidden" name="filter_month" value="{{ request.GET.filter_month }}">
-                    <input type="hidden" name="filter_year" value="{{ request.GET.filter_year }}">
-                
-                    <button type="submit" class="btn btn-success ms-3 mb-2">Apply Filter</button>
-                </form>
-                {% if forecast_data %}
-                    <div class="chart-container mb-4">
-                        <canvas id="forecastChart"></canvas>
-                    </div>
-                    <h3 class="mt-5">Monthly Forecast Data</h3>
-                    <div class="table-responsive mb-3">
-                        <table class="table table-striped align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Month</th>
-                                    <th>Forecasted Amount (kg)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for label, value, month_number, year in forecast_data.combined %}
-                                    <tr>
-                                        <td>{{ label }}</td>
-                                        <td>{{ value }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <form method="get" action="{% url 'dashboard:forecast_csv' %}">
-                        <input type="hidden" name="csv_type" value="by_month">
-                        <input type="hidden" name="batch_id" value="{{ batch_id }}">
-                        <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
-                        <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
-                        <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
-                        <button type="submit" class="btn btn-outline-success mb-3">Download CSV for this Forecast</button>
-                    </form>
-
-                    <form method="get" action="{% url 'dashboard:forecast_pdf' %}" target="_blank">
-                        <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
-                        <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
-                        <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
-                        <button type="submit" class="btn btn-outline-info mb-3">Download PDF for this Forecast</button>
-                    </form>
-                    {% if user_role_id == 2 or user_role_id == 3 %}
-                        <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-success mb-3">View All Forecast Batches</a>
-                    {% endif %}
-                {% else %}
-                    <div class="alert alert-warning">No forecast data available for this commodity and municipality. Please contact your administrator.</div>
-                {% endif %}
-                
-                <h2 class="mt-5 text-success fw-bold">Choropleth Map of Bataan</h2>
-                <h3 class="mb-4">by Forecasted Amount (kg)</h3>
-
-                <form method="get" id="choropleth-filter-form">
-                    <div class="row mb-4 mx-1">
-                        <div class="col-sm-4">
-                            <label for="mapcommodity_type" class="form-label">Commodity:</label>
-                            <select class="form-select w-auto d-inline-block me-auto" name="mapcommodity_id" id="mapcommodity_type">
-                                {% for commodity in commodity_types %}
-                                    <option value="{{ commodity.commodity_id }}" {% if commodity.commodity_id|stringformat:"s" == selected_mapcommodity_id|stringformat:"s" %}selected{% endif %}>{{ commodity.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-sm-4">
-                            <label for="filter_month" class="form-label ms-3">Month:</label>
-                            <select class="form-select w-auto d-inline-block me-auto" name="filter_month" id="filter_month">
-                                {% for m in months %}
-                                    <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-sm-4">
-                            <label for="filter_year" class="form-label ms-3">Year:</label>
-                            <select class="form-select w-auto d-inline-block me-auto" name="filter_year" id="filter_year">
-                                {% for y in available_years %}
-                                    <option value="{{ y }}" {% if y|stringformat:"s" == filter_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                    </div>
-                    <input type="hidden" name="commodity_id" value="{{ request.GET.commodity_id }}">
-                    <input type="hidden" name="municipality_id" value="{{ request.GET.municipality_id }}">
-                    <button type="submit" class="btn btn-success ms-3 mb-2">Apply Filter</button>
-                </form>
-
-
-                <div id="map" style="height: 500px; z-index: 0"></div> {% endcomment %}
                 <script>
                 var forecastChoropleth = {{ choropleth_data|safe }};
                 
@@ -472,83 +353,30 @@ Fruit Cast | Forecast
                     });
                             
                 </script>
-            {% comment %} {% else %} {% endcomment %}
-                {% comment %} <div class="alert alert-warning">No forecast data available for this commodity and municipality. Please contact your administrator.</div> {% endcomment %}
-            {% comment %} {% endif %} {% endcomment %}
-
                 <hr>
+            </div>
+        </div>
 
-            {% comment %} {% for m in months %}
-                {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}
-                    {% with m.name as filter_month_name %}
-                    {% endwith %}
-                {% endif %}
-            {% endfor %}
+<!-- Sidebar containing buttons or link that navigates to the sections-->
 
-            {% if filter_month and filter_year %}
-                <h3 class="mt-5">
-                    Forecasted Amount by Commodity
-                    {% if filter_month and filter_year %}
-                        ({{ filter_month_name }} {{ filter_year }})
-                    {% endif %}
-                </h3>
-            {% else %}
-                <h3 class="mt-5">Forecasted Amount by Commodity</h3>
-            {% endif %}
-
-            <form method="get" class="mb-4" id="summary-forecast-form">
-                <label for="filter_month" class="form-label ms-3">Month:</label>
-                <select class="form-select w-auto d-inline-block" name="filter_month" id="filter_month">
-                    {% for m in months %}
-                        <option value="{{ m.number }}" {% if m.number|stringformat:"s" == filter_month|stringformat:"s" %}selected{% endif %}>
-                            {{ m.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <label for="filter_year" class="form-label ms-3">Year:</label>
-                <select class="form-select w-auto d-inline-block" name="filter_year" id="filter_year">
-                    {% for y in available_years %}
-                        <option value="{{ y }}">{{ y }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn btn-success ms-3">Show Summary</button>
-                <a href="{% url 'dashboard:forecast' %}" class="btn btn-secondary ms-3">Reset</a>
-            </form>
-            <a href="{% url 'dashboard:forecast_bycommodity' %}" class="btn btn-outline-success mb-3">Forecast by commodity</a> {% endcomment %}
-
-            {% comment %} {% if forecast_summary %}
-                <div class="my-4">
-                    <canvas id="forecastSummaryBarChart" style="height: 45vh;"></canvas>
+        <div class="col-4 float-right main-user-content" style="background: #f7fff2;">
+            <div class="card-header bg-success text-white">
+                <div id="header-section" class="d-flex justify-content-between align-items-center text-white">
+                    <h4 class="mb-1">Navigate</h4>
                 </div>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Commodity Type</th>
-                            <th>Forecasted Amount (kg)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in forecast_summary %}
-                        <tr>
-                            <td>{{ row.commodity }}</td>
-                            <td>
-                                {% if row.forecasted_kg is not None %}
-                                    {{ row.forecasted_kg }}
-                                {% else %}
-                                    <span class="text-muted">Not enough data</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <form method="get" action="{% url 'dashboard:forecast_csv' %}">
-                    {% if filter_month %}<input type="hidden" name="filter_month" value="{{ filter_month }}">{% endif %}
-                    {% if filter_year %}<input type="hidden" name="filter_year" value="{{ filter_year }}">{% endif %}
-                    {% if selected_municipality %}<input type="hidden" name="municipality_id" value="{{ selected_municipality }}">{% endif %}
-                    <button type="submit" class="btn btn-outline-success mb-3">Download CSV</button>
-                </form>
-            {% endif %} {% endcomment %}
+                <div class="bg-light card-body">
+                    <div class="g-3">
+                        <div class="m-2 row">
+                            <a href="#top-section" class="btn btn-outline-success" type="button">Forecast Graph</a>
+                        </div>
+                        <div class="m-2 row">
+                            <a href="#table-section" class="btn btn-outline-success" type="button">Tabular Form</a>
+                        </div>
+                        <div class="m-2 row">
+                            <a href="#map-section" class="btn btn-outline-success" type="button">Geographic Distribution</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
