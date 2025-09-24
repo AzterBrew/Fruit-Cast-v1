@@ -10,7 +10,7 @@ Fruit Cast | Create New Record
 
 {% block content %}
 
-<div class="transaction-layout container-fluid pt-5">
+<div class="transaction-layout container-fluid">
     <!-- Mobile Navigation Toggle -->
     <div class="d-lg-none mb-3">
         <button class="btn btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#mobileTransactionNav" aria-expanded="false" aria-controls="mobileTransactionNav">
@@ -47,8 +47,8 @@ Fruit Cast | Create New Record
 
     <div class="row">
         <!-- Main Content Area -->
-        <div class="col-8">
-            <div class="transaction-content">
+        <div class="col-8 float-right">
+            <div class="transaction-content card shadow-sm rounded-4 p-4 mb-4 text-center">
                 {% if view_to_show == "recordlist" %}
                     {% include "loggedin/transaction/transaction_recordlist.html" %}
                 {% elif view_to_show == "harvest" %}
@@ -85,8 +85,8 @@ Fruit Cast | Create New Record
         </div>
 
         <!-- Right Sidebar -->
-        <div class="col-4 d-none d-lg-block">
-            <div class="position-sticky" style="top: 1rem;">
+        <div class="transaction-sidebar-content d-none d-lg-block col-4 float-right">
+            <div style="top: 1rem;">
                 <!-- Transaction Navigation Card -->
                 <div class="card shadow-sm mb-4 border-0">
                     <div class="card-header bg-success text-white">

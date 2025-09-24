@@ -383,21 +383,7 @@ a:hover {
     background: #f7fff2;
 }
 
-.transaction-sidebar {
-    position: fixed;
-    /* top: 0; */
-    /* margin-top: 4vh; */
-    left: 0;
-    width: 17vw;
-    height: 90vh;
-    background: #fffdfa;
-    border-right: 1px solid #f8faf5;
-    z-index: 0;
-    box-shadow: 3px 0 8px rgba(0,0,1,.05);
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
+
 
 .transaction-sidebar .nav-link {
     font-size: 1.1rem; /* Adjust as needed (e.g., 1rem, 1.25rem, etc.) */
@@ -423,12 +409,19 @@ a:hover {
 }
 
 .transaction-content {
-    width: 100%;
-    min-width: 72vw;
-    max-width: 72vw;
+    width: max-content;
+    min-width: 20vw;
+    max-width: 100vw;
     min-height: 60vh;
     margin: 2rem auto;
-    background: #fffdfa;
+    background: #f7fff2;
+    border-radius: 1rem;
+}
+
+.transaction-sidebar-content {
+    max-width: 100vw;
+    min-height: 60vh;
+    margin: 2rem auto;
 }
 
 @media (max-width: 991px) {
@@ -442,9 +435,13 @@ a:hover {
     .transaction-main {
         margin-left: 0;
     }
+
+}
+
+@media (min-width: 1024px) {
     .transaction-content {
-        margin: 1rem;
-        min-height: 60vh;
+        width: unset !important;
+        min-width: unset !important;
     }
 }
 
@@ -507,7 +504,7 @@ a:hover {
 .main-user-content {
     width: max-content;
     min-width: 20vw;
-    max-width: 85vw;
+    max-width: 100vw;
     min-height: 60vh;
     margin: 2rem auto;
     background: #f7fff2;
@@ -525,7 +522,7 @@ a:hover {
 .monitor-user-content {
     width: max-content;
     min-width: 20vw;
-    max-width: 85vw;
+    max-width: 90vw;
     min-height: 60vh;
     margin: 2rem auto;
     background: #f7fff2;
@@ -607,4 +604,9 @@ a:hover {
     .chart-container {
         height: 250px;
     }
+}
+
+.list-group-item-action.active {
+    --bs-list-group-action-active-bg: #abef9e;
+    --bs-list-group-action-active-color: #212529;
 }

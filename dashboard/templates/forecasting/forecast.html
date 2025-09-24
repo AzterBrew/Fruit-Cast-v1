@@ -115,7 +115,7 @@ Fruit Cast | Forecast
                             <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
                             <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
                             <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
-                            <button type="submit" class="btn btn-outline-warning     btn-sm">
+                            <button type="submit" class="btn btn-outline-success btn-sm">
                                 <i class="bi bi-file-earmark-excel me-1"></i>CSV
                             </button>
                         </form>
@@ -374,7 +374,6 @@ Fruit Cast | Forecast
         <!-- Desktop Navigation Sidebar -->
         <div id="desktopnav-section" class="d-none d-lg-block col-3 float-right main-user-content" style="background: #f7fff2;">
             <div style="top: 1rem;">
-
                 <div class="card shadow-sm mb-4 border-0">
                     <div class="card-header bg-success text-white">
                         <h6 class="mb-0 text-center">
@@ -405,7 +404,7 @@ Fruit Cast | Forecast
                     <div class="card-body">
                         <div class="d-grid">
                             <a href="{% url 'dashboard:forecast' %}" class="btn btn-outline-success">
-                                <i class="bi bi-graph-up me-2"></i>Back to Main Forecast
+                                <i class="bi bi-graph-up me-2"></i>To By-Commodity Forecast
                             </a>
                         </div>
                     </div>
