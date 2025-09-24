@@ -1,65 +1,230 @@
 {%load static%}
 
-{% block navbar %}
-{% comment %} NAVBAR SECTION {% endcomment %}
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-  <div class="container-fluid">
-    <!-- Offcanvas Toggle Button (always visible on mobile) -->
-    <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasguest" aria-controls="offcanvasguest">
-            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
-        </button>
-    <a class="navbar-brand d-flex align-items-center" href="{% url 'base:home' %}">
-      <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
-      <span class="fw-bold text-success">Fruit Cast</span>
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'base:home' %}">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Forecast</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Monitor</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'base:about' %}">About Us</a>
-        </li>
-        <li class="nav-item">
-          <a class="btn btn-outline-success ms-3 me-2" href="{% url 'base:login' %}">Login</a>
-        </li>
-      </ul>
+<header id="header" class="d-block navbar navbar-expand-lg shadow-sm fixed-top bg-light">
+    <div class="container-fluid ">
+        <!-- Sidebar Toggle and Logo -->
+        <div class="d-flex align-items-center">
+            <a class="navbar-brand d-flex align-items-center text-white" href="{% url 'base:home' %}">
+                <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+                <span class="fw-bold">Fruit Cast</span>
+            </a>
+        </div>
+        <!-- User Navigation -->
+        <nav class="ms-auto bg-light" aria-label="User">
+            <ul class="navbar-nav d-flex flex-row align-items-center">
+                <!-- Notifications -->
+                <li class="nav-item me-3">
+                    <a class="nav-link text-success position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#notifPanel" aria-controls="notifPanel">
+                        <i class="bi bi-bell fs-5"></i>
+                        {% if unread_count and unread_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ unread_count }}
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- User Dropdown -->
+                 
+                <li class="nav-item dropdown">
+                    <i class="bi bi-person-circle fs-5 me-2"></i>
+                    <span class="d-none d-md-inline">
+                        Join Us! 
+                    </span>
+                </li>
+                <li class="nav-item me-3">
+                    <a href="{% url 'base:register_step1' %}" class="nav-link text-success">
+                      <i class="bi bi-activity me-1"></i>
+                      <span>Sign Up</span>
+                    </a>
+                </li>
+                <li class="nav-item me-3">
+                    <a href="{% url 'base:login' %}" class="nav-link text-success">
+                      <i class="bi bi-activity me-1"></i>
+                      <span>Sign In</span>
+                  </a>
+                </li>
+            </ul>
+        </nav>
     </div>
-  </div>
-</nav>
+        
+    <!-- Main Navigation - Always visible, no collapse -->
+    <nav class="ps-3 d-block bg-light border-top border-light border-opacity-25" aria-label="Site">
+        <ul class="navbar-nav d-flex flex-row flex-wrap">
+            <li class="nav-item mx-md-1 dropdown">
+                <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-success" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-graph-up me-1"></i>
+                    <span>Forecast</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-start mobile-dropdown">
+                    <li><a class="dropdown-item" href="{% url 'dashboard:forecast' %}">
+                        <i class="bi bi-calendar-month me-2"></i>by Month
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'dashboard:forecast_bycommodity' %}">
+                        <i class="bi bi-box-seam me-2"></i>by Commodity
+                    </a></li>
+                </ul>
+            </li>
+            <li class="nav-item mx-md-1">
+                <a href="{% url 'dashboard:monitor' %}" class="nav-link text-success">
+                    <i class="bi bi-activity me-1"></i>
+                    <span>Monitor</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
 
-{% comment %} OFFCANVAS SECTION {% endcomment %}
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prevent dropdown menu from closing when clicking inside (optional)
+    document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
 
-<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast</h5>
-    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-  </div>
-  <div class="offcanvas-header">
-    <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto" style="max-height: 20vh; align-content: center;">
-  </div>
-  <div class="offcanvas-body d-flex flex-column h-100">
-    <div class="list-group">
-      <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action">Home</a>
-      <a href="#" class="list-group-item list-group-item-action">Forecast</a>
-      <a href="#" class="list-group-item list-group-item-action">Monitor</a>
-      <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a>
-      <a href="{% url 'base:login' %}" class="list-group-item list-group-item-action">Login to access other functions</a>
-    </div>
-    <div class="flex-grow-1"></div>
-    <hr>
-    <br>
-  </div>
-</div>
+    // Custom dropdown positioning for mobile
+    document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+        toggle.addEventListener('shown.bs.dropdown', function() {
+            var dropdown = this.nextElementSibling;
+            if (dropdown && window.innerWidth <= 768) {
+                // Additional mobile-specific positioning if needed
+                dropdown.style.transform = 'none';
+            }
+        });
+    });
+});
+</script>
 
-  {% endblock navbar %}
+<style>
+/* Custom navbar styles */
+#header {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Prevent navbar expansion on mobile */
+.navbar-nav {
+    flex-direction: row !important;
+}
+
+.navbar-collapse {
+    display: block !important;
+}
+
+/* Mobile dropdown improvements */
+@media (max-width: 768px) {
+    /* Ensure dropdowns are positioned absolutely and don't affect navbar height */
+    .mobile-dropdown {
+        position: absolute !important;
+        transform: none !important;
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3) !important;
+        border-radius: 0.5rem;
+        max-width: 280px;
+        min-width: 200px;
+        z-index: 1050;
+        margin-top: 0.5rem;
+    }
+    
+    /* Make nav text smaller on mobile */
+    .nav-link span {
+        font-size: 0.9rem;
+    }
+    
+    /* Show icons on mobile for better UX */
+    .d-md-none {
+        display: inline !important;
+    }
+    
+    /* Adjust navbar padding on mobile */
+    .navbar .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Main navigation wrapping */
+    .navbar-nav.flex-wrap {
+        flex-wrap: wrap;
+    }
+    
+    /* User dropdown positioning */
+    .dropdown-menu-end {
+        right: 0 !important;
+        left: auto !important;
+    }
+    
+    .dropdown-menu-start {
+        left: 0 !important;
+        right: auto !important;
+    }
+}
+
+/* Notification badge pulse animation */
+.nav-link .badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Dropdown menu improvements */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+    z-index: 1050;
+}
+
+.dropdown-item {
+    transition: all 0.2s ease;
+    padding: 0.75rem 1rem;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(0,123,255,0.1);
+    transform: translateX(5px);
+}
+
+/* Notification styles */
+.notif-link:hover {
+    text-decoration: none !important;
+}
+
+.list-group-item.border-start {
+    background-color: rgba(0,123,255,0.02);
+}
+
+/* Logo hover effect */
+.navbar-brand:hover img {
+    transform: rotate(5deg) scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+/* Ensure main navigation is always visible */
+.navbar .container-fluid + nav {
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Fix for very small screens */
+@media (max-width: 480px) {
+    .navbar-brand span {
+        font-size: 1rem;
+    }
+    
+    .mobile-dropdown {
+        max-width: 250px;
+        min-width: 180px;
+    }
+    
+    .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+</style>

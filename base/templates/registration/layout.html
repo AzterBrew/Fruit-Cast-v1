@@ -12,15 +12,25 @@
         {% endblock %}
     </title>
     <link rel="icon" href="{% static 'images/logo/3.png' %}" type="image/png">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    {% comment %} <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> {% endcomment %}
-    {% comment %} <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> {% endcomment %}
     <link rel="stylesheet" href="{% static 'css/bootstrap-css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <script src="{% static 'js/chart.umd.js' %}"></script>
+    {% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> {% endcomment %}
+    <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}">
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
     <script src="{% static 'js/main.js' %}" defer> </script>
     <link rel="stylesheet" href="{%static 'css/style.css'%}">
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    
 </head>
 <body>
     {% comment %} <nav class="nav">
@@ -33,13 +43,13 @@
 
     </nav> {% endcomment %}
 
-    {% block navbar %}
-    {% endblock navbar %}
-<main>
-    {% block content %}
+    {% include "registration/navbar.html" %}
 
-    {% endblock %}
-</main>
+    <main>
+        {% block content %}
+
+        {% endblock %}
+    </main>
         
     <script src="{% static 'js/bootstrap-js/bootstrap.bundle.min.js' %}"></script>
     

@@ -1,3 +1,20 @@
+:root {
+    font-size: 16px; /* Base font size for desktop */
+}
+
+/* Adjust the base font size for smaller screens using a media query */
+@media (max-width: 991.98px) {
+    :root {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        font-size: 14px;
+    }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -34,7 +51,6 @@ body {
     min-height: 100vh;
     background-color: #f7fff2;
     color: #27371a;
-    /* font-size: 2rem; */
     display: flex;
     flex-flow: column;
     font-family: 'Montserrat', sans-serif;
@@ -94,19 +110,6 @@ div {
     background-color: #416e3f;
 }
 
-.btn-transparent {
-    background-color: transparent;
-    border: none;
-    color: #546749; /* or any color you want, like Bootstrap's primary */
-    font-size: 2rem; /* optional: make the "=" symbol bigger */
-    padding: 0.5rem 1rem;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.btn-transparent:hover {
-    background-color: #546749; /* light blue hover */
-    color: #293323; /* darker blue on hover */
-}
 
 /* Custom navbar styles */
 #header {
@@ -253,7 +256,7 @@ div {
 
 
 .logindiv {
-    font-size: 1rem;
+    font-size: 1.125rem;
 }
 
 .logindiv label {
@@ -374,30 +377,16 @@ a:hover {
 
 /* Fixed sidebar layout for transaction pages */
 .transaction-layout {
-    display: flex;
-    margin-top: 4vh;
+    /* display: flex; */
+    margin-top: 10vh;
     min-height: 100vh;
     background: #f7fff2;
 }
 
-.transaction-sidebar {
-    position: fixed;
-    /* top: 0; */
-    /* margin-top: 4vh; */
-    left: 0;
-    width: 17vw;
-    height: 90vh;
-    background: #fffdfa;
-    border-right: 1px solid #f8faf5;
-    z-index: 0;
-    box-shadow: 3px 0 8px rgba(0,0,1,.05);
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
+
 
 .transaction-sidebar .nav-link {
-    font-size: 1.3rem; /* Adjust as needed (e.g., 1rem, 1.25rem, etc.) */
+    font-size: 1.1rem; /* Adjust as needed (e.g., 1rem, 1.25rem, etc.) */
 }
 
 .sidebar-inner {
@@ -420,12 +409,18 @@ a:hover {
 }
 
 .transaction-content {
-    width: 100%;
-    min-width: 72vw;
-    max-width: 72vw;
+    width: max-content;
+    min-width: 20vw;
+    max-width: 100vw;
     min-height: 60vh;
     margin: 2rem auto;
-    background: #fffdfa;
+    border-radius: 1rem;
+}
+
+.transaction-sidebar-content {
+    max-width: 100vw;
+    min-height: 60vh;
+    margin: 2rem auto;
 }
 
 @media (max-width: 991px) {
@@ -439,9 +434,13 @@ a:hover {
     .transaction-main {
         margin-left: 0;
     }
+
+}
+
+@media (min-width: 1024px) {
     .transaction-content {
-        margin: 1rem;
-        min-height: 60vh;
+        width: unset !important;
+        min-width: unset !important;
     }
 }
 
@@ -449,7 +448,7 @@ a:hover {
 /* Account panel layout */
 .account-layout {
     display: flex;
-    margin-top: 4vh;
+    margin-top: 15vh;
     min-height: 100vh;
     background: #f7fff2;
 }
@@ -469,7 +468,7 @@ a:hover {
 }
 
 .account-sidebar .nav-link {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 .account-main {
@@ -496,17 +495,117 @@ a:hover {
 
 .main-user {
     display: flex;
-    margin-top: 4vh;
+    margin-top: 10vh;
     min-height: 100vh;
     background: #f7fff2;
 }
 
 .main-user-content {
-    width: 100%;
-    min-width: 72vw;
-    max-width: 72vw;
+    width: max-content;
+    min-width: 20vw;
+    max-width: 100vw;
     min-height: 60vh;
     margin: 2rem auto;
     background: #f7fff2;
     border-radius: 1rem;
+}
+
+
+@media (min-width: 1024px) {
+    .main-user-content {
+        width: unset !important;
+        min-width: unset !important;
+    }
+}
+
+.monitor-user-content {
+    width: max-content;
+    min-width: 20vw;
+    max-width: 90vw;
+    min-height: 60vh;
+    margin: 2rem auto;
+    background: #f7fff2;
+    border-radius: 1rem;
+}
+
+/* Enhanced card styling for forecast page */
+.card.border-0 {
+    border: none !important;
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease;
+}
+
+.card.border-0:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Improved badge styling */
+.badge.bg-success-subtle {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+}
+
+/* Form improvements */
+.form-select, .form-control {
+    border: 1px solid #dee2e6;
+    transition: all 0.15s ease-in-out;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Button improvements */
+.btn {
+    transition: all 0.15s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Table improvements */
+.table-hover tbody tr:hover {
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+/* Chart container improvements */
+.chart-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    position: relative;
+    height: 400px;
+}
+
+#forecastChart {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+@media (max-width: 991.98px) {
+    .chart-container {
+        height: 350px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .chart-container {
+        height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .chart-container {
+        height: 250px;
+    }
+}
+
+.list-group-item-action.active {
+    --bs-list-group-active-bg: #abef9e !important;
+    --bs-list-group-action-active-color: #212529 !important;
 }

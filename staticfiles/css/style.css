@@ -414,7 +414,6 @@ a:hover {
     max-width: 100vw;
     min-height: 60vh;
     margin: 2rem auto;
-    background: #f7fff2;
     border-radius: 1rem;
 }
 
@@ -607,6 +606,6 @@ a:hover {
 }
 
 .list-group-item-action.active {
-    --bs-list-group-action-active-bg: #abef9e;
-    --bs-list-group-action-active-color: #212529;
+    --bs-list-group-active-bg: #abef9e !important;
+    --bs-list-group-action-active-color: #212529 !important;
 }

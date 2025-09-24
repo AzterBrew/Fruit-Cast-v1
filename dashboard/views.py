@@ -154,12 +154,12 @@ fruit_seasons = {
 }
 
 
-
 def forecast(request):
-    account_id = request.session.get('account_id')
-    userinfo_id = request.session.get('userinfo_id')
-    if not (userinfo_id and account_id):
-        return redirect('home')
+    if user.is_authenticated:
+        account_id = request.session.get('account_id')
+        userinfo_id = request.session.get('userinfo_id')
+    # if not (userinfo_id and account_id):
+    #     return redirect('home')
 
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     commodity_types = CommodityType.objects.exclude(pk=1)
@@ -438,7 +438,6 @@ def forecast(request):
 
     print("Choropleth Data:", choropleth_data)  # Debug print
     context = { 
-        'user_firstname': userinfo.firstname,
         'forecast_data': forecast_data,
         'forecast_combined_json': json.dumps(forecast_data['combined']) if forecast_data else '[]',
         # 'forecast_summary': forecast_summary,
@@ -457,6 +456,10 @@ def forecast(request):
         'months': months,
         'choropleth_data' : json.dumps(choropleth_data),
     }
+    if user.is_authenticated:
+        context['account_id'] = account_id
+        context['user_firstname'] = userinfo.firstname
+        
     return render(request, 'forecasting/forecast.html', context)
 
 
