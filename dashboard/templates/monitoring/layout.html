@@ -26,7 +26,11 @@
 <body>
 
 
-{% include "loggedin/navbar.html" %}
+    {% if user.is_authenticated%}
+        {% include "loggedin/navbar.html" %}
+    {% else %}
+        {% include "navbar.html" %}
+    {% endif %}
 
     <main class="pt-5">
         {% block content %}
