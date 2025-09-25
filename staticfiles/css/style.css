@@ -612,7 +612,11 @@ a:hover {
 
 /* Authentication Templates Improvements */
 .auth-container {
-    background: linear-gradient(135deg, #f7fff2 0%, #e8f5e8 100%);
+    background: linear-gradient(135deg, rgba(247, 255, 242, 0.9) 0%, rgba(232, 245, 232, 0.9) 100%), 
+                url('../images/background.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     min-height: 100vh;
 }
 
@@ -620,6 +624,8 @@ a:hover {
     backdrop-filter: blur(10px);
     background: rgba(255, 255, 255, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    min-width: 300px;
 }
 
 .auth-card:hover {
@@ -668,6 +674,34 @@ a:hover {
 .btn-outline-success:hover {
     transform: translateY(-1px);
     box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive improvements for different screen sizes */
+@media (min-width: 1400px) {
+    .auth-container .col-xxl-3 {
+        max-width: 350px;
+    }
+    .auth-container .col-xxl-5 {
+        max-width: 600px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .auth-container .col-xl-4 {
+        max-width: 400px;
+    }
+    .auth-container .col-xl-6 {
+        max-width: 650px;
+    }
+}
+
+@media (min-width: 992px) {
+    .auth-container .col-lg-5 {
+        max-width: 450px;
+    }
+    .auth-container .col-lg-7 {
+        max-width: 700px;
+    }
 }
 
 /* Mobile specific improvements */
