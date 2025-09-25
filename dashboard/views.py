@@ -155,13 +155,16 @@ fruit_seasons = {
 
 
 def forecast(request):
+    # Initialize variables for authenticated users
+    account_id = None
+    userinfo_id = None
+    userinfo = None
+    
     if request.user.is_authenticated:
         account_id = request.session.get('account_id')
         userinfo_id = request.session.get('userinfo_id')
-    # if not (userinfo_id and account_id):
-    #     return redirect('home')
-
-    userinfo = UserInformation.objects.get(pk=userinfo_id)
+        if userinfo_id:
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
     
@@ -456,7 +459,7 @@ def forecast(request):
         'months': months,
         'choropleth_data' : json.dumps(choropleth_data),
     }
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and userinfo:
         context['account_id'] = account_id
         context['user_firstname'] = userinfo.firstname
         
@@ -754,11 +757,14 @@ def get_location_name(model_instance):
 COLORS = ['#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF', '#FF9F40', '#007BFF', '#28A745', '#17A2B8', '#DC3545', '#FD7E14']
 
 def monitor(request):
-    if not request.user.is_authenticated:
-        return redirect('home')
-        
-    userinfo_id = request.session.get('userinfo_id')
-    userinfo = UserInformation.objects.get(pk=userinfo_id)
+    # Initialize variables for authenticated users
+    userinfo_id = None
+    userinfo = None
+    
+    if request.user.is_authenticated:
+        userinfo_id = request.session.get('userinfo_id')
+        if userinfo_id:
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
 
     # Get available years for the filter
     available_years = VerifiedHarvestRecord.objects.annotate(year=ExtractYear('harvest_date')).values_list('year', flat=True).distinct().order_by('year')
@@ -900,7 +906,6 @@ def monitor(request):
     }
 
     context = {
-        'user_firstname': userinfo.firstname,
         'chart_data': chart_data,
         'selected_year': selected_year,
         'selected_municipality': selected_municipality,
@@ -916,6 +921,9 @@ def monitor(request):
         'top_municipalities': top_municipalities,
         'commodities_list': commodities_list,
     }
+    
+    if request.user.is_authenticated and userinfo:
+        context['user_firstname'] = userinfo.firstname
     
     return render(request, 'monitoring/overall_dashboard.html', context)
 

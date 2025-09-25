@@ -1,14 +1,280 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %}{% exte<div class="container-fluid pt-5">
 
-{% block title %}
-    Home
-{% endblock title %}
+{% load static %}    <div class="main-user">
 
-{% block content %}
-<div class="home-container">
-    <div class="home-left-container">
+        <div class="main-user-content justify-content-center">
+
+{% block title %}            <div class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">
+
+    Home - Fruit Cast                <h1 class="mb-3 text-success fw-bold">Welcome to Fruit Cast</h1>
+
+{% endblock title %}                <p class="lead mb-4">Your partner in forecasting and monitoring Bataan's fruit supply.</p>
+
+                
+
+{% block content %}                <!-- Hero Content -->
+
+<div class="container-fluid pt-5">                <div class="row align-items-center mb-4">
+
+    <div class="main-user">                    <div class="col-lg-7 text-start">
+
+        <div class="main-user-content justify-content-center">                        <h2 class="text-success mb-3">About Bataan's Agricultural Sector</h2>
+
+            <div class="card shadow-sm rounded-4 p-4 mb-4 text-center" style="background: #fffefc;">                        <p class="mb-3">
+
+                <h1 class="mb-3 text-success fw-bold">Welcome to Fruit Cast</h1>                            Bataan, which boasts a thriving agricultural sector, is home to a wide range of seasonal fruits that contribute to the 
+
+                <p class="lead mb-4">Your partner in forecasting and monitoring Bataan's fruit supply.</p>                            local economy. The rich environment presents the farmers with the opportunity to plant fruits (i.e., watermelon, pineapple, 
+
+                                            avocado, pomelo) depending on the season. Watermelon, for example, thrive during the summer, while fruits like rambutan 
+
+                <!-- Hero Content -->                            thrive during the rainy season—this cycle ensures a year-round production for the fruit farming sector that not only 
+
+                <div class="row align-items-center mb-4">                            supports the farmers livelihoods but also boosts their town's economic growth.
+
+                    <div class="col-lg-7 text-start">                        </p>
+
+                        <h2 class="text-success mb-3">About Bataan's Agricultural Sector</h2>                    </div>
+
+                        <p class="mb-3">                    <div class="col-lg-5">
+
+                            Bataan, which boasts a thriving agricultural sector, is home to a wide range of seasonal fruits that contribute to the                         <img src="{% static 'images/home-sample-fruits.png' %}" alt="Bataan Fruits" class="img-fluid rounded-4 shadow-sm">
+
+                            local economy. The rich environment presents the farmers with the opportunity to plant fruits (i.e., watermelon, pineapple,                     </div>
+
+                            avocado, pomelo) depending on the season. Watermelon, for example, thrive during the summer, while fruits like rambutan                 </div>
+
+                            thrive during the rainy season—this cycle ensures a year-round production for the fruit farming sector that not only 
+
+                            supports the farmers livelihoods but also boosts their town's economic growth.                <hr class="my-4">
+
+                        </p>
+
+                    </div>                <!-- Guest Features -->
+
+                    <div class="col-lg-5">                <div class="row g-4 mb-4">
+
+                        <img src="{% static 'images/home-sample-fruits.png' %}" alt="Bataan Fruits" class="img-fluid rounded-4 shadow-sm">                    <div class="col-md-6">
+
+                    </div>                        <div class="card h-100 border-0 shadow-sm">
+
+                </div>                            <div class="card-body d-flex flex-column">
+
+                                <div class="text-success mb-3">
+
+                <hr class="my-4">                                    <i class="bi bi-graph-up" style="font-size: 3rem;"></i>
+
+                                </div>
+
+                <!-- Guest Features -->                                <h5 class="card-title text-success">Fruit Forecasting</h5>
+
+                <div class="row g-4 mb-4">                                <p class="card-text flex-grow-1">
+
+                    <div class="col-md-6">                                    Access real-time fruit supply forecasts for Bataan's municipalities. View projected harvest amounts and seasonal trends.
+
+                        <div class="card h-100 border-0 shadow-sm">                                </p>
+
+                            <div class="card-body d-flex flex-column">                                <a href="{% url 'dashboard:forecast' %}" class="btn btn-success mt-auto">
+
+                                <div class="text-success mb-3">                                    <i class="bi bi-graph-up me-2"></i>View Forecasts
+
+                                    <i class="bi bi-graph-up" style="font-size: 3rem;"></i>                                </a>
+
+                                </div>                            </div>
+
+                                <h5 class="card-title text-success">Fruit Forecasting</h5>                        </div>
+
+                                <p class="card-text flex-grow-1">                    </div>
+
+                                    Access real-time fruit supply forecasts for Bataan's municipalities. View projected harvest amounts and seasonal trends.                    <div class="col-md-6">
+
+                                </p>                        <div class="card h-100 border-0 shadow-sm">
+
+                                <a href="{% url 'dashboard:forecast' %}" class="btn btn-success mt-auto">                            <div class="card-body d-flex flex-column">
+
+                                    <i class="bi bi-graph-up me-2"></i>View Forecasts                                <div class="text-info mb-3">
+
+                                </a>                                    <i class="bi bi-bar-chart-line" style="font-size: 3rem;"></i>
+
+                            </div>                                </div>
+
+                        </div>                                <h5 class="card-title text-info">Supply Monitoring</h5>
+
+                    </div>                                <p class="card-text flex-grow-1">
+
+                    <div class="col-md-6">                                    Monitor fruit supply data across different municipalities and track seasonal patterns and trends.
+
+                        <div class="card h-100 border-0 shadow-sm">                                </p>
+
+                            <div class="card-body d-flex flex-column">                                <a href="{% url 'dashboard:monitor' %}" class="btn btn-info mt-auto">
+
+                                <div class="text-info mb-3">                                    <i class="bi bi-bar-chart-line me-2"></i>View Dashboard
+
+                                    <i class="bi bi-bar-chart-line" style="font-size: 3rem;"></i>                                </a>
+
+                                </div>                            </div>
+
+                                <h5 class="card-title text-info">Supply Monitoring</h5>                        </div>
+
+                                <p class="card-text flex-grow-1">                    </div>
+
+                                    Monitor fruit supply data across different municipalities and track seasonal patterns and trends.                </div>
+
+                                </p>
+
+                                <a href="{% url 'dashboard:monitor' %}" class="btn btn-info mt-auto">                <!-- Call to Action for Registration -->
+
+                                    <i class="bi bi-bar-chart-line me-2"></i>View Dashboard                <div class="card border-primary mb-4">
+
+                                </a>                    <div class="card-body">
+
+                            </div>                        <h5 class="card-title text-primary">
+
+                        </div>                            <i class="bi bi-person-plus me-2"></i>Join the Community
+
+                    </div>                        </h5>
+
+                </div>                        <p class="card-text mb-3">
+
+                            Ready to contribute to Bataan's agricultural data? Register to record your own fruit transactions, 
+
+                <!-- Call to Action for Registration -->                            manage your farm land, and help improve forecast accuracy.
+
+                <div class="card border-primary mb-4">                        </p>
+
+                    <div class="card-body">                        <div class="d-flex justify-content-center gap-3">
+
+                        <h5 class="card-title text-primary">                            <a class="btn btn-primary" href="{% url 'base:signup' %}">
+
+                            <i class="bi bi-person-plus me-2"></i>Join the Community                                <i class="bi bi-person-plus me-2"></i>Register Now
+
+                        </h5>                            </a>
+
+                        <p class="card-text mb-3">                            <a class="btn btn-outline-primary" href="{% url 'base:login' %}">
+
+                            Ready to contribute to Bataan's agricultural data? Register to record your own fruit transactions,                                 <i class="bi bi-box-arrow-in-right me-2"></i>Already have an account?
+
+                            manage your farm land, and help improve forecast accuracy.                            </a>
+
+                        </p>                        </div>
+
+                        <div class="d-flex justify-content-center gap-3">                    </div>
+
+                            <a class="btn btn-primary" href="{% url 'base:signup' %}">                </div>
+
+                                <i class="bi bi-person-plus me-2"></i>Register Now
+
+                            </a>                <!-- Features Overview -->
+
+                            <a class="btn btn-outline-primary" href="{% url 'base:login' %}">                <div class="row g-3 text-start">
+
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Already have an account?                    <div class="col-md-4">
+
+                            </a>                        <div class="d-flex align-items-start">
+
+                        </div>                            <div class="text-success me-3 mt-1">
+
+                    </div>                                <i class="bi bi-graph-up fs-4"></i>
+
+                </div>                            </div>
+
+                            <div>
+
+                <!-- Features Overview -->                                <h6 class="text-success mb-2">Accurate Forecasting</h6>
+
+                <div class="row g-3 text-start">                                <p class="small text-muted">
+
+                    <div class="col-md-4">                                    Advanced algorithms predict fruit supply based on historical data and seasonal patterns.
+
+                        <div class="d-flex align-items-start">                                </p>
+
+                            <div class="text-success me-3 mt-1">                            </div>
+
+                                <i class="bi bi-graph-up fs-4"></i>                        </div>
+
+                            </div>                    </div>
+
+                            <div>                    <div class="col-md-4">
+
+                                <h6 class="text-success mb-2">Accurate Forecasting</h6>                        <div class="d-flex align-items-start">
+
+                                <p class="small text-muted">                            <div class="text-info me-3 mt-1">
+
+                                    Advanced algorithms predict fruit supply based on historical data and seasonal patterns.                                <i class="bi bi-geo-alt fs-4"></i>
+
+                                </p>                            </div>
+
+                            </div>                            <div>
+
+                        </div>                                <h6 class="text-info mb-2">Municipality Coverage</h6>
+
+                    </div>                                <p class="small text-muted">
+
+                    <div class="col-md-4">                                    Comprehensive data coverage across all municipalities in Bataan province.
+
+                        <div class="d-flex align-items-start">                                </p>
+
+                            <div class="text-info me-3 mt-1">                            </div>
+
+                                <i class="bi bi-geo-alt fs-4"></i>                        </div>
+
+                            </div>                    </div>
+
+                            <div>                    <div class="col-md-4">
+
+                                <h6 class="text-info mb-2">Municipality Coverage</h6>                        <div class="d-flex align-items-start">
+
+                                <p class="small text-muted">                            <div class="text-warning me-3 mt-1">
+
+                                    Comprehensive data coverage across all municipalities in Bataan province.                                <i class="bi bi-calendar-event fs-4"></i>
+
+                                </p>                            </div>
+
+                            </div>                            <div>
+
+                        </div>                                <h6 class="text-warning mb-2">Seasonal Insights</h6>
+
+                    </div>                                <p class="small text-muted">
+
+                    <div class="col-md-4">                                    Understand seasonal fruit patterns to optimize planting and harvesting decisions.
+
+                        <div class="d-flex align-items-start">                                </p>
+
+                            <div class="text-warning me-3 mt-1">                            </div>
+
+                                <i class="bi bi-calendar-event fs-4"></i>                        </div>
+
+                            </div>                    </div>
+
+                            <div>                </div>
+
+                                <h6 class="text-warning mb-2">Seasonal Insights</h6>            </div>
+
+                                <p class="small text-muted">        </div>
+
+                                    Understand seasonal fruit patterns to optimize planting and harvesting decisions.    </div>
+
+                                </p></div>%}
+
+                            </div>
+
+                        </div>{% block title %}
+
+                    </div>    Home
+
+                </div>{% endblock title %}
+
+            </div>
+
+        </div>{% block content %}
+
+    </div><div class="home-container">
+
+</div>    <div class="home-left-container">
+
         <h1><b>Fruit Cast</b></h1>
-        <p>
+
+{% endblock content %}        <p>
            Bataan, which boasts a thriving agricultural sector, is home to a wide range of seasonal fruits that contribute to the 
            local economy. The rich environment presents the farmers with the opportunity to plant fruits (i.e., watermelon, pineapple, 
            avocado, pomelo) depending on the season. Watermelon, for example, thrive during the summer, while fruits like rambutan 
