@@ -609,3 +609,98 @@ a:hover {
     --bs-list-group-active-bg: #abef9e !important;
     --bs-list-group-action-active-color: #212529 !important;
 }
+
+/* Authentication Templates Improvements */
+.auth-container {
+    background: linear-gradient(135deg, #f7fff2 0%, #e8f5e8 100%);
+    min-height: 100vh;
+}
+
+.auth-card {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-card:hover {
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+.form-control-lg {
+    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control-lg:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Section dividers for registration form */
+.registration-section {
+    border-left: 4px solid #198754;
+    padding-left: 1rem;
+    margin-bottom: 2rem;
+}
+
+.registration-section h5 {
+    border-bottom: 2px solid rgba(25, 135, 84, 0.1);
+    padding-bottom: 0.5rem;
+}
+
+/* Enhanced button styles */
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #146c43;
+    transform: translateY(-1px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-outline-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile specific improvements */
+@media (max-width: 576px) {
+    .auth-container .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .auth-container h1 {
+        font-size: 1.75rem;
+    }
+    
+    .registration-section {
+        border-left: 2px solid #198754;
+        padding-left: 0.75rem;
+    }
+}
+
+/* Animation for form sections */
+.registration-section {
+    animation: fadeInUp 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.registration-section:nth-child(1) { animation-delay: 0.1s; }
+.registration-section:nth-child(2) { animation-delay: 0.2s; }
+.registration-section:nth-child(3) { animation-delay: 0.3s; }
+.registration-section:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

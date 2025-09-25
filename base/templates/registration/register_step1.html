@@ -1,172 +1,198 @@
 {% extends "registration/layout.html" %} 
 {% block title %} Fruit Cast | Register {% endblock title %} 
 
-
 {%block content %}
-{% comment %} <div class="container1 center-div-text">
-  <h1>REGISTER</h1>
-    <br>
-    <form action="" method="POST">
-    {% csrf_token %} 
-    {% for field in form %}
-    <div class="form-group">
-      {{ field.label_tag }}
-      {{ field }}
+<div class="container-fluid d-flex justify-content-center align-items-center min-vh-100 py-4">
+  <div class="row w-100 justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+      <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4 p-md-5">
+          <!-- Logo/Brand -->
+          <div class="text-center mb-4">
+            <div class="text-success mb-2">
+              <i class="bi bi-leaf" style="font-size: 3rem;"></i>
+            </div>
+            <h1 class="h2 text-success fw-bold mb-0">Fruit Cast</h1>
+            <p class="text-muted small">Complete your registration</p>
+          </div>
 
-      {% if field.errors %}
-        <p class="form-error">{{ field.errors|striptags }}</p>
-      {% endif %}
-    </div>
-    <br>
-  {% endfor %}
-    
-    <button type="Submit">Submit</button>
-  </form>
-  <br>
-  <p>or</p>
-  <a href="/accounts/login">Log In</a>
-
-
-</div> {% endcomment %}
-<div class="login-container">
-  <div class="container py-5" style="max-width: 80vw;">
-    <div class="card shadow p-4">
-      <h1 class="text-center mb-4">Complete Registration</h1>
-      <form method="POST" id="register-form" novalidate>
-          {% csrf_token %}
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_firstname">First Name *</label>
-              {{ form.firstname }}
-              {% if form.firstname.errors %}
-                <div class="text-danger small">{{ form.firstname.errors }}</div>
-              {% endif %}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_lastname">Last Name *</label>
-              {{ form.lastname }}
-              {% if form.lastname.errors %}
-                <div class="text-danger small">{{ form.lastname.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_middlename">Middle Name *</label>
-              {{ form.middlename }}
-              {% if form.middlename.errors %}
-                <div class="text-danger small">{{ form.middlename.errors }}</div>
-              {% endif %}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_nameextension">Name Extension</label>
-              {{ form.nameextension }}
-              {% if form.nameextension.errors %}
-                <div class="text-danger small">{{ form.nameextension.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_sex">Sex *</label>
-              {{ form.sex }}
-              {% if form.sex.errors %}
-                <div class="text-danger small">{{ form.sex.errors }}</div>
-              {% endif %}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_birthdate">Date of Birth *</label>
-              {{ form.birthdate }}
-              {% if form.birthdate.errors %}
-                <div class="text-danger small">{{ form.birthdate.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_contact_number">Contact Number *</label>
-              {{ form.contact_number }}
-              {% if form.contact_number.errors %}
-                <div class="text-danger small">{{ form.contact_number.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
-          <div class="col-md-12 mb-3">
-              <label class="form-label" for="id_address_details">Address Details *</label>
-              {{ form.address_details }}
-              {% if form.address_details.errors %}
-                <div class="text-danger small">{{ form.address_details.errors }}</div>
-              {% endif %}
-            </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_municipality_id">Municipality *</label>
-              {{ form.municipality_id }}
-              {% if form.municipality_id.errors %}
-                <div class="text-danger small">{{ form.municipality_id.errors }}</div>
-              {% endif %}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_barangay_id">Barangay *</label>
-              <select name="barangay_id" id="id_barangay_id" class="form-select" disabled>
-                <option value="">Select a municipality first</option>
-              </select>
-              {% if form.barangay_id.errors %}
-                <div class="text-danger small">{{ form.barangay_id.errors }}</div>
-              {% endif %}
-            </div>
-          </div>          
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_religion">Religion *</label>
-              {{ form.religion }}
-              {% if form.religion.errors %}
-                <div class="text-danger small">{{ form.religion.errors }}</div>
-              {% endif %}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_civil_status">Civil Status *</label>
-              {{ form.civil_status }}
-              {% if form.civil_status.errors %}
-                <div class="text-danger small">{{ form.civil_status.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_rsbsa_ref_number">RSBSA Reference Number</label>
-              {{ form.rsbsa_ref_number }}
-              {% if form.rsbsa_ref_number.errors %}
-                <div class="text-danger small">{{ form.rsbsa_ref_number.errors }}</div>
-              {% endif %}
-            </div>
+          <form method="POST" id="register-form" novalidate>
+            {% csrf_token %}
             
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_emergency_contact_person">Emergency Contact Person *</label>
-              {{ form.emergency_contact_person }}
-              {% if form.emergency_contact_person.errors %}
-                <div class="text-danger small">{{ form.emergency_contact_person.errors }}</div>
-              {% endif %}
+            <!-- Personal Information Section -->
+            <div class="mb-4 registration-section">
+              <h5 class="text-success mb-3">
+                <i class="bi bi-person me-2"></i>Personal Information
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_firstname">
+                    <i class="bi bi-person-badge me-1"></i>First Name *
+                  </label>
+                  {{ form.firstname }}
+                  {% if form.firstname.errors %}
+                    <div class="text-danger small mt-1">{{ form.firstname.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_lastname">
+                    <i class="bi bi-person-badge me-1"></i>Last Name *
+                  </label>
+                  {{ form.lastname }}
+                  {% if form.lastname.errors %}
+                    <div class="text-danger small mt-1">{{ form.lastname.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_middlename">
+                    <i class="bi bi-person-badge me-1"></i>Middle Name *
+                  </label>
+                  {{ form.middlename }}
+                  {% if form.middlename.errors %}
+                    <div class="text-danger small mt-1">{{ form.middlename.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_nameextension">
+                    <i class="bi bi-person-badge me-1"></i>Name Extension
+                  </label>
+                  {{ form.nameextension }}
+                  {% if form.nameextension.errors %}
+                    <div class="text-danger small mt-1">{{ form.nameextension.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_sex">
+                    <i class="bi bi-gender-ambiguous me-1"></i>Sex *
+                  </label>
+                  {{ form.sex }}
+                  {% if form.sex.errors %}
+                    <div class="text-danger small mt-1">{{ form.sex.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_birthdate">
+                    <i class="bi bi-calendar me-1"></i>Date of Birth *
+                  </label>
+                  {{ form.birthdate }}
+                  {% if form.birthdate.errors %}
+                    <div class="text-danger small mt-1">{{ form.birthdate.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label" for="id_emergency_contact_number">Emergency Contact Person's Contact No. *</label>
-              {{ form.emergency_contact_number }}
-              {% if form.emergency_contact_number.errors %}
-                <div class="text-danger small">{{ form.emergency_contact_number.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
 
-          
-    
-          <div class="text-center mt-4">
-            <hr />
-            <button type="submit" class="btn btn-success">Complete Registrations</button>
-             
-          </div>
-        </form>
+            <!-- Contact Information Section -->
+            <div class="mb-4 registration-section">
+              <h5 class="text-info mb-3">
+                <i class="bi bi-telephone me-2"></i>Contact Information
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_contact_number">
+                    <i class="bi bi-phone me-1"></i>Contact Number *
+                  </label>
+                  {{ form.contact_number }}
+                  {% if form.contact_number.errors %}
+                    <div class="text-danger small mt-1">{{ form.contact_number.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Address Information Section -->
+            <div class="mb-4 registration-section">
+              <h5 class="text-warning mb-3">
+                <i class="bi bi-geo-alt me-2"></i>Address Information
+              </h5>
+              
+              <div class="mb-3">
+                <label class="form-label" for="id_address_details">
+                  <i class="bi bi-house me-1"></i>Address Details *
+                </label>
+                {{ form.address_details }}
+                {% if form.address_details.errors %}
+                  <div class="text-danger small mt-1">{{ form.address_details.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_municipality_id">
+                    <i class="bi bi-building me-1"></i>Municipality *
+                  </label>
+                  {{ form.municipality_id }}
+                  {% if form.municipality_id.errors %}
+                    <div class="text-danger small mt-1">{{ form.municipality_id.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_barangay_id">
+                    <i class="bi bi-signpost me-1"></i>Barangay *
+                  </label>
+                  <select name="barangay_id" id="id_barangay_id" class="form-select" disabled>
+                    <option value="">Select a municipality first</option>
+                  </select>
+                  {% if form.barangay_id.errors %}
+                    <div class="text-danger small mt-1">{{ form.barangay_id.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Information Section -->
+            <div class="mb-4 registration-section">
+              <h5 class="text-secondary mb-3">
+                <i class="bi bi-info-circle me-2"></i>Additional Information
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_religion">
+                    <i class="bi bi-heart me-1"></i>Religion *
+                  </label>
+                  {{ form.religion }}
+                  {% if form.religion.errors %}
+                    <div class="text-danger small mt-1">{{ form.religion.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_civil_status">
+                    <i class="bi bi-people me-1"></i>Civil Status *
+                  </label>
+                  {{ form.civil_status }}
+                  {% if form.civil_status.errors %}
+                    <div class="text-danger small mt-1">{{ form.civil_status.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_rsbsa_ref_number">
+                    <i class="bi bi-file-text me-1"></i>RSBSA Reference Number
+                  </label>
+                  {{ form.rsbsa_ref_number }}
+                  <small class="form-text text-muted">Optional - for registered farmers</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check-circle me-2"></i>Complete Registration
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -188,14 +214,20 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
           if (data.length > 0) {
             barangaySelect.disabled = false;
-            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+            barangaySelect.innerHTML = '<option value="">Select a barangay</option>';
             data.forEach(barangay => {
               const option = document.createElement('option');
               option.value = barangay.id;
-              option.textContent = barangay.name;
+              option.textContent = barangay.barangay_name;
               barangaySelect.appendChild(option);
             });
+          } else {
+            barangaySelect.innerHTML = '<option value="">No barangays available</option>';
           }
+        })
+        .catch(error => {
+          console.error('Error fetching barangays:', error);
+          barangaySelect.innerHTML = '<option value="">Error loading barangays</option>';
         });
     } else {
       barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
@@ -203,8 +235,5 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 </script>
-
-
-
 
 {% endblock content %}
