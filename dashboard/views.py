@@ -155,7 +155,7 @@ fruit_seasons = {
 
 
 def forecast(request):
-    if user.is_authenticated:
+    if request.user.is_authenticated:
         account_id = request.session.get('account_id')
         userinfo_id = request.session.get('userinfo_id')
     # if not (userinfo_id and account_id):
@@ -456,7 +456,7 @@ def forecast(request):
         'months': months,
         'choropleth_data' : json.dumps(choropleth_data),
     }
-    if user.is_authenticated:
+    if request.user.is_authenticated:
         context['account_id'] = account_id
         context['user_firstname'] = userinfo.firstname
         

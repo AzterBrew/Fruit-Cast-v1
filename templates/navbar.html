@@ -1,86 +1,218 @@
 {%load static%}
 
-{% block navbar %}
-{% comment %} NAVBAR SECTION {% endcomment %}
-<nav class="navbar navbar-expand-lg navbar-light">
-
-    <a class="btn btn-tarnsparent ms-5" data-bs-toggle="offcanvas" href="#offcanvasguest" role="button" aria-controls="offcanvasExample">
-        =
-      </a>
-        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 50px;">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-  
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-
-      <ul class="navbar-nav ms-auto me-auto">
-        <li class="nav-item active">
-            <a class="nav-link" href="{% url 'base:home' %}"><b>Home</b> <span class="sr-only"></span></a>
-        </li> 
-        <li class="nav-item active">
-          
-                    <a class="nav-link" href="{% url 'dashboard:forecast' %}"><b>Forecast</b><span class="sr-only"></span></a>
-
-        </li>
-        <li class="nav-item active">
-            <a class="nav-link" href="{% url 'dashboard:monitor' %}"><b>Monitor</b><span class="sr-only"></span></a>
-
-          </li>          
-        </li>
-      </ul>
-
-      <ul class="navbar-nav ms-auto me-5">
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'base:login' %}"><b>Login</b></a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'base:register_email' %}"><b>Register</b></a>
-      </li>
-      </ul>
-    </div>
-  </nav>
-
-{% comment %} OFFCANVAS SECTION {% endcomment %}
-
-
-<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasguest" aria-labelledby="offcanvasExampleLabel">
-    <div class="offcanvas-header">
-      <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fruit Cast</h5>
-      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-header">      
-        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="mx-auto"style="max-height: 20vh; align-content : center;">
-
-    </div>
-    <div class="offcanvas-body">      
-        <div class="list-group">
-            {% comment %} <a href="#" class="list-group-item list-group-item-action">Report History</a>
-            <a href="#" class="list-group-item list-group-item-action">Account Details</a> {% endcomment %}
-            <a href="{% url 'base:home' %}" class="list-group-item list-group-item-action">Home</a>
-          <a class="nav-link" href="{% url 'dashboard:forecast' %}"><b>Forecast</b><span class="sr-only"></span></a>
-            <a class="nav-link" href="{% url 'dashboard:monitor' %}"><b>Monitor</b><span class="sr-only"></span></a>
-
-            <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a>
-            <a href="{% url 'base:login' %}" class="list-group-item list-group-item-action">Login to access other functions</a>
-            <!-- Collapsible Section -->
-
-            
+<header id="header" class="d-block navbar navbar-expand-lg shadow-sm fixed-top bg-light">
+    <div class="container-fluid ">
+        <!-- Sidebar Toggle and Logo -->
+        <div class="d-flex align-items-center">
+            <a class="navbar-brand d-flex align-items-center text-success" href="{% url 'base:home' %}">
+                <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
+                <span class="fw-bold">Fruit Cast</span>
+            </a>
         </div>
-        <br>
-        <hr>
-        <br>
-        {% comment %} <div class="offcanvas-p">
-            <p>
-                If you would like to register, please contact the Municipal Office of Agriculture in your respective municipality within Bataan. 
-            </p>            
-            <p>Below are the email addresses for each municipality in Bataan: </p>
-            <p>* Abucay : {insert email}</p>
-            <p>* Bagac : {insert email}</p>
-            <p>* Balanga : {insert email}</p>
-            <p>* Dinalupihan : {insert email}</p>
-        </div> {% endcomment %}
+        <!-- User Navigation -->
+        <nav class="ms-auto bg-light" aria-label="User">
+            <ul class="navbar-nav d-flex flex-row align-items-center">
+                <!-- User Dropdown -->
+                 
+                <li class="nav-item dropdown me-3">
+                    <i class="bi bi-person-circle fs-5 me-2"></i>
+                    <span class="d-none d-md-inline">
+                        Join Us! 
+                    </span>
+                </li>
+                <li class="nav-item me-3 btn btn-outline-success">
+                    <a href="{% url 'base:register_step1' %}" class="nav-link text-success">
+                      <i class="bi bi-activity me-1"></i>
+                      <span>Sign Up</span>
+                    </a>
+                </li>
+                <li class="nav-item me-3 btn btn-success">
+                    <a href="{% url 'base:login' %}" class="nav-link text-light">
+                      <i class="bi bi-door-closed me-1"></i>
+                      <span>Log In</span>
+                  </a>
+                </li>
+            </ul>
+        </nav>
     </div>
-  </div>
+        
+    <!-- Main Navigation - Always visible, no collapse -->
+    <nav class="ps-3 d-block bg-light border-top border-light border-opacity-25" aria-label="Site">
+        <ul class="navbar-nav d-flex flex-row flex-wrap">
+            <li class="nav-item mx-md-1 dropdown">
+                <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-success" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-graph-up me-1"></i>
+                    <span>Forecast</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-start mobile-dropdown">
+                    <li><a class="dropdown-item" href="{% url 'dashboard:forecast' %}">
+                        <i class="bi bi-calendar-month me-2"></i>by Month
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'dashboard:forecast_bycommodity' %}">
+                        <i class="bi bi-box-seam me-2"></i>by Commodity
+                    </a></li>
+                </ul>
+            </li>
+            <li class="nav-item mx-md-1">
+                <a href="{% url 'dashboard:monitor' %}" class="nav-link text-success">
+                    <i class="bi bi-activity me-1"></i>
+                    <span>Monitor</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
 
-  {% endblock navbar %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prevent dropdown menu from closing when clicking inside (optional)
+    document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+
+    // Custom dropdown positioning for mobile
+    document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+        toggle.addEventListener('shown.bs.dropdown', function() {
+            var dropdown = this.nextElementSibling;
+            if (dropdown && window.innerWidth <= 768) {
+                // Additional mobile-specific positioning if needed
+                dropdown.style.transform = 'none';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+/* Custom navbar styles */
+#header {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Prevent navbar expansion on mobile */
+.navbar-nav {
+    flex-direction: row !important;
+}
+
+.navbar-collapse {
+    display: block !important;
+}
+
+/* Mobile dropdown improvements */
+@media (max-width: 768px) {
+    /* Ensure dropdowns are positioned absolutely and don't affect navbar height */
+    .mobile-dropdown {
+        position: absolute !important;
+        transform: none !important;
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3) !important;
+        border-radius: 0.5rem;
+        max-width: 280px;
+        min-width: 200px;
+        z-index: 1050;
+        margin-top: 0.5rem;
+    }
+    
+    /* Make nav text smaller on mobile */
+    .nav-link span {
+        font-size: 0.9rem;
+    }
+    
+    /* Show icons on mobile for better UX */
+    .d-md-none {
+        display: inline !important;
+    }
+    
+    /* Adjust navbar padding on mobile */
+    .navbar .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Main navigation wrapping */
+    .navbar-nav.flex-wrap {
+        flex-wrap: wrap;
+    }
+    
+    /* User dropdown positioning */
+    .dropdown-menu-end {
+        right: 0 !important;
+        left: auto !important;
+    }
+    
+    .dropdown-menu-start {
+        left: 0 !important;
+        right: auto !important;
+    }
+}
+
+/* Notification badge pulse animation */
+.nav-link .badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Dropdown menu improvements */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+    z-index: 1050;
+}
+
+.dropdown-item {
+    transition: all 0.2s ease;
+    padding: 0.75rem 1rem;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(0,123,255,0.1);
+    transform: translateX(5px);
+}
+
+/* Notification styles */
+.notif-link:hover {
+    text-decoration: none !important;
+}
+
+.list-group-item.border-start {
+    background-color: rgba(0,123,255,0.02);
+}
+
+/* Logo hover effect */
+.navbar-brand:hover img {
+    transform: rotate(5deg) scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+/* Ensure main navigation is always visible */
+.navbar .container-fluid + nav {
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Fix for very small screens */
+@media (max-width: 480px) {
+    .navbar-brand span {
+        font-size: 1rem;
+    }
+    
+    .mobile-dropdown {
+        max-width: 250px;
+        min-width: 180px;
+    }
+    
+    .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+</style>

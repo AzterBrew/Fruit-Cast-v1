@@ -4,7 +4,7 @@
     <div class="container-fluid ">
         <!-- Sidebar Toggle and Logo -->
         <div class="d-flex align-items-center">
-            <a class="navbar-brand d-flex align-items-center text-white" href="{% url 'base:home' %}">
+            <a class="navbar-brand d-flex align-items-center text-success" href="{% url 'base:home' %}">
                 <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
                 <span class="fw-bold">Fruit Cast</span>
             </a>
@@ -12,67 +12,17 @@
         <!-- User Navigation -->
         <nav class="ms-auto bg-light" aria-label="User">
             <ul class="navbar-nav d-flex flex-row align-items-center">
-                <!-- Notifications -->
-                <li class="nav-item me-3">
-                    <a class="nav-link text-success position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#notifPanel" aria-controls="notifPanel">
-                        <i class="bi bi-bell fs-5"></i>
-                        {% if unread_count and unread_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ unread_count }}
-                            </span>
-                        {% endif %}
-                    </a>
-                </li>
-
                 <!-- User Dropdown -->
-                 
-                <li class="nav-item dropdown">
-                    <i class="bi bi-person-circle fs-5 me-2"></i>
-                    <span class="d-none d-md-inline">
-                        Join Us! 
-                    </span>
-                </li>
-                <li class="nav-item me-3">
-                    <a href="{% url 'base:register_step1' %}" class="nav-link text-success">
-                      <i class="bi bi-activity me-1"></i>
-                      <span>Sign Up</span>
+    
+                <li class="nav-item me-3 btn btn-outline-success">
+                    <a href="{% url 'base:home' %}" class="nav-link text-success">
+                      <i class="bi bi-house-door-fill me-1"></i>
+                      <span>Return to Home</span>
                     </a>
-                </li>
-                <li class="nav-item me-3">
-                    <a href="{% url 'base:login' %}" class="nav-link text-success">
-                      <i class="bi bi-activity me-1"></i>
-                      <span>Sign In</span>
-                  </a>
                 </li>
             </ul>
         </nav>
     </div>
-        
-    <!-- Main Navigation - Always visible, no collapse -->
-    <nav class="ps-3 d-block bg-light border-top border-light border-opacity-25" aria-label="Site">
-        <ul class="navbar-nav d-flex flex-row flex-wrap">
-            <li class="nav-item mx-md-1 dropdown">
-                <a href="{% url 'dashboard:forecast' %}" class="nav-link dropdown-toggle text-success" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-graph-up me-1"></i>
-                    <span>Forecast</span>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-start mobile-dropdown">
-                    <li><a class="dropdown-item" href="{% url 'dashboard:forecast' %}">
-                        <i class="bi bi-calendar-month me-2"></i>by Month
-                    </a></li>
-                    <li><a class="dropdown-item" href="{% url 'dashboard:forecast_bycommodity' %}">
-                        <i class="bi bi-box-seam me-2"></i>by Commodity
-                    </a></li>
-                </ul>
-            </li>
-            <li class="nav-item mx-md-1">
-                <a href="{% url 'dashboard:monitor' %}" class="nav-link text-success">
-                    <i class="bi bi-activity me-1"></i>
-                    <span>Monitor</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
 </header>
 
 
