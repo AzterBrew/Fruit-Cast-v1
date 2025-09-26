@@ -1153,6 +1153,7 @@ def register_email(request):
                 [email],
                 fail_silently=False,
             )
+            
         # MODIFY THIS EMAIL PAGKA OKS NA
         return redirect("base:register_verify_code")
     return render(request, "registration/register_email.html", {"email_error": email_error,"password_error": password_error,})

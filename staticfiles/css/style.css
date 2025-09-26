@@ -353,7 +353,7 @@ div {
 
 main {
     flex-grow: 1;
-    display: grid;
+    /* display: grid; */
     place-content: center;
 }
 
@@ -708,10 +708,6 @@ a:hover {
 @media (max-width: 576px) {
     .auth-container .card-body {
         padding: 2rem 1.5rem !important;
-    }
-    
-    .auth-container h1 {
-        font-size: 1.75rem;
     }
     
     .registration-section {
