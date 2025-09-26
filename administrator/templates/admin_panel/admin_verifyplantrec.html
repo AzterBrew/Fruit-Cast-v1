@@ -1,144 +1,333 @@
 {% extends "admin_login/layout.html" %}
 
 {% block title %}
-Fruit Cast | Plant and Harvest Records
+Fruit Cast | Plant Record Verification
 {% endblock title %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-sm rounded-4 p-4 mb-4">
-                <h2 class="text-xl font-bold mb-4">Plant Record Verification</h2>
-                <form method="get" class="mb-3" id="filterForm">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-4">
-                            <label for="municipality" class="form-label mb-0">Filter by Municipality:</label>
-                            <select name="municipality" id="municipality" class="form-select form-select-sm">
-                                <option value="">All</option>
-                                {% for m in municipalities %}
-                                    <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
-                                {% endfor %}
-                            </select>
+<div class="main-user">
+    <div class="monitor-user-content justify-content-center">
+        <div class="card shadow-sm rounded-4 p-4 mb-3">
+            <h1 class="mb-4 text-success fw-bold text-center">
+                <i class="bi bi-clipboard-check"></i> Plant Record Verification
+            </h1>
+            
+            <!-- Filter Section -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-info mb-3">
+                        <i class="bi bi-funnel me-2"></i>Filter Records
+                    </h5>
+                    <form method="get" id="filterForm">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label for="municipality" class="form-label">
+                                    <i class="bi bi-geo-alt me-1"></i>Municipality
+                                </label>
+                                <select name="municipality" id="municipality" class="form-select">
+                                    <option value="">All Municipalities</option>
+                                    {% for m in municipalities %}
+                                        <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="commodity" class="form-label">
+                                    <i class="bi bi-leaf me-1"></i>Commodity
+                                </label>
+                                <select name="commodity" id="commodity" class="form-select">
+                                    <option value="">All Commodities</option>
+                                    {% for c in commodities %}
+                                        <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == selected_commodity %}selected{% endif %}>{{ c.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="status" class="form-label">
+                                    <i class="bi bi-check-circle me-1"></i>Status
+                                </label>
+                                <select name="status" id="status" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    {% for status in status_choices %}
+                                        <option value="{{ status.pk }}" {% if selected_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label for="commodity" class="form-label mb-0">Filter by Commodity:</label>
-                            <select name="commodity" id="commodity" class="form-select form-select-sm">
-                                <option value="">All</option>
-                                {% for c in commodities %}
-                                    <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == selected_commodity %}selected{% endif %}>{{ c.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="status" class="form-label mb-0">Filter by Status:</label>
-                            <select name="status" id="status" class="form-select form-select-sm">
-                                <option value="">All</option>
-                                {% for status in status_choices %}
-                                    <option value="{{ status.pk }}" {% if selected_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Records Section -->
+            {% if records %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title text-success mb-0">
+                            <i class="bi bi-table me-2"></i>Plant Records
+                        </h5>
+                        <span class="badge bg-info">{{ records|length }} record{{ records|length|pluralize }}</span>
                     </div>
-                </form>
 
-                {% if records %}
-                <form method="post">
-                    {% csrf_token %}
+                    <form method="post">
+                        {% csrf_token %}
 
-                    <table class="table table-bordered table-hover">
-                        <thead class="table-success">
-                            <tr>
-                                <th>Select</th>
-                                <th>ID</th>
-                                <th>Farmer</th>
-                                <th>Plant Date</th>
-                                <th>Commodity</th>
-                                <th>Location</th>
-                                <th>Expected Harvest (kg)</th>
-                                <th>Remarks</th>
-                                <th>Current Status</th>
-                                <th>Verified by</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for rec in records %}
-                            <tr>
-                                <td><input type="checkbox" name="selected_records" value="{{ rec.pk }}"></td>
-                                <td>{{ rec.pk }}</td>
-                                <td>{{ rec.transaction.account_id.userinfo_id.lastname }}, {{ rec.transaction.account_id.userinfo_id.firstname }} </td>
-                                <td>{{ rec.plant_date }}</td>
-                                <td>
-                                    {% if rec.commodity_id.pk == 1 %}
-                                        Not Listed : {{ rec.commodity_custom }}
-                                    {% else %}
-                                        {{ rec.commodity_id.name }}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if rec.transaction.farm_land %}
-                                        {{ rec.transaction.farm_land.municipality.municipality }} - {{ rec.transaction.farm_land.barangay.barangay }}
-                                    {% elif rec.transaction.manual_municipality %}
-                                        {{ rec.transaction.manual_municipality.municipality }} - {{ rec.transaction.manual_barangay.barangay }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
-                                <td>{{ rec.min_expected_harvest }} - {{ rec.max_expected_harvest }}</td>
-                                <td>{{ rec.remarks|default:"-" }}</td>
-                                <td>{{ rec.record_status.acc_status }}</td>
-                                <td>
-                                    {% if rec.verified_by %}
-                                        {{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}
-                                    {% else %}
-                                        Not yet verified
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            
+                        <!-- Responsive Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th class="text-center">
+                                            <input type="checkbox" id="selectAll" class="form-check-input">
+                                        </th>
+                                        <th><i class="bi bi-hash me-1"></i>ID</th>
+                                        <th><i class="bi bi-person me-1"></i>Farmer</th>
+                                        <th><i class="bi bi-calendar me-1"></i>Plant Date</th>
+                                        <th><i class="bi bi-leaf me-1"></i>Commodity</th>
+                                        <th><i class="bi bi-geo me-1"></i>Location</th>
+                                        <th><i class="bi bi-box me-1"></i>Expected Harvest (kg)</th>
+                                        <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
+                                        <th><i class="bi bi-check-circle me-1"></i>Status</th>
+                                        <th><i class="bi bi-person-check me-1"></i>Verified by</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rec in records %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="selected_records" value="{{ rec.pk }}" class="form-check-input record-checkbox">
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ rec.pk }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }}</div>
+                                            <div class="text-muted small">{{ rec.transaction.account_id.userinfo_id.firstname }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="fw-medium">{{ rec.plant_date }}</span>
+                                        </td>
+                                        <td>
+                                            {% if rec.commodity_id.pk == 1 %}
+                                                <span class="badge bg-warning text-dark">Custom</span>
+                                                <div class="small">{{ rec.commodity_custom }}</div>
+                                            {% else %}
+                                                <span class="badge bg-success">{{ rec.commodity_id.name }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if rec.transaction.farm_land %}
+                                                <div class="fw-medium">{{ rec.transaction.farm_land.municipality.municipality }}</div>
+                                                <div class="text-muted small">{{ rec.transaction.farm_land.barangay.barangay }}</div>
+                                            {% elif rec.transaction.manual_municipality %}
+                                                <div class="fw-medium">{{ rec.transaction.manual_municipality.municipality }}</div>
+                                                <div class="text-muted small">{{ rec.transaction.manual_barangay.barangay }}</div>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="fw-medium">{{ rec.min_expected_harvest }}</span> - 
+                                            <span class="fw-medium">{{ rec.max_expected_harvest }}</span>
+                                        </td>
+                                        <td>
+                                            {% if rec.remarks %}
+                                                <i class="bi bi-chat-left-quote text-info" data-bs-toggle="tooltip" title="{{ rec.remarks }}"></i>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if rec.record_status.acc_status == "Approved" %}
+                                                <span class="badge bg-success">{{ rec.record_status.acc_status }}</span>
+                                            {% elif rec.record_status.acc_status == "Pending" %}
+                                                <span class="badge bg-warning text-dark">{{ rec.record_status.acc_status }}</span>
+                                            {% elif rec.record_status.acc_status == "Rejected" %}
+                                                <span class="badge bg-danger">{{ rec.record_status.acc_status }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ rec.record_status.acc_status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if rec.verified_by %}
+                                                <div class="fw-medium">{{ rec.verified_by.userinfo_id.firstname }}</div>
+                                                <div class="text-muted small">{{ rec.verified_by.userinfo_id.lastname }}</div>
+                                            {% else %}
+                                                <span class="text-muted fst-italic">Not verified</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
                             {% endfor %}
-                        </tbody>
-                    </table>
-                    {% if messages %}
-                        {% for message in messages %}
-                        <div class="alert 
-                            {% if message.tags %} alert-{{ message.tags }} {% endif %} text-danger small mt-2">
-                            {{ message }}
+                        {% endif %}
+
+                        <!-- Action Section -->
+                        <div class="card border-info mt-4">
+                            <div class="card-body">
+                                <h6 class="card-title text-info">
+                                    <i class="bi bi-tools me-2"></i>Bulk Actions
+                                </h6>
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-6">
+                                        <label for="new_status" class="form-label">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Update Status
+                                        </label>
+                                        <select name="new_status" id="new_status" class="form-select" required>
+                                            <option value="" disabled selected>Choose new status...</option>
+                                            {% for status in status_choices %}
+                                                <option value="{{ status.pk }}">{{ status.acc_status }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="submit" class="btn btn-success" id="updateBtn" disabled>
+                                            <i class="bi bi-check-circle me-2"></i>Update Selected Records
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="text-muted small mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Select records using checkboxes above to enable bulk actions.
+                                </div>
+                            </div>
                         </div>
-                        {% endfor %}
-                    {% endif %}
-                    <div class="row g-2 align-items-end mt-2">
-                        <div class="col-md-4">
-                            <label for="new_status" class="form-label mb-0">Set selected to:</label>
-                            <select name="new_status" id="new_status" class="form-select form-select-sm" required>
-                                {% for status in status_choices %}
-                                    <option value="{{ status.pk }}">{{ status.acc_status }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-success btn-sm">Update Selected</button>
-                        </div>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted mb-3">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
                     </div>
-                </form>
-                {% else %}
-                    <p>No records found.</p>
-                {% endif %}
+                    <h5 class="text-muted">No Records Found</h5>
+                    <p class="text-muted">Try adjusting your filters to see more results.</p>
+                </div>
+            </div>
+            {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Auto-submit form on filter change
-    document.getElementById('municipality').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
-    document.getElementById('commodity').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
-    document.getElementById('status').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Auto-submit form on filter change
+        const municipalitySelect = document.getElementById('municipality');
+        const commoditySelect = document.getElementById('commodity');
+        const statusSelect = document.getElementById('status');
+        
+        if (municipalitySelect) {
+            municipalitySelect.addEventListener('change', function() {
+                document.getElementById('filterForm').submit();
+            });
+        }
+        
+        if (commoditySelect) {
+            commoditySelect.addEventListener('change', function() {
+                document.getElementById('filterForm').submit();
+            });
+        }
+        
+        if (statusSelect) {
+            statusSelect.addEventListener('change', function() {
+                document.getElementById('filterForm').submit();
+            });
+        }
+
+        // Select All functionality
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+        const updateBtn = document.getElementById('updateBtn');
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                recordCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateButtonState();
+            });
+        }
+
+        // Individual checkbox functionality
+        recordCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectAllState();
+                updateButtonState();
+            });
+        });
+
+        function updateSelectAllState() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = checkedBoxes.length === recordCheckboxes.length;
+                selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < recordCheckboxes.length;
+            }
+        }
+
+        function updateButtonState() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (updateBtn) {
+                updateBtn.disabled = checkedBoxes.length === 0;
+                
+                // Update button text based on selection count
+                const count = checkedBoxes.length;
+                if (count === 0) {
+                    updateBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Update Selected Records';
+                } else {
+                    updateBtn.innerHTML = `<i class="bi bi-check-circle me-2"></i>Update ${count} Record${count > 1 ? 's' : ''}`;
+                }
+            }
+        }
+
+        // Form validation
+        const actionForm = document.querySelector('form[method="post"]:not(#filterForm)');
+        if (actionForm) {
+            actionForm.addEventListener('submit', function(e) {
+                const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+                const newStatusSelect = document.getElementById('new_status');
+                
+                if (checkedBoxes.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one record to update.');
+                    return false;
+                }
+                
+                if (!newStatusSelect.value) {
+                    e.preventDefault();
+                    alert('Please select a status to update to.');
+                    return false;
+                }
+                
+                // Confirmation dialog
+                const confirmMessage = `Are you sure you want to update ${checkedBoxes.length} record${checkedBoxes.length > 1 ? 's' : ''} to "${newStatusSelect.selectedOptions[0].text}"?`;
+                if (!confirm(confirmMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        // Initialize button state
+        updateButtonState();
     });
 </script>
 {% endblock content %}
