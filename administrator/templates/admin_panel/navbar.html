@@ -4,7 +4,7 @@
     <div class="container-fluid ">
         <!-- Sidebar Toggle and Logo -->
         <div class="d-flex align-items-center">
-            <a class="navbar-brand d-flex align-items-center text-white" href="{% url 'base:home' %}">
+            <a class="navbar-brand d-flex align-items-center text-white" href="{% url 'administrator:home' %}">
                 <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 40px;" class="me-2">
                 <span class="fw-bold">Fruit Cast</span>
             </a>
@@ -12,17 +12,6 @@
         <!-- User Navigation -->
         <nav class="ms-auto bg-green-fc" aria-label="User">
             <ul class="navbar-nav d-flex flex-row align-items-center">
-                <!-- Notifications -->
-                <li class="nav-item me-3">
-                    <a class="nav-link text-light position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#notifPanel" aria-controls="notifPanel">
-                        <i class="bi bi-bell fs-5"></i>
-                        {% if unread_count and unread_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ unread_count }}
-                            </span>
-                        {% endif %}
-                    </a>
-                </li>
 
                 <!-- User Dropdown -->
                 <li class="nav-item dropdown">
