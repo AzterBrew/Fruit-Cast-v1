@@ -101,7 +101,7 @@ Fruit Cast | Plant Record Verification
                                             <span class="badge bg-secondary">{{ rec.pk }}</span>
                                         </td>
                                         <td>
-                                            <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }}</div>
+                                            <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }}</div>,
                                             <div class="text-muted small">{{ rec.transaction.account_id.userinfo_id.firstname }}</div>
                                         </td>
                                         <td>
@@ -206,6 +206,7 @@ Fruit Cast | Plant Record Verification
                     </form>
                 </div>
             </div>
+
             {% else %}
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center py-5">
@@ -219,6 +220,7 @@ Fruit Cast | Plant Record Verification
             {% endif %}
             </div>
         </div>
+       
     </div>
 </div>
 

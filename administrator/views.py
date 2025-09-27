@@ -1019,14 +1019,14 @@ def admin_verifyplantrec(request):
                         municipality = rec.transaction.manual_municipality
                         barangay = rec.transaction.manual_barangay
                     # Calculate average and estimated weight
-                    avg_units = (rec.min_expected_harvest + rec.max_expected_harvest) / 2
-                    est_weight = avg_units * float(rec.commodity_id.average_weight_per_unit_kg)
+                    est_weight = (rec.min_expected_harvest + rec.max_expected_harvest) / 2
+                    # est_weight = avg_units * float(rec.commodity_id.average_weight_per_unit_kg)
                     VerifiedPlantRecord.objects.create(
                         plant_date=rec.plant_date,
                         commodity_id=rec.commodity_id,
                         min_expected_harvest=rec.min_expected_harvest,
                         max_expected_harvest=rec.max_expected_harvest,
-                        average_harvest_units=avg_units,
+                        # average_harvest_units=avg_units,
                         estimated_weight_kg=est_weight,
                         remarks=rec.remarks,
                         municipality=municipality,
