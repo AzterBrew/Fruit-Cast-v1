@@ -16,6 +16,18 @@
             </div>
             <h1 class="h2 text-success fw-bold mb-0">Fruit Cast</h1>
             <p class="text-muted small">Complete your registration</p>
+            
+            <!-- Show the email being used for registration -->
+            {% if reg_email %}
+            <div class="alert alert-info border-0 bg-light-info mb-4">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle text-primary me-2"></i>
+                <small class="text-muted">
+                  Registering with: <strong>{{ reg_email }}</strong>
+                </small>
+              </div>
+            </div>
+            {% endif %}
           </div>
 
           <form method="POST" id="register-form" novalidate>
@@ -51,7 +63,7 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label" for="id_middlename">
-                    <i class="bi bi-person-badge me-1"></i>Middle Name *
+                    <i class="bi bi-person-badge me-1"></i>Middle Name
                   </label>
                   {{ form.middlename }}
                   {% if form.middlename.errors %}
@@ -192,6 +204,17 @@
               <button type="submit" class="btn btn-success btn-lg">
                 <i class="bi bi-check-circle me-2"></i>Complete Registration
               </button>
+            </div>
+
+            <!-- Cancel Registration Section -->
+            <div class="text-center mt-4">
+              <div class="border-top pt-3">
+                {% comment %} <p class="text-muted mb-3">Want to use a different email?</p> {% endcomment %}
+                <a href="{% url 'base:cancel_registration' %}" class="btn btn-outline-danger" 
+                   onclick="return confirm('Are you sure? This will cancel your current registration and you will need to start over.')">
+                  <i class="bi bi-x-circle me-2"></i>Cancel Registration
+                </a>
+              </div>
             </div>
           </form>
         </div>

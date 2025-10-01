@@ -1221,7 +1221,12 @@ def register_step1(request):
                 form.add_error(None, "Something went wrong during registration. Please try again.")
     else:
         form = RegistrationForm()
-    return render(request, 'registration/register_step1.html', {'form': form})
+    
+    context = {
+        'form': form,
+        'reg_email': request.session.get('reg_email')
+    }
+    return render(request, 'registration/register_step1.html', context)
 
 
 def register_step2(request):
@@ -1283,6 +1288,31 @@ def register_step2(request):
         form = RegistrationForm()
 
     return render(request, 'registration/register_step2.html', {'form': form})
+
+
+def cancel_registration(request):
+    """
+    Cancel the current registration process by clearing all registration session data.
+    Redirects user back to the email registration page.
+    """
+    # Clear all registration-related session data
+    session_keys_to_clear = [
+        'reg_email',
+        'reg_password', 
+        'reg_code',
+        'step1_data',
+        'email_verified'
+    ]
+    
+    for key in session_keys_to_clear:
+        if key in request.session:
+            del request.session[key]
+    
+    # Add a success message
+    messages.success(request, 'Registration cancelled successfully. You can now start over with a new email.')
+    
+    # Redirect to the email registration page
+    return redirect('base:home')
 
  
 def custom_login(request):

@@ -16,6 +16,7 @@ urlpatterns = [
     path('register/email/verify/', views.register_verify_code, name='register_verify_code'),
     path('register/step1/', views.register_step1, name='register_step1'),
     path('register/step2/', views.register_step2, name='register_step2'),
+    path('register/cancel/', views.cancel_registration, name='cancel_registration'),
     # path('signup/', register_step1, name='registerauth'),
     path('login/', custom_login, name='login'),
     path('accounts/', include('django.contrib.auth.urls')),

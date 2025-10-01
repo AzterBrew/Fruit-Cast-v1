@@ -84,7 +84,7 @@ class RegistrationForm(forms.ModelForm):
     class Meta:
         model = UserInformation
         fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay_id", "municipality_id", "address_details", "religion", "civil_status", "rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "contact_number"]
-        labels = {"lastname": "Last Name *","firstname": "First Name *", "middlename": "Middle Name *","nameextension": "Name Extension","sex": "Sex *","birthdate": "Date of Birth *","barangay_id": "Barangay *","municipality_id": "Municipality *","address_details": "Address Details *", "religion":"Religion *",  "emergency_contact_person" : "Emergency Contact Person *", "emergency_contact_number" : "Emergency Contact Person's Contact No. *", "contact_number" : "Contact Number *"}
+        labels = {"lastname": "Last Name *","firstname": "First Name *", "middlename": "Middle Name","nameextension": "Name Extension","sex": "Sex *","birthdate": "Date of Birth *","barangay_id": "Barangay *","municipality_id": "Municipality *","address_details": "Address Details *", "religion":"Religion *",  "emergency_contact_person" : "Emergency Contact Person *", "emergency_contact_number" : "Emergency Contact Person's Contact No. *", "contact_number" : "Contact Number *"}
         widgets = {
             'firstname': forms.TextInput(attrs={'class': 'form-control','required': 'required', 'placeholder': 'First Name'}),
             'lastname': forms.TextInput(attrs={'class': 'form-control','required': 'required', 'placeholder': 'Last Name'}),
