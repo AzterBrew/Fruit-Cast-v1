@@ -51,9 +51,6 @@ class VerifiedPlantRecord(models.Model):
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
     prev_record = models.ForeignKey('base.initPlantRecord', on_delete=models.SET_NULL, null=True, blank=True)
 
-# average_harvest_units = (min_expected_harvest + max_expected_harvest) / 2
-# estimated_weight_kg = average_harvest_units * avg_weight_per_unit_kg [avg weight per unit will be on the commodity type table]
-
     def __str__(self):
         return f"{self.commodity_id} ({self.estimated_weight_kg} kg est.) on {self.plant_date}"
 
@@ -124,3 +121,6 @@ class ForecastResult(models.Model):
 # then it would take the data from their input and there is no defined average weight per unit
 
 
+
+# average_harvest_units = (min_expected_harvest + max_expected_harvest) / 2
+# estimated_weight_kg = average_harvest_units * avg_weight_per_unit_kg [avg weight per unit will be on the commodity type table]

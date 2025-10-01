@@ -15,7 +15,7 @@ Fruit Cast | Plant Record Verification
             <!-- Filter Section -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
-                    <h5 class="card-title text-info mb-3">
+                    <h5 class="mb-0">
                         <i class="bi bi-funnel me-2"></i>Filter Records
                     </h5>
                 </div>
@@ -36,7 +36,7 @@ Fruit Cast | Plant Record Verification
                                 </div>
                                 <div class="col-md-4">
                                     <label for="commodity" class="form-label">
-                                        <i class="bi bi-leaf me-1"></i>Commodity
+                                        <i class="bi bi-droplet me-1"></i>Commodity
                                     </label>
                                     <select name="commodity" id="commodity" class="form-select">
                                         <option value="">All Commodities</option>
@@ -88,7 +88,7 @@ Fruit Cast | Plant Record Verification
                                         <th><i class="bi bi-hash me-1"></i>ID</th>
                                         <th><i class="bi bi-person me-1"></i>Farmer</th>
                                         <th><i class="bi bi-calendar me-1"></i>Plant Date</th>
-                                        <th><i class="bi bi-leaf me-1"></i>Commodity</th>
+                                        <th><i class="bi bi-droplet me-1"></i>Commodity</th>
                                         <th><i class="bi bi-geo me-1"></i>Location</th>
                                         <th><i class="bi bi-box me-1"></i>Expected Harvest (kg)</th>
                                         <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
@@ -106,7 +106,7 @@ Fruit Cast | Plant Record Verification
                                             <span class="badge bg-secondary">{{ rec.pk }}</span>
                                         </td>
                                         <td>
-                                            <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }}</div>,
+                                            <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }},</div>
                                             <div class="text-muted small">{{ rec.transaction.account_id.userinfo_id.firstname }}</div>
                                         </td>
                                         <td>

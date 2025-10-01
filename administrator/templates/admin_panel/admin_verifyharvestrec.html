@@ -15,7 +15,7 @@ Fruit Cast | Plant and Harvest Records
             <!-- Filter Section -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
-                    <h5 class="card-title text-white mb-3">
+                    <h5 class="mb-0">
                         <i class="bi bi-funnel me-2"></i>Filter Records
                     </h5>
                 </div>
@@ -36,7 +36,7 @@ Fruit Cast | Plant and Harvest Records
                                 </div>
                                 <div class="col-md-4">
                                     <label for="commodity" class="form-label">
-                                        <i class="bi bi-leaf me-1"></i>Commodity
+                                        <i class="bi bi-droplet me-1"></i>Commodity
                                     </label>
                                     <select name="commodity" id="commodity" class="form-select">
                                         <option value="">All Commodities</option>
@@ -86,8 +86,9 @@ Fruit Cast | Plant and Harvest Records
                                             <input type="checkbox" id="selectAll" class="form-check-input">
                                         </th>
                                         <th><i class="bi bi-hash me-1"></i>ID</th>
+                                        <th><i class="bi bi-person me-1"></i>Farmer</th>
                                         <th><i class="bi bi-calendar3 me-1"></i>Harvest Date</th>
-                                        <th><i class="bi bi-leaf me-1"></i>Commodity</th>
+                                        <th><i class="bi bi-droplet me-1"></i>Commodity</th>
                                         <th><i class="bi bi-geo me-1"></i>Location</th>
                                         <th><i class="bi bi-box me-1"></i>Total Weight (kg)</th>
                                         <th><i class="bi bi-clipboard-data me-1"></i>Unit Weight (kg)</th>
@@ -107,6 +108,10 @@ Fruit Cast | Plant and Harvest Records
                                         </td>
                                         <td>
                                             <span class="fw-medium">{{ rec.harvest_date }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }},</div>
+                                            <div class="text-muted small">{{ rec.transaction.account_id.userinfo_id.firstname }}</div>
                                         </td>
                                         <td>
                                             {% if rec.commodity_id.pk == 1 %}
@@ -135,7 +140,7 @@ Fruit Cast | Plant and Harvest Records
                                         </td>
                                         <td>
                                             {% if rec.remarks %}
-                                                <i class="bi bi-chat-left-quote text-info" data-bs-toggle="tooltip" title="{{ rec.remarks }}"></i>
+                                                <i class="bi bi-chat-left-quote text-success" data-bs-toggle="tooltip" title="{{ rec.remarks }}"></i>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
