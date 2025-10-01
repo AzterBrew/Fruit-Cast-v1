@@ -254,6 +254,12 @@ def forecast(request):
         df['ds'] = pd.to_datetime(df['ds'])
         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
         df = df.groupby('ds', as_index=False)['y'].sum()
+        
+        # Filter out future outlier dates (anything beyond current date + 1 year)
+        current_date = pd.Timestamp.now()
+        max_allowed_date = current_date + pd.DateOffset(years=1)
+        df = df[df['ds'] <= max_allowed_date]
+        print(f"Filtered historical data: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
 
         # Prepare forecast data (from trained model)
         if selected_municipality_id == "14" or selected_municipality_id == 14:
@@ -283,39 +289,47 @@ def forecast(request):
             # and the future forecast period.
             future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
             future = pd.DataFrame({'ds': future_months})
-            forecast = m.predict(future)
             
-            # Create a comprehensive timeline that includes both historical and forecast periods
-            all_dates = pd.date_range(start=df['ds'].min(), end=future_end_date, freq='MS')
+            print(f"Future dataframe: {len(future)} rows, date range: {future['ds'].min()} to {future['ds'].max()}")
             
-            # Create dictionaries for easy lookup
-            hist_dict = dict(zip(df['ds'], df['y']))
-            forecast_dict = dict(zip(forecast['ds'], forecast['yhat']))
-            
-            # Build aligned arrays for Chart.js
-            all_labels = [d.strftime('%b %Y') for d in all_dates]
-            hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
-            forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
-            
-            # Combined data for CSV/table (only future forecasts)
-            future_forecast = forecast[forecast['ds'] > last_historical_date]
-            combined_list = list(zip(
-                future_forecast['ds'].dt.strftime('%b %Y').tolist(),
-                future_forecast['yhat'].round(2).tolist(),
-                future_forecast['ds'].dt.month.tolist(),
-                future_forecast['ds'].dt.year.tolist()
-            ))
+            # Check if future dataframe is empty
+            if len(future) == 0:
+                forecast_data = None
+                print("Error: Future dataframe is empty - cannot generate forecast")
+            else:
+                forecast = m.predict(future)
+                
+                # Create a comprehensive timeline that includes both historical and forecast periods
+                all_dates = pd.date_range(start=df['ds'].min(), end=future_end_date, freq='MS')
+                
+                # Create dictionaries for easy lookup
+                hist_dict = dict(zip(df['ds'], df['y']))
+                forecast_dict = dict(zip(forecast['ds'], forecast['yhat']))
+                
+                # Build aligned arrays for Chart.js
+                all_labels = [d.strftime('%b %Y') for d in all_dates]
+                hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
+                forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
+                
+                # Combined data for CSV/table (only future forecasts)
+                future_forecast = forecast[forecast['ds'] > last_historical_date]
+                combined_list = list(zip(
+                    future_forecast['ds'].dt.strftime('%b %Y').tolist(),
+                    future_forecast['yhat'].round(2).tolist(),
+                    future_forecast['ds'].dt.month.tolist(),
+                    future_forecast['ds'].dt.year.tolist()
+                ))
 
-            print("Historical data points:", sum(1 for v in hist_values if v is not None))
-            print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
-            print("Overlapping timeline created with", len(all_labels), "labels")
+                print("Historical data points:", sum(1 for v in hist_values if v is not None))
+                print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
+                print("Overlapping timeline created with", len(all_labels), "labels")
 
-            forecast_data = {
-                'all_labels': json.dumps(all_labels),
-                'hist_values': json.dumps(hist_values),
-                'forecast_values': json.dumps(forecast_values),
-                'combined': combined_list,
-            }
+                forecast_data = {
+                    'all_labels': json.dumps(all_labels),
+                    'hist_values': json.dumps(hist_values),
+                    'forecast_values': json.dumps(forecast_values),
+                    'combined': combined_list,
+                }
             
     now = datetime.now()
     current_year = now.year
