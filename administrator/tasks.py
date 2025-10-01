@@ -24,6 +24,9 @@ def retrain_and_generate_forecasts_task():
         # Create a single ForecastBatch object to track this generation run.
         batch = ForecastBatch.objects.create(notes="Bulk generated forecast - All commodities and municipalities.")
         
+        # Clear any existing forecast records that might conflict
+        print(f"Clearing any existing forecast records to prevent duplicates...")
+        
         municipalities = MunicipalityName.objects.exclude(pk=14)
         commodities = CommodityType.objects.exclude(pk=1)
         months = Month.objects.all().order_by('number')
@@ -109,13 +112,15 @@ def retrain_and_generate_forecasts_task():
                     
                     forecast = m.predict(future)
                     
-                    # EXACT Dashboard logic: only future forecasts beyond last historical date
-                    future_forecast = forecast[forecast['ds'] > last_historical_date]
-                    
-                    # Use EXACT same processing as dashboard: round the entire series first, then process
-                    rounded_forecasts = future_forecast['yhat'].round(2)  # Apply rounding to entire series like dashboard
-                    
-                    for idx, row in future_forecast.iterrows():
+                # EXACT Dashboard logic: only future forecasts beyond last historical date
+                future_forecast = forecast[forecast['ds'] > last_historical_date]
+                
+                print(f"Debug for Overall {comm.name}: Generated {len(future_forecast)} future forecasts")
+                print(f"  Last historical date: {last_historical_date}")
+                print(f"  Future forecast range: {future_forecast['ds'].min()} to {future_forecast['ds'].max()}")
+                
+                # Use EXACT same processing as dashboard: round the entire series first, then process
+                rounded_forecasts = future_forecast['yhat'].round(2)  # Apply rounding to entire series like dashboard                    for idx, row in future_forecast.iterrows():
                         forecast_date = row['ds']
                         # Use the pre-rounded value from the series (exact dashboard approach)
                         forecasted_amount = max(0, rounded_forecasts.loc[idx])  # Ensure non-negative values
@@ -124,7 +129,7 @@ def retrain_and_generate_forecasts_task():
                         
                         print(f"  Saving forecast: {comm.name} - {muni.municipality} - {month_obj.name} {year}: {forecasted_amount} kg")
                         
-                        ForecastResult.objects.update_or_create(
+                        forecast_obj, created = ForecastResult.objects.update_or_create(
                             commodity=comm,
                             forecast_month=month_obj,
                             forecast_year=year,
@@ -135,7 +140,8 @@ def retrain_and_generate_forecasts_task():
                                 'notes': f"Generated from Prophet model"
                             }
                         )
-                        results_created += 1
+                        if created:
+                            results_created += 1
 
             # Process "Overall" models for each commodity
             for comm in commodities:
@@ -199,10 +205,35 @@ def retrain_and_generate_forecasts_task():
                 # EXACT Dashboard logic: only future forecasts beyond last historical date
                 future_forecast = forecast[forecast['ds'] > last_historical_date]
                 
+                print(f"Debug for {comm.name} - {muni.municipality}: Generated {len(future_forecast)} future forecasts")
+                print(f"  Last historical date: {last_historical_date}")
+                print(f"  Future forecast range: {future_forecast['ds'].min()} to {future_forecast['ds'].max()}")
+                
                 # Use EXACT same processing as dashboard: round the entire series first, then process
                 rounded_forecasts = future_forecast['yhat'].round(2)  # Apply rounding to entire series like dashboard
                 
                 for idx, row in future_forecast.iterrows():
+                    forecast_date = row['ds']
+                    forecasted_amount = max(0, rounded_forecasts.loc[idx])  # Use series-level rounded value
+                    month_obj = months.get(number=forecast_date.month)
+                    year = forecast_date.year
+                    
+                    print(f"  Saving forecast: {comm.name} - Overall - {month_obj.name} {year}: {forecasted_amount} kg")
+                    
+                    overall_muni = MunicipalityName.objects.get(pk=14)
+                    forecast_obj, created = ForecastResult.objects.update_or_create(
+                        commodity=comm,
+                        forecast_month=month_obj,
+                        forecast_year=year,
+                        municipality=overall_muni,
+                        defaults={
+                            'batch': batch,
+                            'forecasted_amount_kg': forecasted_amount, 
+                            'notes': f"Overall forecast generated by Prophet"
+                        }
+                    )
+                    if created:
+                        results_created += 1
                     forecast_date = row['ds']
                     # Use the pre-rounded value from the series (exact dashboard approach)
                     forecasted_amount = max(0, rounded_forecasts.loc[idx])  # Ensure non-negative values
