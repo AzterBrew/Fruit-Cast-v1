@@ -34,9 +34,9 @@ def retrain_and_generate_forecasts_task():
          
         # We need to get all historical data once, for both individual and overall models
         all_records_qs = VerifiedHarvestRecord.objects.filter(
-            commodity_id__in=commodities,
+            commodity__in=commodities,
             municipality__in=municipalities
-        ).values('harvest_date', 'total_weight_kg', 'commodity_id', 'municipality_id').order_by('harvest_date')
+        ).values('harvest_date', 'total_weight_kg', 'commodity__pk', 'municipality__pk').order_by('harvest_date')
         
         all_records_df = pd.DataFrame(list(all_records_qs))
         
@@ -50,8 +50,8 @@ def retrain_and_generate_forecasts_task():
                 for comm in commodities:
                     # Filter the main DataFrame for the specific combination
                     df = all_records_df[
-                        (all_records_df['municipality_id'] == muni.pk) & 
-                        (all_records_df['commodity_id'] == comm.pk)
+                        (all_records_df['municipality__pk'] == muni.pk) & 
+                        (all_records_df['commodity__pk'] == comm.pk)
                     ].copy()
                     
                     if len(df) < 2:
@@ -131,7 +131,7 @@ def retrain_and_generate_forecasts_task():
             # Process "Overall" models for each commodity
             for comm in commodities:
                 # Filter the main DataFrame for the specific commodity across all municipalities
-                df = all_records_df[all_records_df['commodity_id'] == comm.pk].copy()
+                df = all_records_df[all_records_df['commodity__pk'] == comm.pk].copy()
                 
                 if len(df) < 2:
                     print(f"Skipping Overall {comm.name}: not enough data.")
