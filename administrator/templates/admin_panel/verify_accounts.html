@@ -3,122 +3,317 @@
 {% load static %}
 
 {% block title %}
-Fruit Cast | {% block page_title %}{% endblock %}
+Fruit Cast | Farmer Account Verification
 {% endblock title %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-sm rounded-4 p-4 mb-4">
-                {% if user_role_id == 2 or user_role_id == 3 %}
-                <h2 class="text-xl font-bold mb-4">Farmer Accounts{{ account.account_id }}</h2>
+<div class="main-user">
+    <div class="monitor-user-content justify-content-center">
+        <div class="card shadow-sm rounded-4 p-4 mb-3">
+            {% if user_role_id == 2 or user_role_id == 3 %}
 
-                <form method="get" class="mb-3">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-6">
-                            <label for="status" class="form-label mb-0">Filter by Status:</label>
-                            <select name="status" id="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                <option value="">All</option>
-                                {% for status in status_choices %}
-                                    <option value="{{ status.pk }}" {% if current_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
-                                {% endfor %}
-                            </select>
+            <h1 class="mb-4 text-success fw-bold text-center">
+                <i class="bi bi-person-check-fill"></i> Farmer Account Verification
+            </h1>
+            
+            <!-- Filter Section -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>Filter Farmer Accounts
+                    </h5>
+                </div>
+                <div class="card-body bg-light">
+                    <form method="get" id="filterForm">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Filter by Status:</label>
+                                <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                                    <option value="">All Statuses</option>
+                                    {% for status in status_choices %}
+                                        <option value="{{ status.pk }}" {% if current_status == status.pk|stringformat:"s" %}selected{% endif %}>
+                                            {{ status.acc_status }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="municipality" class="form-label">Filter by Municipality:</label>
+                                <select name="municipality" id="municipality" class="form-select" onchange="this.form.submit()">
+                                    <option value="">All Municipalities</option>
+                                    {% for municipality in municipalities %}
+                                        <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
+                                            {{ municipality.municipality }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="municipality" class="form-label mb-0">Filter by Municipality:</label>
-                            <select name="municipality" id="municipality" class="form-select form-select-sm" onchange="this.form.submit()">
-                                <option value="">All</option>
-                                {% for municipality in municipalities %}
-                                    <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
-                                        {{ municipality.municipality }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </form>
-                {% if accounts %}
-                <form method="post" action="">
-                    {% csrf_token %}
-                    <table class="table table-bordered table-hover">
-                        <thead class="table-success">
-                            <tr>
-                                <th>Select</th>
-                                <th>{% sort_header "date" "Date Registered" current_sort current_order current_status %}</th>
-                                <th>{% sort_header "name" "Name" current_sort current_order current_status %}</th>
-                                <th>Email</th>
-                                <th>Contact No.</th>
-                                <th>Location</th>
-                                <th>Account Status</th>
-                                <th>Total Records</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for account in accounts %}
-                            <tr>
-                                <td><input type="checkbox" name="selected_records" value="{{ account.pk }}"></td>
-                                <td>{{ account.account_register_date}}</td>
-                                <td>{{ account.userinfo_id.lastname }}, {{ account.userinfo_id.firstname }} {{ account.userinfo_id.middlename|slice:":1" }}.</td>
-                                <td>{{ account.userinfo_id.user_email }}</td>
-                                <td>{{ account.userinfo_id.contact_number }}</td>
-                                <td>{{ account.userinfo_id.municipality_id.municipality }} - {{account.userinfo_id.barangay_id.barangay}}</td>
-                                {% comment %} SHOULD MAKE A CONDITION WHERE THE SHOWN FARMER ACCOUNTS ARE ONLY MATCHING WITH THEIR ASSIGNED MUNICIPALITY {% endcomment %}
-                                <td>{{ account.acc_status_id.acc_status }}</td>
-                                <td>{{account.record_count}}</td>
-                                {% comment %} <td>{{ account.account_verified_by_id.userinfo_id.lastname }}</td> {% endcomment %}
-                                {% comment %} <td>
-                                    <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}">
-                                        {% csrf_token %}
-                                            <select name="new_status" class="form-select form-select-sm">
-                                                {% for status in status_choices %}
-                                                    <option value="{{ status.pk }}" {% if account.acc_status_id.pk == status.pk %}selected{% endif %}>
-                                                        {{ status.acc_status }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                    </form>
-                                </td> {% endcomment %}
-                                <td>
-                                    {% comment %} change this to an anchor tag {% endcomment %}
-                                    <a href="" class="btn btn-primary btn-sm mt-1">View Details</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="row g-2 align-items-end mt-2">
-                        <div class="col-md-4">
-                            <label for="new_status" class="form-label mb-0">Set selected to:</label>
-                            <select name="new_status" id="new_status" class="form-select form-select-sm" required>
-                                {% for status in status_choices %}
-                                    <option value="{{ status.pk }}">{{ status.acc_status }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-success btn-sm">Update Selected</button>
-                        </div>
-                    </div>
-                </form>
-            {% else %}
-                <p>No accounts found.</p>
-            {% endif %}
-            {%else%}
-                    <p>You do not have permission to view this page.</p>
-            {% endif%}
+                    </form>
+                </div>
             </div>
+
+            <!-- Farmer Accounts Section -->
+            <!-- Farmer Accounts Section -->
+            {% if accounts %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title text-success mb-0">
+                            <i class="bi bi-table me-2"></i>Farmer Account Records
+                        </h5>
+                        <span class="badge bg-warning">{{ accounts|length }} account{{ accounts|length|pluralize }}</span>
+                    </div>
+
+                    <form method="post" action="">
+                        {% csrf_token %}
+
+                        <!-- Responsive Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th scope="col">
+                                            <input type="checkbox" id="selectAll" class="form-check-input">
+                                        </th>
+                                        <th scope="col">{% sort_header "date" "Date Registered" current_sort current_order current_status %}</th>
+                                        <th scope="col">{% sort_header "name" "Farmer Name" current_sort current_order current_status %}</th>
+                                        <th scope="col">Contact Information</th>
+                                        <th scope="col">Location</th>
+                                        <th scope="col">Account Status</th>
+                                        <th scope="col">Total Records</th>
+                                        <th scope="col" class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for account in accounts %}
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="selected_records" value="{{ account.pk }}" class="form-check-input record-checkbox">
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ account.account_register_date|date:"M d, Y" }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                                    {{ account.userinfo_id.firstname|first }}{{ account.userinfo_id.lastname|first }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium">
+                                                        {{ account.userinfo_id.lastname }}, {{ account.userinfo_id.firstname }} 
+                                                        {% if account.userinfo_id.middlename %}{{ account.userinfo_id.middlename|slice:":1" }}.{% endif %}
+                                                    </div>
+                                                    <small class="text-muted">{{ account.userinfo_id.user_email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <small class="text-muted d-block">
+                                                    <i class="bi bi-envelope me-1"></i>{{ account.userinfo_id.user_email }}
+                                                </small>
+                                                <small class="text-muted d-block">
+                                                    <i class="bi bi-telephone me-1"></i>{{ account.userinfo_id.contact_number }}
+                                                </small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <span class="badge bg-info mb-1">{{ account.userinfo_id.municipality_id.municipality }}</span>
+                                                <br>
+                                                <small class="text-muted">{{ account.userinfo_id.barangay_id.barangay }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if account.acc_status_id.acc_status == "Verified" %}
+                                                <span class="badge bg-success">{{ account.acc_status_id.acc_status }}</span>
+                                            {% elif account.acc_status_id.acc_status == "Pending" %}
+                                                <span class="badge bg-warning">{{ account.acc_status_id.acc_status }}</span>
+                                            {% elif account.acc_status_id.acc_status == "Rejected" %}
+                                                <span class="badge bg-danger">{{ account.acc_status_id.acc_status }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ account.acc_status_id.acc_status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-dark">{{ account.record_count }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="#" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="View Account Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <!-- Action Section -->
+                        <div class="card border-success mt-4">
+                            <div class="card-body">
+                                <h6 class="card-title text-success mb-3">
+                                    <i class="bi bi-gear me-2"></i>Bulk Account Actions
+                                </h6>
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-6">
+                                        <label for="new_status" class="form-label">Set selected farmer accounts to:</label>
+                                        <select name="new_status" id="new_status" class="form-select" required>
+                                            <option value="">Select Status</option>
+                                            {% for status in status_choices %}
+                                                <option value="{{ status.pk }}">{{ status.acc_status }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="submit" id="updateBtn" class="btn btn-success" disabled>
+                                            <i class="bi bi-check-circle me-2"></i>Update Selected Accounts
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted mb-3">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-muted">No Farmer Accounts Found</h5>
+                    <p class="text-muted">Try adjusting your filters to see more results.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted mb-3">
+                        <i class="bi bi-shield-x" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-muted">Access Denied</h5>
+                    <p class="text-muted">You do not have permission to view this page.</p>
+                </div>
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </div>
 <script>
-    // Select/Deselect all checkboxes
-    document.getElementById('select-all').addEventListener('change', function() {
-        var checkboxes = document.querySelectorAll('input[name="selected_accounts"]');
-        for (var cb of checkboxes) {
-            cb.checked = this.checked;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Auto-submit form on filter change
+        const municipalitySelect = document.getElementById('municipality');
+        const statusSelect = document.getElementById('status');
+        
+        if (municipalitySelect) {
+            municipalitySelect.addEventListener('change', function() {
+                document.getElementById('filterForm').submit();
+            });
         }
+        
+        if (statusSelect) {
+            statusSelect.addEventListener('change', function() {
+                document.getElementById('filterForm').submit();
+            });
+        }
+
+        // Select All functionality
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+        const updateBtn = document.getElementById('updateBtn');
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                recordCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateButtonState();
+            });
+        }
+
+        // Individual checkbox functionality
+        recordCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectAllState();
+                updateButtonState();
+            });
+        });
+
+        function updateSelectAllState() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = checkedBoxes.length === recordCheckboxes.length;
+                selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < recordCheckboxes.length;
+            }
+        }
+
+        function updateButtonState() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (updateBtn) {
+                updateBtn.disabled = checkedBoxes.length === 0;
+                
+                // Update button text based on selection count
+                const count = checkedBoxes.length;
+                if (count === 0) {
+                    updateBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Update Selected Accounts';
+                } else {
+                    updateBtn.innerHTML = `<i class="bi bi-check-circle me-2"></i>Update ${count} Account${count > 1 ? 's' : ''}`;
+                }
+            }
+        }
+
+        // Form validation for bulk actions
+        const actionForm = document.querySelector('form[method="post"]:not(#filterForm)');
+        if (actionForm) {
+            actionForm.addEventListener('submit', function(e) {
+                const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+                const newStatusSelect = document.getElementById('new_status');
+                
+                if (checkedBoxes.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one farmer account to update.');
+                    return false;
+                }
+                
+                if (!newStatusSelect.value) {
+                    e.preventDefault();
+                    alert('Please select a status to update to.');
+                    return false;
+                }
+                
+                // Confirmation dialog
+                const confirmMessage = `Are you sure you want to update ${checkedBoxes.length} farmer account${checkedBoxes.length > 1 ? 's' : ''} to "${newStatusSelect.selectedOptions[0].text}"?`;
+                if (!confirm(confirmMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        // Initialize button state
+        updateButtonState();
     });
 </script>
 
