@@ -1079,7 +1079,7 @@ def admin_verifyharvestrec(request):
     commodities = CommodityType.objects.all()
     status_choices = AccountStatus.objects.all()
 
-    # Query records
+    # Query records 
     records = initHarvestRecord.objects.all()
     if selected_municipality:
         records = records.filter(

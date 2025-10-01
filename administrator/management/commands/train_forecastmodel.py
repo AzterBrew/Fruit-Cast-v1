@@ -11,7 +11,7 @@ from io import BytesIO
 
 class Command(BaseCommand):
     help = 'Train Prophet models for each municipality and commodity combination'
-
+ 
     def handle(self, *args, **options):
 
         municipalities = MunicipalityName.objects.exclude(pk=14)

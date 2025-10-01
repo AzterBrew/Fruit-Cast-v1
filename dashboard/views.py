@@ -344,13 +344,13 @@ def forecast(request):
                 break
     
     
-    # CHOROPLETH 2D MAP TEST DATA
-    # Set commodity_pk=4, month_pk=9 (September), year=2025
-    commodity_pk = 4
-    month_pk = 9
-    year = 2025
+    # CHOROPLETH 2D MAP DATA
+    # Use the selected parameters from the form instead of hardcoded values
+    map_commodity_id = selected_mapcommodity_id or selected_commodity_id
+    map_month = filter_month
+    map_year = filter_year
     
-    
+    print(f"Map parameters - Commodity: {map_commodity_id}, Month: {map_month}, Year: {map_year}")
 
     geojson_path = os.path.join('static', 'geojson', 'BATAAN_MUNICIPALITY.geojson')
     with open(geojson_path, encoding='utf-8') as f:
@@ -370,72 +370,50 @@ def forecast(request):
         objectids = geojson_name_to_objectids.get(name_key, [])
         muni_id_to_objectids[muni.municipality_id] = objectids
 
-    # Build choropleth data: OBJECTID -> value
-    
-    # initial with predefined values
-    # choropleth_data = {}
-    # for muni_id, value in test_values.items():
-    #     for objectid in muni_id_to_objectids.get(muni_id, []):
-    #         choropleth_data[objectid] = value
-    
-    
-    # # OLD WORKING 2D MAP RETRIEVING DATA FROM FORECASTRESULT MODEL
-    # choropleth_data = {}
-    
-    # if filter_month and filter_year and selected_commodity_id:
-    #     results = ForecastResult.objects.filter(
-    #         commodity_id=selected_commodity_id,
-    #         forecast_month__number=filter_month,
-    #         forecast_year=filter_year
-    #     ).values('municipality__municipality_id').annotate(
-    #         forecasted_kg=Sum('forecasted_amount_kg')
-    #     )
-        
-    #     for res in results:
-    #         choropleth_data[str(res['municipality__municipality_id'])] = round(float(res['forecasted_kg'] or 0),2)
-
-
-    
-    try:
-        # latest_batch = ForecastBatch.objects.latest('generated_at')
-        latest_result = ForecastResult.objects.filter(
-            commodity_id=selected_mapcommodity_id  # or selected_commodity_id
-        ).order_by('-batch__generated_at').first()
-        latest_batch = latest_result.batch if latest_result else None
-    except ForecastBatch.DoesNotExist:
-        latest_batch = None
-    
-    print('LatestBatch : ',latest_batch)
-    
-    # Initialize an empty dictionary for the map data
+    # Initialize choropleth data
     choropleth_data = {}
 
-    # Check if all required filters and a batch exist
-    if latest_batch and selected_mapcommodity_id and filter_month and filter_year:
+    # Try to get forecast data for the map
+    if map_commodity_id and map_month and map_year:
         try:
-            print("latest_batch",latest_batch," and selected_commodity_id and filter_month and filter_year")
-            # Query the database to get the total forecasted amount for each municipality
-            # for the selected batch, commodity, month, and year.
+            # First, try to get data for the selected parameters
             forecast_results = ForecastResult.objects.filter(
-                batch=latest_batch,
-                commodity_id=selected_mapcommodity_id,
-                forecast_month__number=filter_month,
-                forecast_year=filter_year
+                commodity_id=map_commodity_id,
+                forecast_month__number=map_month,
+                forecast_year=map_year
             ).values('municipality_id').annotate(
                 total_forecasted_kg=Sum('forecasted_amount_kg')
             )
             
-            print(f"Map commodity : ", selected_mapcommodity_obj, "\nForecast res : ",forecast_results)
+            print(f"Map commodity: {selected_mapcommodity_obj}")
+            print(f"Forecast results for {map_month}/{map_year}: {forecast_results}")
             
-            # Populate the dictionary for your map
-            for result in forecast_results:
-                muni_id = result['municipality_id']
-                total_kg = result['total_forecasted_kg']
-                # The keys in your map's JavaScript need to be strings
-                choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
+            if forecast_results.exists():
+                # Populate the choropleth data
+                for result in forecast_results:
+                    muni_id = result['municipality_id']
+                    total_kg = result['total_forecasted_kg']
+                    choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
+            else:
+                # If no data for selected year/month, try to get any available data for the commodity
+                print(f"No data for {map_month}/{map_year}, trying to get any available data for commodity {map_commodity_id}")
+                
+                fallback_results = ForecastResult.objects.filter(
+                    commodity_id=map_commodity_id
+                ).values('municipality_id').annotate(
+                    total_forecasted_kg=Sum('forecasted_amount_kg')
+                )
+                
+                if fallback_results.exists():
+                    print(f"Found fallback data: {fallback_results}")
+                    for result in fallback_results:
+                        muni_id = result['municipality_id']
+                        total_kg = result['total_forecasted_kg']
+                        choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
+                else:
+                    print(f"No forecast data available for commodity {map_commodity_id}")
                 
         except Exception as e:
-            # Log any errors and return an empty dictionary to prevent the view from crashing
             print(f"Error fetching choropleth data: {e}")
             choropleth_data = {}
 

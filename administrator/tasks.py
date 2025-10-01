@@ -31,7 +31,7 @@ def retrain_and_generate_forecasts_task():
         print("Starting model training and forecast generation...")
         
         results_created = 0
-        
+         
         # We need to get all historical data once, for both individual and overall models
         all_records_qs = VerifiedHarvestRecord.objects.filter(
             commodity_id__in=commodities,
