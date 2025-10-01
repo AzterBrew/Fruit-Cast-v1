@@ -24,41 +24,23 @@ class Command(BaseCommand):
                     commodity_id=comm
                 ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
 
-                # Create minimal data if not enough records exist (to match dashboard behavior)
                 if qs.count() < 2:
-                    self.stdout.write(f"Creating synthetic data for {muni} - {comm}: insufficient historical data")
-                    # Create minimal synthetic data to enable forecasting
-                    from datetime import datetime
-                    from dateutil.relativedelta import relativedelta
-                    today = datetime.today()
-                    synthetic_data = [
-                        {'harvest_date': today - relativedelta(months=2), 'total_weight_kg': 1.0},
-                        {'harvest_date': today - relativedelta(months=1), 'total_weight_kg': 1.0}
-                    ]
-                    df = pd.DataFrame(list(qs) + synthetic_data)
-                else:
-                    df = pd.DataFrame(list(qs))
+                    self.stdout.write(f"Not enough data for {muni} - {comm}")
+                    continue
 
+                df = pd.DataFrame(list(qs))
                 if df.empty:
                     self.stdout.write(f"No data for {muni} - {comm}")
                     continue
-                df['ds'] = pd.to_datetime(df['harvest_date'])
-                df['y'] = df['total_weight_kg'].astype(float)
-                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                df['ds'] = df['ds'].dt.to_timestamp()
+                    
+                # Use Dashboard approach - simpler, more conservative data preparation
+                df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+                df['ds'] = pd.to_datetime(df['ds'])
+                df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+                df = df.groupby('ds', as_index=False)['y'].sum()
 
-                # Remove outliers (5th and 95th percentiles)
-                if len(df) >= 4:
-                    q_low = df['y'].quantile(0.05)
-                    q_high = df['y'].quantile(0.95)
-                    df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
-
-                # Smooth data (rolling mean)
-                df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
-
-                # More permissive check - even 1 data point can work with Prophet
-                if df['y'].notna().sum() < 1:
-                    self.stdout.write(f"Skipping: {comm.name}, {muni.municipality} (no valid data after cleaning)")
+                if len(df) < 2:
+                    self.stdout.write(f"Insufficient data after grouping for {muni} - {comm}")
                     continue
 
                 # Prophet model with tuned parameters
@@ -96,44 +78,23 @@ class Command(BaseCommand):
                 commodity_id=comm
             ).exclude(municipality_id=14).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
 
-            # Create minimal data if not enough records exist (to match dashboard behavior)
             if qs.count() < 2:
-                self.stdout.write(f"Creating synthetic data for Overall {comm}: insufficient historical data")
-                # Create minimal synthetic data to enable forecasting
-                from datetime import datetime
-                from dateutil.relativedelta import relativedelta
-                today = datetime.today()
-                synthetic_data = [
-                    {'harvest_date': today - relativedelta(months=2), 'total_weight_kg': 1.0},
-                    {'harvest_date': today - relativedelta(months=1), 'total_weight_kg': 1.0}
-                ]
-                df = pd.DataFrame(list(qs) + synthetic_data)
-            else:
-                df = pd.DataFrame(list(qs))
+                self.stdout.write(f"Not enough overall data for {comm}")
+                continue
 
+            df = pd.DataFrame(list(qs))
             if df.empty:
                 self.stdout.write(f"No overall data for {comm}")
                 continue
 
-            df['ds'] = pd.to_datetime(df['harvest_date'])
-            df['y'] = df['total_weight_kg'].astype(float)
-            
-            # Group by month and sum across all municipalities
-            df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-            df['ds'] = df['ds'].dt.to_timestamp()
+            # Use Dashboard approach - simpler data preparation
+            df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+            df['ds'] = pd.to_datetime(df['ds'])
+            df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+            df = df.groupby('ds', as_index=False)['y'].sum()
 
-            # Remove outliers (5th and 95th percentiles)
-            if len(df) >= 4:
-                q_low = df['y'].quantile(0.05)
-                q_high = df['y'].quantile(0.95)
-                df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
-
-            # Smooth data (rolling mean)
-            df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
-
-            # More permissive check - even 1 data point can work with Prophet
-            if df['y'].notna().sum() < 1:
-                self.stdout.write(f"Skipping: {comm.name} Overall (no valid data after cleaning)")
+            if len(df) < 2:
+                self.stdout.write(f"Insufficient overall data after grouping for {comm}")
                 continue
 
             # Prophet model with tuned parameters

@@ -381,7 +381,7 @@ def forecast(request):
                 commodity_id=map_commodity_id,
                 forecast_month__number=map_month,
                 forecast_year=map_year
-            ).values('municipality_id').annotate(
+            ).exclude(municipality_id=14).values('municipality_id').annotate(  # Exclude "Overall" for individual maps
                 total_forecasted_kg=Sum('forecasted_amount_kg')
             )
             
@@ -395,23 +395,24 @@ def forecast(request):
                     total_kg = result['total_forecasted_kg']
                     choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
             else:
-                # If no data for selected year/month, try to get any available data for the commodity
-                print(f"No data for {map_month}/{map_year}, trying to get any available data for commodity {map_commodity_id}")
+                # If no specific data, try to get "Overall" forecast and distribute it
+                overall_forecast = ForecastResult.objects.filter(
+                    commodity_id=map_commodity_id,
+                    forecast_month__number=map_month,
+                    forecast_year=map_year,
+                    municipality_id=14  # "Overall" municipality
+                ).first()
                 
-                fallback_results = ForecastResult.objects.filter(
-                    commodity_id=map_commodity_id
-                ).values('municipality_id').annotate(
-                    total_forecasted_kg=Sum('forecasted_amount_kg')
-                )
-                
-                if fallback_results.exists():
-                    print(f"Found fallback data: {fallback_results}")
-                    for result in fallback_results:
-                        muni_id = result['municipality_id']
-                        total_kg = result['total_forecasted_kg']
-                        choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
+                if overall_forecast:
+                    print(f"Using overall forecast: {overall_forecast.forecasted_amount_kg} kg")
+                    # Distribute overall forecast among all municipalities equally
+                    num_munis = len(muni_id_to_objectids)
+                    if num_munis > 0:
+                        avg_per_muni = overall_forecast.forecasted_amount_kg / num_munis
+                        for muni_id in muni_id_to_objectids.keys():
+                            choropleth_data[str(muni_id)] = round(float(avg_per_muni), 2)
                 else:
-                    print(f"No forecast data available for commodity {map_commodity_id}")
+                    print(f"No forecast data available for commodity {map_commodity_id}, {map_month}/{map_year}")
                 
         except Exception as e:
             print(f"Error fetching choropleth data: {e}")

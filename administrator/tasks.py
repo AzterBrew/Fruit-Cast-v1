@@ -54,33 +54,18 @@ def retrain_and_generate_forecasts_task():
                         (all_records_df['commodity_id'] == comm.pk)
                     ].copy()
                     
-                    # Create minimal data if not enough records exist (to match dashboard behavior)
                     if len(df) < 2:
-                        print(f"Creating synthetic data for {comm.name} - {muni.municipality}: insufficient historical data.")
-                        # Create minimal synthetic data to enable forecasting (like dashboard does)
-                        today = datetime.today()
-                        synthetic_data = pd.DataFrame({
-                            'harvest_date': [today - relativedelta(months=2), today - relativedelta(months=1)],
-                            'total_weight_kg': [1.0, 1.0]  # Minimal values
-                        })
-                        df = pd.concat([df, synthetic_data], ignore_index=True)
+                        print(f"Skipping {comm.name} - {muni.municipality}: not enough data.")
+                        continue
                     
-                    # Group and clean the data for Prophet (same as dashboard)
-                    df['ds'] = pd.to_datetime(df['harvest_date'])
-                    df['y'] = df['total_weight_kg'].astype(float)
-                    df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                    df['ds'] = df['ds'].dt.to_timestamp()
+                    # Use Dashboard approach - simpler, more conservative data preparation
+                    df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+                    df['ds'] = pd.to_datetime(df['ds'])
+                    df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+                    df = df.groupby('ds', as_index=False)['y'].sum()
                     
-                    # Apply lighter data cleaning (more permissive than before)
-                    if len(df) >= 4:
-                        q_low = df['y'].quantile(0.05)
-                        q_high = df['y'].quantile(0.95)
-                        df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
-                    df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
-                    
-                    # More permissive check (even 1 data point can work with Prophet)
-                    if df['y'].notna().sum() < 1:
-                        print(f"Skipping {comm.name} - {muni.municipality}: no valid data after cleaning.")
+                    if len(df) < 2:
+                        print(f"Skipping {comm.name} - {muni.municipality}: insufficient data after grouping.")
                         continue
                         
                     # Train model
@@ -102,61 +87,47 @@ def retrain_and_generate_forecasts_task():
                     # Save the model directly to DigitalOcean Spaces
                     default_storage.save(bucket_path, buffer)
                     
-                    # Generate forecast
-                    future = m.make_future_dataframe(periods=12, freq='MS') # Changed to 'MS' for month start
+                    # Generate forecast using Dashboard approach
+                    future = m.make_future_dataframe(periods=12, freq='MS')
                     forecast = m.predict(future)
                     
-                    today = datetime.today().replace(day=1)
+                    # Get only future forecasts (like dashboard does)
+                    last_historical_date = df['ds'].max()
+                    future_forecast = forecast[forecast['ds'] > last_historical_date]
                     
-                    for _, row in forecast.iterrows():
+                    for _, row in future_forecast.iterrows():
                         forecast_date = row['ds']
-                        if forecast_date >= today:
-                            forecasted_amount = max(0, row['yhat'])
-                            month_obj = months.get(number=forecast_date.month)
-                            year = forecast_date.year
-                            
-                            ForecastResult.objects.update_or_create(
-                                batch=batch,
-                                commodity=comm,
-                                forecast_month=month_obj,
-                                forecast_year=year,
-                                municipality=muni,
-                                defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Generated from Prophet model"}
-                            )
-                            results_created += 1
+                        forecasted_amount = max(0, row['yhat'])  # Ensure non-negative values
+                        month_obj = months.get(number=forecast_date.month)
+                        year = forecast_date.year
+                        
+                        ForecastResult.objects.update_or_create(
+                            batch=batch,
+                            commodity=comm,
+                            forecast_month=month_obj,
+                            forecast_year=year,
+                            municipality=muni,
+                            defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Generated from Prophet model"}
+                        )
+                        results_created += 1
 
             # Process "Overall" models for each commodity
             for comm in commodities:
                 # Filter the main DataFrame for the specific commodity across all municipalities
                 df = all_records_df[all_records_df['commodity_id'] == comm.pk].copy()
                 
-                # Create minimal data if not enough records exist (to match dashboard behavior)
                 if len(df) < 2:
-                    print(f"Creating synthetic data for Overall {comm.name}: insufficient historical data.")
-                    # Create minimal synthetic data to enable forecasting
-                    today = datetime.today()
-                    synthetic_data = pd.DataFrame({
-                        'harvest_date': [today - relativedelta(months=2), today - relativedelta(months=1)],
-                        'total_weight_kg': [1.0, 1.0]  # Minimal values
-                    })
-                    df = pd.concat([df, synthetic_data], ignore_index=True)
+                    print(f"Skipping Overall {comm.name}: not enough data.")
+                    continue
                 
-                # Group by month and sum across all municipalities
-                df['ds'] = pd.to_datetime(df['harvest_date'])
-                df['y'] = df['total_weight_kg'].astype(float)
-                df = df.groupby(df['ds'].dt.to_period('M'))['y'].sum().reset_index()
-                df['ds'] = df['ds'].dt.to_timestamp()
+                # Use Dashboard approach - simpler data preparation
+                df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+                df['ds'] = pd.to_datetime(df['ds'])
+                df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+                df = df.groupby('ds', as_index=False)['y'].sum()
 
-                # Apply lighter data cleaning (more permissive than before)
-                if len(df) >= 4:
-                    q_low = df['y'].quantile(0.05)
-                    q_high = df['y'].quantile(0.95)
-                    df = df[(df['y'] >= q_low) & (df['y'] <= q_high)]
-                df['y'] = df['y'].rolling(window=2, min_periods=1).mean()
-
-                # More permissive check
-                if df['y'].notna().sum() < 1:
-                    print(f"Skipping Overall {comm.name}: no valid data after cleaning.")
+                if len(df) < 2:
+                    print(f"Skipping Overall {comm.name}: insufficient data after grouping.")
                     continue
                 
                 # Train model
@@ -177,129 +148,32 @@ def retrain_and_generate_forecasts_task():
                 # Save the model directly to DigitalOcean Spaces
                 default_storage.save(bucket_path, buffer)
 
-                # Generate forecast
-                future = m.make_future_dataframe(periods=12, freq='MS') # Changed to 'MS' for month start
+                # Generate forecast using Dashboard approach
+                future = m.make_future_dataframe(periods=12, freq='MS')
                 forecast = m.predict(future)
                 
-                today = datetime.today().replace(day=1)
+                # Get only future forecasts (like dashboard does)
+                last_historical_date = df['ds'].max()
+                future_forecast = forecast[forecast['ds'] > last_historical_date]
                 
-                for _, row in forecast.iterrows():
+                for _, row in future_forecast.iterrows():
                     forecast_date = row['ds']
-                    if forecast_date >= today:
-                        forecasted_amount = max(0, row['yhat'])
-                        month_obj = months.get(number=forecast_date.month)
-                        year = forecast_date.year
-                        
-                        overall_muni = MunicipalityName.objects.get(pk=14)
-                        ForecastResult.objects.update_or_create(
-                            batch=batch,
-                            commodity=comm,
-                            forecast_month=month_obj,
-                            forecast_year=year,
-                            municipality=overall_muni,
-                            defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Overall forecast generated by Prophet"}
-                        )
-                        results_created += 1
+                    forecasted_amount = max(0, row['yhat'])  # Ensure non-negative values
+                    month_obj = months.get(number=forecast_date.month)
+                    year = forecast_date.year
+                    
+                    overall_muni = MunicipalityName.objects.get(pk=14)
+                    ForecastResult.objects.update_or_create(
+                        batch=batch,
+                        commodity=comm,
+                        forecast_month=month_obj,
+                        forecast_year=year,
+                        municipality=overall_muni,
+                        defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Overall forecast generated by Prophet"}
+                    )
+                    results_created += 1
 
         print(f"Successfully generated {results_created} forecast records in batch {batch.batch_id}.")
-        
-        # ADDITIONAL: Generate forecasts for ALL missing combinations using fallback logic
-        print("Generating forecasts for missing municipality-commodity combinations...")
-        
-        # Get all possible combinations
-        all_munis = list(municipalities) + [MunicipalityName.objects.get(pk=14)]  # Include "Overall"
-        all_combinations = []
-        for muni in all_munis:
-            for comm in commodities:
-                all_combinations.append((muni, comm))
-        
-        # Check which combinations are missing from the current batch
-        existing_combinations = set(
-            ForecastResult.objects.filter(batch=batch)
-            .values_list('municipality_id', 'commodity_id')
-        )
-        
-        missing_combinations = [
-            (muni, comm) for muni, comm in all_combinations 
-            if (muni.pk, comm.pk) not in existing_combinations
-        ]
-        
-        print(f"Found {len(missing_combinations)} missing combinations. Generating fallback forecasts...")
-        
-        # Generate fallback forecasts for missing combinations
-        for muni, comm in missing_combinations:
-            try:
-                # Use overall model if individual model doesn't exist
-                individual_model_path = f"prophet_models/prophet_{comm.commodity_id}_{muni.municipality_id}.joblib"
-                overall_model_path = f"prophet_models/prophet_{comm.commodity_id}_14.joblib"
-                
-                model_path = None
-                if default_storage.exists(individual_model_path):
-                    model_path = individual_model_path
-                elif default_storage.exists(overall_model_path):
-                    model_path = overall_model_path
-                
-                if model_path:
-                    # Load the model and generate forecasts
-                    with default_storage.open(model_path, 'rb') as f:
-                        m = joblib.load(f)
-                    
-                    # Generate forecast
-                    future = m.make_future_dataframe(periods=12, freq='MS')
-                    forecast = m.predict(future)
-                    
-                    today = datetime.today().replace(day=1)
-                    
-                    for _, row in forecast.iterrows():
-                        forecast_date = row['ds']
-                        if forecast_date >= today:
-                            forecasted_amount = max(0, row['yhat'])
-                            month_obj = months.get(number=forecast_date.month)
-                            year = forecast_date.year
-                            
-                            ForecastResult.objects.update_or_create(
-                                batch=batch,
-                                commodity=comm,
-                                forecast_month=month_obj,
-                                forecast_year=year,
-                                municipality=muni,
-                                defaults={
-                                    'forecasted_amount_kg': forecasted_amount, 
-                                    'notes': f"Fallback forecast using {'individual' if 'individual' in model_path else 'overall'} model"
-                                }
-                            )
-                            results_created += 1
-                else:
-                    # Create minimal forecasts with default values
-                    print(f"No model available for {muni.municipality} - {comm.name}. Creating minimal forecasts.")
-                    today = datetime.today().replace(day=1)
-                    
-                    for i in range(12):  # 12 months ahead
-                        forecast_date = today + relativedelta(months=i)
-                        month_obj = months.get(number=forecast_date.month)
-                        year = forecast_date.year
-                        
-                        # Use a minimal forecast value (could be based on average, seasonal data, etc.)
-                        minimal_forecast = 1.0  # Adjust this based on your business logic
-                        
-                        ForecastResult.objects.update_or_create(
-                            batch=batch,
-                            commodity=comm,
-                            forecast_month=month_obj,
-                            forecast_year=year,
-                            municipality=muni,
-                            defaults={
-                                'forecasted_amount_kg': minimal_forecast, 
-                                'notes': f"Minimal forecast (no model/data available)"
-                            }
-                        )
-                        results_created += 1
-                        
-            except Exception as e:
-                print(f"Error generating fallback forecast for {muni.municipality} - {comm.name}: {e}")
-                continue
-        
-        print(f"Final total: {results_created} forecast records generated in batch {batch.batch_id}.")
         return True
 
     except Exception as e:
