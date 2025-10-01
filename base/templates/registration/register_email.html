@@ -24,7 +24,7 @@
               <label class="form-label" for="id_email">
                 <i class="bi bi-envelope me-2"></i>Email Address *
               </label>
-              <input type="email" class="form-control form-control-lg" id="id_email" name="email" placeholder="Enter your email" required>
+              <input type="email" class="form-control form-control-md" id="id_email" name="email" placeholder="Enter your email" required>
               {% if email_error %}
                 <div class="text-danger small mt-1">
                   <i class="bi bi-exclamation-circle me-1"></i>{{ email_error }}
@@ -36,14 +36,14 @@
               <label class="form-label" for="id_password">
                 <i class="bi bi-lock me-2"></i>Password *
               </label>
-              <input type="password" class="form-control form-control-lg" id="id_password" name="password" placeholder="Create a password" required>
+              <input type="password" class="form-control form-control-md" id="id_password" name="password" placeholder="Create a password" required>
             </div>
 
             <div class="mb-3">
               <label class="form-label" for="id_confirm_password">
                 <i class="bi bi-lock-fill me-2"></i>Confirm Password *
               </label>
-              <input type="password" class="form-control form-control-lg" id="id_confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+              <input type="password" class="form-control form-control-md" id="id_confirm_password" name="confirm_password" placeholder="Confirm your password" required>
               {% if password_error %}
                 <div class="text-danger small mt-1">
                   <i class="bi bi-exclamation-circle me-1"></i>{{ password_error }}
@@ -52,7 +52,7 @@
             </div>
 
             <div class="d-grid gap-2 mt-4">
-              <button type="submit" class="btn btn-success btn-lg">
+              <button type="submit" class="btn btn-success btn-md">
                 <i class="bi bi-envelope-check me-2"></i>Send Verification Code
               </button>
             </div>

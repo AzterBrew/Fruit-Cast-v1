@@ -171,7 +171,7 @@ def forecast(request):
     selected_commodity_id = None
     selected_municipality_id = None
     selected_mapcommodity_id = None
-
+ 
     if request.GET.get('mapcommodity_id'):
         selected_mapcommodity_id = request.GET.get('mapcommodity_id')
         selected_mapcommodity_obj = CommodityType.objects.get(pk=selected_mapcommodity_id)
