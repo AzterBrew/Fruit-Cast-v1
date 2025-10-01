@@ -33,11 +33,12 @@ def retrain_and_generate_forecasts_task():
         results_created = 0
          
         # We need to get all historical data once, for both individual and overall models
-        # The corrected queryset in your Celery task
         all_records_qs = VerifiedHarvestRecord.objects.filter(
             commodity_id__in=commodities,
-            municipality_id__in=municipalities
-        ).values('harvest_date', 'total_weight_kg', 'commodity_id__pk', 'municipality_id__pk').order_by('harvest_date')
+            municipality__in=municipalities
+        ).values('harvest_date', 'total_weight_kg', 'commodity_id', 'municipality_id').order_by('harvest_date')
+        
+        all_records_df = pd.DataFrame(list(all_records_qs))
         
         # Directory to save models (optional but good practice to keep them)
         # model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
@@ -49,10 +50,9 @@ def retrain_and_generate_forecasts_task():
                 for comm in commodities:
                     # Filter the main DataFrame for the specific combination
                     df = all_records_df[
-                        (all_records_df['municipality_id__pk'] == muni.pk) & 
-                        (all_records_df['commodity_id__pk'] == comm.pk)
+                        (all_records_df['municipality_id'] == muni.pk) & 
+                        (all_records_df['commodity_id'] == comm.pk)
                     ].copy()
-
                     
                     if len(df) < 2:
                         print(f"Skipping {comm.name} - {muni.municipality}: not enough data.")
@@ -109,30 +109,38 @@ def retrain_and_generate_forecasts_task():
                     
                     forecast = m.predict(future)
                     
-                    # Get only future forecasts (beyond last historical date) - EXACT MATCH
+                    # EXACT Dashboard logic: only future forecasts beyond last historical date
                     future_forecast = forecast[forecast['ds'] > last_historical_date]
                     
-                    for _, row in future_forecast.iterrows():
+                    # Use EXACT same processing as dashboard: round the entire series first, then process
+                    rounded_forecasts = future_forecast['yhat'].round(2)  # Apply rounding to entire series like dashboard
+                    
+                    for idx, row in future_forecast.iterrows():
                         forecast_date = row['ds']
-                        forecasted_amount = max(0, row['yhat'])  # Ensure non-negative values
+                        # Use the pre-rounded value from the series (exact dashboard approach)
+                        forecasted_amount = max(0, rounded_forecasts.loc[idx])  # Ensure non-negative values
                         month_obj = months.get(number=forecast_date.month)
                         year = forecast_date.year
                         
+                        print(f"  Saving forecast: {comm.name} - {muni.municipality} - {month_obj.name} {year}: {forecasted_amount} kg")
+                        
                         ForecastResult.objects.update_or_create(
-                            batch=batch,
                             commodity=comm,
                             forecast_month=month_obj,
                             forecast_year=year,
                             municipality=muni,
-                            defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Generated from Prophet model"}
+                            defaults={
+                                'batch': batch,
+                                'forecasted_amount_kg': forecasted_amount, 
+                                'notes': f"Generated from Prophet model"
+                            }
                         )
                         results_created += 1
 
             # Process "Overall" models for each commodity
             for comm in commodities:
                 # Filter the main DataFrame for the specific commodity across all municipalities
-                df = all_records_df[all_records_df['commodity_id__pk'] == comm.pk].copy()
-
+                df = all_records_df[all_records_df['commodity_id'] == comm.pk].copy()
                 
                 if len(df) < 2:
                     print(f"Skipping Overall {comm.name}: not enough data.")
@@ -188,23 +196,32 @@ def retrain_and_generate_forecasts_task():
                 
                 forecast = m.predict(future)
                 
-                # Get only future forecasts (beyond last historical date) - EXACT MATCH
+                # EXACT Dashboard logic: only future forecasts beyond last historical date
                 future_forecast = forecast[forecast['ds'] > last_historical_date]
                 
-                for _, row in future_forecast.iterrows():
+                # Use EXACT same processing as dashboard: round the entire series first, then process
+                rounded_forecasts = future_forecast['yhat'].round(2)  # Apply rounding to entire series like dashboard
+                
+                for idx, row in future_forecast.iterrows():
                     forecast_date = row['ds']
-                    forecasted_amount = max(0, row['yhat'])  # Ensure non-negative values
+                    # Use the pre-rounded value from the series (exact dashboard approach)
+                    forecasted_amount = max(0, rounded_forecasts.loc[idx])  # Ensure non-negative values
                     month_obj = months.get(number=forecast_date.month)
                     year = forecast_date.year
                     
+                    print(f"  Saving Overall forecast: {comm.name} - Overall - {month_obj.name} {year}: {forecasted_amount} kg")
+                    
                     overall_muni = MunicipalityName.objects.get(pk=14)
                     ForecastResult.objects.update_or_create(
-                        batch=batch,
                         commodity=comm,
                         forecast_month=month_obj,
                         forecast_year=year,
                         municipality=overall_muni,
-                        defaults={'forecasted_amount_kg': forecasted_amount, 'notes': f"Overall forecast generated by Prophet"}
+                        defaults={
+                            'batch': batch,
+                            'forecasted_amount_kg': forecasted_amount, 
+                            'notes': f"Overall forecast generated by Prophet"
+                        }
                     )
                     results_created += 1
 

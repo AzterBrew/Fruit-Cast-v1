@@ -390,23 +390,21 @@ def forecast(request):
     # Try to get forecast data for the map
     if map_commodity_id and map_month and map_year:
         try:
-            # First, try to get data for the selected parameters
+            # First, try to get data for the selected parameters (no aggregation needed if unique records)
             forecast_results = ForecastResult.objects.filter(
                 commodity_id=map_commodity_id,
                 forecast_month__number=map_month,
                 forecast_year=map_year
-            ).exclude(municipality_id=14).values('municipality_id').annotate(  # Exclude "Overall" for individual maps
-                total_forecasted_kg=Sum('forecasted_amount_kg')
-            )
+            ).exclude(municipality_id=14).select_related('municipality')  # Exclude "Overall" for individual maps
             
             print(f"Map commodity: {selected_mapcommodity_obj}")
             print(f"Forecast results for {map_month}/{map_year}: {forecast_results}")
             
             if forecast_results.exists():
-                # Populate the choropleth data
+                # Populate the choropleth data - use individual records (should be unique per municipality)
                 for result in forecast_results:
-                    muni_id = result['municipality_id']
-                    total_kg = result['total_forecasted_kg']
+                    muni_id = result.municipality_id
+                    total_kg = result.forecasted_amount_kg
                     choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
             else:
                 # If no specific data, try to get "Overall" forecast and distribute it
