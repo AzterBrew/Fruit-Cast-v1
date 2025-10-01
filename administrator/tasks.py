@@ -33,12 +33,11 @@ def retrain_and_generate_forecasts_task():
         results_created = 0
          
         # We need to get all historical data once, for both individual and overall models
+        # The corrected queryset in your Celery task
         all_records_qs = VerifiedHarvestRecord.objects.filter(
-            commodity__in=commodities,
-            municipality__in=municipalities
-        ).values('harvest_date', 'total_weight_kg', 'commodity__pk', 'municipality__pk').order_by('harvest_date')
-        
-        all_records_df = pd.DataFrame(list(all_records_qs))
+            commodity_id__in=commodities,
+            municipality_id__in=municipalities
+        ).values('harvest_date', 'total_weight_kg', 'commodity_id__pk', 'municipality_id__pk').order_by('harvest_date')
         
         # Directory to save models (optional but good practice to keep them)
         # model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
@@ -50,9 +49,10 @@ def retrain_and_generate_forecasts_task():
                 for comm in commodities:
                     # Filter the main DataFrame for the specific combination
                     df = all_records_df[
-                        (all_records_df['municipality__pk'] == muni.pk) & 
-                        (all_records_df['commodity__pk'] == comm.pk)
+                        (all_records_df['municipality_id__pk'] == muni.pk) & 
+                        (all_records_df['commodity_id__pk'] == comm.pk)
                     ].copy()
+
                     
                     if len(df) < 2:
                         print(f"Skipping {comm.name} - {muni.municipality}: not enough data.")
@@ -131,7 +131,8 @@ def retrain_and_generate_forecasts_task():
             # Process "Overall" models for each commodity
             for comm in commodities:
                 # Filter the main DataFrame for the specific commodity across all municipalities
-                df = all_records_df[all_records_df['commodity__pk'] == comm.pk].copy()
+                df = all_records_df[all_records_df['commodity_id__pk'] == comm.pk].copy()
+
                 
                 if len(df) < 2:
                     print(f"Skipping Overall {comm.name}: not enough data.")
