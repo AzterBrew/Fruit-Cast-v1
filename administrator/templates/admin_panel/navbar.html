@@ -20,7 +20,13 @@
                         <span class="d-none d-md-inline">
                             Hi, 
                             {% if user_firstname %}
-                                {{ user_firstname }}
+                                {% if user_role_id == 2 %}
+                                    Administrator {{ user_firstname }}
+                                {% elif user_role_id == 3 %}
+                                    Agriculturist {{ user_firstname }}
+                                {% else %}
+                                    User {{ user_firstname }}
+                                {% endif %}
                             {% else %}
                                 {% if user_role_id == 1 %}
                                     Farmer
