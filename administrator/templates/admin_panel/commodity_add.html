@@ -40,12 +40,9 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                             <div class="col-md-4">
                                 <label class="form-label">
                                     <i class="bi bi-clock me-1"></i>Years to Mature
+                                    <small class="text-muted d-block">(If only in months, calculate with: [no. of months / 12])</small>
                                 </label>
                                 {{ form.years_to_mature }}
-                                <div class="form-text">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Note: If only in months, calculate with: [no. of months / 12]
-                                </div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">

@@ -2,130 +2,193 @@
 {% load static %}
 
 {% block title %}
-Fruit Cast | {% block page_title %}{% endblock %}
+Fruit Cast | Create Administrator/Agriculturist Account
 {% endblock title %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-sm rounded-4 p-4 mb-4">
-        {% if user_role_id == 2 and user.is_superuser %}
-        {% comment %} restricting view to non admins {% endcomment %}
-        <h2 class="text-center mb-4">Create Administrator/Agriculturist Account</h2>
+<div class="main-user">
+    <div class="monitor-user-content justify-content-center">
+        <div class="card shadow-sm rounded-4 p-4 mb-3" style="max-width: 900px; margin: 0 auto;">
+            <h1 class="mb-4 text-success fw-bold text-center">
+                <i class="bi bi-person-plus"></i>
+                Create Administrator/Agriculturist Account
+            </h1>
 
-        <form method="POST" action="{% url 'administrator:assign_account' %}">
-          {% if form.errors %}
-            <div class="alert alert-danger">
-              <strong>Error!</strong> Please correct the errors below.
-            </div>
-            {% endif %}
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-
-            <div class="mb-3">
-                <label for="{{ form.email.id_for_label }}">Email</label>
-                {{ form.email }}
-                {{ form.email.errors }}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.first_name.id_for_label }}">First Name</label>
-                {{ form.first_name }}
-                {{ form.first_name.errors }}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.middle_name.id_for_label }}">Middle Name</label>
-                {{ form.middle_name }}
-                {{ form.middle_name.errors }}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
-                {{ form.last_name }}
-                {{ form.last_name.errors }}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.sex.id_for_label }}">Sex</label>
-                <div>
-                    {% for radio in form.sex %}
-                    <div class="form-check form-check-inline">
-                        {{ radio.tag }}
-                        <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+            {% if user_role_id == 2 and user.is_superuser %}
+                <!-- Account Creation Form Section -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-badge me-2"></i>Account Information
+                        </h5>
                     </div>
+                    <div class="card-body bg-light">
+                        <form method="POST" action="{% url 'administrator:assign_account' %}">
+                            {% csrf_token %}
+                            
+                            <!-- Error Display -->
+                            {% if form.errors %}
+                                <div class="alert alert-danger mb-4">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Error!</strong> Please correct the errors below.
+                                </div>
+                            {% endif %}
+                            
+                            {{ form.non_field_errors }}
+
+                            <!-- Personal Information Row -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person me-1"></i>First Name *
+                                    </label>
+                                    {{ form.first_name }}
+                                    {{ form.first_name.errors }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.middle_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person me-1"></i>Middle Name
+                                        <small class="text-muted">(Optional)</small>
+                                    </label>
+                                    {{ form.middle_name }}
+                                    {{ form.middle_name.errors }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person me-1"></i>Last Name *
+                                    </label>
+                                    {{ form.last_name }}
+                                    {{ form.last_name.errors }}
+                                </div>
+                            </div>
+
+                            <!-- Contact & Account Information Row -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        <i class="bi bi-envelope me-1"></i>Email Address *
+                                    </label>
+                                    {{ form.email }}
+                                    {{ form.email.errors }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                        <i class="bi bi-gender-ambiguous me-1"></i>Sex *
+                                    </label>
+                                    <div class="d-flex gap-3 mt-2">
+                                        {% for radio in form.sex %}
+                                            <div class="form-check">
+                                                {{ radio.tag }}
+                                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                    {{ radio.choice_label }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    {{ form.sex.errors }}
+                                </div>
+                            </div>
+
+                            <!-- Account Type & Municipality Row -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.account_type.id_for_label }}" class="form-label">
+                                        <i class="bi bi-shield-check me-1"></i>Account Type *
+                                    </label>
+                                    {{ form.account_type }}
+                                    {{ form.account_type.errors }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.municipality.id_for_label }}" class="form-label">
+                                        <i class="bi bi-geo-alt me-1"></i>Municipality
+                                        <small class="text-muted">(Required for Agriculturists)</small>
+                                    </label>
+                                    <div id="municipality-wrapper">
+                                        {{ form.municipality }}
+                                    </div>
+                                    {{ form.municipality.errors }}
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-flex gap-2 mt-4">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-lg me-2"></i>Create Account
+                                </button>
+                                <a href="{% url 'administrator:admin_dashboard' %}" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mt-3" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>{{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
                     {% endfor %}
-                </div>
-                {{ form.sex.errors }}
-                </div>
+                {% endif %}
 
-            <div class="mb-3">
-                <label for="{{ form.account_type.id_for_label }}">Account Type</label>
-                {{ form.account_type }}
-                {{ form.account_type.errors }}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.municipality.id_for_label }}">Municipality (Only for Agriculturists)</label>
-                <div id="municipality-wrapper">
-                    {{ form.municipality }}
+            {% else %}
+                <!-- Access Denied Section -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-shield-exclamation text-warning" style="font-size: 4rem;"></i>
+                        <h3 class="text-warning mt-3">Access Denied</h3>
+                        <p class="text-muted">You do not have permission to view this page.</p>
+                        <a href="{% url 'administrator:admin_dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
                 </div>
-                {{ form.municipality.errors }}
-            </div>
-            {% if messages %}
-            {% for message in messages %}
-              <div class="alert 
-                {% if message.tags %} alert-{{ message.tags }} {% endif %} text-danger small mt-2">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
+            {% endif %}
 
-            <div class="text-center">
-                <button type="submit" class="btn btn-success">Assign Account</button>
-            </div>
-        </form>
-        
-        {%else%}
-                <p>You do not have permission to view this page. </p>
-        {% endif%}
-      </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <script>
-  const accountTypeSelect = document.getElementById("id_account_type");
-  const municipalitySelect = document.getElementById("municipality-select");
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
 
-  function updateMunicipalityField() {
-    const overallOption = [...municipalitySelect.options].find(opt => opt.value === "14");
+        // Account type and municipality logic
+        const accountTypeSelect = document.getElementById("id_account_type");
+        const municipalitySelect = document.getElementById("municipality-select");
 
-    if (accountTypeSelect.value === "Agriculturist") {
-      municipalitySelect.disabled = false;
-      municipalitySelect.classList.remove("visually-locked");
-      if (overallOption) {
-        overallOption.hidden = true;
-        overallOption.disabled = true;
-        overallOption.selected = false;
-      }
-    } else if (accountTypeSelect.value === "Administrator") {
-      //municipalitySelect.disabled = true;
-      municipalitySelect.classList.add("visually-locked");
-      if (overallOption) {
-        overallOption.hidden = false;
-        overallOption.disabled = false;
-        overallOption.selected = true;
-      }
-    }
-  }
+        function updateMunicipalityField() {
+            const overallOption = [...municipalitySelect.options].find(opt => opt.value === "14");
 
-  accountTypeSelect.addEventListener("change", updateMunicipalityField);
-  updateMunicipalityField(); // Initialize on page load
+            if (accountTypeSelect.value === "Agriculturist") {
+                municipalitySelect.disabled = false;
+                municipalitySelect.classList.remove("visually-locked");
+                if (overallOption) {
+                    overallOption.hidden = true;
+                    overallOption.disabled = true;
+                    overallOption.selected = false;
+                }
+            } else if (accountTypeSelect.value === "Administrator") {
+                municipalitySelect.classList.add("visually-locked");
+                if (overallOption) {
+                    overallOption.hidden = false;
+                    overallOption.disabled = false;
+                    overallOption.selected = true;
+                }
+            }
+        }
+
+        if (accountTypeSelect && municipalitySelect) {
+            accountTypeSelect.addEventListener("change", updateMunicipalityField);
+            updateMunicipalityField(); // Initialize on page load
+        }
+    });
 </script>
-
-
-
 
 {% endblock %}
