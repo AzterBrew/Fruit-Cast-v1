@@ -992,7 +992,10 @@ def admin_verifyplantrec(request):
 
     # Apply filters
     if filter_municipality:
-        records = records.filter(municipality__pk=filter_municipality)
+        records = records.filter(
+            Q(transaction__farm_land__municipality__pk=filter_municipality) |
+            Q(transaction__manual_municipality__pk=filter_municipality)
+        )
     if filter_commodity:
         records = records.filter(commodity_id__pk=filter_commodity)
     if filter_status:
@@ -1079,7 +1082,10 @@ def admin_verifyharvestrec(request):
     # Query records
     records = initHarvestRecord.objects.all()
     if selected_municipality:
-        records = records.filter(municipality__pk=selected_municipality)
+        records = records.filter(
+            Q(transaction__farm_land__municipality__pk=selected_municipality) |
+            Q(transaction__manual_municipality__pk=selected_municipality)
+        )
     elif not (is_superuser or is_pk14):
         records = records.filter(municipality=admin_info.municipality_incharge)
     if selected_commodity:

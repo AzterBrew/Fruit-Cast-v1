@@ -30,7 +30,9 @@ Fruit Cast | Plant and Harvest Records
                                     <select name="municipality" id="municipality" class="form-select">
                                         <option value="">All Municipalities</option>
                                         {% for m in municipalities %}
-                                            <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                            {% if m.pk != 14 %}
+                                                <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -71,7 +73,7 @@ Fruit Cast | Plant and Harvest Records
                         <h5 class="card-title text-success mb-0">
                             <i class="bi bi-table me-2"></i>Harvest Records
                         </h5>
-                        <span class="badge bg-info">{{ records|length }} record{{ records|length|pluralize }}</span>
+                        <span class="badge bg-warning">{{ records|length }} record{{ records|length|pluralize }}</span>
                     </div>
 
                     <form method="post">
@@ -90,8 +92,8 @@ Fruit Cast | Plant and Harvest Records
                                         <th><i class="bi bi-calendar3 me-1"></i>Harvest Date</th>
                                         <th><i class="bi bi-droplet me-1"></i>Commodity</th>
                                         <th><i class="bi bi-geo me-1"></i>Location</th>
-                                        <th><i class="bi bi-box me-1"></i>Total Weight (kg)</th>
-                                        <th><i class="bi bi-clipboard-data me-1"></i>Unit Weight (kg)</th>
+                                        <th><i class="bi bi-box me-1"></i>Total Weight</th>
+                                        <th><i class="bi bi-clipboard-data me-1"></i>Unit Weight</th>
                                         <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
                                         <th><i class="bi bi-check-circle me-1"></i>Status</th>
                                         <th><i class="bi bi-person-check me-1"></i>Verified by</th>
@@ -107,11 +109,11 @@ Fruit Cast | Plant and Harvest Records
                                             <span class="badge bg-secondary">{{ rec.pk }}</span>
                                         </td>
                                         <td>
-                                            <span class="fw-medium">{{ rec.harvest_date }}</span>
-                                        </td>
-                                        <td>
                                             <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }},</div>
                                             <div class="text-muted small">{{ rec.transaction.account_id.userinfo_id.firstname }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="fw-medium">{{ rec.harvest_date }}</span>
                                         </td>
                                         <td>
                                             {% if rec.commodity_id.pk == 1 %}
@@ -177,7 +179,7 @@ Fruit Cast | Plant and Harvest Records
                         {% if messages %}
                             {% for message in messages %}
                             <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-                                <i class="bi bi-info-circle me-2"></i>
+                                <i class="bi bi-success-circle me-2"></i>
                                 {{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
@@ -185,9 +187,9 @@ Fruit Cast | Plant and Harvest Records
                         {% endif %}
 
                         <!-- Action Section -->
-                        <div class="card border-info mt-4">
+                        <div class="card border-success mt-4">
                             <div class="card-body">
-                                <h6 class="card-title text-info">
+                                <h6 class="card-title text-success">
                                     <i class="bi bi-tools me-2"></i>Bulk Actions
                                 </h6>
                                 <div class="row g-3 align-items-end">
@@ -209,7 +211,7 @@ Fruit Cast | Plant and Harvest Records
                                     </div>
                                 </div>
                                 <div class="text-muted small mt-2">
-                                    <i class="bi bi-info-circle me-1"></i>
+                                    <i class="bi bi-success-circle me-1"></i>
                                     Select records using checkboxes above to enable bulk actions.
                                 </div>
                             </div>

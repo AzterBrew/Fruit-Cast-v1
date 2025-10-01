@@ -16,8 +16,8 @@
                         {{ plant_record.commodity_custom }}
                     {% endif %}
                 </li>
-                <li>Minimum Expected Harvest: {{ plant_record.min_expected_harvest }}</li>
-                <li>Maximum Expected Harvest: {{ plant_record.max_expected_harvest }}</li>
+                <li>Minimum Expected Harvest: {{ plant_record.min_expected_harvest }} kg.</li>
+                <li>Maximum Expected Harvest: {{ plant_record.max_expected_harvest }} kg.</li>
                 <li>Remarks: {{ plant_record.remarks }}</li>
             </ul>
         {% endif %}
@@ -25,8 +25,11 @@
             <h4>Harvest Record</h4>
             <ul>
                 <li>Date Harvested: {{ harvest_record.harvest_date|date:"d/m/Y" }}</li>
-                <li>Commodity: {{ harvest_record.commodity_id }}</li>
-                <li>Custom: {{ harvest_record.commodity_custom }}</li>
+                {% if harvest_record.commodity_id %}
+                    <li>Commodity: {{ harvest_record.commodity_id.name }}</li>
+                {% else %}
+                    <li>Commodity: {{ harvest_record.commodity_custom }}</li>
+                {% endif %}
                 <li>Total Weight: {{ harvest_record.total_weight }} {{ harvest_record.unit.unit_abrv }}</li>
                 <li>Average Individual Weight: {{ harvest_record.weight_per_unit }} {{ harvest_record.unit.unit_abrv }}</li>
             </ul>

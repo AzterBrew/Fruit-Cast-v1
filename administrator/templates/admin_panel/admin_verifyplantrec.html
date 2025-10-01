@@ -71,7 +71,7 @@ Fruit Cast | Plant Record Verification
                         <h5 class="card-title text-success mb-0">
                             <i class="bi bi-table me-2"></i>Plant Records
                         </h5>
-                        <span class="badge bg-info">{{ records|length }} record{{ records|length|pluralize }}</span>
+                        <span class="badge bg-warning">{{ records|length }} record{{ records|length|pluralize }}</span>
                     </div>
 
                     <form method="post">
@@ -90,7 +90,7 @@ Fruit Cast | Plant Record Verification
                                         <th><i class="bi bi-calendar me-1"></i>Plant Date</th>
                                         <th><i class="bi bi-droplet me-1"></i>Commodity</th>
                                         <th><i class="bi bi-geo me-1"></i>Location</th>
-                                        <th><i class="bi bi-box me-1"></i>Expected Harvest (kg)</th>
+                                        <th><i class="bi bi-box me-1"></i>Expected Harvest</th>
                                         <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
                                         <th><i class="bi bi-check-circle me-1"></i>Status</th>
                                         <th><i class="bi bi-person-check me-1"></i>Verified by</th>
@@ -133,11 +133,11 @@ Fruit Cast | Plant Record Verification
                                         </td>
                                         <td>
                                             <span class="fw-medium">{{ rec.min_expected_harvest }}</span> - 
-                                            <span class="fw-medium">{{ rec.max_expected_harvest }}</span>
+                                            <span class="fw-medium">{{ rec.max_expected_harvest }} kg</span>
                                         </td>
                                         <td>
                                             {% if rec.remarks %}
-                                                <i class="bi bi-chat-left-quote text-info" data-bs-toggle="tooltip" title="{{ rec.remarks }}"></i>
+                                                <i class="bi bi-chat-left-quote text-success" data-bs-toggle="tooltip" title="{{ rec.remarks }}"></i>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
@@ -171,7 +171,7 @@ Fruit Cast | Plant Record Verification
                         {% if messages %}
                             {% for message in messages %}
                             <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-                                <i class="bi bi-info-circle me-2"></i>
+                                <i class="bi bi-success-circle me-2"></i>
                                 {{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
@@ -179,9 +179,9 @@ Fruit Cast | Plant Record Verification
                         {% endif %}
 
                         <!-- Action Section -->
-                        <div class="card border-info mt-4">
+                        <div class="card border-success mt-4">
                             <div class="card-body">
-                                <h6 class="card-title text-info">
+                                <h6 class="card-title text-success">
                                     <i class="bi bi-tools me-2"></i>Bulk Actions
                                 </h6>
                                 <div class="row g-3 align-items-end">
@@ -203,7 +203,7 @@ Fruit Cast | Plant Record Verification
                                     </div>
                                 </div>
                                 <div class="text-muted small mt-2">
-                                    <i class="bi bi-info-circle me-1"></i>
+                                    <i class="bi bi-success-circle me-1"></i>
                                     Select records using checkboxes above to enable bulk actions.
                                 </div>
                             </div>
