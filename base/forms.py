@@ -90,7 +90,13 @@ class RegistrationForm(forms.ModelForm):
             'lastname': forms.TextInput(attrs={'class': 'form-control','required': 'required', 'placeholder': 'Last Name'}),
             'middlename': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Middle Name'}),
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input','required': 'required'}),
-            'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control','required': 'required'}),
+            'birthdate': forms.DateInput(attrs={
+                'type': 'date', 
+                'class': 'form-control',
+                'required': 'required',
+                'min': '1900-01-01',
+                'max': '2024-12-31'
+            }),
             'barangay_id': forms.Select(attrs={'class': 'form-select','required': 'required'}),
             'municipality_id': forms.Select(attrs={'class': 'form-select','required': 'required'}),
             'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 2,'required': 'required', 'placeholder': 'Purok, Street Name, Building, House No.'}),

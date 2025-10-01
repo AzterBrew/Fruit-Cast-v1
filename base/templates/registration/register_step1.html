@@ -201,6 +201,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Municipality and Barangay handling
   const municipalitySelect = document.getElementById('id_municipality_id');
   const barangaySelect = document.getElementById('id_barangay_id');
 
@@ -219,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data.forEach(barangay => {
               const option = document.createElement('option');
               option.value = barangay.id;
-              option.textContent = barangay.barangay_name;
+              option.textContent = barangay.name;
               barangaySelect.appendChild(option);
             });
           } else {
@@ -234,6 +235,22 @@ document.addEventListener('DOMContentLoaded', function () {
       barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
     }
   });
+
+  // Simple year validation for birthdate
+  const birthdateInput = document.getElementById('id_birthdate');
+  if (birthdateInput) {
+    birthdateInput.addEventListener('input', function() {
+      const value = this.value;
+      if (value) {
+        const dateParts = value.split('-');
+        // Limit year to 4 digits
+        if (dateParts[0] && dateParts[0].length > 4) {
+          dateParts[0] = dateParts[0].substring(0, 4);
+          this.value = dateParts.join('-');
+        }
+      }
+    });
+  }
 });
 </script>
 
