@@ -14,45 +14,50 @@ Fruit Cast | Plant and Harvest Records
             
             <!-- Filter Section -->
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title text-info mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title text-white mb-3">
                         <i class="bi bi-funnel me-2"></i>Filter Records
                     </h5>
+                </div>
+                <div class="card-body bg-light">
                     <form method="get" id="filterForm">
                         <div class="row g-3 align-items-end">
-                            <div class="col-md-4">
-                                <label for="municipality" class="form-label">
-                                    <i class="bi bi-geo-alt me-1"></i>Municipality
-                                </label>
-                                <select name="municipality" id="municipality" class="form-select">
-                                    <option value="">All Municipalities</option>
-                                    {% for m in municipalities %}
-                                        <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
-                                    {% endfor %}
-                                </select>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="municipality" class="form-label">
+                                        <i class="bi bi-geo-alt me-1"></i>Municipality
+                                    </label>
+                                    <select name="municipality" id="municipality" class="form-select">
+                                        <option value="">All Municipalities</option>
+                                        {% for m in municipalities %}
+                                            <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="commodity" class="form-label">
+                                        <i class="bi bi-leaf me-1"></i>Commodity
+                                    </label>
+                                    <select name="commodity" id="commodity" class="form-select">
+                                        <option value="">All Commodities</option>
+                                        {% for c in commodities %}
+                                            <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == selected_commodity %}selected{% endif %}>{{ c.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="status" class="form-label">
+                                        <i class="bi bi-check-circle me-1"></i>Status
+                                    </label>
+                                    <select name="status" id="status" class="form-select">
+                                        <option value="">All Statuses</option>
+                                        {% for status in status_choices %}
+                                            <option value="{{ status.pk }}" {% if selected_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label for="commodity" class="form-label">
-                                    <i class="bi bi-leaf me-1"></i>Commodity
-                                </label>
-                                <select name="commodity" id="commodity" class="form-select">
-                                    <option value="">All Commodities</option>
-                                    {% for c in commodities %}
-                                        <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == selected_commodity %}selected{% endif %}>{{ c.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="status" class="form-label">
-                                    <i class="bi bi-check-circle me-1"></i>Status
-                                </label>
-                                <select name="status" id="status" class="form-select">
-                                    <option value="">All Statuses</option>
-                                    {% for status in status_choices %}
-                                        <option value="{{ status.pk }}" {% if selected_status == status.pk|stringformat:"s" %}selected{% endif %}>{{ status.acc_status }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                            
                         </div>
                     </form>
                 </div>
