@@ -467,6 +467,17 @@ def forecast(request):
 
 
 def forecast_bycommodity(request):
+    # Initialize variables for authenticated users
+    account_id = None
+    userinfo_id = None
+    userinfo = None
+    
+    if request.user.is_authenticated:
+        account_id = request.session.get('account_id')
+        userinfo_id = request.session.get('userinfo_id')
+        if userinfo_id:
+            userinfo = UserInformation.objects.get(pk=userinfo_id)
+    
     # Get filter params
     filter_month = request.GET.get('filter_month') or str(timezone.now().month)
     filter_year = request.GET.get('filter_year') or str(timezone.now().year)
@@ -526,6 +537,7 @@ def forecast_bycommodity(request):
     print("Forecast results count:", forecast_qs.count())
 
     context = {
+        'user_firstname': userinfo.firstname if userinfo else None,
         'commodity_types': commodity_types,
         'all_municipalities': all_municipalities,
         'months': months,
