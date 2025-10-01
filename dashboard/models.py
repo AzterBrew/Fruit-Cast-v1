@@ -50,7 +50,7 @@ class VerifiedPlantRecord(models.Model):
     date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
     verified_by = models.ForeignKey('base.AdminInformation', on_delete=models.CASCADE, null=True, blank=True)
     prev_record = models.ForeignKey('base.initPlantRecord', on_delete=models.SET_NULL, null=True, blank=True)
-    average_harvest_units = models.IntegerField(_("Average Harvest Units"), null=True, blank=True)
+    average_harvest_units = models.IntegerField(null=True, blank=True)
 # estimated_weight_kg = average_harvest_units * avg_weight_per_unit_kg [avg weight per unit will be on the commodity type table]
 
     def __str__(self):
