@@ -7,7 +7,7 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
 {% block content %}
 <div class="main-user">
     <div class="monitor-user-content justify-content-center">
-        <div class="card shadow-sm rounded-4 p-4 mb-3">
+        <div class="card shadow-sm rounded-4 p-4 mb-3" style="max-width: 800px; margin: 0 auto;">
             <h1 class="mb-4 text-success fw-bold text-center">
                 <i class="bi bi-{% if commodity %}pencil-square{% else %}plus-circle{% endif %}"></i>
                 {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif %}
@@ -24,26 +24,20 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                     <form method="post">
                         {% csrf_token %}
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="id_name" class="form-label">
                                     <i class="bi bi-tag me-1"></i>Name
                                     <small class="text-muted">(Technique, optional: <i>ex. Grafted</i>)</small>
                                 </label>
                                 {{ form.name }}
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="id_average_weight_per_unit_kg" class="form-label">
                                     <i class="bi bi-speedometer2 me-1"></i>Average Weight per Unit (kg)
                                 </label>
                                 {{ form.average_weight_per_unit_kg }}
                             </div>
-                            <div class="col-12">
-                                <label class="form-label">
-                                    <i class="bi bi-calendar3 me-1"></i>Seasonal Months of Harvest
-                                </label>
-                                {{ form.seasonal_months }}
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">
                                     <i class="bi bi-clock me-1"></i>Years to Mature
                                 </label>
@@ -52,6 +46,12 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                                     <i class="bi bi-info-circle me-1"></i>
                                     Note: If only in months, calculate with: [no. of months / 12]
                                 </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar3 me-1"></i>Seasonal Months of Harvest
+                                </label>
+                                {{ form.seasonal_months }}
                             </div>
                         </div>
 
@@ -91,13 +91,13 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row g-3 align-items-end">
-                            <div class="col-md-8">
+                            <div class="col-md-6">
                                 <label for="csv_file" class="form-label">
                                     <i class="bi bi-file-earmark-arrow-up me-1"></i>Choose CSV File
                                 </label>
                                 <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <button type="submit" class="btn btn-info w-100">
                                     <i class="bi bi-upload me-2"></i>Upload CSV
                                 </button>
