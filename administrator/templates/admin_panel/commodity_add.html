@@ -1,60 +1,146 @@
 {% extends "admin_login/layout.html" %}
 
 {% block title %}
-Fruit Cast | Forecast
+Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif %}
 {% endblock title %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-sm rounded-4 p-4 mb-4">
-              <h2>
-                {% if commodity %}
-                  Edit Commodity
-                {% else %}
-                  Add New Commodity
-                {% endif %}
-              </h2>
+<div class="main-user">
+    <div class="monitor-user-content justify-content-center">
+        <div class="card shadow-sm rounded-4 p-4 mb-3">
+            <h1 class="mb-4 text-success fw-bold text-center">
+                <i class="bi bi-{% if commodity %}pencil-square{% else %}plus-circle{% endif %}"></i>
+                {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif %}
+            </h1>
 
-              <form method="post">
-                  {% csrf_token %}
-                  <div class="mb-3">
-                      <label for="id_name" class="form-label">Name (Technique, optional: <i>ex. Grafted</i>)</label>
-                      {{ form.name }}
-                  </div>
-                  <div class="mb-3">
-                      <label for="id_average_weight_per_unit_kg" class="form-label">Average Weight per Unit (kg)</label>
-                      {{ form.average_weight_per_unit_kg }}
-                  </div>
-                  <div class="mb-3">
-                      <label class="form-label">Seasonal Months of Harvest</label>
-                      {{ form.seasonal_months }}
-                  </div>
-                  <div class="mb-3">
-                      <label class="form-label">Years to Mature :</label>
-                      {{ form.years_to_mature }}
-                      <p class="form-text">Note : If only in months, calculate with : [no. of months / 12]</p>
+            <!-- Form Section -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clipboard-data me-2"></i>Commodity Information
+                    </h5>
+                </div>
+                <div class="card-body bg-light">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="id_name" class="form-label">
+                                    <i class="bi bi-tag me-1"></i>Name
+                                    <small class="text-muted">(Technique, optional: <i>ex. Grafted</i>)</small>
+                                </label>
+                                {{ form.name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_average_weight_per_unit_kg" class="form-label">
+                                    <i class="bi bi-speedometer2 me-1"></i>Average Weight per Unit (kg)
+                                </label>
+                                {{ form.average_weight_per_unit_kg }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar3 me-1"></i>Seasonal Months of Harvest
+                                </label>
+                                {{ form.seasonal_months }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="bi bi-clock me-1"></i>Years to Mature
+                                </label>
+                                {{ form.years_to_mature }}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Note: If only in months, calculate with: [no. of months / 12]
+                                </div>
+                            </div>
+                        </div>
 
-                  </div>
-                  <button type="submit" class="btn btn-success">{% if commodity %}Update{% else %}Save{% endif %}</button>
-                  <a href="{% url 'administrator:admin_commodity_list' %}" class="btn btn-secondary">Back to List</a>
-              </form>
-            <hr>
-            <p>or upload a CSV file of commodities:</p>
-            <form method="post" enctype="multipart/form-data">
-              {% csrf_token %}
-              <h4>Upload a CSV file with the following format: </h4>
-              <p>name,average_weight_per_unit_kg,seasonal_months,years_to_mature,years_to_bearfruit</p>
-              <p>Mango,4.00,"January;February;March",2.0,0.5</p>
-              <input type="file" name="csv_file" accept=".csv" required>
-              <button type="submit" class="btn btn-success">Upload CSV</button>
-            </form>
-          </div>
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg me-2"></i>
+                                {% if commodity %}Update{% else %}Save{% endif %}
+                            </button>
+                            <a href="{% url 'administrator:admin_commodity_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- CSV Upload Section -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-upload me-2"></i>Bulk Upload
+                    </h5>
+                </div>
+                <div class="card-body bg-light">
+                    <p class="mb-3">Or upload a CSV file of commodities:</p>
+                    
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV Format Required:
+                        </h6>
+                        <p class="mb-2"><strong>Header:</strong></p>
+                        <code>name,average_weight_per_unit_kg,seasonal_months,years_to_mature,years_to_bearfruit</code>
+                        <p class="mb-2 mt-2"><strong>Example:</strong></p>
+                        <code>Mango,4.00,"January;February;March",2.0,0.5</code>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-8">
+                                <label for="csv_file" class="form-label">
+                                    <i class="bi bi-file-earmark-arrow-up me-1"></i>Choose CSV File
+                                </label>
+                                <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-info w-100">
+                                    <i class="bi bi-upload me-2"></i>Upload CSV
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mt-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
         </div>
-      </div>
     </div>
-  </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // File input validation
+        const fileInput = document.getElementById('csv_file');
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file && !file.name.toLowerCase().endsWith('.csv')) {
+                    alert('Please select a valid CSV file.');
+                    e.target.value = '';
+                }
+            });
+        }
+    });
+</script>
 
 {% endblock content %}
