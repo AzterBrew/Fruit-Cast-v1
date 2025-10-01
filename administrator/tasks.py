@@ -58,14 +58,19 @@ def retrain_and_generate_forecasts_task():
                         print(f"Skipping {comm.name} - {muni.municipality}: not enough data.")
                         continue
                     
-                    # Use Dashboard approach - simpler, more conservative data preparation
+                    # Use EXACT Dashboard approach - match forecast view logic
                     df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                     df['ds'] = pd.to_datetime(df['ds'])
                     df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
                     df = df.groupby('ds', as_index=False)['y'].sum()
                     
+                    # Filter out future outlier dates (anything beyond current date + 1 year) - EXACT MATCH
+                    current_date = pd.Timestamp.now()
+                    max_allowed_date = current_date + pd.DateOffset(years=1)
+                    df = df[df['ds'] <= max_allowed_date]
+                    
                     if len(df) < 2:
-                        print(f"Skipping {comm.name} - {muni.municipality}: insufficient data after grouping.")
+                        print(f"Skipping {comm.name} - {muni.municipality}: insufficient data after grouping and filtering.")
                         continue
                         
                     # Train model
@@ -87,12 +92,24 @@ def retrain_and_generate_forecasts_task():
                     # Save the model directly to DigitalOcean Spaces
                     default_storage.save(bucket_path, buffer)
                     
-                    # Generate forecast using Dashboard approach
-                    future = m.make_future_dataframe(periods=12, freq='MS')
+                    # Generate forecast using EXACT Dashboard approach
+                    last_historical_date = df['ds'].max()
+                    backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+                    
+                    # Define the end date for forecast (12 months into the future) - EXACT MATCH
+                    future_end_date = datetime.today() + relativedelta(months=+12)
+
+                    # Create future DataFrame that includes backtesting and future periods - EXACT MATCH
+                    future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
+                    future = pd.DataFrame({'ds': future_months})
+                    
+                    if len(future) == 0:
+                        print(f"Error: Future dataframe is empty for {comm.name} - {muni.municipality} - cannot generate forecast")
+                        continue
+                    
                     forecast = m.predict(future)
                     
-                    # Get only future forecasts (like dashboard does)
-                    last_historical_date = df['ds'].max()
+                    # Get only future forecasts (beyond last historical date) - EXACT MATCH
                     future_forecast = forecast[forecast['ds'] > last_historical_date]
                     
                     for _, row in future_forecast.iterrows():
@@ -120,14 +137,19 @@ def retrain_and_generate_forecasts_task():
                     print(f"Skipping Overall {comm.name}: not enough data.")
                     continue
                 
-                # Use Dashboard approach - simpler data preparation
+                # Use EXACT Dashboard approach - match forecast view logic
                 df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                 df['ds'] = pd.to_datetime(df['ds'])
                 df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
                 df = df.groupby('ds', as_index=False)['y'].sum()
 
+                # Filter out future outlier dates (anything beyond current date + 1 year) - EXACT MATCH
+                current_date = pd.Timestamp.now()
+                max_allowed_date = current_date + pd.DateOffset(years=1)
+                df = df[df['ds'] <= max_allowed_date]
+
                 if len(df) < 2:
-                    print(f"Skipping Overall {comm.name}: insufficient data after grouping.")
+                    print(f"Skipping Overall {comm.name}: insufficient data after grouping and filtering.")
                     continue
                 
                 # Train model
@@ -148,12 +170,24 @@ def retrain_and_generate_forecasts_task():
                 # Save the model directly to DigitalOcean Spaces
                 default_storage.save(bucket_path, buffer)
 
-                # Generate forecast using Dashboard approach
-                future = m.make_future_dataframe(periods=12, freq='MS')
+                # Generate forecast using EXACT Dashboard approach
+                last_historical_date = df['ds'].max()
+                backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+                
+                # Define the end date for forecast (12 months into the future) - EXACT MATCH
+                future_end_date = datetime.today() + relativedelta(months=+12)
+
+                # Create future DataFrame that includes backtesting and future periods - EXACT MATCH
+                future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
+                future = pd.DataFrame({'ds': future_months})
+                
+                if len(future) == 0:
+                    print(f"Error: Future dataframe is empty for Overall {comm.name} - cannot generate forecast")
+                    continue
+                
                 forecast = m.predict(future)
                 
-                # Get only future forecasts (like dashboard does)
-                last_historical_date = df['ds'].max()
+                # Get only future forecasts (beyond last historical date) - EXACT MATCH
                 future_forecast = forecast[forecast['ds'] > last_historical_date]
                 
                 for _, row in future_forecast.iterrows():

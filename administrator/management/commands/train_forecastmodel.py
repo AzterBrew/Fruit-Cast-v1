@@ -33,14 +33,19 @@ class Command(BaseCommand):
                     self.stdout.write(f"No data for {muni} - {comm}")
                     continue
                     
-                # Use Dashboard approach - simpler, more conservative data preparation
+                # Use EXACT Dashboard approach - match forecast view logic
                 df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                 df['ds'] = pd.to_datetime(df['ds'])
                 df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
                 df = df.groupby('ds', as_index=False)['y'].sum()
 
+                # Filter out future outlier dates (anything beyond current date + 1 year) - EXACT MATCH
+                current_date = pd.Timestamp.now()
+                max_allowed_date = current_date + pd.DateOffset(years=1)
+                df = df[df['ds'] <= max_allowed_date]
+
                 if len(df) < 2:
-                    self.stdout.write(f"Insufficient data after grouping for {muni} - {comm}")
+                    self.stdout.write(f"Insufficient data after grouping and filtering for {muni} - {comm}")
                     continue
 
                 # Prophet model with tuned parameters
@@ -87,14 +92,19 @@ class Command(BaseCommand):
                 self.stdout.write(f"No overall data for {comm}")
                 continue
 
-            # Use Dashboard approach - simpler data preparation
+            # Use EXACT Dashboard approach - match forecast view logic
             df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
             df['ds'] = pd.to_datetime(df['ds'])
             df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
             df = df.groupby('ds', as_index=False)['y'].sum()
 
+            # Filter out future outlier dates (anything beyond current date + 1 year) - EXACT MATCH
+            current_date = pd.Timestamp.now()
+            max_allowed_date = current_date + pd.DateOffset(years=1)
+            df = df[df['ds'] <= max_allowed_date]
+
             if len(df) < 2:
-                self.stdout.write(f"Insufficient overall data after grouping for {comm}")
+                self.stdout.write(f"Insufficient overall data after grouping and filtering for {comm}")
                 continue
 
             # Prophet model with tuned parameters
