@@ -1,215 +1,212 @@
 {% block content %}
 <div class="container p-4">
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <!-- Header Section -->
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                    <h2 class="text-success fw-bold mb-1">
-                        <i class="bi bi-file-earmark-text me-2"></i>Transaction Details
-                    </h2>
-                    <p class="text-muted mb-0">Transaction ID: <span class="badge bg-secondary">{{ transaction.transaction_id }}</span></p>
-                </div>
-                <span class="badge bg-success fs-6">
-                    <i class="bi bi-calendar3 me-1"></i>{{ transaction.transaction_date|date:"M d, Y" }}
-                </span>
-            </div>
 
-            <!-- Location Information -->
-            <div class="alert alert-success border-0 mb-4">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-geo-alt text-success me-3 fs-4"></i>
-                    <div>
-                        <h6 class="mb-1 fw-semibold">Location</h6>
-                        <p class="mb-0">{{ transaction.get_location_display }}</p>
-                    </div>
-                </div>
-            </div>
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="text-success fw-bold mb-1">
+                <i class="bi bi-file-earmark-text me-2"></i>Transaction Details
+            </h2>
+            <p class="text-muted mb-0">Transaction ID: <span class="badge bg-secondary">{{ transaction.transaction_id }}</span></p>
+        </div>
+        <span class="badge bg-success fs-6">
+            <i class="bi bi-calendar3 me-1"></i>{{ transaction.transaction_date|date:"M d, Y" }}
+        </span>
+    </div>
 
-            <!-- Plant Record Section -->
-            {% if plant_record %}
-                <div class="card border-success mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-plus-circle me-2"></i>Plant Record
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="border-start border-success border-3 ps-3">
-                                    <label class="small text-muted fw-semibold">Date Planted</label>
-                                    <p class="fw-medium mb-0">{{ plant_record.plant_date|date:"F d, Y" }}</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="border-start border-success border-3 ps-3">
-                                    <label class="small text-muted fw-semibold">Commodity</label>
-                                    {% if plant_record.commodity_id.pk == 1 %}
-                                        <p class="mb-0">
-                                            <span class="badge bg-warning text-dark me-2">Custom</span>
-                                            {{ plant_record.commodity_custom }}
-                                        </p>
-                                    {% else %}
-                                        <p class="mb-0">
-                                            <span class="badge bg-success me-2">{{ plant_record.commodity_id.name }}</span>
-                                        </p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="border-start border-success border-3 ps-3">
-                                    <label class="small text-muted fw-semibold">Expected Harvest Range</label>
-                                    <p class="fw-medium mb-0">{{ plant_record.min_expected_harvest }} - {{ plant_record.max_expected_harvest }} kg</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="border-start border-success border-3 ps-3">
-                                    <label class="small text-muted fw-semibold">Remarks</label>
-                                    <p class="mb-0">{{ plant_record.remarks|default:"No remarks" }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            <!-- Harvest Records Section -->
-            {% if harvest_record %}
-                <div class="card border-warning mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">
-                            <i class="bi bi-scissors me-2"></i>Harvest Record{{ harvest_record|length|pluralize }}
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        {% if harvest_record|length > 1 %}
-                            <!-- Multiple harvest records - use table -->
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead class="table-warning">
-                                        <tr>
-                                            <th><i class="bi bi-calendar3 me-1"></i>Date</th>
-                                            <th><i class="bi bi-droplet me-1"></i>Commodity</th>
-                                            <th><i class="bi bi-box me-1"></i>Total Weight</th>
-                                            <th><i class="bi bi-ruler me-1"></i>Avg Unit Weight</th>
-                                            <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for record in harvest_record %}
-                                        <tr>
-                                            <td>
-                                                <span class="fw-medium">{{ record.harvest_date|date:"M d, Y" }}</span>
-                                            </td>
-                                            <td>
-                                                {% if record.commodity_id.pk == 1 %}
-                                                    <span class="badge bg-warning text-dark">Custom</span>
-                                                    <div class="small">{{ record.commodity_custom }}</div>
-                                                {% else %}
-                                                    <span class="badge bg-success">{{ record.commodity_id.name }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <span class="fw-bold text-primary">{{ record.total_weight }}</span> {{ record.unit.unit_abrv }}
-                                            </td>
-                                            <td>
-                                                <span class="fw-medium">{{ record.weight_per_unit }}</span> {{ record.unit.unit_abrv }}
-                                            </td>
-                                            <td>
-                                                {% if record.remarks %}
-                                                    <i class="bi bi-chat-left-quote text-success" data-bs-toggle="tooltip" title="{{ record.remarks }}"></i>
-                                                {% else %}
-                                                    <span class="text-muted">-</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <!-- Single harvest record - use card layout -->
-                            {% with harvest_record.0 as record %}
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="border-start border-warning border-3 ps-3">
-                                        <label class="small text-muted fw-semibold">Date Harvested</label>
-                                        <p class="fw-medium mb-0">{{ record.harvest_date|date:"F d, Y" }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="border-start border-warning border-3 ps-3">
-                                        <label class="small text-muted fw-semibold">Commodity</label>
-                                        {% if record.commodity_id.pk == 1 %}
-                                            <p class="mb-0">
-                                                <span class="badge bg-warning text-dark me-2">Custom</span>
-                                                {{ record.commodity_custom }}
-                                            </p>
-                                        {% else %}
-                                            <p class="mb-0">
-                                                <span class="badge bg-success me-2">{{ record.commodity_id.name }}</span>
-                                            </p>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="border-start border-warning border-3 ps-3">
-                                        <label class="small text-muted fw-semibold">Total Weight</label>
-                                        <p class="fw-bold text-primary mb-0">{{ record.total_weight }} {{ record.unit.unit_abrv }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="border-start border-warning border-3 ps-3">
-                                        <label class="small text-muted fw-semibold">Average Unit Weight</label>
-                                        <p class="fw-medium mb-0">{{ record.weight_per_unit }} {{ record.unit.unit_abrv }}</p>
-                                    </div>
-                                </div>
-                                {% if record.remarks %}
-                                <div class="col-12">
-                                    <div class="border-start border-warning border-3 ps-3">
-                                        <label class="small text-muted fw-semibold">Remarks</label>
-                                        <p class="mb-0">{{ record.remarks }}</p>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                            {% endwith %}
-                        {% endif %}
-                    </div>
-                </div>
-            {% endif %}
-
-            <!-- Notification Section -->
-            {% if plant_notification %}
-                <div class="alert alert-warning border-0 mb-4">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-bell text-warning me-3 fs-4"></i>
-                        <div>
-                            <h6 class="mb-1 fw-semibold">Notification</h6>
-                            <p class="mb-0">{{ plant_notification.message }}</p>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            <!-- Action Buttons -->
-            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                <div class="d-flex flex-wrap gap-2">
-                    {% if plant_record %}
-                        <a href="{% url 'base:harvest_record_for_plant' transaction.transaction_id %}" class="btn btn-success">
-                            <i class="bi bi-plus-circle me-2"></i>Add Harvest Record
-                        </a>
-                    {% endif %}
-                    <a href="{% url 'base:transaction_history' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-2"></i>Back to History
-                    </a>
-                </div>
-                <button class="btn btn-outline-danger" onclick="confirmDelete()">
-                    <i class="bi bi-trash me-2"></i>Delete Transaction
-                </button>
+    <!-- Location Information -->
+    <div class="alert alert-success border-0 mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-geo-alt text-success me-3 fs-4"></i>
+            <div>
+                <h6 class="mb-1 fw-semibold">Location</h6>
+                <p class="mb-0">{{ transaction.get_location_display }}</p>
             </div>
         </div>
+    </div>
+
+    <!-- Plant Record Section -->
+    {% if plant_record %}
+        <div class="card border-success mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Plant Record
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="border-start border-success border-3 ps-3">
+                            <label class="small text-muted fw-semibold">Date Planted</label>
+                            <p class="fw-medium mb-0">{{ plant_record.plant_date|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border-start border-success border-3 ps-3">
+                            <label class="small text-muted fw-semibold">Commodity</label>
+                            {% if plant_record.commodity_id.pk == 1 %}
+                                <p class="mb-0">
+                                    <span class="badge bg-warning text-dark me-2">Custom</span>
+                                    {{ plant_record.commodity_custom }}
+                                </p>
+                            {% else %}
+                                <p class="mb-0">
+                                    <span class="badge bg-success me-2">{{ plant_record.commodity_id.name }}</span>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border-start border-success border-3 ps-3">
+                            <label class="small text-muted fw-semibold">Expected Harvest Range</label>
+                            <p class="fw-medium mb-0">{{ plant_record.min_expected_harvest }} - {{ plant_record.max_expected_harvest }} kg</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border-start border-success border-3 ps-3">
+                            <label class="small text-muted fw-semibold">Remarks</label>
+                            <p class="mb-0">{{ plant_record.remarks|default:"No remarks" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Harvest Records Section -->
+    {% if harvest_record %}
+        <div class="card border-warning mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-scissors me-2"></i>Harvest Record{{ harvest_record|length|pluralize }}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if harvest_record|length > 1 %}
+                    <!-- Multiple harvest records - use table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-warning">
+                                <tr>
+                                    <th><i class="bi bi-calendar3 me-1"></i>Date</th>
+                                    <th><i class="bi bi-droplet me-1"></i>Commodity</th>
+                                    <th><i class="bi bi-box me-1"></i>Total Weight</th>
+                                    <th><i class="bi bi-ruler me-1"></i>Avg Unit Weight</th>
+                                    <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in harvest_record %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-medium">{{ record.harvest_date|date:"M d, Y" }}</span>
+                                    </td>
+                                    <td>
+                                        {% if record.commodity_id.pk == 1 %}
+                                            <span class="badge bg-warning text-dark">Custom</span>
+                                            <div class="small">{{ record.commodity_custom }}</div>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ record.commodity_id.name }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-primary">{{ record.total_weight }}</span> {{ record.unit.unit_abrv }}
+                                    </td>
+                                    <td>
+                                        <span class="fw-medium">{{ record.weight_per_unit }}</span> {{ record.unit.unit_abrv }}
+                                    </td>
+                                    <td>
+                                        {% if record.remarks %}
+                                            <i class="bi bi-chat-left-quote text-success" data-bs-toggle="tooltip" title="{{ record.remarks }}"></i>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <!-- Single harvest record - use card layout -->
+                    {% with harvest_record.0 as record %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="border-start border-warning border-3 ps-3">
+                                <label class="small text-muted fw-semibold">Date Harvested</label>
+                                <p class="fw-medium mb-0">{{ record.harvest_date|date:"F d, Y" }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border-start border-warning border-3 ps-3">
+                                <label class="small text-muted fw-semibold">Commodity</label>
+                                {% if record.commodity_id.pk == 1 %}
+                                    <p class="mb-0">
+                                        <span class="badge bg-warning text-dark me-2">Custom</span>
+                                        {{ record.commodity_custom }}
+                                    </p>
+                                {% else %}
+                                    <p class="mb-0">
+                                        <span class="badge bg-success me-2">{{ record.commodity_id.name }}</span>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border-start border-warning border-3 ps-3">
+                                <label class="small text-muted fw-semibold">Total Weight</label>
+                                <p class="fw-bold text-primary mb-0">{{ record.total_weight }} {{ record.unit.unit_abrv }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border-start border-warning border-3 ps-3">
+                                <label class="small text-muted fw-semibold">Average Unit Weight</label>
+                                <p class="fw-medium mb-0">{{ record.weight_per_unit }} {{ record.unit.unit_abrv }}</p>
+                            </div>
+                        </div>
+                        {% if record.remarks %}
+                        <div class="col-12">
+                            <div class="border-start border-warning border-3 ps-3">
+                                <label class="small text-muted fw-semibold">Remarks</label>
+                                <p class="mb-0">{{ record.remarks }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Notification Section -->
+    {% if plant_notification %}
+        <div class="alert alert-warning border-0 mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-bell text-warning me-3 fs-4"></i>
+                <div>
+                    <h6 class="mb-1 fw-semibold">Notification</h6>
+                    <p class="mb-0">{{ plant_notification.message }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <div class="d-flex flex-wrap gap-2">
+            {% if plant_record %}
+                <a href="{% url 'base:harvest_record_for_plant' transaction.transaction_id %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-2"></i>Add Harvest Record
+                </a>
+            {% endif %}
+            <a href="{% url 'base:transaction_history' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to History
+            </a>
+        </div>
+        <button class="btn btn-outline-danger" onclick="confirmDelete()">
+            <i class="bi bi-trash me-2"></i>Delete Transaction
+        </button>
     </div>
 </div>
 

@@ -2,41 +2,90 @@
 
 {% block content %}
 <div class="container p-4">
-    <h2 class="mb-4">Create New Harvest Record</h2>    
-    {% comment %} <div class="row align-items-center"> {% endcomment %}
-    <div class="row mb-3">
-        {% if transaction %}
-            <div class="col-md-6">
-                    <h5>Planted Commodity:
-                        <b>
-                        {% if transaction.initplantrecord.commodity_id.pk == 1 %}
-                            {{ transaction.initplantrecord.commodity_custom }}
-                        {% else %}
-                            {{ transaction.initplantrecord.commoditytype.name }}
-                        {% endif %}
-                        </b>
-                    </h5>
-                    <p class="text-muted">Date of Planting: <b>{{ transaction.initplantrecord.plant_date|date:"d/m/Y" }}</b></p>
+    
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-success fw-bold mb-1">
+                <i class="bi bi-scissors me-2"></i>Create New Harvest Record
+            </h2>
+            <p class="text-muted mb-0">Record your harvest information and yield data</p>
+        </div>
+    </div>
+
+    <!-- Plant Information Card (if from transaction) -->
+    {% if transaction %}
+    <div class="card bg-light border-0 mb-4">
+        <div class="card-body">
+            <h6 class="text-success fw-semibold mb-3">
+                <i class="bi bi-info-circle me-2"></i>Related Plant Record Information
+            </h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-2">
+                        <strong>Planted Commodity:</strong>
+                        <span class="badge bg-success ms-2">
+                            {% if transaction.initplantrecord.commodity_id.pk == 1 %}
+                                {{ transaction.initplantrecord.commodity_custom }}
+                            {% else %}
+                                {{ transaction.initplantrecord.commoditytype.name }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="text-muted small">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        Date of Planting: <strong>{{ transaction.initplantrecord.plant_date|date:"M d, Y" }}</strong>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     {% if transaction.location_type == 'farm_land' %}
-                        <p class="text-muted">Your Farm for Planting: <b>{{ transaction.farm_land.farmland_name }}</b></p>
-                        <p class="text-muted">Farm Location : <b>{{ transaction.farm_land.municipality.municipality }}, {{ transaction.farm_land.barangay.barangay }}</b></p>
+                        <div class="mb-1">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <strong>Farm:</strong> {{ transaction.farm_land.farmland_name }}
+                        </div>
+                        <div class="text-muted small">
+                            <i class="bi bi-map me-1"></i>
+                            {{ transaction.farm_land.municipality.municipality }}, {{ transaction.farm_land.barangay.barangay }}
+                        </div>
                     {% elif transaction.location_type == 'manual' %}
-                        <p class="text-muted">Location of Planting: <b>{{ transaction.manual_municipality.municipality }}, {{ transaction.manual_barangay.barangay }}</b></p>
+                        <div class="mb-1">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <strong>Location:</strong> {{ transaction.manual_municipality.municipality }}, {{ transaction.manual_barangay.barangay }}
+                        </div>
                     {% endif %}
-                    <p class="text-muted">Remarks: <b>{{ transaction.initplantrecord.remarks }}</b></p>
+                    {% if transaction.initplantrecord.remarks %}
+                        <div class="text-muted small mt-2">
+                            <i class="bi bi-chat-left-text me-1"></i>
+                            <strong>Plant Remarks:</strong> {{ transaction.initplantrecord.remarks }}
+                        </div>
+                    {% endif %}
                 </div>
-            {% endif %}
+            </div>
         </div>
-    <hr>
-    <p class="mb-4">Note : Proceeding with Record does not mean the record has been saved in the database. Proceed with Record and Complete the Transaction to successfully submit the record</p>
+    </div>
+    {% endif %}
+
+    <!-- Information Alert -->
+    <div class="alert alert-warning border-0 mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle text-warning me-3 fs-5"></i>
+            <p class="mb-0 small">
+                <strong>Note:</strong> Proceeding with Record does not mean the record has been saved in the database. 
+                Proceed with Record and Complete the Transaction to successfully submit the record.
+            </p>
+        </div>
+    </div>
+
     <form method="POST" novalidate id="harvest-record-form">
         {% csrf_token %}
 
-        <div class="row g-3">
-
-        {% if transaction %}
+        <!-- Harvest Details Section -->
+        <div class="mb-4">
+            <h5 class="text-success mb-3">
+                <i class="bi bi-clipboard-data me-2"></i>Harvest Details
+            </h5>
+            <div class="row g-3">
+                {% if transaction %}
                     <div class="col-md-6">
                         <label class="form-label" for="{{ form.harvest_date.id_for_label }}">{{ form.harvest_date.label }}</label>
                         {{ form.harvest_date }}
@@ -67,7 +116,7 @@
                             <div class="text-danger small mt-1">{{ form.weight_per_unit.errors }}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label class="form-label" for="{{ form.remarks.id_for_label }}">{{ form.remarks.label }}</label>
                         {{ form.remarks }}
                         {% if form.remarks.errors %}
@@ -86,11 +135,23 @@
                     {% endfor %}
                 {% endif %}
             </div>
-            <br>
+        </div>
+
+        <!-- Location Section (for standalone harvest records) -->
         {% if not transaction %}
-            <div>
-                <p>If you own a farm land that you would like to use for your records, you should first set up your farm land information through this <a href="{% url 'base:farmland_record' %}">link</a> before creating a harvest record.</p>
+        <div class="mt-4 pt-3 border-top">
+            <h5 class="text-success mb-3">
+                <i class="bi bi-geo-alt me-2"></i>Location Information
+            </h5>
+            <div class="alert alert-warning border-0 mb-3">
+                <p class="mb-0 small">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    If you own a farm land that you would like to use for your records, you should first 
+                    <a href="{% url 'base:farmland_record' %}" class="alert-link">set up your farm land information</a> 
+                    before creating a harvest record.
+                </p>
             </div>
+            
             <div class="row g-3">
                 {% for field in transaction_form %}
                 {% if field.name != "manual_barangay" and field.name != "manual_municipality" %}
@@ -114,17 +175,28 @@
                     </select>
                 </div>
             </div>
-            {% endif %}
-            <div class="mt-4">
-                <button type="submit" class="btn btn-success me-2">Proceed with Record</button>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4 pt-3 border-top">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle me-2"></i>Proceed with Record
+            </button>
+            
+            <div class="d-flex flex-wrap gap-2">
                 {% if transaction %}
-                    <a href="{% url 'base:transaction_recordlist' transaction.transaction_id%}" class="btn btn-secondary">Back to Transaction Record</a>
+                    <a href="{% url 'base:transaction_recordlist' transaction.transaction_id%}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Transaction Record
+                    </a>
                 {% else %}
-                    <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-secondary">Cancel</a>
+                    <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-2"></i>Cancel
+                    </a>
                 {% endif %}
             </div>
-        </form>
-
+        </div>
+    </form>
 </div>
 
 <script>

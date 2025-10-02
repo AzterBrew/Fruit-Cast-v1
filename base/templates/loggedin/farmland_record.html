@@ -1,135 +1,125 @@
 {% load static %}
 {% block content %}
 <div class="container p-4">
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <!-- Header Section -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="text-success fw-bold mb-1">
-                        <i class="bi bi-tree me-2"></i>
-                        {% if farmland %}Edit Farmland{% else %}Add New Farmland{% endif %}
-                    </h2>
-                    <p class="text-muted mb-0">
-                        {% if farmland %}
-                            Update your farmland information
-                        {% else %}
-                            Register a new farmland for your agricultural records
-                        {% endif %}
-                    </p>
-                </div>
-                {% if total_farmlands %}
-                <span class="badge bg-info fs-6">
-                    <i class="bi bi-geo-alt me-1"></i>{{ total_farmlands }} farmland{{ total_farmlands|pluralize }} registered
-                </span>
+
+        <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-success fw-bold mb-1">
+                <i class="bi bi-tree me-2"></i>
+                {% if farmland %}Edit Farmland{% else %}Add New Farmland{% endif %}
+            </h2>
+            <p class="text-muted mb-0">
+                {% if farmland %}
+                    Update your farmland information
+                {% else %}
+                    Register a new farmland for your agricultural records
+                {% endif %}
+            </p>
+        </div>
+        {% if total_farmlands %}
+        <span class="badge bg-info fs-6">
+            <i class="bi bi-geo-alt me-1"></i>{{ total_farmlands }} farmland{{ total_farmlands|pluralize }} registered
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Information Alert -->
+    <div class="alert alert-warning border-0 mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle text-warning me-3 fs-4"></i>
+            <div>
+                <h6 class="mb-1 fw-semibold">Why register farmlands?</h6>
+                <p class="mb-0 small">Registering your farmlands helps you easily select locations for plant and harvest records, making record-keeping more efficient and organized.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <form method="POST" novalidate id="farmland-record-form">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.farmland_name.id_for_label }}">
+                    <i class="bi bi-tag me-1"></i>{{ form.farmland_name.label }}
+                </label>
+                {{ form.farmland_name }}
+                {% if form.farmland_name.errors %}
+                    <div class="text-danger small mt-1">{{ form.farmland_name.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.estimated_area.id_for_label }}">
+                    <i class="bi bi-rulers me-1"></i>{{ form.estimated_area.label }}
+                </label>
+                {{ form.estimated_area }}
+                {% if form.estimated_area.errors %}
+                    <div class="text-danger small mt-1">{{ form.estimated_area.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.municipality.id_for_label }}">
+                    <i class="bi bi-geo-alt me-1"></i>{{ form.municipality.label }}
+                </label>
+                {{ form.municipality }}
+                {% if form.municipality.errors %}
+                    <div class="text-danger small mt-1">{{ form.municipality.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.barangay.id_for_label }}">
+                    <i class="bi bi-map me-1"></i>{{ form.barangay.label }}
+                </label>
+                {{ form.barangay }}
+                {% if form.barangay.errors %}
+                    <div class="text-danger small mt-1">{{ form.barangay.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4 pt-3 border-top">
+            <div class="d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    {% if farmland %}Update Farmland{% else %}Save Farmland{% endif %}
+                </button>
+                
+                {% if farmland %}
+                    <a href="{% url 'base:farmland_owned' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Cancel
+                    </a>
+                {% else %}
+                    <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-2"></i>Cancel
+                    </a>
                 {% endif %}
             </div>
 
-            <!-- Information Alert -->
-            <div class="alert alert-info border-0 mb-4">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-info-circle text-info me-3 fs-4"></i>
-                    <div>
-                        <h6 class="mb-1 fw-semibold">Why register farmlands?</h6>
-                        <p class="mb-0 small">Registering your farmlands helps you easily select locations for plant and harvest records, making record-keeping more efficient and organized.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Form Section -->
-            <form method="POST" novalidate id="farmland-record-form">
-                {% csrf_token %}
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.farmland_name }}
-                            <label for="{{ form.farmland_name.id_for_label }}">
-                                <i class="bi bi-tag me-1"></i>{{ form.farmland_name.label }}
-                            </label>
-                            {% if form.farmland_name.errors %}
-                                <div class="text-danger small mt-1">{{ form.farmland_name.errors }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.estimated_area }}
-                            <label for="{{ form.estimated_area.id_for_label }}">
-                                <i class="bi bi-rulers me-1"></i>{{ form.estimated_area.label }}
-                            </label>
-                            {% if form.estimated_area.errors %}
-                                <div class="text-danger small mt-1">{{ form.estimated_area.errors }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.municipality }}
-                            <label for="{{ form.municipality.id_for_label }}">
-                                <i class="bi bi-geo-alt me-1"></i>{{ form.municipality.label }}
-                            </label>
-                            {% if form.municipality.errors %}
-                                <div class="text-danger small mt-1">{{ form.municipality.errors }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.barangay }}
-                            <label for="{{ form.barangay.id_for_label }}">
-                                <i class="bi bi-map me-1"></i>{{ form.barangay.label }}
-                            </label>
-                            {% if form.barangay.errors %}
-                                <div class="text-danger small mt-1">{{ form.barangay.errors }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4 pt-3 border-top">
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle me-2"></i>
-                            {% if farmland %}Update Farmland{% else %}Save Farmland{% endif %}
-                        </button>
-                        
-                        {% if farmland %}
-                            <a href="{% url 'base:farmland_owned' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-2"></i>Cancel
-                            </a>
-                        {% else %}
-                            <a href="{% url 'base:newrecord' %}?view=choose" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-2"></i>Cancel
-                            </a>
-                        {% endif %}
-                    </div>
-
-                    {% if not farmland %}
-                        <a href="{% url 'base:farmland_owned' %}" class="btn btn-outline-info">
-                            <i class="bi bi-list me-2"></i>View All Farmlands
-                        </a>
-                    {% endif %}
-                </div>
-            </form>
-
-            <!-- Help Section -->
             {% if not farmland %}
-            <div class="card border-warning mt-4">
-                <div class="card-body">
-                    <h6 class="card-title text-warning">
-                        <i class="bi bi-lightbulb me-2"></i>Pro Tips
-                    </h6>
-                    <ul class="mb-0 small text-muted">
-                        <li>Use descriptive names like "North Rice Field" or "Mango Orchard 1" for easy identification</li>
-                        <li>Estimated area helps with planning and record analysis (optional but recommended)</li>
-                        <li>You can edit farmland information anytime from your account panel</li>
-                    </ul>
-                </div>
-            </div>
+                <a href="{% url 'base:farmland_owned' %}" class="btn btn-secondary">
+                    <i class="bi bi-list me-2"></i>View All Farmlands
+                </a>
             {% endif %}
         </div>
+    </form>
+
+    <!-- Help Section -->
+    {% if not farmland %}
+    <div class="card border-warning mt-4">
+        <div class="card-body">
+            <h6 class="card-title text-warning">
+                <i class="bi bi-lightbulb me-2"></i>Pro Tips
+            </h6>
+            <ul class="mb-0 small text-muted">
+                <li>Use descriptive names like "North Rice Field" or "Mango Orchard 1" for easy identification</li>
+                <li>Estimated area helps with planning and record analysis (optional but recommended)</li>
+                <li>You can edit farmland information anytime from your account panel</li>
+            </ul>
+        </div>
     </div>
+    {% endif %}
+
 </div>
 
 <script>
@@ -214,26 +204,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // On page load, keep the initial selection (for edit mode)
         updateBarangayOptions(true);
     }
-
-    // Add floating label effects for better UX
-    const floatingInputs = document.querySelectorAll('.form-floating input, .form-floating select');
-    floatingInputs.forEach(input => {
-        // Handle focus/blur for better floating label animation
-        input.addEventListener('focus', function() {
-            this.parentElement.classList.add('focused');
-        });
-        
-        input.addEventListener('blur', function() {
-            if (!this.value) {
-                this.parentElement.classList.remove('focused');
-            }
-        });
-        
-        // Initial state check
-        if (input.value) {
-            input.parentElement.classList.add('focused');
-        }
-    });
 });
 </script>
 {% endblock content %}

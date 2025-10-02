@@ -744,8 +744,8 @@ def farmland_owned_view(request):
     farmlands_with_stats = []
     for farmland in farmlands:
         # Count total transactions (harvest + plant records) for this farmland
-        harvest_count = InitHarvestRecord.objects.filter(farmland_id=farmland).count()
-        plant_count = InitPlantRecord.objects.filter(farmland_id=farmland).count()
+        harvest_count = initHarvestRecord.objects.filter(farmland_id=farmland).count()
+        plant_count = initPlantRecord.objects.filter(farmland_id=farmland).count()
         total_transactions = harvest_count + plant_count
         
         farmlands_with_stats.append({
