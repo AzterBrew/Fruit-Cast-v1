@@ -780,7 +780,7 @@ def account_edit_view(request):
             'userinfo': userinfo, 
             'view_to_show': 'edit',
         }
-        return render(request, 'loggedin/account_edit.html', context)
+        return render(request, 'loggedin/account_panel.html', context)
         
     except UserInformation.DoesNotExist:
         messages.error(request, 'User information not found.')
@@ -792,31 +792,43 @@ def farmland_owned_view(request):
     userinfo_id = request.session.get('userinfo_id')
     if not userinfo_id:
         return redirect('base:home')
-    userinfo = UserInformation.objects.get(pk=userinfo_id)
-    farmlands = FarmLand.objects.filter(userinfo_id=userinfo)
+    
+    try:
+        userinfo = UserInformation.objects.get(pk=userinfo_id)
+        farmlands = FarmLand.objects.filter(userinfo_id=userinfo).select_related('municipality', 'barangay')
 
-    # Add transaction count for each farmland
-    farmlands_with_stats = []
-    for farmland in farmlands:
-        # Count total transactions (harvest + plant records) for this farmland
-        harvest_count = initHarvestRecord.objects.filter(farmland_id=farmland).count()
-        plant_count = initPlantRecord.objects.filter(farmland_id=farmland).count()
-        total_transactions = harvest_count + plant_count
+        # Calculate total area and unique municipalities
+        total_area = sum(farm.estimated_area or 0 for farm in farmlands)
+        unique_municipalities = set(farm.municipality.municipality for farm in farmlands)
+
+        # Add transaction count for each farmland
+        farmlands_with_stats = []
+        for farmland in farmlands:
+            # Count total transactions (harvest + plant records) for this farmland
+            # Use the correct relationship: transaction__farm_land
+            harvest_count = initHarvestRecord.objects.filter(transaction__farm_land=farmland).count()
+            plant_count = initPlantRecord.objects.filter(transaction__farm_land=farmland).count()
+            total_transactions = harvest_count + plant_count
+            
+            farmlands_with_stats.append({
+                'farmland': farmland,
+                'harvest_records': harvest_count,
+                'plant_records': plant_count,
+                'total_transactions': total_transactions,
+            })
+
+        context = {
+            'farmlands': farmlands,
+            'farmlands_with_stats': farmlands_with_stats,
+            'total_area': total_area if total_area > 0 else None,
+            'unique_municipalities': unique_municipalities,
+            'user_firstname': userinfo.firstname,
+            'view_to_show': 'farmland_owned',
+        }
+        return render(request, 'loggedin/account_panel.html', context)
         
-        farmlands_with_stats.append({
-            'farmland': farmland,
-            'harvest_records': harvest_count,
-            'plant_records': plant_count,
-            'total_transactions': total_transactions,
-        })
-
-    context = {
-        'farmlands': farmlands,
-        'farmlands_with_stats': farmlands_with_stats,
-        'user_firstname': userinfo.firstname,
-        'view_to_show': 'farmland_owned',
-    }
-    return render(request, 'loggedin/account_panel.html', context)
+    except UserInformation.DoesNotExist:
+        return redirect('base:home')
 
 
 UNIT_CONVERSION_TO_KG = {

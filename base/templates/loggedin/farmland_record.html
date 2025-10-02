@@ -9,6 +9,11 @@
                 <i class="bi bi-tree me-2"></i>
                 {% if farmland %}Edit Farmland{% else %}Add New Farmland{% endif %}
             </h2>
+            {% if total_farmlands %}
+            <span class="badge bg-succcess">
+                <i class="bi bi-geo-alt me-1"></i>{{ total_farmlands }} farmland{{ total_farmlands|pluralize }} registered
+            </span>
+            {% endif %}
             <p class="text-muted mb-0">
                 {% if farmland %}
                     Update your farmland information
@@ -17,11 +22,7 @@
                 {% endif %}
             </p>
         </div>
-        {% if total_farmlands %}
-        <span class="badge bg-info fs-6">
-            <i class="bi bi-geo-alt me-1"></i>{{ total_farmlands }} farmland{{ total_farmlands|pluralize }} registered
-        </span>
-        {% endif %}
+        
     </div>
 
     <!-- Information Alert -->
