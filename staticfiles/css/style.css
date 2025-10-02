@@ -607,7 +607,8 @@ a:hover {
 
 .list-group-item-action.active {
     --bs-list-group-active-bg: #abef9e !important;
-    --bs-list-group-action-active-color: #212529 !important;
+    --bs-list-group-active-border-color: #198754 !important;
+    --bs-list-group-active-color: #198754 !important;
 }
 
 /* Authentication Templates Improvements */

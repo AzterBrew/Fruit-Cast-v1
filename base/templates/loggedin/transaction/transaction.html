@@ -112,9 +112,9 @@ Fruit Cast | Create New Record
                                 <i class="bi bi-plus-circle text-success me-3"></i>
                                 <span>New Plant Record</span>
                             </a>
-                            <a href="{% url 'base:solo_harvest_record' %}" class="list-group-item list-group-item-action d-block align-items-center py-3 {% if view_to_show == 'plant' %}active{% endif %}">
+                            <a href="{% url 'base:solo_harvest_record' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if view_to_show == 'harvest' %}active{% endif %}">
                                 <i class="bi bi-plus-circle text-success me-3"></i>
-                                <div class="d-block">
+                                <div>
                                     <span class="d-block">New Harvest Record</span>
                                     <small class="d-block">* This is for submitting a record of your harvest that is not connected to a plant record</small>
                                 </div>
