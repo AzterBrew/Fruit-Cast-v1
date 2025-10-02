@@ -54,7 +54,6 @@ Fruit Cast | Farmer Account Verification
             </div>
 
             <!-- Farmer Accounts Section -->
-            <!-- Farmer Accounts Section -->
             {% if accounts %}
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
@@ -82,7 +81,9 @@ Fruit Cast | Farmer Account Verification
                                         <th scope="col">Location</th>
                                         <th scope="col">Account Status</th>
                                         <th scope="col">Total Records</th>
+                                        {% if user_role_id == 2%}
                                         <th scope="col" class="text-center">Actions</th>
+                                        {% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -95,18 +96,9 @@ Fruit Cast | Farmer Account Verification
                                             <small class="text-muted">{{ account.account_register_date|date:"M d, Y" }}</small>
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px; font-size: 0.8rem;">
-                                                    {{ account.userinfo_id.firstname|first }}{{ account.userinfo_id.lastname|first }}
-                                                </div>
-                                                <div>
-                                                    <div class="fw-medium">
-                                                        {{ account.userinfo_id.lastname }}, {{ account.userinfo_id.firstname }} 
-                                                        {% if account.userinfo_id.middlename %}{{ account.userinfo_id.middlename|slice:":1" }}.{% endif %}
-                                                    </div>
-                                                    <small class="text-muted">{{ account.userinfo_id.user_email }}</small>
-                                                </div>
-                                            </div>
+                                            <div class="fw-semibold">{{ account.userinfo_id.lastname }},</div>
+                                            <div class="text-muted small">{{ account.userinfo_id.firstname }} {% if account.userinfo_id.middlename %}, {{ account.userinfo_id.middlename }}{% endif %}
+                                                    </div></div>
                                         </td>
                                         <td>
                                             <div>
@@ -120,9 +112,9 @@ Fruit Cast | Farmer Account Verification
                                         </td>
                                         <td>
                                             <div>
-                                                <span class="badge bg-info mb-1">{{ account.userinfo_id.municipality_id.municipality }}</span>
+                                                <div class="fw-medium">{{ account.userinfo_id.municipality_id.municipality }}</div>
                                                 <br>
-                                                <small class="text-muted">{{ account.userinfo_id.barangay_id.barangay }}</small>
+                                                <div class="text-muted small">{{ account.userinfo_id.barangay_id.barangay }}</div>
                                             </div>
                                         </td>
                                         <td>
@@ -139,11 +131,13 @@ Fruit Cast | Farmer Account Verification
                                         <td class="text-center">
                                             <span class="badge bg-light text-dark">{{ account.record_count }}</span>
                                         </td>
+                                        {% if user_role_id == 2%}
                                         <td class="text-center">
                                             <a href="#" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="View Account Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </td>
+                                        {% endif %}
                                     </tr>
                                     {% endfor %}
                                 </tbody>

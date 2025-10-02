@@ -175,9 +175,9 @@ class EditUserInformation(forms.ModelForm):
         fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate","barangay_id", "municipality_id", "address_details", "religion", "civil_status","rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "user_email", "contact_number"]
         labels = {"lastname": "Last Name", "firstname": "First Name", "middlename": "Middle Name","nameextension": "Name Extension", "sex": "Sex", "birthdate": "Date of Birth","barangay_id": "Barangay", "municipality_id": "Municipality","address_details": "Purok, Street Name, Building, House No.", "religion": "Religion","civil_status": "Civil Status", "rsbsa_ref_number": "RSBSA Reference No.","emergency_contact_person": "Emergency Contact Person", "emergency_contact_number": "Emergency Contact No.","user_email": "Email", "contact_number": "Contact No."}
         widgets = {
-            'firstname': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
-            'lastname': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
-            'middlename': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
+            'firstname': forms.TextInput(attrs={'class': 'form-control form-control'}),
+            'lastname': forms.TextInput(attrs={'class': 'form-control form-control'}),
+            'middlename': forms.TextInput(attrs={'class': 'form-control form-control'}),
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'barangay_id': forms.Select(attrs={'class': 'form-control form-select'}),

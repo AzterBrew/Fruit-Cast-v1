@@ -142,7 +142,7 @@
             <div class="list-group list-group-flush">
                 {% for notification in notifications %}
                     <div class="list-group-item{% if not notification.is_read %} border-start border-primary border-3{% endif %} p-3" id="notif-{{ notification.id }}">
-                        <a href="{{ notification.redirect_url }}" class="notif-link text-decoration-none" data-notif-id="{{ notification.id }}">
+                        <a href="{% if notification.redirect_url %}{{ notification.redirect_url }}{% else %}#{% endif %}" class="notif-link text-decoration-none" data-notif-id="{{ notification.id }}" {% if not notification.redirect_url %}onclick="return false;"{% endif %}>
                             <div class="d-flex">
                                 <div class="flex-shrink-0">
                                     <i class="bi bi-bell-fill text-success"></i>
@@ -176,6 +176,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.notif-link').forEach(function(link) {
         link.addEventListener('click', function(e) {
             var notifId = this.getAttribute('data-notif-id');
+            var href = this.getAttribute('href');
+            
+            // If no redirect URL (href is "#"), prevent default navigation
+            if (href === '#') {
+                e.preventDefault();
+            }
+            
             // Mark as read via AJAX
             fetch("{% url 'dashboard:mark_notification_read' %}", {
                 method: "POST",
@@ -197,7 +204,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
-            // Let the link continue to its href
+            
+            // If href is not "#", let the link continue to its href
+            // If href is "#", do nothing (already prevented default)
         });
     });
 
@@ -317,6 +326,15 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Notification styles */
 .notif-link:hover {
     text-decoration: none !important;
+}
+
+.notif-link[href="#"] {
+    cursor: default;
+}
+
+.notif-link[href="#"]:hover {
+    background-color: rgba(0,0,0,0.02) !important;
+    transform: none !important;
 }
 
 .list-group-item.border-start {
