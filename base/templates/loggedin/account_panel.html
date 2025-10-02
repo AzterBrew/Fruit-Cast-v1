@@ -75,7 +75,7 @@ Fruit Cast | Account Panel
 
                 <!-- Profile Summary Card -->
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-info text-white">
+                    <div class="card-header bg-secondary text-white">
                         <h6 class="mb-0">
                             <i class="bi bi-person-badge me-2"></i>Quick Info
                         </h6>
@@ -85,7 +85,7 @@ Fruit Cast | Account Panel
                             Manage your account settings, view your registered farmlands, and update your personal information.
                         </p>
                         <div class="d-grid">
-                            <a href="{% url 'base:transaction_history' %}" class="btn btn-outline-info btn-sm">
+                            <a href="{% url 'base:transaction_history' %}" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-clock-history me-1"></i>View Transactions
                             </a>
                         </div>
@@ -99,6 +99,8 @@ Fruit Cast | Account Panel
             <div class="transaction-content card shadow-sm rounded-4 p-4 mb-4 text-left">
                 {% if view_to_show == "info" %}
                     {% include "loggedin/account_info.html" %}
+                {% elif view_to_show == "edit" %}
+                    {% include "loggedin/account_edit.html" %}
                 {% elif view_to_show == "farmland_owned" %}
                     {% include "loggedin/farmland_owned.html" %}
                 {% else %}

@@ -1,54 +1,199 @@
-{% extends "loggedin/layout.html" %}
-
-{% block title %}
-Fruit Cast | Account Information
-{% endblock title %}
-
-{% block navbar %}
-    {% include "loggedin/navbar.html" %}
-{% endblock navbar %}
- 
 {% block content %}
-{% comment %} <div class="container1">
-    <div>
-        <h1>Edit your Account Information</h1>
+<div class="container p-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-success fw-bold mb-1">
+                <i class="bi bi-person-gear me-2"></i>Edit Account Information
+            </h2>
+            <p class="text-muted mb-0">Update your personal details and contact information</p>
+        </div>
     </div>
-    <hr>
-    <div class="list-group">
-        <form method="POST" class="list-group-item">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Save Changes</button>
-        </form>        
-    </div>
-    <hr>
-    <div>
-        <a href="/accountinfo">Back to Account Information</a>
-    </div>
-</div> {% endcomment %}
-<div class="container1">
-    <div class="container mt-5">
-        <h2>Edit Account Information</h2>
-        <form method="POST" novalidate onsubmit="return confirmSave();">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="mb-3">
-                    <label class="form-label">{{ field.label_tag }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small">{{ field.errors }}</div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-            <div class="col-5">
-                <button type="submit" class="btn btn-success">Save Changes</button>
-                <a href="{% url 'base:accinfo' %}" class="btn btn-secondary">Cancel</a>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        </form>
-    </div>
-    
+        {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
+    <form method="POST" novalidate id="account-edit-form">
+        {% csrf_token %}
+        
+        <!-- Personal Information Section -->
+        <div class="mb-4">
+            <h5 class="text-success mb-3">
+                <i class="bi bi-person-lines-fill me-2"></i>Personal Information
+            </h5>
+            <div class="row g-3">
+                {% for field in form %}
+                    {% if field.name in "firstname,lastname,middlename,nameextension,sex,birthdate,religion,civil_status" %}
+                        <div class="{% if field.name == 'sex' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {% if field.name == "firstname" %}<i class="bi bi-person me-1"></i>{% endif %}
+                                {% if field.name == "lastname" %}<i class="bi bi-person me-1"></i>{% endif %}
+                                {% if field.name == "middlename" %}<i class="bi bi-person me-1"></i>{% endif %}
+                                {% if field.name == "nameextension" %}<i class="bi bi-person-badge me-1"></i>{% endif %}
+                                {% if field.name == "birthdate" %}<i class="bi bi-calendar me-1"></i>{% endif %}
+                                {% if field.name == "religion" %}<i class="bi bi-church me-1"></i>{% endif %}
+                                {% if field.name == "civil_status" %}<i class="bi bi-heart me-1"></i>{% endif %}
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Contact Information Section -->
+        <div class="mb-4 pt-3 border-top">
+            <h5 class="text-success mb-3">
+                <i class="bi bi-telephone me-2"></i>Contact Information
+            </h5>
+            <div class="row g-3">
+                {% for field in form %}
+                    {% if field.name in "contact_number,user_email,emergency_contact_person,emergency_contact_number" %}
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {% if field.name == "contact_number" %}<i class="bi bi-phone me-1"></i>{% endif %}
+                                {% if field.name == "user_email" %}<i class="bi bi-envelope me-1"></i>{% endif %}
+                                {% if field.name == "emergency_contact_person" %}<i class="bi bi-person-exclamation me-1"></i>{% endif %}
+                                {% if field.name == "emergency_contact_number" %}<i class="bi bi-telephone-plus me-1"></i>{% endif %}
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Address Information Section -->
+        <div class="mb-4 pt-3 border-top">
+            <h5 class="text-success mb-3">
+                <i class="bi bi-geo-alt me-2"></i>Address Information
+            </h5>
+            <div class="row g-3">
+                {% for field in form %}
+                    {% if field.name in "address_details,municipality_id,barangay_id" %}
+                        <div class="{% if field.name == 'address_details' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {% if field.name == "address_details" %}<i class="bi bi-house me-1"></i>{% endif %}
+                                {% if field.name == "municipality_id" %}<i class="bi bi-geo-alt me-1"></i>{% endif %}
+                                {% if field.name == "barangay_id" %}<i class="bi bi-map me-1"></i>{% endif %}
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="mb-4 pt-3 border-top">
+            <h5 class="text-success mb-3">
+                <i class="bi bi-info-circle me-2"></i>Additional Information
+            </h5>
+            <div class="row g-3">
+                {% for field in form %}
+                    {% if field.name == "rsbsa_ref_number" %}
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                <i class="bi bi-card-text me-1"></i>{{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4 pt-3 border-top">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle me-2"></i>Save Changes
+            </button>
+            
+            <a href="{% url 'base:account_info_panel' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-2"></i>Cancel
+            </a>
+        </div>
+    </form>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation and confirmation
+    const form = document.getElementById("account-edit-form");
+    if (form) {
+        form.addEventListener("submit", function (e) {
+            const message = "Are you sure you want to save these changes to your account information?\nSiguro ka bang gusto mong i-save ang mga pagbabago?";
+            if (!confirm(message)) {
+                e.preventDefault();
+            }
+        });
+    }
 
+    // Municipality and barangay dynamic selection (if applicable)
+    const municipalitySelect = document.getElementById('id_municipality_id');
+    const barangaySelect = document.getElementById('id_barangay_id');
+
+    if (municipalitySelect && barangaySelect) {
+        municipalitySelect.addEventListener('change', function() {
+            const municipalityId = this.value;
+            barangaySelect.innerHTML = '<option value="">Loading...</option>';
+            barangaySelect.disabled = true;
+
+            if (municipalityId) {
+                fetch(`/get-barangays/${municipalityId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        barangaySelect.innerHTML = '';
+                        if (data.length > 0) {
+                            barangaySelect.disabled = false;
+                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                            data.forEach(barangay => {
+                                const option = document.createElement('option');
+                                option.value = barangay.id;
+                                option.textContent = barangay.name;
+                                barangaySelect.appendChild(option);
+                            });
+                        } else {
+                            barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
+                            barangaySelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading barangays:', error);
+                        barangaySelect.innerHTML = '<option value="">Error loading barangays</option>';
+                        barangaySelect.disabled = true;
+                    });
+            } else {
+                barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+                barangaySelect.disabled = true;
+            }
+        });
+    }
+});
+</script>
 {% endblock content %}
 

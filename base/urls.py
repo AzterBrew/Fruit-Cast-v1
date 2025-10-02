@@ -25,7 +25,7 @@ urlpatterns = [
     path('accounts/login/success/', views.login_success, name='login_success'),
     # path('login/', include('loginpage.urls'))
     path('accountinfo/', accinfo, name="accinfo"),
-    path('accountinfo/edit', editacc, name="editacc"),
+    path('accountinfo/edit/', editacc, name="editacc"),
     path('forecast/', forecast, name="forecast"),
     path('monitor/', monitor, name="monitor"),
     path('aboutus/', about, name="about"),
@@ -40,6 +40,7 @@ urlpatterns = [
     path('transaction-recordlist/<int:transaction_id>/', views.transaction_recordlist, name='transaction_recordlist'),
     path('get-barangays/', views.get_barangays, name='get_barangays'),
     path('accountpanel/', views.account_panel_view, name='account_info_panel'),
+    path('accountpanel/edit/', views.account_edit_view, name='account_edit_panel'),
     path('accountpanel/farmland/', views.farmland_owned_view, name='farmland_owned'),
 
     path('record/remove/<int:index>/', views.remove_pending_record, name='remove_pending_record'), #index ng pending record since saved as array lang sha, not in the db

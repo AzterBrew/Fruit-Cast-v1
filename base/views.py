@@ -709,28 +709,83 @@ def transaction_history(request):
 
 @login_required
 def account_panel_view(request):
-    # You can add logic to switch views based on GET params or URLs
-    view_to_show = request.GET.get("view", "info")
-    context = {
-        'user_firstname': request.user.userinformation.firstname,
-        'user_middlename': request.user.userinformation.middlename,
-        'user_lastname': request.user.userinformation.lastname,
-        'user_nameext': request.user.userinformation.nameextension,
-        'user_sex': request.user.userinformation.sex,
-        'user_dob': request.user.userinformation.birthdate,
-        'user_civil_status': request.user.userinformation.civil_status,
-        'user_religion': request.user.userinformation.religion,
-        'user_rsbsa_ref_number': request.user.userinformation.rsbsa_ref_number,
-        'user_contactno': request.user.userinformation.contact_number,
-        'user_email': request.user.userinformation.user_email,
-        'user_address_details': request.user.userinformation.address_details,
-        'user_municipality': request.user.userinformation.municipality_id,
-        'user_barangay': request.user.userinformation.barangay_id,
-        'user_emperson': request.user.userinformation.emergency_contact_person,
-        'user_emcontact': request.user.userinformation.emergency_contact_number,
-        'view_to_show': view_to_show,
-    }
-    return render(request, 'loggedin/account_panel.html', context)
+    userinfo_id = request.session.get('userinfo_id')
+    
+    if not userinfo_id:
+        return redirect('base:home')
+        
+    try:
+        # Use select_related to optimize database queries
+        userinfo = UserInformation.objects.select_related(
+            'barangay_id', 'municipality_id'
+        ).get(pk=userinfo_id)
+        
+        context = {
+            'user_firstname': userinfo.firstname,
+            'user_middlename': userinfo.middlename,
+            'user_lastname': userinfo.lastname,
+            'user_nameext': userinfo.nameextension,
+            'user_sex': userinfo.sex,
+            'user_dob': userinfo.birthdate,
+            'user_emperson': userinfo.emergency_contact_person or 'Not Specified',
+            'user_emcontact': userinfo.emergency_contact_number or 'Not Specified',
+            'user_address_details': userinfo.address_details,
+            'user_barangay': userinfo.barangay_id.barangay,
+            'user_municipality': userinfo.municipality_id.municipality,
+            'user_contactno': userinfo.contact_number,
+            'user_email': userinfo.user_email,
+            'user_religion': userinfo.religion,
+            'user_civil_status': userinfo.civil_status,
+            'user_rsbsa_ref_number': userinfo.rsbsa_ref_number or 'Not Provided',
+            'view_to_show': 'info',
+        }            
+        return render(request, 'loggedin/account_panel.html', context)
+        
+    except UserInformation.DoesNotExist:
+        return redirect('base:home') 
+
+@login_required
+def account_edit_view(request):
+    userinfo_id = request.session.get('userinfo_id')
+    
+    if not userinfo_id:
+        return redirect('base:home')
+        
+    try:
+        # Use select_related to optimize database queries
+        userinfo = UserInformation.objects.select_related(
+            'barangay_id', 'municipality_id'
+        ).get(pk=userinfo_id)
+        
+        if request.method == "POST":
+            form = EditUserInformation(request.POST, instance=userinfo)
+            if form.is_valid():
+                updated_info = form.save(commit=False)
+                # Update the associated auth user email if it changed
+                if updated_info.user_email != request.user.email:
+                    request.user.email = updated_info.user_email
+                    request.user.save()
+                
+                updated_info.save()
+                messages.success(request, 'Your account information has been updated successfully!')
+                return redirect('base:account_info_panel')
+            else:
+                messages.error(request, 'Please correct the errors below.')
+        else:
+            form = EditUserInformation(instance=userinfo)
+
+        context = {
+            'form': form,
+            'user_firstname': userinfo.firstname,
+            'userinfo': userinfo, 
+            'view_to_show': 'edit',
+        }
+        return render(request, 'loggedin/account_edit.html', context)
+        
+    except UserInformation.DoesNotExist:
+        messages.error(request, 'User information not found.')
+        return redirect('base:home') 
+
 
 @login_required
 def farmland_owned_view(request):
@@ -1037,73 +1092,86 @@ def about(request):
         return render(request, 'about.html', {})  
 
 
-def editacc(request):
-    print("🔥 DEBUG: editacc view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
-        userinfo_id = request.session.get('userinfo_id')
-        userinfo = UserInformation.objects.get(pk=userinfo_id)
+# @login_required
+# def editacc(request):
+    # userinfo_id = request.session.get('userinfo_id')
+    
+    # if not userinfo_id:
+    #     return redirect('base:home')
         
-        context = {
-                'user_firstname' : userinfo.firstname,
-            } 
+    # try:
+    #     # Use select_related to optimize database queries
+    #     userinfo = UserInformation.objects.select_related(
+    #         'barangay_id', 'municipality_id'
+    #     ).get(pk=userinfo_id)
         
-        if request.method == "POST":
-            form = EditUserInformation(request.POST,instance=userinfo)
-            if form.is_valid():
-                updated_info = form.save(commit=False)
-                updated_info.auth_user = request.user
-                updated_info.save()
+    #     if request.method == "POST":
+    #         form = EditUserInformation(request.POST, instance=userinfo)
+    #         if form.is_valid():
+    #             updated_info = form.save(commit=False)
+    #             # Update the associated auth user email if it changed
+    #             if updated_info.user_email != request.user.email:
+    #                 request.user.email = updated_info.user_email
+    #                 request.user.save()
                 
-                request.user.email = updated_info.user_email
-                request.user.save()
-                
-                return redirect('base:accinfo')                
+    #             updated_info.save()
+    #             messages.success(request, 'Your account information has been updated successfully!')
+    #             return redirect('base:accinfo')
+    #         else:
+    #             messages.error(request, 'Please correct the errors below.')
+    #     else:
+    #         form = EditUserInformation(instance=userinfo)
+
+    #     context = {
+    #         'form': form,
+    #         'user_firstname': userinfo.firstname,
+    #         'userinfo': userinfo,  # Add full userinfo for reference
+    #     }
+    #     return render(request, 'loggedin/account_edit.html', context)
         
-        else:
-            form = EditUserInformation(instance=userinfo)
-
-        return render(request, 'loggedin/account_edit.html', {'form': form})
-    else :
-        return render(request, 'home.html', {})  
+    # except UserInformation.DoesNotExist:
+    #     messages.error(request, 'User information not found.')
+    #     return redirect('base:home')  
 
 
-def accinfo(request):
-    print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
-        account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
+# def accinfo(request):
+#     if request.user.is_authenticated: 
+#         userinfo_id = request.session.get('userinfo_id')
         
-        if userinfo_id and account_id:
+#         if not userinfo_id:
+#             return redirect('base:home')
             
-            userinfo = UserInformation.objects.get(pk=userinfo_id)
+#         try:
+#             # Use select_related to optimize database queries
+#             userinfo = UserInformation.objects.select_related(
+#                 'barangay_id', 'municipality_id'
+#             ).get(pk=userinfo_id)
+            
+#             context = {
+#                 'user_firstname': userinfo.firstname,
+#                 'user_middlename': userinfo.middlename,
+#                 'user_lastname': userinfo.lastname,
+#                 'user_nameext': userinfo.nameextension,
+#                 'user_sex': userinfo.sex,
+#                 'user_dob': userinfo.birthdate,
+#                 'user_emperson': userinfo.emergency_contact_person or 'Not Specified',
+#                 'user_emcontact': userinfo.emergency_contact_number or 'Not Specified',
+#                 'user_address_details': userinfo.address_details,
+#                 'user_barangay': userinfo.barangay_id.barangay,
+#                 'user_municipality': userinfo.municipality_id.municipality,
+#                 'user_contactno': userinfo.contact_number,
+#                 'user_email': userinfo.user_email,
+#                 'user_religion': userinfo.religion,
+#                 'user_civil_status': userinfo.civil_status,
+#                 'user_rsbsa_ref_number': userinfo.rsbsa_ref_number or 'Not Provided',
+#             }            
+#             return render(request, 'loggedin/account_info.html', context)
+            
+#         except UserInformation.DoesNotExist:
+#             return redirect('base:home')
         
-            context = {
-                'user_firstname' : userinfo.firstname,
-                'user_middlename' : userinfo.middlename,
-                'user_lastname' : userinfo.lastname,
-                'user_nameext' : userinfo.nameextension,
-                'user_sex' : userinfo.sex,
-                'user_dob' : userinfo.birthdate,
-                'user_emperson' : userinfo.emergency_contact_person,
-                'user_emcontact' : userinfo.emergency_contact_number,
-                'user_address_details' : userinfo.address_details,
-                'user_barangay' : userinfo.barangay_id,
-                'user_municipality' : userinfo.municipality_id,
-                'user_contactno' : userinfo.contact_number,
-                'user_email' : userinfo.user_email,
-                'user_religion' : userinfo.religion,
-                'user_civil_status' : userinfo.civil_status,
-                'user_rsbsa_ref_number' : userinfo.rsbsa_ref_number,
-            }            
-            return render(request, 'loggedin/account_info.html', context)
-        
-        else:
-            print("⚠️ account_id missing in session!")
-            return redirect('home') #dapat redirect si user sa guest home
-    else :
-        return render(request, 'home.html', {})   
+#     else:
+#         return render(request, 'home.html', {})   
     
 
 def login_success(request):
