@@ -24,8 +24,8 @@ urlpatterns = [
     # path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
     path('accounts/login/success/', views.login_success, name='login_success'),
     # path('login/', include('loginpage.urls'))
-    path('accountinfo/', accinfo, name="accinfo"),
-    path('accountinfo/edit/', editacc, name="editacc"),
+    # path('accountinfo/', accinfo, name="accinfo"),
+    # path('accountinfo/edit/', editacc, name="editacc"),
     path('forecast/', forecast, name="forecast"),
     path('monitor/', monitor, name="monitor"),
     path('aboutus/', about, name="about"),
