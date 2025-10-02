@@ -122,7 +122,7 @@ def schedule_immediate_fruit_recommendations(account, municipality_id):
         if all_recommendations:
             # Create a combined message for all recommendations for this municipality
             fruit_names = [rec['commodity_name'] for rec in all_recommendations]
-            message = f"🌱 Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names[:3])}{'...' if len(fruit_names) > 3 else ''} based on forecasted low supply trends."
+            message = f"🌱 Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names)} based on forecasted low supply trends."
             
             # Schedule for immediate delivery (current time)
             scheduled_datetime = current_time

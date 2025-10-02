@@ -148,8 +148,8 @@
                                     <i class="bi bi-bell-fill text-success"></i>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <div class="text-dark{% if not notification.is_read %} fw-bold{% endif %}">
-                                        {{ notification.message|truncatechars:150 }}
+                                    <div class="text-dark{% if not notification.is_read %} fw-bold{% endif %} small">
+                                        {{ notification.message|truncatechars:250 }}
                                     </div>
                                     <small class="text-muted">
                                         <i class="bi bi-calendar3 me-1"></i>{{ notification.created_at|date:"M d, Y H:i" }}
