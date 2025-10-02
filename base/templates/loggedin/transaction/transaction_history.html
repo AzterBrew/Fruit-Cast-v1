@@ -1,87 +1,111 @@
 
 {% block content %}
 <div class="container p-4">
-    <div class="record-cart">
-        <h2>Your Transaction History</h2>
-        <p class="mb-4">Below is your list of submitted transactions. Click a transaction to view its details.</p>
-        {% if transactions %}
-            <table class="table table-bordered table-hover">
-                <thead class="table-success">
-                    <tr>
-                        {% comment %} <th>Transaction #</th> {% endcomment %}
-                        <th>Date Created</th>
-                        <th>Type</th>
-                        <th>Commodity Type</th>
-                        {% comment %} <th>Status</th> {% endcomment %}
-                        <th>Location</th>
-                        <th>View</th>
-                    </tr>
-                </thead> 
-                <tbody>
-                    {% for transaction in transactions %}
-                    <tr>
-                        {% comment %} <td>{{ transaction.transaction_id }}</td> {% endcomment %}
-                        <td>{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
-                        <td>
-                            {% if transaction.initplantrecord %} 
-                                Planting
-                                {% if transaction.initharvestrecord %}
-                                    , Harvest
-                                {% endif %}
-                            {% elif transaction.initharvestrecord %}
-                                Harvest
-                            {% else %}
-                                None
-                            {% endif %}
-                        </td>
-
-
-                        {% comment %} <td>{{ transaction.pk }}</td> {% endcomment %}
-
-                        <td>
-                            {% if transaction.initplantrecord %}
-                                {% if transaction.initplantrecord.commodity_id.pk == 1 %}
-                                    {{ transaction.initplantrecord.commodity_custom }}
-                                {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
-                                    {{ transaction.initplantrecord.commodity_id.name }}
-                                {% endif %}
-                            {% elif transaction.initharvestrecord %}
-                                {% if transaction.initharvestrecord.commodity_id.pk == 1 %}
-                                    {{ transaction.initharvestrecord.commodity_custom }}
-                                {% elif transaction.initharvestrecord.commodity_id.pk > 1 %}
-                                    {{ transaction.initharvestrecord.commodity_id.name }}
-                                {% endif %}
-                            {% else %}
-                                N/A
-                            {% endif %}
-{% comment %} 
-                            {% if transaction.initplantrecord.commodity_id.pk == 1 or transaction.initharvestrecord.commodity_id.pk == 1 %}
-                                {{ transaction.initplantrecord.commodity_custom }}
-                            {% elif transaction.initplantrecord.commodity_id.pk > 1 or transaction.initharvestrecord.commodity_id.pk > 1 %}
-                                {{ transaction.initplantrecord.commoditytype.name }}
-                            {% else %}
-                                N/A
-                            {% endif %} {% endcomment %}
-                        
-                        </td>
-                        {% comment %} <td>{{ transaction.harvest_status }}</td> {% endcomment %}
-                        <td>{{ transaction.get_location_display }}</td>
-                        <td>
-                            <a href="{% url 'base:transaction_recordlist' transaction.transaction_id %}" class="btn btn-sm btn-outline-success">
-                                View Record
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-success fw-bold mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Your Transaction History
+                </h2>
+                <span class="badge bg-success">{{ transactions|length }} transaction{{ transactions|length|pluralize }}</span>
+            </div>
             
-        {% else %}
-            <p>No transactions found.</p>
-        {% endif %}
+            <p class="text-muted mb-4">Below is your list of submitted transactions. Click a transaction to view its details.</p>
+            
+            {% if transactions %}
+                <!-- Responsive Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-success">
+                            <tr>
+                                <th><i class="bi bi-calendar3 me-1"></i>Date Created</th>
+                                <th><i class="bi bi-arrow-left-right me-1"></i>Type</th>
+                                <th><i class="bi bi-droplet me-1"></i>Commodity Type</th>
+                                <th><i class="bi bi-geo-alt me-1"></i>Location</th>
+                                <th><i class="bi bi-eye me-1"></i>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>
+                                    <span class="fw-medium">{{ transaction.transaction_date|date:"M d, Y" }}</span>
+                                    <div class="text-muted small">{{ transaction.transaction_date|date:"H:i" }}</div>
+                                </td>
+                                <td>
+                                    {% if transaction.initplantrecord %} 
+                                        <span class="badge bg-success me-1">
+                                            <i class="bi bi-plus-circle me-1"></i>Planting
+                                        </span>
+                                        {% if transaction.initharvestrecord %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-scissors me-1"></i>Harvest
+                                            </span>
+                                        {% endif %}
+                                    {% elif transaction.initharvestrecord %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-scissors me-1"></i>Harvest Only
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transaction.initplantrecord %}
+                                        {% if transaction.initplantrecord.commodity_id.pk == 1 %}
+                                            <span class="badge bg-warning text-dark">Custom</span>
+                                            <div class="small">{{ transaction.initplantrecord.commodity_custom }}</div>
+                                        {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
+                                            <span class="badge bg-success">{{ transaction.initplantrecord.commodity_id.name }}</span>
+                                        {% endif %}
+                                    {% elif transaction.initharvestrecord %}
+                                        {% if transaction.initharvestrecord.commodity_id.pk == 1 %}
+                                            <span class="badge bg-warning text-dark">Custom</span>
+                                            <div class="small">{{ transaction.initharvestrecord.commodity_custom }}</div>
+                                        {% elif transaction.initharvestrecord.commodity_id.pk > 1 %}
+                                            <span class="badge bg-success">{{ transaction.initharvestrecord.commodity_id.name }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transaction.farm_land %}
+                                        <div class="fw-medium">{{ transaction.farm_land.municipality.municipality }}</div>
+                                        <div class="text-muted small">{{ transaction.farm_land.barangay.barangay }}</div>
+                                    {% elif transaction.manual_municipality %}
+                                        <div class="fw-medium">{{ transaction.manual_municipality.municipality }}</div>
+                                        {% if transaction.manual_barangay %}
+                                            <div class="text-muted small">{{ transaction.manual_barangay.barangay }}</div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'base:transaction_recordlist' transaction.transaction_id %}" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-eye me-1"></i>View Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-inbox display-1 text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No transactions found</h5>
+                    <p class="text-muted">You haven't submitted any transactions yet.</p>
+                    <a href="{% url 'base:plant_record' %}" class="btn btn-success">
+                        <i class="bi bi-plus-circle me-2"></i>Create Your First Transaction
+                    </a>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
-    
-    
 {% endblock content %}
 

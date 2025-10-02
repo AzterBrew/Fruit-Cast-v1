@@ -589,17 +589,15 @@ def transaction_recordlist(request, transaction_id):
         return HttpResponseForbidden("Unauthorized access to this transaction.")
     
     plant_record = None
-    harvest_record = None
+    harvest_records = []
 
     try:
         plant_record = initPlantRecord.objects.get(transaction=transaction)
     except initPlantRecord.DoesNotExist:
         pass
 
-    try:
-        harvest_record = initHarvestRecord.objects.get(transaction=transaction)
-    except initHarvestRecord.DoesNotExist:
-        pass
+    # Get all harvest records for this transaction
+    harvest_records = initHarvestRecord.objects.filter(transaction=transaction).order_by('-harvest_date')
     
     plant_notification = None
     if plant_record:
@@ -611,7 +609,7 @@ def transaction_recordlist(request, transaction_id):
     context = {
         'transaction': transaction,
         'plant_record': plant_record,
-        'harvest_record': harvest_record,
+        'harvest_record': harvest_records,  # Changed to support multiple records
         'view_to_show': 'recordlist',  # So transaction.html knows what to include
         'user_firstname': transaction.account_id.userinfo_id.firstname,
         'plant_notification': plant_notification

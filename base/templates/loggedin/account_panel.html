@@ -5,44 +5,133 @@ Fruit Cast | Account Panel
 {% endblock title %}
  
 {% block content %}
-<div class="account-layout">
-    <nav class="account-sidebar">
-        <div class="sidebar-inner">
-            <div class="sidebar-title">
-                <span class="fs-4 text-light fw-bold">Account</span>
+<div class="transaction-layout container-fluid">
+    <!-- Mobile Navigation Toggle -->
+    <div class="d-lg-none mb-3">
+        <button class="btn btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#mobileAccountNav" aria-expanded="false" aria-controls="mobileAccountNav">
+            <i class="bi bi-person-circle me-2"></i>Account Menu
+        </button>
+    </div>
+
+    <!-- Mobile Navigation Collapse -->
+    <div class="collapse d-lg-none mb-4" id="mobileAccountNav">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-circle me-2"></i>Account Options
+                </h6>
             </div>
-            <ul class="nav flex-column mt-3">
-                <li class="nav-item mb-2">
-                    <a href="{% url 'base:account_info_panel' %}" class="nav-link link-light">
-                        <i class="bi bi-person-circle me-2"></i> Account Information
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'base:account_info_panel' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                        <i class="bi bi-person-circle text-success me-3"></i>
+                        <span>Account Information</span>
                     </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a href="{% url 'base:farmland_owned' %}" class="nav-link link-light">
-                        <i class="bi bi-tree me-2"></i> Owned Farmland Recorded
+                    <a href="{% url 'base:farmland_owned' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                        <i class="bi bi-tree text-success me-3"></i>
+                        <span>Owned Farmland Records</span>
                     </a>
-                </li>
-              {% if user_role_id == 3 or user_role_id == 2 %}
-
-                <li class="nav-item mb-2">
-                    <a href="{% url 'administrator:admin_dashboard' %}" class="nav-link link-light">
-                        <i class="bi bi-gear me-2"></i> Head to Admin Panel
+                    {% if user_role_id == 3 or user_role_id == 2 %}
+                    <a href="{% url 'administrator:admin_dashboard' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                        <i class="bi bi-gear text-success me-3"></i>
+                        <span>Head to Admin Panel</span>
                     </a>
-                </li>
-                {% endif%}
-
-                {# Add more account-related links here #}
-            </ul>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-    </nav>
-    <main class="account-main">
-        <div class="account-content card shadow-sm rounded-4 p-4 mt-3">
-            {% if view_to_show == "info" %}
-                {% include "loggedin/account_info.html" %}
-            {% elif view_to_show == "farmland_owned" %}
-                {% include "loggedin/farmland_owned.html" %}
-            {% else %}
-                <p class="text-muted">Choose an account option in the sidebar.</p>
+    </div>
+
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="transaction-sidebar-content d-none d-lg-block col-4 float-left">
+            <div style="top: 1rem;">
+                <!-- Account Navigation Card -->
+                <div class="card shadow-sm mb-4 border-0">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-person-circle me-2"></i>Account Options
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <a href="{% url 'base:account_info_panel' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if view_to_show == 'info' %}active{% endif %}">
+                                <i class="bi bi-person-circle text-success me-3"></i>
+                                <span>Account Information</span>
+                            </a>
+                            <a href="{% url 'base:farmland_owned' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if view_to_show == 'farmland_owned' %}active{% endif %}">
+                                <i class="bi bi-tree text-success me-3"></i>
+                                <span>Owned Farmland Records</span>
+                            </a>
+                            {% if user_role_id == 3 or user_role_id == 2 %}
+                            <a href="{% url 'administrator:admin_dashboard' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                                <i class="bi bi-gear text-success me-3"></i>
+                                <span>Head to Admin Panel</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Summary Card -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-person-badge me-2"></i>Quick Info
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            Manage your account settings, view your registered farmlands, and update your personal information.
+                        </p>
+                        <div class="d-grid">
+                            <a href="{% url 'base:transaction_history' %}" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-clock-history me-1"></i>View Transactions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="col-8 float-right">
+            <div class="transaction-content card shadow-sm rounded-4 p-4 mb-4 text-left">
+                {% if view_to_show == "info" %}
+                    {% include "loggedin/account_info.html" %}
+                {% elif view_to_show == "farmland_owned" %}
+                    {% include "loggedin/farmland_owned.html" %}
+                {% else %}
+                    <!-- Default State -->
+                    <div class="container p-4">
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-person-circle display-1 text-success"></i>
+                            </div>
+                            <h3 class="text-success fw-bold mb-3">Welcome to Your Account Panel</h3>
+                            <p class="text-muted mb-4">Choose an option from the sidebar to manage your account settings and information.</p>
+                            <div class="row g-3 justify-content-center">
+                                <div class="col-md-6 col-lg-4">
+                                    <a href="{% url 'base:account_info_panel' %}" class="btn btn-outline-success w-100 py-3">
+                                        <i class="bi bi-person-circle d-block mb-2 fs-4"></i>
+                                        Account Info
+                                    </a>
+                                </div>
+                                <div class="col-md-6 col-lg-4">
+                                    <a href="{% url 'base:farmland_owned' %}" class="btn btn-outline-success w-100 py-3">
+                                        <i class="bi bi-tree d-block mb-2 fs-4"></i>
+                                        Farmland Records
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
             {% endif %}
         </div>
     </main>

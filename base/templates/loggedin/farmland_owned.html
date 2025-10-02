@@ -1,43 +1,117 @@
 {% block content %}
 <div class="container p-4">
-    <div class="record-cart">
-        <h2 class="mb-4 text-success fw-bold">Your Recorded Farmlands</h2>
-        {% if farmlands %}
-            <div class="table-responsive mb-3">
-                <table class="table table-striped align-middle mb-0">
-                    {% comment %} <thead> {% endcomment %}
-                    <thead class="table-success">
-                        <tr> 
-                            <th>Name</th>
-                            <th>Municipality</th>
-                            <th>Barangay</th>
-                            <th>Estimated Area (hectares)</th>
-                            <th>Edit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for farm in farmlands %}
-                        <tr>
-                            <td>{{ farm.farmland_name }}</td>
-                            <td>{{ farm.municipality.municipality }}</td>
-                            <td>{{ farm.barangay.barangay }}</td>
-                            <td>{{ farm.estimated_area|default:"N/A" }}</td>
-                            <td>
-                                <a href="{% url 'base:farmland_edit' farm.farminfo_id %}" class="btn btn-secondary btn-sm">Edit</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-            </table>
-
-            {% else %}
-            <p>No farmlands recorded yet.</p>
-            {% endif %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-success fw-bold mb-0">
+                    <i class="bi bi-tree me-2"></i>Your Recorded Farmlands
+                </h2>
+                <span class="badge bg-success">{{ farmlands|length }} farmland{{ farmlands|length|pluralize }}</span>
             </div>
-        <div>
-            <a href="{% url 'base:farmland_record' %}" class="btn btn-success">
-                Add New Farmland
-            </a>
+
+            {% if farmlands %}
+                <!-- Responsive Table -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-success">
+                            <tr>
+                                <th><i class="bi bi-tag me-1"></i>Name</th>
+                                <th><i class="bi bi-geo-alt me-1"></i>Municipality</th>
+                                <th><i class="bi bi-map me-1"></i>Barangay</th>
+                                <th><i class="bi bi-rulers me-1"></i>Estimated Area</th>
+                                <th><i class="bi bi-pencil-square me-1"></i>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for farm in farmlands %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-success">{{ farm.farmland_name }}</div>
+                                </td>
+                                <td>
+                                    <span class="fw-medium">{{ farm.municipality.municipality }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ farm.barangay.barangay }}</span>
+                                </td>
+                                <td>
+                                    {% if farm.estimated_area %}
+                                        <span class="fw-bold text-primary">{{ farm.estimated_area }}</span> hectares
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Not specified</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'base:farmland_edit' farm.farminfo_id %}" class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="bi bi-geo-alt text-success fs-2 mb-2"></i>
+                                <h5 class="card-title">{{ farmlands|length }}</h5>
+                                <p class="text-muted small mb-0">Total Farmlands</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="bi bi-rulers text-info fs-2 mb-2"></i>
+                                <h5 class="card-title">
+                                    {% if total_area %}
+                                        {{ total_area }} ha
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </h5>
+                                <p class="text-muted small mb-0">Total Area</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <i class="bi bi-map text-warning fs-2 mb-2"></i>
+                                <h5 class="card-title">{{ unique_municipalities|length }}</h5>
+                                <p class="text-muted small mb-0">Municipalities</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-tree display-1 text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No farmlands recorded yet</h5>
+                    <p class="text-muted">Start by adding your first farmland to track your agricultural activities.</p>
+                </div>
+            {% endif %}
+
+            <!-- Action Button -->
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{% url 'base:farmland_record' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Farmland
+                </a>
+                
+                {% if farmlands %}
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Click "Edit" to modify farmland details
+                </small>
+                {% endif %}
+            </div>
         </div>
     </div>
+</div>
 {% endblock content %}
