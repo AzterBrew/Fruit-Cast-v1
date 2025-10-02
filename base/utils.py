@@ -13,6 +13,22 @@ from django.core.files.storage import default_storage
 from io import BytesIO
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# 2.5 = API KEY = AIzaSyDUXqs1PBI5BNsYwmwBBzd_4z5yoY2BVc4
+# curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
+#   -H 'Content-Type: application/json' \
+#   -H 'X-goog-api-key: AIzaSyDUXqs1PBI5BNsYwmwBBzd_4z5yoY2BVc4' \
+#   -X POST \
+#   -d '{
+#     "contents": [
+#       {
+#         "parts": [
+#           {
+#             "text": "Explain how AI works in a few words"
+#           }
+#         ]
+#       }
+#     ]
+#   }'
 
 def get_alternative_recommendations(selected_month=None, selected_year=None, selected_municipality_id=None):
     """
@@ -174,7 +190,7 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
     
     # Step 3: Make a single API call
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content(full_prompt)
         
         raw_text = response.text.replace("```json", "").replace("```", "").strip()
