@@ -37,14 +37,14 @@
                                         <span class="badge bg-success me-1">
                                             <i class="bi bi-plus-circle me-1"></i>Planting
                                         </span>
-                                        {% if transaction.initharvestrecord %}
+                                        {% if transaction.initharvestrecord_set.all %}
                                             <span class="badge bg-warning text-dark">
                                                 <i class="bi bi-scissors me-1"></i>Harvest
                                             </span>
                                         {% endif %}
-                                    {% elif transaction.initharvestrecord %}
+                                    {% elif transaction.initharvestrecord_set.all %}
                                         <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-scissors me-1"></i>Harvest Only
+                                            <i class="bi bi-scissors me-1"></i>Harvest
                                         </span>
                                     {% else %}
                                         <span class="badge bg-secondary">None</span>
@@ -58,13 +58,15 @@
                                         {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
                                             <span class="badge bg-success">{{ transaction.initplantrecord.commodity_id.name }}</span>
                                         {% endif %}
-                                    {% elif transaction.initharvestrecord %}
-                                        {% if transaction.initharvestrecord.commodity_id.pk == 1 %}
-                                            <span class="badge bg-warning text-dark">Custom</span>
-                                            <div class="small">{{ transaction.initharvestrecord.commodity_custom }}</div>
-                                        {% elif transaction.initharvestrecord.commodity_id.pk > 1 %}
-                                            <span class="badge bg-success">{{ transaction.initharvestrecord.commodity_id.name }}</span>
-                                        {% endif %}
+                                    {% elif transaction.initharvestrecord_set.all %}
+                                        {% with transaction.initharvestrecord_set.first as harvest_record %}
+                                            {% if harvest_record.commodity_id.pk == 1 %}
+                                                <span class="badge bg-warning text-dark">Custom</span>
+                                                <div class="small">{{ harvest_record.commodity_custom }}</div>
+                                            {% elif harvest_record.commodity_id.pk > 1 %}
+                                                <span class="badge bg-success">{{ harvest_record.commodity_id.name }}</span>
+                                            {% endif %}
+                                        {% endwith %}
                                     {% else %}
                                         <span class="text-muted">N/A</span>
                                     {% endif %}

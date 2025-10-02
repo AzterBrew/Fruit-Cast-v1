@@ -641,10 +641,14 @@ def farmland_record_view(request):
         form = FarmlandRecordCreate()
         form.fields['barangay'].queryset = BarangayName.objects.none()
 
+    # Calculate total farmlands for the current user
+    total_farmlands = FarmLand.objects.filter(userinfo_id=userinfo).count()
+
     context = {
         'form': form,
         'user_firstname': userinfo.firstname,
-        'view_to_show': 'farmland_record', 
+        'view_to_show': 'farmland_record',
+        'total_farmlands': total_farmlands,
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 
@@ -736,8 +740,24 @@ def farmland_owned_view(request):
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     farmlands = FarmLand.objects.filter(userinfo_id=userinfo)
 
+    # Add transaction count for each farmland
+    farmlands_with_stats = []
+    for farmland in farmlands:
+        # Count total transactions (harvest + plant records) for this farmland
+        harvest_count = InitHarvestRecord.objects.filter(farmland_id=farmland).count()
+        plant_count = InitPlantRecord.objects.filter(farmland_id=farmland).count()
+        total_transactions = harvest_count + plant_count
+        
+        farmlands_with_stats.append({
+            'farmland': farmland,
+            'harvest_records': harvest_count,
+            'plant_records': plant_count,
+            'total_transactions': total_transactions,
+        })
+
     context = {
         'farmlands': farmlands,
+        'farmlands_with_stats': farmlands_with_stats,
         'user_firstname': userinfo.firstname,
         'view_to_show': 'farmland_owned',
     }

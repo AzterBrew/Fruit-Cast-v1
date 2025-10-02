@@ -214,6 +214,24 @@ class HarvestRecordCreate(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
+        # Custom ordering for commodity dropdown: blank, "Not Listed" (pk=1), then alphabetical
+        if 'commodity_id' in self.fields:
+            commodities = CommodityType.objects.all()
+            not_listed = commodities.filter(pk=1).first()
+            other_commodities = commodities.exclude(pk=1).order_by('name')
+            
+            # Create custom queryset with desired order
+            if not_listed:
+                ordered_commodities = [not_listed] + list(other_commodities)
+                self.fields['commodity_id'].queryset = CommodityType.objects.filter(
+                    pk__in=[c.pk for c in ordered_commodities]
+                )
+                # Set the widget choices manually to maintain order
+                choices = [('', '---------')]  # Default blank option
+                choices.append((not_listed.pk, not_listed.name))  # "Not Listed" as second option
+                choices.extend([(c.pk, c.name) for c in other_commodities])
+                self.fields['commodity_id'].widget.choices = choices
+        
 class RecordTransactionCreate(forms.ModelForm):
     location_type = forms.ChoiceField(label="Pick a Location Type *",choices=LOCATION_TYPE_CHOICES,widget=forms.RadioSelect(attrs={ 'style': 'margin-right: 5px;', 'placeholder' : 'Enter estimated land area...(optional)'}))
     farm_land = forms.ModelChoiceField(queryset=FarmLand.objects.none(),required=False,label="Select FarmLand",widget=forms.Select(attrs={'class': 'form-select',  'placeholder' : 'Enter Farmland name...'}))
@@ -251,6 +269,24 @@ class PlantRecordCreate(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Custom ordering for commodity dropdown: blank, "Not Listed" (pk=1), then alphabetical
+        if 'commodity_id' in self.fields:
+            commodities = CommodityType.objects.all()
+            not_listed = commodities.filter(pk=1).first()
+            other_commodities = commodities.exclude(pk=1).order_by('name')
+            
+            # Create custom queryset with desired order
+            if not_listed:
+                ordered_commodities = [not_listed] + list(other_commodities)
+                self.fields['commodity_id'].queryset = CommodityType.objects.filter(
+                    pk__in=[c.pk for c in ordered_commodities]
+                )
+                # Set the widget choices manually to maintain order
+                choices = [('', '---------')]  # Default blank option
+                choices.append((not_listed.pk, not_listed.name))  # "Not Listed" as second option
+                choices.extend([(c.pk, c.name) for c in other_commodities])
+                self.fields['commodity_id'].widget.choices = choices
 
 class FarmlandRecordCreate(forms.ModelForm):
     farmland_name = forms.CharField(label="Farm Name *", max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Enter Farmland name...'}))
