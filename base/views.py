@@ -12,7 +12,7 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
 import json, time
 from dateutil.relativedelta import relativedelta
 #from .forms import CustomUserCreationForm  # make sure this is imported
@@ -1238,11 +1238,29 @@ def register_email(request):
             request.session["reg_code"] = verification_code
             request.session['verification_code_time'] = int(time.time())  # Store timestamp
             # Send email
-            subject="Fruit Cast Verification Code"
+            subject="Confirm Your Fruit Cast Account Registration"
             message= (
                 "Hello Farmer,\n\n"
                 "Thank you for registering with Fruit Cast!\nTo complete your application, please verify your account using the code below:\n"
                 f"Your verification code is: {verification_code}\n"
+                
+                "<p>Hello Farmer,</p>"
+                "<br>"
+                "<p><b>Thank you for registering with Fruit Cast!</b></p>"
+                "<p>To activate your account, please enter the following verification code on the registration page:</p>"
+                "<div style=\"margin:12px 0 0;padding:20px;background-color:rgba(0,0,0,0.04);text-align:center;border-radius:8px\">"
+                "  <div style=\"color:#474747;font-weight:normal;font-size:12px;line-height:20px\">"
+                "    <span class=\"il\">Verification</span> code"
+                "  </div>"
+                "  <div style=\"color:#474747;font-weight:bold;font-size:20px;line-height:28px\">"
+                f"    {verification_code}"
+                "  </div>"
+                "</div>"
+                "<p>This code will expire in 10 minutes.</p>"
+                "<p>If you did not request this, you can safely ignore this email.</p>"
+                "<br>"
+                "<p>Warm Regards,<br>The Fruit Cast Team</p>"
+
             )
 
             send_mail(
