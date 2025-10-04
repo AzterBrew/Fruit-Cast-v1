@@ -317,16 +317,10 @@ def forecast(request):
                 'combined': future_forecast_data,
             }
 
-                print("Historical data points:", sum(1 for v in hist_values if v is not None))
-                print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
-                print("Overlapping timeline created with", len(all_labels), "labels")
-
-                forecast_data = {
-                    'all_labels': json.dumps(all_labels),
-                    'hist_values': json.dumps(hist_values),
-                    'forecast_values': json.dumps(forecast_values),
-                    'combined': combined_list,
-                }
+            print("Historical data points:", sum(1 for v in hist_values if v is not None))
+            print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
+            print("Overlapping timeline created with", len(all_labels), "labels")
+            
             
     now = datetime.now()
     current_year = now.year
