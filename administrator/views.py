@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord, initPlantRecord
+from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord, initPlantRecord, FarmLand, RecordTransaction
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseForbidden, HttpResponse
@@ -333,10 +333,24 @@ def farmer_transaction_history(request, account_id):
             account_id=farmer_account
         ).order_by('-transaction_date')
         
+        # Get farmer's farm lands
+        farm_lands = FarmLand.objects.filter(
+            userinfo_id=farmer_account.userinfo_id
+        ).select_related('municipality', 'barangay')
+        
+        # Calculate age from birthdate
+        from datetime import date
+        today = date.today()
+        birthdate = farmer_account.userinfo_id.birthdate
+        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        
         context.update({
             'farmer_account': farmer_account,
             'transactions': transactions,
-            'farmer_name': f"{farmer_account.userinfo_id.firstname} {farmer_account.userinfo_id.lastname}"
+            'farmer_name': f"{farmer_account.userinfo_id.firstname} {farmer_account.userinfo_id.lastname}",
+            'farmer_info': farmer_account.userinfo_id,
+            'farm_lands': farm_lands,
+            'farmer_age': age
         })
         
     except AccountsInformation.DoesNotExist:
