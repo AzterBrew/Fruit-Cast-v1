@@ -56,7 +56,7 @@ def retrain_and_generate_forecasts_task():
         # Directory to save models (optional but good practice to keep them)
         # model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
         # os.makedirs(model_dir, exist_ok=True)
-         
+        
         with transaction.atomic():
             # Process each individual municipality and commodity
             for muni in municipalities:
@@ -105,15 +105,13 @@ def retrain_and_generate_forecasts_task():
                     # Save the model directly to DigitalOcean Spaces
                     default_storage.save(bucket_path, buffer)
                     
-                    # Generate forecast using EXACT Dashboard approach
-                    last_historical_date = df['ds'].max()
-                    backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+                    # Generate forecast using dynamic approach from start of current year to end of next year
+                    current_year = datetime.today().year
+                    forecast_start_date = datetime(current_year, 1, 1)  # Start of current year
+                    forecast_end_date = datetime(current_year + 1, 12, 31)  # End of next year
                     
-                    # Define the end date for forecast (12 months into the future) - EXACT MATCH
-                    future_end_date = datetime.today() + relativedelta(months=+12)
-
-                    # Create future DataFrame that includes backtesting and future periods - EXACT MATCH
-                    future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
+                    # Create future DataFrame with dynamic range
+                    future_months = pd.date_range(start=forecast_start_date, end=forecast_end_date, freq='MS')
                     future = pd.DataFrame({'ds': future_months})
                     
                     if len(future) == 0:
@@ -122,17 +120,14 @@ def retrain_and_generate_forecasts_task():
                     
                     forecast = m.predict(future)
                     
-                    # EXACT Dashboard logic: only future forecasts beyond last historical date
-                    future_forecast = forecast[forecast['ds'] > last_historical_date]
+                    # Use the entire forecast range (both historical fill-in and future predictions)
+                    print(f"Debug for {comm.name} - {muni.municipality}: Generated {len(forecast)} total forecasts")
+                    print(f"  Forecast range: {forecast['ds'].min()} to {forecast['ds'].max()}")
                     
-                    print(f"Debug for {comm.name} - {muni.municipality}: Generated {len(future_forecast)} future forecasts")
-                    print(f"  Last historical date: {last_historical_date}")
-                    print(f"  Future forecast range: {future_forecast['ds'].min()} to {future_forecast['ds'].max()}")
+                    # Round the forecasts and process all periods
+                    rounded_forecasts = forecast['yhat'].round(2)
                     
-                    # Use EXACT same processing as dashboard: round the entire series first, then process
-                    rounded_forecasts = future_forecast['yhat'].round(2)  # Apply rounding to entire series like dashboard
-                    
-                    for idx, row in future_forecast.iterrows():
+                    for idx, row in forecast.iterrows():
                         forecast_date = row['ds']
                         # Use the pre-rounded value from the series (exact dashboard approach)
                         forecasted_amount = max(0, rounded_forecasts.loc[idx])  # Ensure non-negative values
@@ -204,15 +199,13 @@ def retrain_and_generate_forecasts_task():
                 # Save the model directly to DigitalOcean Spaces
                 default_storage.save(bucket_path, buffer)
 
-                # Generate forecast using EXACT Dashboard approach
-                last_historical_date = df['ds'].max()
-                backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+                # Generate forecast using dynamic approach from start of current year to end of next year
+                current_year = datetime.today().year
+                forecast_start_date = datetime(current_year, 1, 1)  # Start of current year
+                forecast_end_date = datetime(current_year + 1, 12, 31)  # End of next year
                 
-                # Define the end date for forecast (12 months into the future) - EXACT MATCH
-                future_end_date = datetime.today() + relativedelta(months=+12)
-
-                # Create future DataFrame that includes backtesting and future periods - EXACT MATCH
-                future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
+                # Create future DataFrame with dynamic range
+                future_months = pd.date_range(start=forecast_start_date, end=forecast_end_date, freq='MS')
                 future = pd.DataFrame({'ds': future_months})
                 
                 if len(future) == 0:
@@ -221,17 +214,14 @@ def retrain_and_generate_forecasts_task():
                 
                 forecast = m.predict(future)
                 
-                # EXACT Dashboard logic: only future forecasts beyond last historical date
-                future_forecast = forecast[forecast['ds'] > last_historical_date]
+                # Use the entire forecast range (both historical fill-in and future predictions)
+                print(f"Debug for Overall {comm.name}: Generated {len(forecast)} total forecasts")
+                print(f"  Forecast range: {forecast['ds'].min()} to {forecast['ds'].max()}")
                 
-                print(f"Debug for Overall {comm.name}: Generated {len(future_forecast)} future forecasts")
-                print(f"  Last historical date: {last_historical_date}")
-                print(f"  Future forecast range: {future_forecast['ds'].min()} to {future_forecast['ds'].max()}")
+                # Round the forecasts and process all periods
+                rounded_forecasts = forecast['yhat'].round(2)
                 
-                # Use EXACT same processing as dashboard: round the entire series first, then process
-                rounded_forecasts = future_forecast['yhat'].round(2)  # Apply rounding to entire series like dashboard
-                
-                for idx, row in future_forecast.iterrows():
+                for idx, row in forecast.iterrows():
                     forecast_date = row['ds']
                     forecasted_amount = max(0, rounded_forecasts.loc[idx])  # Use series-level rounded value
                     month_obj = months.get(number=forecast_date.month)

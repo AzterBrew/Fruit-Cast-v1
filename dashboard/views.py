@@ -261,63 +261,60 @@ def forecast(request):
         df = df[df['ds'] <= max_allowed_date]
         print(f"Filtered historical data: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
 
-        # Prepare forecast data (from trained model)
-        if selected_municipality_id == "14" or selected_municipality_id == 14:
-            model_filename = f"prophet_{selected_commodity_id}_14.joblib"
-        else:
-            model_filename = f"prophet_{selected_commodity_id}_{selected_municipality_id}.joblib"
-        bucket_path = f"prophet_models/{model_filename}"
-
-        # Check if the model file exists in the Spaces bucket
-        if not default_storage.exists(bucket_path):
+        # Get forecast data from ForecastResult table (pre-computed)
+        forecast_results = ForecastResult.objects.filter(
+            commodity_id=selected_commodity_id,
+            municipality_id=selected_municipality_id
+        ).order_by('forecast_year', 'forecast_month__number')
+        
+        if not forecast_results.exists():
             forecast_data = None
-            print("No trained model found.")
+            print("No forecast results found in database.")
         else:
-            # Open the file from the bucket and load it with joblib
-            with default_storage.open(bucket_path, 'rb') as f:
-                m = joblib.load(f)
+            print(f"Found {forecast_results.count()} forecast results in database")
             
-            # Define forecast period (e.g., 12 months into future)
+            # Create a comprehensive timeline that includes both historical and forecast periods
+            forecast_dates = []
+            forecast_values_list = []
+            
+            for result in forecast_results:
+                # Create date from year and month
+                forecast_date = datetime(result.forecast_year, result.forecast_month.number, 1)
+                forecast_dates.append(forecast_date)
+                forecast_values_list.append(float(result.forecasted_amount_kg))
+            
+            # Create combined timeline from historical start to forecast end
+            all_dates = pd.date_range(start=df['ds'].min(), end=max(forecast_dates), freq='MS')
+            
+            # Create dictionaries for easy lookup
+            hist_dict = dict(zip(df['ds'], df['y']))
+            forecast_dict = dict(zip(forecast_dates, forecast_values_list))
+            
+            # Build aligned arrays for Chart.js
+            all_labels = [d.strftime('%b %Y') for d in all_dates]
+            hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
+            forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
+            
+            # Combined data for CSV/table (only future forecasts beyond historical data)
             last_historical_date = df['ds'].max()
-            backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
+            future_forecast_data = []
             
-            # Define the end date for your forecast (e.g., 12 months into the future)
-            # future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
-            future_end_date = datetime.today() + relativedelta(months=+12)
-
-            # Create a 'future' DataFrame that includes the backtesting period
-            # and the future forecast period.
-            future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
-            future = pd.DataFrame({'ds': future_months})
+            for result in forecast_results:
+                forecast_date = datetime(result.forecast_year, result.forecast_month.number, 1)
+                if forecast_date > last_historical_date:
+                    future_forecast_data.append([
+                        forecast_date.strftime('%b %Y'),
+                        round(float(result.forecasted_amount_kg), 2),
+                        result.forecast_month.number,
+                        result.forecast_year
             
-            print(f"Future dataframe: {len(future)} rows, date range: {future['ds'].min()} to {future['ds'].max()}")
-             
-            # Check if future dataframe is empty
-            if len(future) == 0:
-                forecast_data = None
-                print("Error: Future dataframe is empty - cannot generate forecast")
-            else:
-                forecast = m.predict(future)
-                
-                # Create a comprehensive timeline that includes both historical and forecast periods
-                all_dates = pd.date_range(start=df['ds'].min(), end=future_end_date, freq='MS')
-                
-                # Create dictionaries for easy lookup
-                hist_dict = dict(zip(df['ds'], df['y']))
-                forecast_dict = dict(zip(forecast['ds'], forecast['yhat']))
-                
-                # Build aligned arrays for Chart.js
-                all_labels = [d.strftime('%b %Y') for d in all_dates]
-                hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
-                forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
-                
-                # Combined data for CSV/table (only future forecasts)
-                future_forecast = forecast[forecast['ds'] > last_historical_date]
-                combined_list = list(zip(
-                    future_forecast['ds'].dt.strftime('%b %Y').tolist(),
-                    future_forecast['yhat'].round(2).tolist(),
-                    future_forecast['ds'].dt.month.tolist(),
-                    future_forecast['ds'].dt.year.tolist()
+            # Create forecast_data structure for the template
+            forecast_data = {
+                'all_labels': json.dumps(all_labels),
+                'hist_values': json.dumps(hist_values),
+                'forecast_values': json.dumps(forecast_values),
+                'combined': future_forecast_data,
+            }
                 ))
 
                 print("Historical data points:", sum(1 for v in hist_values if v is not None))
