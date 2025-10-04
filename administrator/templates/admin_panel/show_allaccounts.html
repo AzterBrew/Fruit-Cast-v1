@@ -179,7 +179,7 @@ Fruit Cast | Account Management
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
-                                            <a href="#" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="View Details">
+                                            <a href="{% url 'administrator:admin_account_detail' account.account_id %}" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </td>

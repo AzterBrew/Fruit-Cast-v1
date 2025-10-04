@@ -1399,8 +1399,64 @@ def admin_harvestverified(request):
 #             return redirect('base:home') #dapat redirect si user sa guest home
 #     else :
 #         return render(request, 'home.html', {})   
-    
-    
+
+
+@admin_or_agriculturist_required
+def admin_account_detail(request, account_id):
+    """
+    Display account details for administrators and agriculturists
+    Access levels:
+    - Superuser: Full information
+    - Administrator: Limited information (name, age, sex, contact, address, assigned municipality)
+    """
+    try:
+        # Get the account to view
+        target_account = get_object_or_404(AccountsInformation, pk=account_id)
+        target_userinfo = target_account.userinfo_id
+        
+        # Check if target account is admin or agriculturist
+        if target_account.account_type_id.account_type not in ["Administrator", "Agriculturist"]:
+            messages.error(request, "You can only view administrator and agriculturist accounts.")
+            return redirect('administrator:show_allaccounts')
+        
+        # Get current user info
+        current_user_info = request.user.userinformation
+        current_account = AccountsInformation.objects.get(userinfo_id=current_user_info)
+        current_admin_info = AdminInformation.objects.filter(userinfo_id=current_user_info).first()
+        
+        # Determine access level
+        is_superuser = request.user.is_superuser
+        user_role_id = current_account.account_type_id.pk
+        
+        # Calculate age
+        from datetime import date
+        today = date.today()
+        birth_date = target_userinfo.birthdate
+        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        
+        # Get admin information if target is admin/agriculturist
+        target_admin_info = AdminInformation.objects.filter(userinfo_id=target_userinfo).first()
+        
+        context = {
+            **get_admin_context(request),
+            'target_account': target_account,
+            'target_userinfo': target_userinfo,
+            'target_admin_info': target_admin_info,
+            'calculated_age': age,
+            'is_superuser': is_superuser,
+            'user_role_id': user_role_id,
+            'can_view_full_details': is_superuser,  # Only superuser sees all
+        }
+        
+        return render(request, 'admin_panel/admin_account_detail.html', context)
+        
+    except AccountsInformation.DoesNotExist:
+        messages.error(request, "Account not found.")
+        return redirect('administrator:show_allaccounts')
+    except Exception as e:
+        messages.error(request, f"Error loading account details: {str(e)}")
+        return redirect('administrator:show_allaccounts')
+
 
 # def editacc(request):
 #     print("🔥 DEBUG: editacc view called!")  # This should print when you visit "/"

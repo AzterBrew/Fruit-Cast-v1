@@ -20,9 +20,9 @@ Fruit Cast | Farmer Profile & Transaction History
                         Farmer: <strong>{{ farmer_name }}</strong>
                     </p>
                 </div>
-                <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 w-100 w-lg-auto">
-                    <span class="badge bg-success">{{ transactions|length }} transaction{{ transactions|length|pluralize }}</span>
-                    <a href="{% url 'administrator:verify_accounts' %}" class="btn btn-outline-success btn-sm w-100 w-sm-auto">
+                <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center w-lg-auto gap-2">
+                    <span class="badge bg-success ms-auto">{{ transactions|length }} transaction{{ transactions|length|pluralize }}</span>
+                    <a href="{% url 'administrator:verify_accounts' %}" class="btn btn-outline-success btn-sm w-sm-auto ms-auto">
                         <i class="bi bi-arrow-left me-2"></i>Back to Verification
                     </a>
                 </div>
