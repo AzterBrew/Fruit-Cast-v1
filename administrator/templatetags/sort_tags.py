@@ -14,7 +14,7 @@ def sort_header(field, label, current_sort, current_order, current_status=None):
 
     arrow = ''
     if current_sort == field:
-        arrow = '▲' if current_order == 'asc' else '▼'
+        arrow = '<i class="bi bi-caret-up-fill ms-1"></i>' if current_order == 'asc' else '<i class="bi bi-caret-down-fill ms-1"></i>'
 
     url = '?' + urlencode(query_params)
-    return format_html('<a href="{}">{} {}</a>', url, label, arrow)
+    return format_html('<a href="{}" class="link-success">{} {}</a>', url, label, arrow)

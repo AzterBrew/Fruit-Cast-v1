@@ -39,6 +39,21 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, redirect
 from dateutil.relativedelta import relativedelta 
 
+def get_admin_context(request):
+    """Helper function to get admin context data"""
+    context = {}
+    if request.user.is_authenticated:
+        try:
+            user_info = UserInformation.objects.get(auth_user=request.user)
+            account_info = AccountsInformation.objects.get(userinfo_id=user_info)
+            context.update({
+                'user_firstname': user_info.firstname,
+                'user_role_id': account_info.account_type_id.account_type_id,
+            })
+        except (UserInformation.DoesNotExist, AccountsInformation.DoesNotExist):
+            pass
+    return context 
+
 def admin_login(request):
     if request.method == 'POST':
         
@@ -85,23 +100,24 @@ def admin_login(request):
 @admin_or_agriculturist_required
 def admin_dashboard(request):
     user = request.user
+    context = get_admin_context(request)
 
     if user.is_superuser:
-        return render(request, 'admin_panel/admin_dashboard.html')  # or something similar
+        return render(request, 'admin_panel/admin_dashboard.html', context)
 
     try:
         user_info = UserInformation.objects.get(auth_user=user)
         account_info = AccountsInformation.objects.get(userinfo_id=user_info)
 
         if account_info.account_type_id.account_type.lower() in ['administrator', 'agriculturist']:
-            return render(request, 'admin_panel/admin_dashboard.html')
+            return render(request, 'admin_panel/admin_dashboard.html', context)
         else:
             return HttpResponseForbidden("You are not authorized to access this page.")
         
     except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
         return HttpResponseForbidden("You are not authorized to access this page.")
 
-    return render(request, 'admin_panel/admin_dashboard.html')
+    return render(request, 'admin_panel/admin_dashboard.html', context)
 
 @login_required
 def update_account_status(request, account_id):
@@ -179,8 +195,9 @@ def verify_accounts(request):
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()
     municipalities = MunicipalityName.objects.all()
-
-    return render(request, 'admin_panel/verify_accounts.html', {
+    
+    context = get_admin_context(request)
+    context.update({
         'accounts': all_accounts,
         'status_choices': status_choices,
         'municipalities': municipalities,
@@ -189,6 +206,8 @@ def verify_accounts(request):
         'current_sort': sort_by,
         'current_order': order,
     })
+
+    return render(request, 'admin_panel/verify_accounts.html', context)
 
 # @admin_or_agriculturist_required
 # def verify_account_action(request, account_id):
@@ -262,8 +281,9 @@ def show_allaccounts(request):
     # Pass status choices for filter dropdown
     status_choices = AccountStatus.objects.all()
     municipalities = MunicipalityName.objects.all()
-
-    return render(request, 'admin_panel/show_allaccounts.html', {
+    
+    context = get_admin_context(request)
+    context.update({
         'allAccounts': all_accounts,
         'account_types': AccountType.objects.exclude(account_type='Farmer'),
         'status_choices': status_choices,
@@ -274,6 +294,8 @@ def show_allaccounts(request):
         'current_sort': sort_by,
         'current_order': order,
     })
+
+    return render(request, 'admin_panel/show_allaccounts.html', context)
 
 @admin_or_agriculturist_required
 @require_POST
@@ -293,6 +315,35 @@ def change_account_type(request, account_id):
         messages.warning(request, "Only Agriculturist accounts can be updated.")
 
     return redirect('administrator:show_allaccounts')  # or wherever the list view lives
+
+@admin_or_agriculturist_required
+def farmer_transaction_history(request, account_id):
+    """View to display transaction history for a specific farmer account"""
+    context = get_admin_context(request)
+    
+    try:
+        # Get the farmer's account information
+        farmer_account = AccountsInformation.objects.get(
+            pk=account_id, 
+            account_type_id=1  # Ensure it's a farmer account
+        )
+        
+        # Get all transactions for this farmer
+        transactions = RecordTransaction.objects.filter(
+            account_id=farmer_account
+        ).order_by('-transaction_date')
+        
+        context.update({
+            'farmer_account': farmer_account,
+            'transactions': transactions,
+            'farmer_name': f"{farmer_account.userinfo_id.firstname} {farmer_account.userinfo_id.lastname}"
+        })
+        
+    except AccountsInformation.DoesNotExist:
+        messages.error(request, "Farmer account not found.")
+        return redirect('administrator:verify_accounts')
+    
+    return render(request, 'admin_panel/farmer_transaction_history.html', context)
 
 @admin_or_agriculturist_required
 @superuser_required
@@ -387,9 +438,12 @@ def assign_account(request):
     else:
         form = AssignAdminAgriForm()
 
-    return render(request, 'admin_panel/assign_admin_agriculturist.html', {
+    context = get_admin_context(request)
+    context.update({
         'form': form
     })
+
+    return render(request, 'admin_panel/assign_admin_agriculturist.html', context)
 
 
 @login_required
@@ -725,8 +779,8 @@ def admin_forecast(request):
         #         'forecast_value_for_selected_month': forecast_value_for_selected_month
         #     })
 
-    context = {
-        'user_firstname': userinfo.firstname,
+    context = get_admin_context(request)
+    context.update({
         'forecast_data': forecast_data,
         'forecast_combined_json': json.dumps(forecast_data['combined']) if forecast_data else '[]',
         
@@ -741,7 +795,7 @@ def admin_forecast(request):
         'available_years': available_years,
         'months': months,
         # 'forecast_summary': forecast_summary,
-    }
+    })
     
     return render(request, 'admin_panel/admin_forecast.html', context)
 
@@ -900,20 +954,26 @@ def admin_forecastviewall(request):
     paginator = Paginator(batches, 10)  # Show 10 batches per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'admin_panel/admin_forecastviewall.html', {'page_obj': page_obj})
+    context = get_admin_context(request)
+    context.update({'page_obj': page_obj})
+    return render(request, 'admin_panel/admin_forecastviewall.html', context)
 
 @login_required
 @admin_or_agriculturist_required
 def admin_forecastbatchdetails(request, batch_id):
     batch = get_object_or_404(ForecastBatch, pk=batch_id)
     results = ForecastResult.objects.filter(batch=batch).select_related('commodity', 'municipality', 'forecast_month').order_by('forecast_year', 'forecast_month__number')
-    return render(request, 'admin_panel/admin_forecastbatchdetails.html', {'batch': batch, 'results': results})
+    context = get_admin_context(request)
+    context.update({'batch': batch, 'results': results})
+    return render(request, 'admin_panel/admin_forecastbatchdetails.html', context)
 
 @login_required
 @admin_or_agriculturist_required
 def admin_commodity_list(request):
-    commodities = CommodityType.objects.all()
-    return render(request, 'admin_panel/admin_commodity.html', {'commodities': commodities})
+    commodities = CommodityType.objects.exclude(pk=1)  # Exclude 'Not Listed' commodity
+    context = get_admin_context(request)
+    context.update({'commodities': commodities})
+    return render(request, 'admin_panel/admin_commodity.html', context)
 
 
 @login_required
@@ -966,7 +1026,9 @@ def admin_commodity_add_edit(request, pk=None):
         form = CommodityTypeForm(instance=commodity)
         print("⚠️ Not post Form errors:", form.errors)
 
-    return render(request, 'admin_panel/commodity_add.html', {'form': form, 'commodity': commodity})
+    context = get_admin_context(request)
+    context.update({'form': form, 'commodity': commodity})
+    return render(request, 'admin_panel/commodity_add.html', context)
 
 
 @login_required
@@ -1037,14 +1099,15 @@ def admin_verifyplantrec(request):
                         verified_by=admin_info,
                         prev_record=rec,
                     )
-                messages.success(request, "Selected records updated successfully.")
-            else:
-                messages.error(request, "No records selected or status not chosen.")
+        messages.success(request, "Selected records updated successfully.")
+    else:
+        messages.error(request, "No records selected or status not chosen.")
 
     commodities = CommodityType.objects.all()
     status_choices = AccountStatus.objects.all()
 
-    context = {
+    context = get_admin_context(request)
+    context.update({
         'records': records,
         'municipalities': municipalities,
         'commodities': commodities,
@@ -1052,7 +1115,7 @@ def admin_verifyplantrec(request):
         'selected_municipality': filter_municipality,
         'selected_commodity': filter_commodity,
         'selected_status': filter_status,
-    }
+    })
     return render(request, 'admin_panel/admin_verifyplantrec.html', context)
 
 
@@ -1132,11 +1195,11 @@ def admin_verifyharvestrec(request):
                         logger.info("Attempting to delay Celery task...")
                         logger.info(f"Using broker URL: {settings.CELERY_BROKER_URL}") # This will show the URL Celery sees
                         retrain_and_generate_forecasts_task.delay()
-                        messages.success(request, "log1 : Records verified. Forecast models are being updated in the background.")
+                        messages.success(request, "Records verified. Forecast models are being updated in the background.")
                         
                     except Exception as e:
                         logger.error(f"Error during verification: {e}")
-                        messages.error(request, f"log 1 : An error occurred during verification: {e}")
+                        messages.error(request, f"An error occurred during verification: {e}")
 
 
                        # for rec in records.filter(pk__in=selected_ids):
@@ -1144,13 +1207,14 @@ def admin_verifyharvestrec(request):
                        #     if not rec.verified_by:
                        #         rec.verified_by = admin_info
                        #     rec.save()
-                messages.success(request, "Selected records updated successfully.")
-            else:
-                messages.error(request, "No records selected or status not chosen.")
+        messages.success(request, "Selected records updated successfully.")
+    else:
+        messages.error(request, "No records selected or status not chosen.")
 
     
     
-    context = {
+    context = get_admin_context(request)
+    context.update({
         'municipalities': municipalities,
         'commodities': commodities,
         'status_choices': status_choices,
@@ -1158,7 +1222,7 @@ def admin_verifyharvestrec(request):
         'selected_municipality': selected_municipality,
         'selected_commodity': selected_commodity,
         'selected_status': selected_status,
-    }
+    })
     return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
 
 @login_required
@@ -1166,7 +1230,8 @@ def admin_verifyharvestrec(request):
 def admin_add_verifyharvestrec(request):
     municipalities = MunicipalityName.objects.all()
     admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
-    context = {'municipalities': municipalities}
+    context = get_admin_context(request)
+    context.update({'municipalities': municipalities})
 
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = request.FILES["csv_file"]
@@ -1224,66 +1289,68 @@ def admin_add_verifyharvestrec(request):
 @admin_or_agriculturist_required
 def admin_harvestverified(request):
     records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
-    return render(request, 'admin_panel/admin_harvestverified.html', {'records': records})
+    context = get_admin_context(request)
+    context.update({'records': records})
+    return render(request, 'admin_panel/admin_harvestverified.html', context)
 
 
-def accinfo(request):
-    print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
-        account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
+# def accinfo(request):
+#     print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+#     if request.user.is_authenticated: 
+#         account_id = request.session.get('account_id')
+#         userinfo_id = request.session.get('userinfo_id')
         
-        if userinfo_id and account_id:
+#         if userinfo_id and account_id:
             
-            account_id = request.session.get('account_id')
-            userinfo_id = request.session.get('userinfo_id')
-            if userinfo_id and account_id:
-                userinfo = UserInformation.objects.get(pk=userinfo_id)
-                account_info = AccountsInformation.objects.get(pk=account_id)
-                context = {
-                    'user_firstname': userinfo.firstname,
-                    # ...other fields...
-                    'user_role_id': account_info.account_type_id.account_type_id,
-                }
-                return render(request, 'loggedin/account_info.html', context)
-            else:
-                return redirect('administrator:dashboard')
+#             account_id = request.session.get('account_id')
+#             userinfo_id = request.session.get('userinfo_id')
+#             if userinfo_id and account_id:
+#                 userinfo = UserInformation.objects.get(pk=userinfo_id)
+#                 account_info = AccountsInformation.objects.get(pk=account_id)
+#                 context = {
+#                     'user_firstname': userinfo.firstname,
+#                     # ...other fields...
+#                     'user_role_id': account_info.account_type_id.account_type_id,
+#                 }
+#                 return render(request, 'loggedin/account_info.html', context)
+#             else:
+#                 return redirect('administrator:dashboard')
         
-        else:
-            print("⚠️ account_id missing in session!")
-            return redirect('base:home') #dapat redirect si user sa guest home
-    else :
-        return render(request, 'home.html', {})   
+#         else:
+#             print("⚠️ account_id missing in session!")
+#             return redirect('base:home') #dapat redirect si user sa guest home
+#     else :
+#         return render(request, 'home.html', {})   
     
     
 
-def editacc(request):
-    print("🔥 DEBUG: editacc view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-    if request.user.is_authenticated: 
-        userinfo_id = request.session.get('userinfo_id')
-        userinfo = UserInformation.objects.get(pk=userinfo_id)
+# def editacc(request):
+#     print("🔥 DEBUG: editacc view called!")  # This should print when you visit "/"
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+#     if request.user.is_authenticated: 
+#         userinfo_id = request.session.get('userinfo_id')
+#         userinfo = UserInformation.objects.get(pk=userinfo_id)
         
-        context = {
-                'user_firstname' : userinfo.firstname,
-            } 
+#         context = {
+#                 'user_firstname' : userinfo.firstname,
+#             } 
         
-        if request.method == "POST":
-            form = EditUserInformation(request.POST,instance=userinfo)
-            if form.is_valid():
-                updated_info = form.save(commit=False)
-                updated_info.auth_user = request.user
-                updated_info.save()
+#         if request.method == "POST":
+#             form = EditUserInformation(request.POST,instance=userinfo)
+#             if form.is_valid():
+#                 updated_info = form.save(commit=False)
+#                 updated_info.auth_user = request.user
+#                 updated_info.save()
                 
-                request.user.email = updated_info.user_email
-                request.user.save()
+#                 request.user.email = updated_info.user_email
+#                 request.user.save()
                 
-                return redirect('administrator:accinfo')                
+#                 return redirect('administrator:accinfo')                
         
-        else:
-            form = EditUserInformation(instance=userinfo)
+#         else:
+#             form = EditUserInformation(instance=userinfo)
 
-        return render(request, 'loggedin/account_edit.html', {'form': form})
-    else :
-        return render(request, 'home.html', {})  
+#         return render(request, 'loggedin/account_edit.html', {'form': form})
+#     else :
+#         return render(request, 'home.html', {})  

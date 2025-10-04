@@ -82,7 +82,7 @@ Fruit Cast | Farmer Account Verification
                                         <th scope="col">Account Status</th>
                                         <th scope="col">Total Records</th>
                                         {% if user_role_id == 2%}
-                                        <th scope="col" class="text-center">Actions</th>
+                                        <th scope="col" class="text-center">View History</th>
                                         {% endif %}
                                     </tr>
                                 </thead>
@@ -113,7 +113,6 @@ Fruit Cast | Farmer Account Verification
                                         <td>
                                             <div>
                                                 <div class="fw-medium">{{ account.userinfo_id.municipality_id.municipality }}</div>
-                                                <br>
                                                 <div class="text-muted small">{{ account.userinfo_id.barangay_id.barangay }}</div>
                                             </div>
                                         </td>
@@ -133,8 +132,10 @@ Fruit Cast | Farmer Account Verification
                                         </td>
                                         {% if user_role_id == 2%}
                                         <td class="text-center">
-                                            <a href="#" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="View Account Details">
-                                                <i class="bi bi-eye"></i>
+                                            <a href="{% url 'administrator:farmer_transaction_history' account.account_id %}" 
+                                               class="btn btn-outline-warning btn-sm" 
+                                               data-bs-toggle="tooltip" title="View Transaction History">
+                                                <i class="bi bi-clock-history"></i>
                                             </a>
                                         </td>
                                         {% endif %}

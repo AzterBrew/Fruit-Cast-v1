@@ -786,7 +786,8 @@ def monitor(request):
     commodities = CommodityType.objects.exclude(pk=1).order_by('name')
 
     # Get filter values from the request
-    selected_year = request.GET.get('year')
+    current_year = timezone.now().year
+    selected_year = request.GET.get('year', str(current_year))  # Default to current year
     selected_municipality = request.GET.get('municipality', 'all')
     selected_commodity = request.GET.get('commodity', 'all')
     selected_municipality_name = 'All Municipalities'
