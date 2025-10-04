@@ -307,7 +307,8 @@ def forecast(request):
                         round(float(result.forecasted_amount_kg), 2),
                         result.forecast_month.number,
                         result.forecast_year
-            
+                    ])
+
             # Create forecast_data structure for the template
             forecast_data = {
                 'all_labels': json.dumps(all_labels),
@@ -315,7 +316,6 @@ def forecast(request):
                 'forecast_values': json.dumps(forecast_values),
                 'combined': future_forecast_data,
             }
-                ))
 
                 print("Historical data points:", sum(1 for v in hist_values if v is not None))
                 print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
