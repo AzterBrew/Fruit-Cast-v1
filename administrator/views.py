@@ -360,6 +360,69 @@ def farmer_transaction_history(request, account_id):
     return render(request, 'admin_panel/farmer_transaction_history.html', context)
 
 @admin_or_agriculturist_required
+def farmer_transaction_detail(request, transaction_id):
+    """View to display detailed information for a specific transaction"""
+    context = get_admin_context(request)
+    
+    try:
+        # Get the transaction with related data
+        transaction = RecordTransaction.objects.select_related(
+            'account_id__userinfo_id',
+            'farm_land__municipality',
+            'farm_land__barangay',
+            'manual_municipality',
+            'manual_barangay'
+        ).get(pk=transaction_id)
+        
+        # Ensure the transaction belongs to a farmer account
+        if transaction.account_id.account_type_id.pk != 1:
+            messages.error(request, "Transaction not found or access denied.")
+            return redirect('administrator:verify_accounts')
+        
+        # Get plant record if exists
+        plant_record = None
+        try:
+            plant_record = initPlantRecord.objects.select_related(
+                'commodity_id', 'record_status'
+            ).get(transaction=transaction)
+        except initPlantRecord.DoesNotExist:
+            pass
+        
+        # Get harvest records if exist
+        harvest_records = initHarvestRecord.objects.select_related(
+            'commodity_id', 'unit', 'record_status'
+        ).filter(transaction=transaction)
+        
+        # Get notification if exists for plant record
+        plant_notification = None
+        if plant_record:
+            from dashboard.models import Notification
+            try:
+                plant_notification = Notification.objects.filter(
+                    account=transaction.account_id,
+                    linked_plant_record=plant_record
+                ).first()
+            except:
+                pass
+        
+        farmer_name = f"{transaction.account_id.userinfo_id.firstname} {transaction.account_id.userinfo_id.lastname}"
+        
+        context.update({
+            'transaction': transaction,
+            'plant_record': plant_record,
+            'harvest_record': harvest_records,
+            'plant_notification': plant_notification,
+            'farmer_name': farmer_name,
+            'farmer_account': transaction.account_id
+        })
+        
+    except RecordTransaction.DoesNotExist:
+        messages.error(request, "Transaction not found.")
+        return redirect('administrator:verify_accounts')
+    
+    return render(request, 'admin_panel/farmer_transaction_detail.html', context)
+
+@admin_or_agriculturist_required
 @superuser_required
 def assign_account(request):
     user = request.user

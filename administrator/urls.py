@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views import *
+from .views import farmer_transaction_detail
 from base.views import get_barangays
 
 app_name = 'administrator'
@@ -11,6 +12,7 @@ urlpatterns = [
     path('dashboard/', admin_dashboard, name='dashboard'),
     path('verify_accounts/', verify_accounts, name='verify_accounts'),
     path('farmer_transactions/<int:account_id>/', farmer_transaction_history, name='farmer_transaction_history'),
+    path('transaction_detail/<int:transaction_id>/', farmer_transaction_detail, name='farmer_transaction_detail'),
     path('admin_dashboard/', admin_dashboard, name='admin_dashboard'),
     path('show_allaccounts/', show_allaccounts, name='show_allaccounts'),
     path('change_account_type/<int:account_id>/', views.change_account_type, name='change_account_type'),    

@@ -44,17 +44,101 @@ Fruit Cast | Farmer Profile & Transaction History
                             <i class="bi bi-person me-2"></i>Basic Information
                         </h6>
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
                                 <span class="fw-medium">Full Name:</span>
-                                <span>{{ farmer_info.firstname }} {{ farmer_info.middlename }} {{ farmer_info.lastname }} {{ farmer_info.nameextension }}</span>
+                                <span class="text-sm-end">{{ farmer_info.firstname }} {{ farmer_info.middlename }} {{ farmer_info.lastname }} {{ farmer_info.nameextension }}</span>
                             </li>
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
                                 <span class="fw-medium">Sex:</span>
-                                <span>{{ farmer_info.sex }}</span>
+                                <span class="text-sm-end">{{ farmer_info.sex }}</span>
                             </li>
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
                                 <span class="fw-medium">Age:</span>
-                                <span>{{ farmer_age }} years old</span>
+                                <span class="text-sm-end">{{ farmer_age }} years old</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Birth Date:</span>
+                                <span class="text-sm-end">{{ farmer_info.birthdate|date:"M d, Y" }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Civil Status:</span>
+                                <span class="text-sm-end">{{ farmer_info.civil_status }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Religion:</span>
+                                <span class="text-sm-end">{{ farmer_info.religion }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">RSBSA Number:</span>
+                                <span class="text-sm-end">
+                                    {% if farmer_info.rsbsa_ref_number %}
+                                        {{ farmer_info.rsbsa_ref_number }}
+                                    {% else %}
+                                        <span class="text-muted">Not provided</span>
+                                    {% endif %}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success mb-3">
+                            <i class="bi bi-telephone me-2"></i>Contact & Address
+                        </h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Contact Number:</span>
+                                <span class="text-sm-end">{{ farmer_info.contact_number }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Email:</span>
+                                <span class="text-sm-end">{{ farmer_info.user_email }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Municipality:</span>
+                                <span class="text-sm-end">{{ farmer_info.municipality_id.municipality }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Barangay:</span>
+                                <span class="text-sm-end">{{ farmer_info.barangay_id.barangay }}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <span class="fw-medium d-block">Address Details:</span>
+                                <div class="mt-1">{{ farmer_info.address_details }}</div>
+                            </li>
+                        </ul>
+                        
+                        <h6 class="text-success mb-3 mt-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Emergency Contact
+                        </h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Emergency Person:</span>
+                                <span class="text-sm-end">{{ farmer_info.emergency_contact_person }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Emergency Number:</span>
+                                <span class="text-sm-end">{{ farmer_info.emergency_contact_number }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                {% elif user_role_id == 3 %}
+                    <!-- Agriculturist - Limited Information -->
+                    <div class="col-md-6">
+                        <h6 class="text-success mb-3">
+                            <i class="bi bi-person me-2"></i>Basic Information
+                        </h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Full Name:</span>
+                                <span class="text-sm-end">{{ farmer_info.firstname }} {{ farmer_info.middlename }} {{ farmer_info.lastname }} {{ farmer_info.nameextension }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Sex:</span>
+                                <span class="text-sm-end">{{ farmer_info.sex }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
+                                <span class="fw-medium">Age:</span>
+                                <span class="text-sm-end">{{ farmer_age }} years old</span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between">
                                 <span class="fw-medium">Birth Date:</span>
@@ -229,156 +313,308 @@ Fruit Cast | Farmer Profile & Transaction History
     <p class="text-muted mb-4">Below is the complete list of transactions submitted by this farmer.</p>
             
             {% if transactions %}
-                <!-- Responsive Table -->
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-success">
-                            <tr>
-                                <th><i class="bi bi-calendar3 me-1"></i>Date Created</th>
-                                <th><i class="bi bi-arrow-left-right me-1"></i>Type</th>
-                                <th><i class="bi bi-droplet me-1"></i>Commodity Type</th>
-                                <th><i class="bi bi-geo-alt me-1"></i>Location</th>
-                                <th><i class="bi bi-check-circle me-1"></i>Status</th>
-                                <th><i class="bi bi-eye me-1"></i>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for transaction in transactions %}
-                            <tr>
-                                <td>
-                                    <span class="fw-medium">{{ transaction.transaction_date|date:"M d, Y" }}</span>
-                                    <div class="text-muted small">{{ transaction.transaction_date|date:"H:i" }}</div>
-                                </td>
-                                <td>
-                                    {% if transaction.initplantrecord %} 
-                                        <span class="badge bg-success me-1">
-                                            <i class="bi bi-plus-circle me-1"></i>Planting
-                                        </span>
-                                        {% if transaction.initharvestrecord_set.all %}
+                <!-- Desktop Table View -->
+                <div class="d-none d-lg-block">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-success">
+                                <tr>
+                                    <th><i class="bi bi-calendar3 me-1"></i>Date Created</th>
+                                    <th><i class="bi bi-arrow-left-right me-1"></i>Type</th>
+                                    <th><i class="bi bi-droplet me-1"></i>Commodity Type</th>
+                                    <th><i class="bi bi-geo-alt me-1"></i>Location</th>
+                                    <th><i class="bi bi-check-circle me-1"></i>Status</th>
+                                    <th><i class="bi bi-eye me-1"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-medium">{{ transaction.transaction_date|date:"M d, Y" }}</span>
+                                        <div class="text-muted small">{{ transaction.transaction_date|date:"H:i" }}</div>
+                                    </td>
+                                    <td>
+                                        {% if transaction.initplantrecord %} 
+                                            <span class="badge bg-success me-1">
+                                                <i class="bi bi-plus-circle me-1"></i>Planting
+                                            </span>
+                                            {% if transaction.initharvestrecord_set.all %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-scissors me-1"></i>Harvest
+                                                </span>
+                                            {% endif %}
+                                        {% elif transaction.initharvestrecord_set.all %}
                                             <span class="badge bg-warning text-dark">
                                                 <i class="bi bi-scissors me-1"></i>Harvest
                                             </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">None</span>
                                         {% endif %}
-                                    {% elif transaction.initharvestrecord_set.all %}
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-scissors me-1"></i>Harvest
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">None</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if transaction.initplantrecord %}
-                                        {% if transaction.initplantrecord.commodity_id.pk == 1 %}
-                                            <span class="badge bg-warning text-dark">Custom</span>
-                                            <div class="small">{{ transaction.initplantrecord.commodity_custom }}</div>
-                                        {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
-                                            <span class="badge bg-success">{{ transaction.initplantrecord.commodity_id.name }}</span>
-                                        {% endif %}
-                                    {% elif transaction.initharvestrecord_set.all %}
-                                        {% with transaction.initharvestrecord_set.first as first_harvest %}
-                                            {% if first_harvest.commodity_id.pk == 1 %}
+                                    </td>
+                                    <td>
+                                        {% if transaction.initplantrecord %}
+                                            {% if transaction.initplantrecord.commodity_id.pk == 1 %}
                                                 <span class="badge bg-warning text-dark">Custom</span>
-                                                <div class="small">{{ first_harvest.commodity_custom }}</div>
-                                            {% elif first_harvest.commodity_id.pk > 1 %}
-                                                <span class="badge bg-success">{{ first_harvest.commodity_id.name }}</span>
+                                                <div class="small">{{ transaction.initplantrecord.commodity_custom }}</div>
+                                            {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
+                                                <span class="badge bg-success">{{ transaction.initplantrecord.commodity_id.name }}</span>
                                             {% endif %}
-                                        {% endwith %}
-                                    {% else %}
-                                        <span class="text-muted">N/A</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if transaction.farm_land %}
-                                        <div class="fw-medium">{{ transaction.farm_land.municipality.municipality }}</div>
-                                        <div class="text-muted small">{{ transaction.farm_land.barangay.barangay }}</div>
-                                    {% elif transaction.manual_municipality %}
-                                        <div class="fw-medium">{{ transaction.manual_municipality.municipality }}</div>
-                                        {% if transaction.manual_barangay %}
-                                            <div class="text-muted small">{{ transaction.manual_barangay.barangay }}</div>
+                                        {% elif transaction.initharvestrecord_set.all %}
+                                            {% with transaction.initharvestrecord_set.first as first_harvest %}
+                                                {% if first_harvest.commodity_id.pk == 1 %}
+                                                    <span class="badge bg-warning text-dark">Custom</span>
+                                                    <div class="small">{{ first_harvest.commodity_custom }}</div>
+                                                {% elif first_harvest.commodity_id.pk > 1 %}
+                                                    <span class="badge bg-success">{{ first_harvest.commodity_id.name }}</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
                                         {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">N/A</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if transaction.initplantrecord %}
-                                        {% if transaction.initplantrecord.record_status %}
-                                            {% if transaction.initplantrecord.record_status.acc_status == "Verified" %}
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-check-circle me-1"></i>Verified
-                                                </span>
-                                            {% elif transaction.initplantrecord.record_status.acc_status == "Pending" %}
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-clock me-1"></i>Pending
-                                                </span>
-                                            {% elif transaction.initplantrecord.record_status.acc_status == "Rejected" %}
-                                                <span class="badge bg-danger">
-                                                    <i class="bi bi-x-circle me-1"></i>Rejected
-                                                </span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">{{ transaction.initplantrecord.record_status.acc_status }}</span>
+                                    </td>
+                                    <td>
+                                        {% if transaction.farm_land %}
+                                            <div class="fw-medium">{{ transaction.farm_land.municipality.municipality }}</div>
+                                            <div class="text-muted small">{{ transaction.farm_land.barangay.barangay }}</div>
+                                        {% elif transaction.manual_municipality %}
+                                            <div class="fw-medium">{{ transaction.manual_municipality.municipality }}</div>
+                                            {% if transaction.manual_barangay %}
+                                                <div class="text-muted small">{{ transaction.manual_barangay.barangay }}</div>
                                             {% endif %}
                                         {% else %}
-                                            <span class="badge bg-secondary">No Status</span>
+                                            <span class="text-muted">N/A</span>
                                         {% endif %}
-                                    {% elif transaction.initharvestrecord_set.all %}
-                                        {% with transaction.initharvestrecord_set.first as first_harvest %}
-                                            {% if first_harvest.record_status %}
-                                                {% if first_harvest.record_status.acc_status == "Verified" %}
+                                    </td>
+                                    <td>
+                                        {% if transaction.initplantrecord %}
+                                            {% if transaction.initplantrecord.record_status %}
+                                                {% if transaction.initplantrecord.record_status.acc_status == "Verified" %}
                                                     <span class="badge bg-success">
                                                         <i class="bi bi-check-circle me-1"></i>Verified
                                                     </span>
-                                                {% elif first_harvest.record_status.acc_status == "Pending" %}
+                                                {% elif transaction.initplantrecord.record_status.acc_status == "Pending" %}
                                                     <span class="badge bg-warning text-dark">
                                                         <i class="bi bi-clock me-1"></i>Pending
                                                     </span>
-                                                {% elif first_harvest.record_status.acc_status == "Rejected" %}
+                                                {% elif transaction.initplantrecord.record_status.acc_status == "Rejected" %}
                                                     <span class="badge bg-danger">
                                                         <i class="bi bi-x-circle me-1"></i>Rejected
                                                     </span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary">{{ first_harvest.record_status.acc_status }}</span>
+                                                    <span class="badge bg-secondary">{{ transaction.initplantrecord.record_status.acc_status }}</span>
                                                 {% endif %}
                                             {% else %}
                                                 <span class="badge bg-secondary">No Status</span>
                                             {% endif %}
-                                        {% endwith %}
-                                    {% else %}
-                                        <span class="badge bg-secondary">N/A</span>
-                                    {% endif %}
-                                </td>
-                                <td>
+                                        {% elif transaction.initharvestrecord_set.all %}
+                                            {% with transaction.initharvestrecord_set.first as first_harvest %}
+                                                {% if first_harvest.record_status %}
+                                                    {% if first_harvest.record_status.acc_status == "Verified" %}
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-check-circle me-1"></i>Verified
+                                                        </span>
+                                                    {% elif first_harvest.record_status.acc_status == "Pending" %}
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-clock me-1"></i>Pending
+                                                        </span>
+                                                    {% elif first_harvest.record_status.acc_status == "Rejected" %}
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Rejected
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ first_harvest.record_status.acc_status }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No Status</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'administrator:farmer_transaction_detail' transaction.transaction_id %}" 
+                                               class="btn btn-sm btn-outline-primary"
+                                               data-bs-toggle="tooltip" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if transaction.initplantrecord and transaction.initplantrecord.record_status.acc_status == "Pending" %}
+                                                <a href="{% url 'administrator:admin_verifyplantrec' %}" 
+                                                   class="btn btn-sm btn-outline-success"
+                                                   data-bs-toggle="tooltip" title="Verify Plant Record">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if transaction.initharvestrecord_set.all %}
+                                                {% with transaction.initharvestrecord_set.first as first_harvest %}
+                                                    {% if first_harvest.record_status.acc_status == "Pending" %}
+                                                        <a href="{% url 'administrator:admin_verifyharvestrec' %}" 
+                                                           class="btn btn-sm btn-outline-warning"
+                                                           data-bs-toggle="tooltip" title="Verify Harvest Record">
+                                                            <i class="bi bi-scissors"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="d-lg-none">
+                    {% for transaction in transactions %}
+                        <div class="card border-start border-success border-3 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold text-success">
+                                            <i class="bi bi-calendar3 me-1"></i>{{ transaction.transaction_date|date:"M d, Y" }}
+                                        </h6>
+                                        <small class="text-muted">{{ transaction.transaction_date|date:"H:i" }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if transaction.initplantrecord %} 
+                                            <span class="badge bg-success mb-1">
+                                                <i class="bi bi-plus-circle me-1"></i>Planting
+                                            </span>
+                                            {% if transaction.initharvestrecord_set.all %}
+                                                <br><span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-scissors me-1"></i>Harvest
+                                                </span>
+                                            {% endif %}
+                                        {% elif transaction.initharvestrecord_set.all %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-scissors me-1"></i>Harvest
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">None</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Commodity:</small>
+                                        {% if transaction.initplantrecord %}
+                                            {% if transaction.initplantrecord.commodity_id.pk == 1 %}
+                                                <span class="badge bg-warning text-dark">Custom</span>
+                                                <div class="small">{{ transaction.initplantrecord.commodity_custom }}</div>
+                                            {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
+                                                <span class="badge bg-success">{{ transaction.initplantrecord.commodity_id.name }}</span>
+                                            {% endif %}
+                                        {% elif transaction.initharvestrecord_set.all %}
+                                            {% with transaction.initharvestrecord_set.first as first_harvest %}
+                                                {% if first_harvest.commodity_id.pk == 1 %}
+                                                    <span class="badge bg-warning text-dark">Custom</span>
+                                                    <div class="small">{{ first_harvest.commodity_custom }}</div>
+                                                {% elif first_harvest.commodity_id.pk > 1 %}
+                                                    <span class="badge bg-success">{{ first_harvest.commodity_id.name }}</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Location:</small>
+                                        {% if transaction.farm_land %}
+                                            <div class="small fw-medium">{{ transaction.farm_land.municipality.municipality }}</div>
+                                            <div class="text-muted small">{{ transaction.farm_land.barangay.barangay }}</div>
+                                        {% elif transaction.manual_municipality %}
+                                            <div class="small fw-medium">{{ transaction.manual_municipality.municipality }}</div>
+                                            {% if transaction.manual_barangay %}
+                                                <div class="text-muted small">{{ transaction.manual_barangay.barangay }}</div>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted small">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted d-block">Status:</small>
+                                        {% if transaction.initplantrecord %}
+                                            {% if transaction.initplantrecord.record_status %}
+                                                {% if transaction.initplantrecord.record_status.acc_status == "Verified" %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Verified
+                                                    </span>
+                                                {% elif transaction.initplantrecord.record_status.acc_status == "Pending" %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-clock me-1"></i>Pending
+                                                    </span>
+                                                {% elif transaction.initplantrecord.record_status.acc_status == "Rejected" %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-x-circle me-1"></i>Rejected
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ transaction.initplantrecord.record_status.acc_status }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-secondary">No Status</span>
+                                            {% endif %}
+                                        {% elif transaction.initharvestrecord_set.all %}
+                                            {% with transaction.initharvestrecord_set.first as first_harvest %}
+                                                {% if first_harvest.record_status %}
+                                                    {% if first_harvest.record_status.acc_status == "Verified" %}
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-check-circle me-1"></i>Verified
+                                                        </span>
+                                                    {% elif first_harvest.record_status.acc_status == "Pending" %}
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-clock me-1"></i>Pending
+                                                        </span>
+                                                    {% elif first_harvest.record_status.acc_status == "Rejected" %}
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Rejected
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ first_harvest.record_status.acc_status }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No Status</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                    
                                     <div class="btn-group" role="group">
-                                        <a href="{% url 'base:transaction_recordlist' transaction.transaction_id %}" 
-                                           class="btn btn-sm btn-outline-primary" target="_blank"
-                                           data-bs-toggle="tooltip" title="View Details">
-                                            <i class="bi bi-eye"></i>
+                                        <a href="{% url 'administrator:farmer_transaction_detail' transaction.transaction_id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i>View
                                         </a>
                                         {% if transaction.initplantrecord and transaction.initplantrecord.record_status.acc_status == "Pending" %}
                                             <a href="{% url 'administrator:admin_verifyplantrec' %}" 
-                                               class="btn btn-sm btn-outline-success"
-                                               data-bs-toggle="tooltip" title="Verify Plant Record">
-                                                <i class="bi bi-check-circle"></i>
+                                               class="btn btn-sm btn-outline-success">
+                                                <i class="bi bi-check-circle me-1"></i>Verify
                                             </a>
                                         {% endif %}
                                         {% if transaction.initharvestrecord_set.all %}
                                             {% with transaction.initharvestrecord_set.first as first_harvest %}
                                                 {% if first_harvest.record_status.acc_status == "Pending" %}
                                                     <a href="{% url 'administrator:admin_verifyharvestrec' %}" 
-                                                       class="btn btn-sm btn-outline-warning"
-                                                       data-bs-toggle="tooltip" title="Verify Harvest Record">
-                                                        <i class="bi bi-scissors"></i>
+                                                       class="btn btn-sm btn-outline-warning">
+                                                        <i class="bi bi-scissors me-1"></i>Verify
                                                     </a>
                                                 {% endif %}
                                             {% endwith %}
                                         {% endif %}
                                     </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             {% else %}
                 <div class="text-center py-5">
