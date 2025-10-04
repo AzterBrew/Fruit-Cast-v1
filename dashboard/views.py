@@ -248,18 +248,15 @@ def forecast(request):
     if not qs.exists():
         forecast_data = None
     else:
-        # Prepare historical data
+        # Prepare historical data - show ALL available historical data
         df = pd.DataFrame(list(qs))
         df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
         df['ds'] = pd.to_datetime(df['ds'])
         df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
         df = df.groupby('ds', as_index=False)['y'].sum()
         
-        # Filter out future outlier dates (anything beyond current date + 1 year)
-        current_date = pd.Timestamp.now()
-        max_allowed_date = current_date + pd.DateOffset(years=1)
-        df = df[df['ds'] <= max_allowed_date]
-        print(f"Filtered historical data: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
+        # No date filtering for historical data display - show all available data
+        print(f"All historical data: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
 
         # Get forecast data from ForecastResult table (pre-computed)
         forecast_results = ForecastResult.objects.filter(
@@ -283,10 +280,16 @@ def forecast(request):
                 forecast_dates.append(forecast_date)
                 forecast_values_list.append(float(result.forecasted_amount_kg))
             
-            # Create combined timeline from previous year to end of next year
+            # Create combined timeline that includes ALL historical data and forecast data
             current_year = datetime.now().year
-            timeline_start = datetime(current_year - 1, 1, 1)  # Start of previous year
-            timeline_end = datetime(current_year + 1, 12, 31)  # End of next year
+            
+            # Start timeline from earliest historical data or previous year, whichever is earlier
+            earliest_historical = df['ds'].min() if not df.empty else datetime(current_year - 1, 1, 1)
+            timeline_start = min(earliest_historical, datetime(current_year - 1, 1, 1))
+            
+            # End timeline at end of next year (forecast range)
+            timeline_end = datetime(current_year + 1, 12, 31)
+            
             all_dates = pd.date_range(start=timeline_start, end=timeline_end, freq='MS')
             
             # Create dictionaries for easy lookup
@@ -841,7 +844,7 @@ def monitor(request):
     monthly_values = [float(data['total_weight']) for data in monthly_harvest_data]
     
     # --- b-a: Total Harvested Weight by Commodity - affected by municipality filter only ---
-    harvest_by_commodity = harvest_records_muni_only.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('commodity_id__name')
+    harvest_by_commodity = harvest_records_muni_only.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
     commodity_labels = [data['commodity_id__name'] for data in harvest_by_commodity]
     commodity_values = [float(data['total_weight']) for data in harvest_by_commodity]
 

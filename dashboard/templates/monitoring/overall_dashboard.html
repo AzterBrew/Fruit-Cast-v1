@@ -102,13 +102,21 @@ Fruit Cast | Monitor
                 <div class="tab-pane fade show active" id="harvest" role="tabpanel" aria-labelledby="harvest-tab">
                     <div class="row g-4 mb-4">
                         <div class="col-lg-8">
-                            <div class="card shadow-sm rounded-4 p-4 h-100">
-                                <h5 class="card-title text-center mb-3">Total Harvested Weight by Commodity</h5>
-                                {% if chart_data.harvest_commodity %}
-                                    <canvas id="harvestWeightChart" height="300"></canvas>
-                                {% else %}
-                                    <div class="alert alert-info text-center">No commodity harvest data available.</div>
-                                {% endif %}
+                            <div class="card shadow-sm rounded-4 border-0 h-100">
+                                <div class="card-header bg-gradient rounded-top" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                                    <h5 class="mb-0 text-white text-center">
+                                        <i class="bi bi-bar-chart me-2"></i>Total Harvested Weight by Commodity
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if chart_data.harvest_commodity %}
+                                        <div style="height: 400px;">
+                                            <canvas id="harvestWeightChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-info text-center">No commodity harvest data available.</div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
 
@@ -143,7 +151,7 @@ Fruit Cast | Monitor
                                     <div class="col-12">
                                         <div class="card text-center bg-light border-0 shadow-sm mb-3">
                                             <div class="card-body">
-                                                <h4 class="card-title fw-bold">{{ forloop.counter }}. {{ municipality.municipality_id__municipality }}</h4>
+                                                <h4 class="card-title fw-bold">{{ forloop.counter }}. {{ municipality.municipality }}</h4>
                                                 <p class="card-text text-muted">Total Harvest: {{ municipality.total_weight|floatformat:"2" }} kg</p>
                                             </div>
                                         </div>
@@ -155,13 +163,21 @@ Fruit Cast | Monitor
                             </div>
                         </div>
                         <div class="col-lg-8">
-                            <div class="card shadow-sm rounded-4 p-4 h-100">
-                                <h5 class="card-title text-center mb-3">Total Harvested Weight by Municipality</h5>
-                                {% if chart_data.harvest_municipality %}
-                                    <canvas id="harvestLocationChart" height="200"></canvas>
-                                {% else %}
-                                    <div class="alert alert-info text-center">No harvest location data available.</div>
-                                {% endif %}
+                            <div class="card shadow-sm rounded-4 border-0 h-100">
+                                <div class="card-header bg-gradient rounded-top" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                                    <h5 class="mb-0 text-white text-center">
+                                        <i class="bi bi-geo-alt me-2"></i>Total Harvested Weight by Municipality
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if chart_data.harvest_municipality %}
+                                        <div style="height: 400px;">
+                                            <canvas id="harvestLocationChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-info text-center">No harvest location data available.</div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -292,7 +308,6 @@ Fruit Cast | Monitor
 
         // B-a: Total Harvested Weight by Commodity (Bar Graph)
         if (document.getElementById('harvestWeightChart')) {
-            const barColors = getRandomColors(harvest_commodity_labels.length);
             new Chart(document.getElementById('harvestWeightChart').getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -300,27 +315,78 @@ Fruit Cast | Monitor
                     datasets: [{
                         label: 'Harvested Weight (Kg)',
                         data: harvest_commodity_values,
-                        backgroundColor: barColors.map(color => `${color}80`), // Add transparency
-                        borderColor: barColors,
-                        borderWidth: 1
+                        backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false
                     }],
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 10
+                        }
+                    },
                     plugins: {
-                        legend: { position: 'top' },
-                        tooltip: { callbacks: { label: function (tooltipItem) { return tooltipItem.raw + " Kg"; } } }
+                        legend: { 
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(25, 135, 84, 1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: { 
+                                label: function (tooltipItem) { 
+                                    return 'Harvest: ' + tooltipItem.raw.toLocaleString() + " Kg"; 
+                                } 
+                            }
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: { 
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return value.toLocaleString() + ' kg';
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
         }
 
-        // B-b: Total Harvested Weight by Municipality (Bar Graph)
+        // B-b: Total Harvested Weight by Municipality (Horizontal Bar Graph)
         if (document.getElementById('harvestLocationChart')) {
-            const barColors = getRandomColors(harvest_municipality_labels.length);
             new Chart(document.getElementById('harvestLocationChart').getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -328,20 +394,72 @@ Fruit Cast | Monitor
                     datasets: [{
                         label: 'Harvested Weight (Kg)',
                         data: harvest_municipality_values,
-                        backgroundColor: barColors.map(color => `${color}80`),
-                        borderColor: barColors,
-                        borderWidth: 1
+                        backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false
                     }],
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     indexAxis: 'y', // Make it a horizontal bar chart for better readability
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 10
+                        }
+                    },
                     plugins: {
-                        legend: { position: 'top' },
-                        tooltip: { callbacks: { label: function (tooltipItem) { return tooltipItem.raw + " Kg"; } } }
+                        legend: { 
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(25, 135, 84, 1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: { 
+                                label: function (tooltipItem) { 
+                                    return 'Harvest: ' + tooltipItem.raw.toLocaleString() + " Kg"; 
+                                } 
+                            }
+                        }
                     },
                     scales: {
-                        x: { beginAtZero: true }
+                        x: { 
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return value.toLocaleString() + ' kg';
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
