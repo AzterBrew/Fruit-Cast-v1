@@ -56,7 +56,7 @@ def retrain_and_generate_forecasts_task():
         # Directory to save models (optional but good practice to keep them)
         # model_dir = os.path.join(settings.BASE_DIR, 'prophet_models')
         # os.makedirs(model_dir, exist_ok=True)
-        
+         
         with transaction.atomic():
             # Process each individual municipality and commodity
             for muni in municipalities:

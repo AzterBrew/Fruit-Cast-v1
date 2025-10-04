@@ -47,7 +47,7 @@ class Command(BaseCommand):
                 if len(df) < 2:
                     self.stdout.write(f"Insufficient data after grouping and filtering for {muni} - {comm}")
                     continue
-
+ 
                 # Prophet model with tuned parameters
                 m = Prophet(
                     yearly_seasonality=True,

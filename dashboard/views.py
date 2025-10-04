@@ -291,7 +291,7 @@ def forecast(request):
             future = pd.DataFrame({'ds': future_months})
             
             print(f"Future dataframe: {len(future)} rows, date range: {future['ds'].min()} to {future['ds'].max()}")
-            
+             
             # Check if future dataframe is empty
             if len(future) == 0:
                 forecast_data = None
