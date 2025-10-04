@@ -1267,76 +1267,43 @@ def register_email(request):
             request.session["reg_code"] = verification_code
             request.session['verification_code_time'] = int(time.time())  # Store timestamp
             # Send email
-            subject="Confirm Your Fruit Cast Account Registration"
-            message= (
-                "Hello Farmer,\n\n"
-                "Thank you for registering with Fruit Cast!\nTo complete your application, please verify your account using the code below:\n"
-                f"Your verification code is: {verification_code}\n"
-                
-                "<p>Hello Farmer,</p>"
-                "<br>"
-                "<p><b>Thank you for registering with Fruit Cast!</b></p>"
-                "<p>To activate your account, please enter the following verification code on the registration page:</p>"
-                "<div style=\"margin:12px 0 0;padding:20px;background-color:rgba(0,0,0,0.04);text-align:center;border-radius:8px\">"
-                "  <div style=\"color:#474747;font-weight:normal;font-size:12px;line-height:20px\">"
-                "    <span class=\"il\">Verification</span> code"
-                "  </div>"
-                "  <div style=\"color:#474747;font-weight:bold;font-size:20px;line-height:28px\">"
-                f"    {verification_code}"
-                "  </div>"
-                "</div>"
-                "<p>This code will expire in 10 minutes.</p>"
-                "<p>If you did not request this, you can safely ignore this email.</p>"
-                "<br>"
-                "<p>Warm Regards,<br>The Fruit Cast Team</p>"
-            )
-            # VERIFICATION EMAIL KUNG GOODS NA
-#             <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
-#     <div style="background: #416e3f; color: white; padding: 20px; text-align: center; border-radius: 6px;">
-#         <h1 style="margin: 0; font-size: 24px;">FRUIT CAST REGISTRATION</h1>
-#     </div>
-#     <div style="padding: 30px; background: white;">
-#         <div style="background: #fffadc;border-left: 4px solid #416e3f;padding: 20px;margin-bottom: 25px;">
-#             <h2 style="margin: 0 0 10px;color: #104e0d;font-size: 20px;">⚠️ Action Required</h2>
-#             <p style="margin: 0; color: #104e0d;">Your Fruit Cast account needs verification to continue</p>
-#         </div>
-#         <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hello Farmer,</p>
-#         <p style="font-size: 15px; color: #555; line-height: 1.6;">
-#             We've detected a new account registration from your email address. To ensure security and activate your access to our farming intelligence platform, please verify your identity using the code below.
-#         </p>
-#         <div style="background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 25px; text-align: center; margin: 25px 0;">
-#             <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">Verification Code</div>
-#             <div style="font-family: Courier, monospace; font-size: 24px; font-weight: bold; color: #2c3e50;">{{ verification_code }}</div>
-#             <div style="color: #999; font-size: 11px; margin-top: 10px;">Expires: 10 minutes from now</div>
-#         </div>
-#         <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
-#             <p style="margin: 0; font-size: 14px; color: #2d5a27;">
-#                 <strong>🎯 Next Steps:</strong> Enter this code on the verification page to unlock your account
-#             </p>
-#         </div>
-#         <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
-#             <p style="font-size: 12px; color: #888; text-align: center;">
-#                 If you didn't register for Fruit Cast, please disregard this notification.
-#             </p>
-#         </div>
-#     </div>
-#     <div style="background: #f8f8f8; padding: 15px; text-align: center;">
-#         <p style="margin: 0; color: #666; font-size: 13px;">
-#             🌱 Fruit Cast Security Team | Protecting Your Agricultural Data
-#         </p>
-#     </div>
-# </div>
+            subject = "Confirm Your Fruit Cast Account Registration"
             
-
-            send_mail(
+            # HTML message
+            html_message = f"""
+            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: #416e3f; color: white; padding: 20px; text-align: center; border-radius: 6px;">
+                    <h2 style="margin: 0;">🌱 Fruit Cast Registration</h2>
+                </div>
+                <div style="padding: 20px; background: #f9f9f9;">
+                    <p>Hello Farmer,</p>
+                    <p><b>Thank you for registering with Fruit Cast!</b></p>
+                    <p>To activate your account, please enter the following verification code on the registration page:</p>
+                    <div style="margin:12px 0 0;padding:20px;background-color:rgba(0,0,0,0.04);text-align:center;border-radius:8px">
+                        <div style="color:#474747;font-weight:normal;font-size:12px;line-height:20px">
+                            Verification code
+                        </div>
+                        <div style="color:#474747;font-weight:bold;font-size:20px;line-height:28px">
+                            {verification_code}
+                        </div>
+                    </div>
+                    <p>This code will expire in 10 minutes.</p>
+                    <p>If you did not request this, you can safely ignore this email.</p>
+                    <br>
+                    <p>Warm Regards,<br>The Fruit Cast Team</p>
+                </div>
+            </div>
+            """
+            
+            # Use EmailMessage for HTML email
+            email_msg = EmailMessage(
                 subject,
-                message,
+                html_message,
                 "noreply@fruitcast.com",  # Change to your sender email
                 [email],
-                fail_silently=False,
             )
-            send_mail.content_subtype = "html"  # Set the content type to HTML
-            send_mail.send()
+            email_msg.content_subtype = "html"  # Set the content type to HTML
+            email_msg.send()
             
         # MODIFY THIS EMAIL PAGKA OKS NA
         return redirect("base:register_verify_code")

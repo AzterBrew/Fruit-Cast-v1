@@ -30,6 +30,8 @@ from pathlib import Path
 from django.core.management import call_command
 from .tasks import retrain_and_generate_forecasts_task
 from django.core.files.storage import default_storage
+from django.contrib.contenttypes.models import ContentType
+from base.models import AdminUserManagement
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -1441,7 +1443,6 @@ def admin_account_detail(request, account_id):
             # If target is Administrator, partial info only (can_view_full_details remains False)
         
         # Calculate age
-        from datetime import date
         today = date.today()
         birth_date = target_userinfo.birthdate
         age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
@@ -1452,12 +1453,14 @@ def admin_account_detail(request, account_id):
         # Get admin action history (if target has AdminInformation)
         admin_actions = []
         if target_admin_info:
-            from django.contrib.contenttypes.models import ContentType
-            from base.models import AdminUserManagement
-            
-            admin_actions = AdminUserManagement.objects.filter(
-                admin_id=target_admin_info
-            ).order_by('-action_timestamp')[:20]  # Latest 20 actions
+            try:
+                admin_actions = AdminUserManagement.objects.filter(
+                    admin_id=target_admin_info
+                ).order_by('-action_timestamp')[:20]  # Latest 20 actions
+            except Exception as e:
+                print(f"Warning: Could not fetch admin actions - database schema issue: {e}")
+                # If there's a database schema issue, set empty list
+                admin_actions = []
         
         context = {
             **get_admin_context(request),
@@ -1476,9 +1479,11 @@ def admin_account_detail(request, account_id):
         
     except AccountsInformation.DoesNotExist:
         messages.error(request, "Account not found.")
+        print("Error: Account not found in admin_account_detail")
         return redirect('administrator:show_allaccounts')
     except Exception as e:
         messages.error(request, f"Error loading account details: {str(e)}")
+        print(f"Error in admin_account_detail: {e}")
         return redirect('administrator:show_allaccounts')
 
 
