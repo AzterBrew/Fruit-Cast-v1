@@ -161,8 +161,8 @@ class AdminUserManagement(models.Model):
     action = models.CharField(max_length=255) # e.g., "Verified", "Rejected", "Archived"
 
     # Generic Foreign Key fields
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
     target_object = GenericForeignKey('content_type', 'object_id')
 
     def __str__(self):
