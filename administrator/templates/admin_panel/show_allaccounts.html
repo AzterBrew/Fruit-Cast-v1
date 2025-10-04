@@ -88,9 +88,15 @@ Fruit Cast | Account Management
                             <table class="table table-hover align-middle">
                                 <thead class="table-success">
                                     <tr>
+                                        {% if user.is_superuser %}
                                         <th scope="col">
                                             <input type="checkbox" id="selectAll" class="form-check-input">
                                         </th>
+                                        {% else %}
+                                        <th scope="col">
+                                            <span class="text-muted small">Select</span>
+                                        </th>
+                                        {% endif %}
                                         <th scope="col">{% sort_header "date" "Date Assigned" current_sort current_order current_status %}</th>
                                         <th scope="col">{% sort_header "name" "Full Name" current_sort current_order current_status %}</th>
                                         <th scope="col">Municipality In-Charge</th>    
@@ -103,7 +109,15 @@ Fruit Cast | Account Management
                                     {% for account in allAccounts %}
                                     <tr>
                                         <td>
-                                            <input type="checkbox" name="selected_records" value="{{ account.pk }}" class="form-check-input record-checkbox">
+                                            {% if user.is_superuser %}
+                                                <input type="checkbox" name="selected_records" value="{{ account.pk }}" class="form-check-input record-checkbox">
+                                            {% elif account.account_type_id.pk == 3 %}
+                                                <!-- Administrator can only select Agriculturists (pk=3) -->
+                                                <input type="checkbox" name="selected_records" value="{{ account.pk }}" class="form-check-input record-checkbox">
+                                            {% else %}
+                                                <!-- No checkbox for administrators when viewed by non-superuser -->
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <small class="text-muted">{{ account.account_register_date|date:"M d, Y" }}</small>
@@ -124,7 +138,7 @@ Fruit Cast | Account Management
                                         <td>
                                             {% with admin_info=account.userinfo_id.admininformation_set.first %}
                                                 {% if admin_info %}
-                                                    <span class="badge bg-primary">{{ admin_info.municipality_incharge.municipality }}</span>
+                                                    <span class="badge bg-secondary">{{ admin_info.municipality_incharge.municipality }}</span>
                                                 {% else %}
                                                     <span class="text-muted">-</span>
                                                 {% endif %}
@@ -140,7 +154,7 @@ Fruit Cast | Account Management
                                                                 <option value="{{ acct_type.pk }}" {% if acct_type.pk == account.account_type_id.pk %}selected{% endif %}>{{ acct_type.account_type }}</option>
                                                             {% endfor %}
                                                         </select>
-                                                        <button type="submit" class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="Update Type">
+                                                        <button type="submit" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Update Type">
                                                             <i class="bi bi-check"></i>
                                                         </button>
                                                     </form>
@@ -179,7 +193,7 @@ Fruit Cast | Account Management
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
-                                            <a href="{% url 'administrator:admin_account_detail' account.account_id %}" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="View Details">
+                                            <a href="{% url 'administrator:admin_account_detail' account.account_id %}" class="btn btn-outline-warning btn-sm" data-bs-toggle="tooltip" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </td>

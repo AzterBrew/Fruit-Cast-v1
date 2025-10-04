@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from dashboard.models import * 
 # Create your models here.
 # class ExtendedUser(models.Model):
@@ -145,12 +147,28 @@ class UserLoginLog(models.Model):
     account_id = models.ForeignKey(AccountsInformation,  on_delete=models.CASCADE)
     login_date = models.DateTimeField(auto_now_add=True)
     
+# class AdminUserManagement(models.Model):
+#     log_id = models.BigAutoField(primary_key=True)
+#     admin_id = models.ForeignKey(AdminInformation, on_delete=models.CASCADE)
+#     action_timestamp = models.DateTimeField(auto_now_add=True)
+#     target_useracc = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
+#     action = models.CharField(max_length=255)
+    
 class AdminUserManagement(models.Model):
     log_id = models.BigAutoField(primary_key=True)
     admin_id = models.ForeignKey(AdminInformation, on_delete=models.CASCADE)
     action_timestamp = models.DateTimeField(auto_now_add=True)
-    target_useracc = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
-    action = models.CharField(max_length=255)
+    action = models.CharField(max_length=255) # e.g., "Verified", "Rejected", "Archived"
+
+    # Generic Foreign Key fields
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    target_object = GenericForeignKey('content_type', 'object_id')
+
+    def __str__(self):
+        return f"Admin {self.admin_id} {self.action} on {self.content_type.model} ID {self.object_id}"
+    
+    
     
 class FarmLand(models.Model):
     farminfo_id = models.BigAutoField(primary_key=True)

@@ -211,7 +211,117 @@ Fruit Cast | Account Details
                         <i class="bi bi-info-circle" style="font-size: 2rem;"></i>
                     </div>
                     <h6 class="text-warning">Limited Access</h6>
-                    <p class="text-muted mb-0">Additional personal details are restricted to superuser access only.</p>
+                    {% if user_role_id == 2 and target_account_type_id == 2 %}
+                        <p class="text-muted mb-0">Additional personal details of other administrators are restricted. Only basic information is available.</p>
+                    {% else %}
+                        <p class="text-muted mb-0">Additional personal details are restricted to superuser access only.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Admin Action History Section -->
+            {% if target_admin_info and admin_actions %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 text-success">
+                        <i class="bi bi-clock-history me-2"></i>Administrative Action History
+                        <span class="badge bg-info ms-2">{{ admin_actions|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Recent administrative actions performed by this {{ target_account.account_type_id.account_type|lower }}.</p>
+                    
+                    <!-- Desktop Table View -->
+                    <div class="d-none d-lg-block">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Date & Time</th>
+                                        <th scope="col">Action</th>
+                                        <th scope="col">Target Type</th>
+                                        <th scope="col">Target ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for action in admin_actions %}
+                                    <tr>
+                                        <td>
+                                            <small class="text-muted">{{ action.action_timestamp|date:"M d, Y" }}</small><br>
+                                            <small class="text-muted">{{ action.action_timestamp|time:"g:i A" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if "Verified" in action.action %}
+                                                <span class="badge bg-success">{{ action.action }}</span>
+                                            {% elif "Rejected" in action.action %}
+                                                <span class="badge bg-danger">{{ action.action }}</span>
+                                            {% elif "Archived" in action.action %}
+                                                <span class="badge bg-secondary">{{ action.action }}</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">{{ action.action }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">{{ action.content_type.model|title }}</span>
+                                        </td>
+                                        <td>
+                                            <code>{{ action.object_id }}</code>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-lg-none">
+                        {% for action in admin_actions %}
+                        <div class="card border-start border-info border-3 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        {% if "Verified" in action.action %}
+                                            <span class="badge bg-success mb-1">{{ action.action }}</span>
+                                        {% elif "Rejected" in action.action %}
+                                            <span class="badge bg-danger mb-1">{{ action.action }}</span>
+                                        {% elif "Archived" in action.action %}
+                                            <span class="badge bg-secondary mb-1">{{ action.action }}</span>
+                                        {% else %}
+                                            <span class="badge bg-primary mb-1">{{ action.action }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ action.action_timestamp|date:"M d, Y" }}<br>
+                                        {{ action.action_timestamp|time:"g:i A" }}
+                                    </small>
+                                </div>
+                                
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Target Type:</small>
+                                        <span class="fw-medium">{{ action.content_type.model|title }}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Target ID:</small>
+                                        <code>{{ action.object_id }}</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% elif target_admin_info %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center py-4">
+                    <div class="text-muted mb-3">
+                        <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="text-muted">No Action History</h6>
+                    <p class="text-muted mb-0">This {{ target_account.account_type_id.account_type|lower }} hasn't performed any administrative actions yet.</p>
                 </div>
             </div>
             {% endif %}

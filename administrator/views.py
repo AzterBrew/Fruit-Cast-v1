@@ -1424,9 +1424,21 @@ def admin_account_detail(request, account_id):
         current_account = AccountsInformation.objects.get(userinfo_id=current_user_info)
         current_admin_info = AdminInformation.objects.filter(userinfo_id=current_user_info).first()
         
-        # Determine access level
+        # Determine access level based on new rules
         is_superuser = request.user.is_superuser
         user_role_id = current_account.account_type_id.pk
+        target_account_type_id = target_account.account_type_id.pk
+        
+        # New access control logic:
+        # - Superuser: full info for everyone
+        # - Administrator: full info for agriculturists, partial for administrators
+        can_view_full_details = False
+        if is_superuser:
+            can_view_full_details = True
+        elif user_role_id == 2:  # Administrator
+            if target_account_type_id == 3:  # Target is Agriculturist
+                can_view_full_details = True
+            # If target is Administrator, partial info only (can_view_full_details remains False)
         
         # Calculate age
         from datetime import date
@@ -1437,6 +1449,16 @@ def admin_account_detail(request, account_id):
         # Get admin information if target is admin/agriculturist
         target_admin_info = AdminInformation.objects.filter(userinfo_id=target_userinfo).first()
         
+        # Get admin action history (if target has AdminInformation)
+        admin_actions = []
+        if target_admin_info:
+            from django.contrib.contenttypes.models import ContentType
+            from base.models import AdminUserManagement
+            
+            admin_actions = AdminUserManagement.objects.filter(
+                admin_id=target_admin_info
+            ).order_by('-action_timestamp')[:20]  # Latest 20 actions
+        
         context = {
             **get_admin_context(request),
             'target_account': target_account,
@@ -1445,7 +1467,9 @@ def admin_account_detail(request, account_id):
             'calculated_age': age,
             'is_superuser': is_superuser,
             'user_role_id': user_role_id,
-            'can_view_full_details': is_superuser,  # Only superuser sees all
+            'target_account_type_id': target_account_type_id,
+            'can_view_full_details': can_view_full_details,
+            'admin_actions': admin_actions,
         }
         
         return render(request, 'admin_panel/admin_account_detail.html', context)
