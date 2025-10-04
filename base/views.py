@@ -17,7 +17,8 @@ import json, time
 from dateutil.relativedelta import relativedelta
 #from .forms import CustomUserCreationForm  # make sure this is imported
 from django.http import JsonResponse
-from django.db import transaction
+from django.db import transaction, IntegrityError
+from django.core.exceptions import ValidationError
 import random
 from .models import *
 from dashboard.models import *
@@ -1207,8 +1208,36 @@ def login_success(request):
         return redirect('base:home')
 
 def get_barangays(request, municipality_id):
-    barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('barangay_id', 'barangay')
-    return JsonResponse([{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays], safe=False)
+    # Debug: Special logging for Orani (municipality_id=9)
+    if municipality_id == 9:
+        print("\n" + "🏘️"*30)
+        print("🔍 BARANGAY FETCH DEBUG - ORANI (pk=9)")
+        print("🏘️"*30)
+    
+    try:
+        # Get municipality info
+        municipality = MunicipalityName.objects.get(pk=municipality_id)
+        print(f"🏘️ Municipality: {municipality.municipality} (ID: {municipality_id})")
+        
+        # Get barangays
+        barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('barangay_id', 'barangay')
+        barangay_list = [{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays]
+        
+        print(f"🏠 Found {len(barangay_list)} barangays for {municipality.municipality}:")
+        for barangay in barangay_list:
+            print(f"   🔸 {barangay['name']} (ID: {barangay['id']})")
+            
+        if municipality_id == 9:
+            print("🏘️"*30)
+            
+        return JsonResponse(barangay_list, safe=False)
+        
+    except MunicipalityName.DoesNotExist:
+        print(f"❌ Municipality with ID {municipality_id} does not exist!")
+        return JsonResponse([], safe=False)
+    except Exception as e:
+        print(f"❌ Error fetching barangays for municipality {municipality_id}: {str(e)}")
+        return JsonResponse([], safe=False)
 
 def register_email(request):
     email_error = None
@@ -1260,8 +1289,44 @@ def register_email(request):
                 "<p>If you did not request this, you can safely ignore this email.</p>"
                 "<br>"
                 "<p>Warm Regards,<br>The Fruit Cast Team</p>"
-
             )
+            # VERIFICATION EMAIL KUNG GOODS NA
+#             <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
+#     <div style="background: #416e3f; color: white; padding: 20px; text-align: center; border-radius: 6px;">
+#         <h1 style="margin: 0; font-size: 24px;">FRUIT CAST REGISTRATION</h1>
+#     </div>
+#     <div style="padding: 30px; background: white;">
+#         <div style="background: #fffadc;border-left: 4px solid #416e3f;padding: 20px;margin-bottom: 25px;">
+#             <h2 style="margin: 0 0 10px;color: #104e0d;font-size: 20px;">⚠️ Action Required</h2>
+#             <p style="margin: 0; color: #104e0d;">Your Fruit Cast account needs verification to continue</p>
+#         </div>
+#         <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hello Farmer,</p>
+#         <p style="font-size: 15px; color: #555; line-height: 1.6;">
+#             We've detected a new account registration from your email address. To ensure security and activate your access to our farming intelligence platform, please verify your identity using the code below.
+#         </p>
+#         <div style="background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 25px; text-align: center; margin: 25px 0;">
+#             <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">Verification Code</div>
+#             <div style="font-family: Courier, monospace; font-size: 24px; font-weight: bold; color: #2c3e50;">{{ verification_code }}</div>
+#             <div style="color: #999; font-size: 11px; margin-top: 10px;">Expires: 10 minutes from now</div>
+#         </div>
+#         <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+#             <p style="margin: 0; font-size: 14px; color: #2d5a27;">
+#                 <strong>🎯 Next Steps:</strong> Enter this code on the verification page to unlock your account
+#             </p>
+#         </div>
+#         <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+#             <p style="font-size: 12px; color: #888; text-align: center;">
+#                 If you didn't register for Fruit Cast, please disregard this notification.
+#             </p>
+#         </div>
+#     </div>
+#     <div style="background: #f8f8f8; padding: 15px; text-align: center;">
+#         <p style="margin: 0; color: #666; font-size: 13px;">
+#             🌱 Fruit Cast Security Team | Protecting Your Agricultural Data
+#         </p>
+#     </div>
+# </div>
+            
 
             send_mail(
                 subject,
@@ -1270,6 +1335,8 @@ def register_email(request):
                 [email],
                 fail_silently=False,
             )
+            send_mail.content_subtype = "html"  # Set the content type to HTML
+            send_mail.send()
             
         # MODIFY THIS EMAIL PAGKA OKS NA
         return redirect("base:register_verify_code")
@@ -1309,33 +1376,163 @@ def register_step1(request):
 
     if request.method == "POST":
         form = RegistrationForm(request.POST)
+        
+        # Debug: Print form data
+        print("\n" + "="*50)
+        print("🔍 REGISTRATION DEBUG - FORM SUBMISSION")
+        print("="*50)
+        print(f"📧 Registration Email: {reg_email}")
+        print(f"📝 Form Data: {dict(request.POST)}")
+        print(f"🏘️ Municipality Selected: {request.POST.get('municipality_id')} (should be 9 for Orani)")
+        print(f"🏠 Barangay Selected: {request.POST.get('barangay_id')}")
+        print(f"✅ Form Valid: {form.is_valid()}")
+        
+        if not form.is_valid():
+            print("❌ FORM VALIDATION ERRORS:")
+            for field, errors in form.errors.items():
+                print(f"   🔸 {field}: {errors}")
+            print("🔍 Non-field errors:", form.non_field_errors())
+        
         if form.is_valid():
+            print("✅ Form validation passed, proceeding with database operations...")
             try:
                 with transaction.atomic():
+                    print("🔄 Starting database transaction...")
+                    
                     # Create AuthUser
+                    print(f"👤 Creating AuthUser with email: {reg_email}")
                     auth_user = AuthUser.objects.create_user(email=reg_email, password=reg_password)
+                    print(f"✅ AuthUser created successfully with ID: {auth_user.id}")
+                    
                     # Prepare UserInformation
+                    print("📋 Preparing UserInformation...")
                     user_info = form.save(commit=False)
                     user_info.auth_user = auth_user
                     user_info.user_email = reg_email  # Set email from session
+                    
+                    # Debug municipality and barangay info
+                    print(f"🏘️ Municipality ID: {user_info.municipality_id} (Type: {type(user_info.municipality_id)})")
+                    print(f"🏠 Barangay ID: {user_info.barangay_id} (Type: {type(user_info.barangay_id)})")
+                    
+                    if user_info.municipality_id:
+                        print(f"🏘️ Municipality Name: {user_info.municipality_id.municipality}")
+                    if user_info.barangay_id:
+                        print(f"🏠 Barangay Name: {user_info.barangay_id.barangay}")
+                    
+                    print("💾 Saving UserInformation...")
                     user_info.save()
+                    print(f"✅ UserInformation saved successfully with ID: {user_info.userinfo_id}")
+                    
                     # Create AccountsInformation (Pending, Farmer by default)
-                    account_type_instance = AccountType.objects.get(account_type__iexact="Farmer")
-                    item_status_instance = AccountStatus.objects.get(acc_status__iexact="Verified")
-                    AccountsInformation.objects.create(
+                    print("🔍 Getting AccountType and AccountStatus...")
+                    
+                    # Check if required objects exist
+                    farmer_types = AccountType.objects.filter(account_type__iexact="Farmer")
+                    verified_statuses = AccountStatus.objects.filter(acc_status__iexact="Verified")
+                    
+                    print(f"🔍 Found {farmer_types.count()} AccountType(s) matching 'Farmer':")
+                    for at in farmer_types:
+                        print(f"   🔸 {at.account_type} (ID: {at.account_type_id})")
+                    
+                    print(f"🔍 Found {verified_statuses.count()} AccountStatus(es) matching 'Verified':")
+                    for vs in verified_statuses:
+                        print(f"   🔸 {vs.acc_status} (ID: {vs.acc_stat_id})")
+                    
+                    if farmer_types.count() == 0:
+                        raise Exception("No AccountType with type 'Farmer' found in database!")
+                    if verified_statuses.count() == 0:
+                        raise Exception("No AccountStatus with status 'Verified' found in database!")
+                    
+                    account_type_instance = farmer_types.first()
+                    item_status_instance = verified_statuses.first()
+                    print(f"📋 Using Account Type: {account_type_instance.account_type} (ID: {account_type_instance.account_type_id})")
+                    print(f"📊 Using Account Status: {item_status_instance.acc_status} (ID: {item_status_instance.acc_stat_id})")
+                    
+                    print("📝 Creating AccountsInformation...")
+                    account_info = AccountsInformation.objects.create(
                         userinfo_id=user_info,
                         account_type_id=account_type_instance,
                         acc_status_id=item_status_instance,
                         account_register_date=timezone.now()
                     )
+                    print(f"✅ AccountsInformation created successfully with ID: {account_info.account_id}")
+                    
+                    # Success message
+                    print("\n🎉 REGISTRATION SUCCESSFUL!")
+                    print(f"👤 User: {user_info.firstname} {user_info.lastname}")
+                    print(f"📧 Email: {reg_email}")
+                    print(f"🏘️ Municipality: {user_info.municipality_id.municipality}")
+                    print(f"🏠 Barangay: {user_info.barangay_id.barangay}")
+                    print("="*50)
+                    
                     # Optionally: clear session registration vars
                     for key in ['reg_email', 'reg_code', 'reg_password', 'reg_verified']:
                         if key in request.session:
                             del request.session[key]
                     return redirect('base:login')
+                    
+            except IntegrityError as ie:
+                print("\n" + "🚫"*50)
+                print("❌ DATABASE INTEGRITY ERROR!")
+                print("🚫"*50)
+                print(f"🔴 Integrity Error: {str(ie)}")
+                print(f"📧 Email: {reg_email}")
+                print(f"🏘️ Municipality Selected: {request.POST.get('municipality_id')}")
+                print(f"🏠 Barangay Selected: {request.POST.get('barangay_id')}")
+                print("🔍 This error suggests a database constraint violation")
+                print("   Possible causes:")
+                print("   - Duplicate email address")
+                print("   - Duplicate RSBSA reference number")
+                print("   - Foreign key constraint violation")
+                print("🚫"*50)
+                
+                if 'email' in str(ie).lower():
+                    error_msg = "This email address is already registered. Please use a different email."
+                elif 'rsbsa' in str(ie).lower():
+                    error_msg = "This RSBSA reference number is already in use. Please check your RSBSA number."
+                else:
+                    error_msg = f"Database integrity error: {str(ie)}"
+                
+                return render(request, 'registration/register_step1.html', {
+                    'form': form,
+                    'error_message': error_msg
+                })
+                
+            except ValidationError as ve:
+                print("\n" + "⚠️"*50)
+                print("❌ VALIDATION ERROR!")
+                print("⚠️"*50)
+                print(f"🔴 Validation Error: {str(ve)}")
+                print(f"📧 Email: {reg_email}")
+                print(f"🏘️ Municipality Selected: {request.POST.get('municipality_id')}")
+                print(f"🏠 Barangay Selected: {request.POST.get('barangay_id')}")
+                print("⚠️"*50)
+                
+                return render(request, 'registration/register_step1.html', {
+                    'form': form,
+                    'error_message': f"Validation error: {str(ve)}"
+                })
+                    
             except Exception as e:
-                print("Exception during registration:", str(e))
-                form.add_error(None, "Something went wrong during registration. Please try again.")
+                print("\n" + "💥"*50)
+                print("❌ REGISTRATION ERROR OCCURRED!")
+                print("💥"*50)
+                print(f"🔴 Exception Type: {type(e).__name__}")
+                print(f"🔴 Exception Message: {str(e)}")
+                print(f"📧 Email: {reg_email}")
+                print(f"🏘️ Municipality Selected: {request.POST.get('municipality_id')}")
+                print(f"🏠 Barangay Selected: {request.POST.get('barangay_id')}")
+                
+                # More detailed error info
+                import traceback
+                print(f"🔍 Full Traceback:")
+                traceback.print_exc()
+                print("💥"*50)
+                
+                form.add_error(None, f"Registration failed: {str(e)}. Please try again or contact support.")
+        else:
+            print("❌ Form validation failed, not proceeding with registration.")
+            print("="*50)
     else:
         form = RegistrationForm()
     

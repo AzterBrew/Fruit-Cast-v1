@@ -275,6 +275,59 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+
+  // Add form submission debugging
+  const registerForm = document.getElementById('register-form');
+  if (registerForm) {
+    registerForm.addEventListener('submit', function(e) {
+      console.log('\n' + '='.repeat(50));
+      console.log('🔍 FRONTEND REGISTRATION DEBUG - FORM SUBMISSION');
+      console.log('='.repeat(50));
+      
+      const formData = new FormData(this);
+      const formObj = {};
+      for (let [key, value] of formData.entries()) {
+        formObj[key] = value;
+      }
+      
+      console.log('📝 Form Data:', formObj);
+      console.log('🏘️ Municipality Selected:', formObj.municipality_id);
+      console.log('🏠 Barangay Selected:', formObj.barangay_id);
+      
+      // Check if municipality is Orani (pk=9)
+      if (formObj.municipality_id === '9') {
+        console.log('🎯 DETECTED ORANI SELECTION (pk=9)!');
+        console.log('🏘️ Municipality Name: Orani');
+        
+        // Get the selected barangay name
+        const barangaySelect = document.getElementById('id_barangay_id');
+        if (barangaySelect && barangaySelect.selectedOptions.length > 0) {
+          console.log('🏠 Barangay Name:', barangaySelect.selectedOptions[0].textContent);
+        }
+      }
+      
+      // Validate required fields
+      const requiredFields = ['firstname', 'lastname', 'sex', 'birthdate', 'contact_number', 'address_details', 'municipality_id', 'barangay_id', 'religion', 'civil_status'];
+      const missingFields = [];
+      
+      requiredFields.forEach(field => {
+        if (!formObj[field] || formObj[field].trim() === '') {
+          missingFields.push(field);
+        }
+      });
+      
+      if (missingFields.length > 0) {
+        console.log('❌ Missing required fields:', missingFields);
+      } else {
+        console.log('✅ All required fields filled');
+      }
+      
+      console.log('📤 Form submission proceeding...');
+      console.log('='.repeat(50));
+      
+      // Let the form submit normally
+    });
+  }
 });
 </script>
 
