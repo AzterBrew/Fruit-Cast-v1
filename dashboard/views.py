@@ -283,8 +283,11 @@ def forecast(request):
                 forecast_dates.append(forecast_date)
                 forecast_values_list.append(float(result.forecasted_amount_kg))
             
-            # Create combined timeline from historical start to forecast end
-            all_dates = pd.date_range(start=df['ds'].min(), end=max(forecast_dates), freq='MS')
+            # Create combined timeline from previous year to end of next year
+            current_year = datetime.now().year
+            timeline_start = datetime(current_year - 1, 1, 1)  # Start of previous year
+            timeline_end = datetime(current_year + 1, 12, 31)  # End of next year
+            all_dates = pd.date_range(start=timeline_start, end=timeline_end, freq='MS')
             
             # Create dictionaries for easy lookup
             hist_dict = dict(zip(df['ds'], df['y']))
@@ -325,9 +328,15 @@ def forecast(request):
     now = datetime.now()
     current_year = now.year
     current_month = now.month
-    months =  Month.objects.order_by('number')
-    if filter_year and int(filter_year) == current_year:
-        months = months.filter(number__gt=now_dt.month)
+    
+    # Always show all months regardless of selected year
+    months = Month.objects.order_by('number')
+    
+    # Set default filters if not provided
+    if not filter_month:
+        filter_month = str(current_month)
+    if not filter_year:
+        filter_year = str(current_year)
         
     print(filter_month, filter_year)
     
@@ -351,9 +360,10 @@ def forecast(request):
     
     # CHOROPLETH 2D MAP DATA
     # Use the selected parameters from the form instead of hardcoded values
+    # Set defaults for map if not provided
     map_commodity_id = selected_mapcommodity_id or selected_commodity_id
-    map_month = filter_month
-    map_year = filter_year
+    map_month = filter_month  # This will use the default set above if not provided
+    map_year = filter_year    # This will use the default set above if not provided
     
     print(f"Map parameters - Commodity: {map_commodity_id}, Month: {map_month}, Year: {map_year}")
 
@@ -460,15 +470,17 @@ def forecast_bycommodity(request):
         if userinfo_id:
             userinfo = UserInformation.objects.get(pk=userinfo_id)
     
-    # Get filter params
+    # Get filter params with defaults
     filter_month = request.GET.get('filter_month') or str(timezone.now().month)
     filter_year = request.GET.get('filter_year') or str(timezone.now().year)
-    selected_municipality_id = request.GET.get('municipality_id')
+    selected_municipality_id = request.GET.get('municipality_id') or "14"  # Default to "Overall"
     
     print("Bar graph filters:", filter_month, filter_year, selected_municipality_id)
     
     commodity_types = CommodityType.objects.exclude(pk=1)
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
+    
+    # Always show all months regardless of selected year
     months = Month.objects.order_by('number')
     now_dt = datetime.now()
     current_year = now_dt.year
@@ -480,11 +492,6 @@ def forecast_bycommodity(request):
     )
     if not available_years:
         available_years = [timezone.now().year]
-
-    # if filter_year and int(filter_year) == current_year:
-    #     months = months.filter(number__gt=current_month)
-
-    months = Month.objects.order_by('number')
     
     forecast_summary = None
     forecast_summary_chart = None
@@ -502,19 +509,23 @@ def forecast_bycommodity(request):
     else:
         forecast_qs = ForecastResult.objects.none()
 
-    summary_dict = OrderedDict()
+    # Build summary dict and sort by descending values
+    summary_dict = {}
     for commodity in commodity_types:
         total = forecast_qs.filter(commodity=commodity).aggregate(
             total_kg=Sum('forecasted_amount_kg')
         )['total_kg']
         summary_dict[commodity.name] = round(total, 2) if total else 0
 
+    # Sort by descending forecast values
+    sorted_summary = sorted(summary_dict.items(), key=lambda x: x[1], reverse=True)
+    
     forecast_summary = [
-        {'commodity': k, 'forecasted_kg': v} for k, v in summary_dict.items()
+        {'commodity': k, 'forecasted_kg': v} for k, v in sorted_summary
     ]
     forecast_summary_chart = {
-        'labels': list(summary_dict.keys()),
-        'values': list(summary_dict.values())
+        'labels': [item[0] for item in sorted_summary],
+        'values': [item[1] for item in sorted_summary]
     } if forecast_summary else None
     print("Forecast results count:", forecast_qs.count())
 

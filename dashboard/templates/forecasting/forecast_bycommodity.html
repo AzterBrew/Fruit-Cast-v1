@@ -234,8 +234,12 @@ Forecast by Commodity
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Data is automatically sorted by descending values in the backend
         var barLabels = {{ forecast_summary_chart.labels|safe }};
         var barValues = {{ forecast_summary_chart.values|safe }};
+        
+        console.log('Chart data loaded with commodities sorted by descending forecast values');
+        
         var ctxBar = document.getElementById('forecastSummaryBarChart');
         if (ctxBar) {
             new Chart(ctxBar, {

@@ -105,9 +105,9 @@ def retrain_and_generate_forecasts_task():
                     # Save the model directly to DigitalOcean Spaces
                     default_storage.save(bucket_path, buffer)
                     
-                    # Generate forecast using dynamic approach from start of current year to end of next year
+                    # Generate forecast using dynamic approach from start of previous year to end of next year
                     current_year = datetime.today().year
-                    forecast_start_date = datetime(current_year, 1, 1)  # Start of current year
+                    forecast_start_date = datetime(current_year - 1, 1, 1)  # Start of previous year
                     forecast_end_date = datetime(current_year + 1, 12, 31)  # End of next year
                     
                     # Create future DataFrame with dynamic range
@@ -199,9 +199,9 @@ def retrain_and_generate_forecasts_task():
                 # Save the model directly to DigitalOcean Spaces
                 default_storage.save(bucket_path, buffer)
 
-                # Generate forecast using dynamic approach from start of current year to end of next year
+                # Generate forecast using dynamic approach from start of previous year to end of next year
                 current_year = datetime.today().year
-                forecast_start_date = datetime(current_year, 1, 1)  # Start of current year
+                forecast_start_date = datetime(current_year - 1, 1, 1)  # Start of previous year
                 forecast_end_date = datetime(current_year + 1, 12, 31)  # End of next year
                 
                 # Create future DataFrame with dynamic range

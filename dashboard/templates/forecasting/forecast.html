@@ -425,6 +425,24 @@ document.addEventListener('DOMContentLoaded', function() {
     var yearSelect = document.getElementById('filter_year');
     var currentYear = new Date().getFullYear();
     var currentMonth = new Date().getMonth() + 1;
+    
+    // Auto-set choropleth filters on page load if they're empty
+    var mapMonthSelect = document.querySelector('#choropleth-filter-form select[name="filter_month"]');
+    var mapYearSelect = document.querySelector('#choropleth-filter-form select[name="filter_year"]');
+    var mapCommoditySelect = document.querySelector('#choropleth-filter-form select[name="mapcommodity_id"]');
+    
+    // Auto-submit choropleth form if filters are not set but have default values from backend
+    if (mapMonthSelect && mapYearSelect && mapCommoditySelect) {
+        var hasMonthValue = mapMonthSelect.value !== '';
+        var hasYearValue = mapYearSelect.value !== '';
+        var hasCommodityValue = mapCommoditySelect.value !== '';
+        
+        // If all filters have values (set by backend defaults), trigger map update
+        if (hasMonthValue && hasYearValue && hasCommodityValue) {
+            // Map will load with the data that's already passed from the backend
+            console.log('Map filters auto-set with current month/year and first commodity');
+        }
+    }
 });
 
 // Render line chart for forecast_data if present
