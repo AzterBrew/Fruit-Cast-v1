@@ -290,14 +290,14 @@ class PlantRecordCreate(forms.ModelForm):
 
 class FarmlandRecordCreate(forms.ModelForm):
     farmland_name = forms.CharField(label="Farm Name *", max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Enter Farmland name...'}))
-    estimated_area = forms.DecimalField(label="Estimated Farm Size (in hectares)", localize=True, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder' : 'Enter land area...(optional)'}))
-    municipality = forms.ModelChoiceField(label="Municipality of Farm *", queryset=MunicipalityName.objects.all(), widget=forms.Select(attrs={'class': 'form-select'}))
+    estimated_area = forms.DecimalField(label="Estimated Farm Area (in hectares)", localize=True, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder' : 'Enter land area...(optional)'}))
+    municipality = forms.ModelChoiceField(label="Municipality of Farm *", queryset=MunicipalityName.objects.exclude(pk=14), widget=forms.Select(attrs={'class': 'form-select'}))
     barangay = forms.ModelChoiceField(label="Barangay of Farm *", queryset=BarangayName.objects.none(), widget=forms.Select(attrs={'class': 'form-select'}))
 
     class Meta:
         model = FarmLand
         fields = ["farmland_name", "estimated_area", "municipality", "barangay"]
-        labels = {"farmland_name": "Farm Name *", "estimated_area": "Farm Size (in hectares) *", "municipality": "Municipality of Farm *", "barangay": "Barangay of Farm *"}
+        labels = {"farmland_name": "Farm Name *", "estimated_area": "Farm Area (in hectares) *", "municipality": "Municipality of Farm *", "barangay": "Barangay of Farm *"}
         widgets = {
             'farmland_name': forms.TextInput(attrs={'class': 'form-control'}),
             'estimated_area': forms.NumberInput(attrs={'class': 'form-control'}),
