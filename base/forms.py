@@ -234,9 +234,9 @@ class HarvestRecordCreate(forms.ModelForm):
         
 class RecordTransactionCreate(forms.ModelForm):
     location_type = forms.ChoiceField(label="Pick a Location Type *",choices=LOCATION_TYPE_CHOICES,widget=forms.RadioSelect(attrs={ 'style': 'margin-right: 5px;', 'placeholder' : 'Enter estimated land area...(optional)'}))
-    farm_land = forms.ModelChoiceField(queryset=FarmLand.objects.none(),required=False,label="Select FarmLand",widget=forms.Select(attrs={'class': 'form-select',  'placeholder' : 'Enter Farmland name...'}))
+    farm_land = forms.ModelChoiceField(queryset=FarmLand.objects.none(),required=False,label="Select Farm Land",widget=forms.Select(attrs={'class': 'form-select',  'placeholder' : 'Enter Farm Land name...'}))
 
-    manual_municipality = forms.ModelChoiceField(label="Manual: Municipality",queryset=MunicipalityName.objects.all(),required=False,widget=forms.Select(attrs={'class': 'form-select'}))
+    manual_municipality = forms.ModelChoiceField(label="Manual: Municipality",queryset=MunicipalityName.objects.exclude(pk=14),required=False,widget=forms.Select(attrs={'class': 'form-select'}))
     manual_barangay = forms.ModelChoiceField(label="Manual: Barangay",queryset=BarangayName.objects.none(),required=False,widget=forms.Select(attrs={'class': 'form-select'}))
 
     class Meta:
@@ -290,7 +290,7 @@ class PlantRecordCreate(forms.ModelForm):
 
 class FarmlandRecordCreate(forms.ModelForm):
     farmland_name = forms.CharField(label="Farm Name *", max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Enter Farmland name...'}))
-    estimated_area = forms.DecimalField(label="Estimated Farm Area (in hectares)", localize=True, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder' : 'Enter land area...(optional)'}))
+    estimated_area = forms.DecimalField(label="Estimated Farm Area (in hectares) *", localize=True, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder' : 'Enter land area...'}))
     municipality = forms.ModelChoiceField(label="Municipality of Farm *", queryset=MunicipalityName.objects.exclude(pk=14), widget=forms.Select(attrs={'class': 'form-select'}))
     barangay = forms.ModelChoiceField(label="Barangay of Farm *", queryset=BarangayName.objects.none(), widget=forms.Select(attrs={'class': 'form-select'}))
 

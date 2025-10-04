@@ -446,6 +446,7 @@ def plant_record_view(request):
             # Create the plant record linked to the transaction
             plant_record = plant_form.save(commit=False)
             plant_record.transaction = transaction
+            plant_record.record_status = pending_status  # Set to pending (pk=3)
             plant_record.save()
             print("may nasave pala")
             

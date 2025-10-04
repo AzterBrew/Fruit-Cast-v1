@@ -77,10 +77,8 @@ def retrain_and_generate_forecasts_task():
                     df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
                     df = df.groupby('ds', as_index=False)['y'].sum()
                     
-                    # Filter out future outlier dates (anything beyond current date + 1 year) - EXACT MATCH
-                    current_date = pd.Timestamp.now()
-                    max_allowed_date = current_date + pd.DateOffset(years=1)
-                    df = df[df['ds'] <= max_allowed_date]
+                    # NO FILTERING of historical data - use ALL available VerifiedHarvestRecord data for training
+                    print(f"Using ALL historical data for training: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
                     
                     if len(df) < 2:
                         print(f"Skipping {comm.name} - {muni.municipality}: insufficient data after grouping and filtering.")
@@ -172,10 +170,8 @@ def retrain_and_generate_forecasts_task():
                 df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
                 df = df.groupby('ds', as_index=False)['y'].sum()
 
-                # Filter out future outlier dates (anything beyond current date + 1 year) - EXACT MATCH
-                current_date = pd.Timestamp.now()
-                max_allowed_date = current_date + pd.DateOffset(years=1)
-                df = df[df['ds'] <= max_allowed_date]
+                # NO FILTERING of historical data - use ALL available VerifiedHarvestRecord data for training
+                print(f"Using ALL historical data for Overall {comm.name} training: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
 
                 if len(df) < 2:
                     print(f"Skipping Overall {comm.name}: insufficient data after grouping and filtering.")

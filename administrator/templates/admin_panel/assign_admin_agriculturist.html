@@ -100,7 +100,7 @@ Fruit Cast | Create Administrator/Agriculturist Account
                                 </div>
                                 <div class="col-md-6">
                                     <label for="{{ form.municipality.id_for_label }}" class="form-label">
-                                        <i class="bi bi-geo-alt me-1"></i>Municipality
+                                        <i class="bi bi-geo-alt me-1"></i>Assigned Municipality
                                         <small class="text-muted">(Required for Agriculturists)</small>
                                     </label>
                                     <div id="municipality-wrapper">
@@ -164,23 +164,12 @@ Fruit Cast | Create Administrator/Agriculturist Account
         const municipalitySelect = document.getElementById("municipality-select");
 
         function updateMunicipalityField() {
-            const overallOption = [...municipalitySelect.options].find(opt => opt.value === "14");
-
             if (accountTypeSelect.value === "Agriculturist") {
                 municipalitySelect.disabled = false;
                 municipalitySelect.classList.remove("visually-locked");
-                if (overallOption) {
-                    overallOption.hidden = true;
-                    overallOption.disabled = true;
-                    overallOption.selected = false;
-                }
             } else if (accountTypeSelect.value === "Administrator") {
                 municipalitySelect.classList.add("visually-locked");
-                if (overallOption) {
-                    overallOption.hidden = false;
-                    overallOption.disabled = false;
-                    overallOption.selected = true;
-                }
+                municipalitySelect.disabled = true;
             }
         }
 

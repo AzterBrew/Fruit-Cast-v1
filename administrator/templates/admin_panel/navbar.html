@@ -76,18 +76,18 @@
           {% if user_role_id == 2 %}
             <li class="nav-item mx-md-1 dropdown">
                 <a href="#" class="nav-link dropdown-toggle text-light" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-graph-up me-1"></i>
+                    <i class="bi bi-tree me-1"></i>
                     <span>Fruit and Farmers</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-start mobile-dropdown">
                     <li><a class="dropdown-item" href="{% url 'administrator:admin_verifyplantrec' %}">
-                        <i class="bi bi-calendar-month me-2"></i>Verify Plant Records
+                        <i class="bi bi-check-circle me-2"></i>Verify Plant Records
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'administrator:admin_verifyharvestrec' %}">
-                        <i class="bi bi-box-seam me-2"></i>Verify Harvest Records
+                        <i class="bi bi-check-circle me-2"></i>Verify Harvest Records
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'administrator:admin_commodity_list' %}">
-                        <i class="bi bi-box-seam me-2"></i>Commodity List
+                        <i class="bi bi-card-list me-2"></i>Commodity List
                     </a></li>
                     <li><a class="dropdown-item" href="{% url 'administrator:verify_accounts' %}">
                         <i class="bi bi-box-seam me-2"></i>Farmer Accounts
@@ -103,13 +103,14 @@
                     <li><a class="dropdown-item" href="{% url 'administrator:show_allaccounts' %}">
                         <i class="bi bi-plus-circle me-1"></i>Adminstrators
                     </a></li>
-                    <li><a class="dropdown-item" href="{% url 'administrator:show_allaccounts' %}">
+
+                    {% comment %} <li><a class="dropdown-item" href="{% url 'administrator:show_allaccounts' %}">
                         <i class="bi bi-plus-circle me-1"></i>Agriculturists TENTATIVE
-                    </a></li>
+                    </a></li> {% endcomment %}
                     
                     {% if user.is_superuser and user_role_id == 2 %}
                       <li><a class="dropdown-item" href="{% url 'administrator:assign_account' %}">
-                        <i class="bi bi-plus-circle me-1"></i>Manage Privilege
+                        <i class="bi bi-person-plus me-1"></i>Manage Privilege
                       </a></li>
                     {% endif%}
                 </ul>

@@ -21,7 +21,7 @@ class AssignAdminAgriForm(forms.Form):
     account_type = forms.ChoiceField(label="Account Type *",choices=ACCOUNT_TYPE_CHOICES,widget=forms.Select(attrs={'class': 'form-select','required': 'required'}))
     municipality = forms.ModelChoiceField(
         label="Municipality",
-        queryset=MunicipalityName.objects.all(),  # Exclude 'Overall' by default
+        queryset=MunicipalityName.objects.exclude(pk=14),  # Exclude 'Overall' municipality
         required=False,
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'municipality-select'})
     )

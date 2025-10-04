@@ -80,10 +80,10 @@ Fruit Cast | Create New Record
                                     <i class="bi bi-plus-circle me-2"></i>New Plant Record
                                 </a>
                                 <a href="/transactions/harvest-record/" class="btn btn-success">
-                                    <i class="bi bi-plus-circle me-2"></i>New Plant Record
+                                    <i class="bi bi-plus-circle me-2"></i>New Harvest Record
                                 </a>
                                 <a href="/transactions/farmland-record/" class="btn btn-outline-success">
-                                    <i class="bi bi-tree me-2"></i>Farm Land Record
+                                    <i class="bi bi-geo-alt me-2"></i>Farm Land Record
                                 </a>
                             </div>
                         </div>
@@ -116,7 +116,7 @@ Fruit Cast | Create New Record
                                 </div>
                             </a>
                             <a href="{% url 'base:farmland_record' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if view_to_show == 'farmland_record' %}active{% endif %}">
-                                <i class="bi bi-tree text-success me-3"></i>
+                                <i class="bi bi-geo-alt text-success me-3"></i>
                                 <span>New Farm Land Record</span>
                             </a>
                             <a href="{% url 'base:transaction_history' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if view_to_show == 'transaction_history' %}active{% endif %}">
