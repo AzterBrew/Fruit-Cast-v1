@@ -19,9 +19,21 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord, VerifiedPlantRecord
 from prophet import Prophet
 import pandas as pd
+import logging
 from django.db.models import Q, Count
 from datetime import datetime, date
 from calendar import monthrange
+from shapely.geometry import shape
+import geojson
+import csv
+from django.core.paginator import Paginator
+from collections import OrderedDict
+from pathlib import Path
+from django.core.management import call_command
+from .tasks import retrain_and_generate_forecasts_task
+from django.core.files.storage import default_storage
+from django.contrib.contenttypes.models import ContentType
+from base.models import AdminUserManagement
 from shapely.geometry import shape
 import csv, io, joblib, json, os, logging
 from django.core.paginator import Paginator
@@ -104,22 +116,127 @@ def admin_dashboard(request):
     user = request.user
     context = get_admin_context(request)
 
-    if user.is_superuser:
-        return render(request, 'admin_panel/admin_dashboard.html', context)
-
     try:
         user_info = UserInformation.objects.get(auth_user=user)
+        admin_info = AdminInformation.objects.get(userinfo_id=user_info)
         account_info = AccountsInformation.objects.get(userinfo_id=user_info)
-
-        if account_info.account_type_id.account_type.lower() in ['administrator', 'agriculturist']:
-            return render(request, 'admin_panel/admin_dashboard.html', context)
-        else:
-            return HttpResponseForbidden("You are not authorized to access this page.")
         
-    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
-        return HttpResponseForbidden("You are not authorized to access this page.")
+        is_superuser = user.is_superuser
+        is_pk14 = admin_info.municipality_incharge.pk == 14
+        is_administrator = account_info.account_type_id.account_type.lower() == 'administrator'
+        assigned_municipality = admin_info.municipality_incharge
+        
+        # Base statistics that apply to all admin types
+        if is_superuser or is_pk14:
+            # Superuser/Administrator (pk=14) sees all data
+            total_accounts = AccountsInformation.objects.filter(account_type_id=1).count()  # All farmers
+            verified_accounts = AccountsInformation.objects.filter(account_type_id=1, acc_status_id=2).count()
+            pending_accounts = AccountsInformation.objects.filter(account_type_id=1, acc_status_id=3).count()
+            total_plant_records = initPlantRecord.objects.count()
+            total_harvest_records = initHarvestRecord.objects.count()
+            pending_plant_records = initPlantRecord.objects.filter(record_status=3).count()
+            pending_harvest_records = initHarvestRecord.objects.filter(record_status=3).count()
+            verified_plant_records = VerifiedPlantRecord.objects.count()
+            verified_harvest_records = VerifiedHarvestRecord.objects.count()
+            recent_registrations = AccountsInformation.objects.filter(
+                account_type_id=1
+            ).order_by('-account_register_date')[:5]
+            municipalities_data = MunicipalityName.objects.exclude(pk=14).annotate(
+                farmer_count=Count('userinformation__accountsinformation', 
+                                 filter=Q(userinformation__accountsinformation__account_type_id=1))
+            )
+        else:
+            # Agriculturist sees only their municipality data
+            total_accounts = AccountsInformation.objects.filter(
+                account_type_id=1,
+                userinfo_id__municipality_id=assigned_municipality
+            ).count()
+            verified_accounts = AccountsInformation.objects.filter(
+                account_type_id=1,
+                acc_status_id=2,
+                userinfo_id__municipality_id=assigned_municipality
+            ).count()
+            pending_accounts = AccountsInformation.objects.filter(
+                account_type_id=1,
+                acc_status_id=3,
+                userinfo_id__municipality_id=assigned_municipality
+            ).count()
+            
+            # Plant and harvest records for their municipality
+            municipality_plant_records = initPlantRecord.objects.filter(
+                Q(transaction__farm_land__municipality=assigned_municipality) |
+                Q(transaction__manual_municipality=assigned_municipality)
+            )
+            municipality_harvest_records = initHarvestRecord.objects.filter(
+                Q(transaction__farm_land__municipality=assigned_municipality) |
+                Q(transaction__manual_municipality=assigned_municipality)
+            )
+            
+            total_plant_records = municipality_plant_records.count()
+            total_harvest_records = municipality_harvest_records.count()
+            pending_plant_records = municipality_plant_records.filter(record_status=3).count()
+            pending_harvest_records = municipality_harvest_records.filter(record_status=3).count()
+            
+            verified_plant_records = VerifiedPlantRecord.objects.filter(municipality=assigned_municipality).count()
+            verified_harvest_records = VerifiedHarvestRecord.objects.filter(municipality=assigned_municipality).count()
+            
+            recent_registrations = AccountsInformation.objects.filter(
+                account_type_id=1,
+                userinfo_id__municipality_id=assigned_municipality
+            ).order_by('-account_register_date')[:5]
+            
+            municipalities_data = [assigned_municipality]  # Only their municipality
 
-    return render(request, 'admin_panel/admin_dashboard.html', context)
+        # Recent activities (last 10 admin actions)
+        recent_activities = AdminUserManagement.objects.filter(
+            admin_id=admin_info
+        ).order_by('-action_timestamp')[:10]
+
+        # Commodity statistics
+        if is_superuser or is_pk14:
+            top_commodities = CommodityType.objects.annotate(
+                plant_count=Count('initplantrecord'),
+                harvest_count=Count('initharvestrecord')
+            ).order_by('-plant_count')[:5]
+        else:
+            # For agriculturists, filter by their municipality
+            top_commodities = CommodityType.objects.annotate(
+                plant_count=Count('initplantrecord', 
+                    filter=Q(initplantrecord__transaction__farm_land__municipality=assigned_municipality) |
+                           Q(initplantrecord__transaction__manual_municipality=assigned_municipality)),
+                harvest_count=Count('initharvestrecord',
+                    filter=Q(initharvestrecord__transaction__farm_land__municipality=assigned_municipality) |
+                           Q(initharvestrecord__transaction__manual_municipality=assigned_municipality))
+            ).order_by('-plant_count')[:5]
+
+        # Recent forecast batches
+        recent_forecasts = ForecastBatch.objects.order_by('-generated_at')[:5]
+
+        context.update({
+            'total_accounts': total_accounts,
+            'verified_accounts': verified_accounts,
+            'pending_accounts': pending_accounts,
+            'total_plant_records': total_plant_records,
+            'total_harvest_records': total_harvest_records,
+            'pending_plant_records': pending_plant_records,
+            'pending_harvest_records': pending_harvest_records,
+            'verified_plant_records': verified_plant_records,
+            'verified_harvest_records': verified_harvest_records,
+            'recent_registrations': recent_registrations,
+            'recent_activities': recent_activities,
+            'top_commodities': top_commodities,
+            'recent_forecasts': recent_forecasts,
+            'municipalities_data': municipalities_data,
+            'is_administrator': is_administrator,
+            'is_agriculturist': not (is_superuser or is_pk14),
+            'assigned_municipality': assigned_municipality,
+            'admin_info': admin_info,
+        })
+
+        return render(request, 'admin_panel/admin_dashboard.html', context)
+        
+    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist, AccountsInformation.DoesNotExist):
+        return HttpResponseForbidden("You are not authorized to access this page.")
 
 @login_required
 def update_account_status(request, account_id):

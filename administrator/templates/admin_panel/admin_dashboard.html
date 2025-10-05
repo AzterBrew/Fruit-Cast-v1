@@ -1,47 +1,475 @@
 {% extends "admin_login/layout.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}
-Fruit Cast | {% block page_title %}{% endblock %}
+Fruit Cast | Dashboard
 {% endblock title %}
 
 {% block content %}
 <div class="main-user">
-
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="card shadow-sm rounded-4 p-4 mb-4">
-                    <h1 class="text-center">Welcome to Fruit Cast {{user_firstname}}</h1>
-                    <br>
-                    </br>
-                    <div class="text-center">
-                        <div class="list-group">
-                            {% comment %} <a href="#" class="list-group-item list-group-item-action">Report History</a>
-                            <a href="#" class="list-group-item list-group-item-action">Account Details</a> {% endcomment %}
-                            <a href="{% url 'administrator:verify_accounts' %}" class="list-group-item list-group-item-action">Verify Accounts</a>
-                            {% comment %} <a href="{% url 'dashboard:forecast' %}" class="list-group-item list-group-item-action">Forecast</a>
-                            <a href="{% url 'dashboard:monitor' %}" class="list-group-item list-group-item-action">Monitor</a>
-                            <a href="{% url 'base:newrecord' %}?view=transaction_history" class="list-group-item list-group-item-action">Record History</a>
-                            <a href="#" class="list-group-item list-group-item-action">Fruit Plant Suggestion</a>
-                            <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">About Us</a> {% endcomment %}
-                            {% comment %} <a href="{% url 'dashboard:addcommodity' %}" class="list-group-item list-group-item-action">Add Commodity</a> {% endcomment %}
-                            <!-- Collapsible Section -->
-                            {% comment %} {% if user_role_id == 3 %}
-                            <a href="{% url 'base:about' %}" class="list-group-item list-group-item-action">Admin Panel</a>
-
-                            {% endif %} {% endcomment %}
-                            
+    <div class="monitor-user-content">
+        <div class="container-fluid py-4">
+            
+            <!-- Welcome Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #416e3f 0%, #5a8a57 100%);">
+                        <div class="card-body text-white p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h1 class="h2 mb-2">Welcome back, {{ user_firstname }}! 🌱</h1>
+                                    <p class="mb-0 opacity-90">
+                                        {% if is_agriculturist %}
+                                            Municipality Agriculturist for <strong>{{ assigned_municipality.municipality }}</strong>
+                                        {% else %}
+                                            System Administrator - Managing fruit production data across all municipalities
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-md-end">
+                                    <div class="d-flex flex-column align-items-md-end">
+                                        <small class="opacity-75">{{ "now"|date:"F d, Y" }}</small>
+                                        <small class="opacity-75">{{ "now"|date:"l, g:i A" }}</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
                     </div>
                 </div>
             </div>
 
-        </div>
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <!-- Accounts Statistics -->
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Total Farmers</h6>
+                                    <span class="h2 font-weight-bold mb-0">{{ total_accounts|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-success text-white rounded-circle shadow">
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-success mr-2">
+                                    <i class="bi bi-check-circle"></i> {{ verified_accounts|default:0 }} verified
+                                </span>
+                                {% if pending_accounts > 0 %}
+                                <span class="text-warning ml-2">
+                                    <i class="bi bi-clock"></i> {{ pending_accounts }} pending
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Plant Records -->
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Plant Records</h6>
+                                    <span class="h2 font-weight-bold mb-0">{{ total_plant_records|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                                        <i class="bi bi-tree-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-info mr-2">
+                                    <i class="bi bi-check-circle"></i> {{ verified_plant_records|default:0 }} verified
+                                </span>
+                                {% if pending_plant_records > 0 %}
+                                <span class="text-warning ml-2">
+                                    <i class="bi bi-clock"></i> {{ pending_plant_records }} pending
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Harvest Records -->
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Harvest Records</h6>
+                                    <span class="h2 font-weight-bold mb-0">{{ total_harvest_records|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                                        <i class="bi bi-basket-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-warning mr-2">
+                                    <i class="bi bi-check-circle"></i> {{ verified_harvest_records|default:0 }} verified
+                                </span>
+                                {% if pending_harvest_records > 0 %}
+                                <span class="text-danger ml-2">
+                                    <i class="bi bi-clock"></i> {{ pending_harvest_records }} pending
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forecasts -->
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Forecasts</h6>
+                                    <span class="h2 font-weight-bold mb-0">{{ recent_forecasts|length|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
+                                        <i class="bi bi-graph-up"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                {% if recent_forecasts %}
+                                <span class="text-primary">
+                                    <i class="bi bi-calendar"></i> Last: {{ recent_forecasts.0.generated_at|date:"M d" }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">No forecasts yet</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 pb-0">
+                            <h5 class="card-title text-primary mb-0">
+                                <i class="bi bi-lightning-fill me-2"></i>Quick Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Admin Panel Actions -->
+                                <div class="col-lg-6 mb-3">
+                                    <h6 class="text-muted mb-3">Admin Panel</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <a href="{% url 'administrator:show_allaccounts' %}" class="btn btn-outline-success w-100 d-flex align-items-center">
+                                                <i class="bi bi-people me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">Manage</div>
+                                                    <div>Accounts</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <a href="{% url 'administrator:admin_verifyplantrec' %}" class="btn btn-outline-info w-100 d-flex align-items-center">
+                                                <i class="bi bi-tree me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">Verify</div>
+                                                    <div>Plant Records</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <a href="{% url 'administrator:admin_verifyharvestrec' %}" class="btn btn-outline-warning w-100 d-flex align-items-center">
+                                                <i class="bi bi-basket me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">Verify</div>
+                                                    <div>Harvest Records</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <a href="{% url 'administrator:admin_commodity_list' %}" class="btn btn-outline-secondary w-100 d-flex align-items-center">
+                                                <i class="bi bi-list-ul me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">Manage</div>
+                                                    <div>Commodities</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Public Site Actions -->
+                                <div class="col-lg-6 mb-3">
+                                    <h6 class="text-muted mb-3">Public Site</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <a href="{% url 'base:home' %}" class="btn btn-outline-primary w-100 d-flex align-items-center" target="_blank">
+                                                <i class="bi bi-house me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">Visit</div>
+                                                    <div>Homepage</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <a href="{% url 'base:forecast' %}" class="btn btn-outline-primary w-100 d-flex align-items-center" target="_blank">
+                                                <i class="bi bi-graph-up me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">View</div>
+                                                    <div>Forecasts</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <a href="{% url 'base:monitor' %}" class="btn btn-outline-primary w-100 d-flex align-items-center" target="_blank">
+                                                <i class="bi bi-bar-chart me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">View</div>
+                                                    <div>Monitor</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <a href="{% url 'base:about' %}" class="btn btn-outline-primary w-100 d-flex align-items-center" target="_blank">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">About</div>
+                                                    <div>System</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Overview Row -->
+            <div class="row">
+                <!-- Recent Registrations -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title text-success mb-0">
+                                    <i class="bi bi-person-plus me-2"></i>Recent Registrations
+                                </h5>
+                                <a href="{% url 'administrator:show_allaccounts' %}" class="btn btn-sm btn-outline-success">View All</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_registrations %}
+                                <div class="list-group list-group-flush">
+                                    {% for account in recent_registrations %}
+                                    <div class="list-group-item border-0 px-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">{{ account.userinfo_id.firstname }} {{ account.userinfo_id.lastname }}</h6>
+                                                <small class="text-muted">{{ account.userinfo_id.municipality_id.municipality }}</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-{% if account.acc_status_id.acc_stat_id == 2 %}success{% elif account.acc_status_id.acc_stat_id == 3 %}warning{% else %}danger{% endif %}">
+                                                    {{ account.acc_status_id.acc_status }}
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">{{ account.account_register_date|date:"M d, Y" }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox h1"></i>
+                                    <p>No recent registrations</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Commodities -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title text-info mb-0">
+                                    <i class="bi bi-bar-chart me-2"></i>Top Commodities
+                                </h5>
+                                <a href="{% url 'administrator:admin_commodity_list' %}" class="btn btn-sm btn-outline-info">Manage</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if top_commodities %}
+                                {% for commodity in top_commodities %}
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h6 class="mb-1">{{ commodity.name }}</h6>
+                                        <small class="text-muted">{{ commodity.average_weight_per_unit_kg }}kg per unit</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="d-flex gap-2">
+                                            <span class="badge bg-info">{{ commodity.plant_count }} plants</span>
+                                            <span class="badge bg-warning">{{ commodity.harvest_count }} harvests</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if not forloop.last %}<hr class="my-2">{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-graph-down h1"></i>
+                                    <p>No commodity data yet</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="card-title text-primary mb-0">
+                                <i class="bi bi-clock-history me-2"></i>Recent Activities
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_activities %}
+                                <div class="list-group list-group-flush">
+                                    {% for activity in recent_activities %}
+                                    <div class="list-group-item border-0 px-0">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <p class="mb-1">{{ activity.action }}</p>
+                                                <small class="text-muted">{{ activity.action_timestamp|date:"M d, Y g:i A" }}</small>
+                                            </div>
+                                            <div class="badge bg-light text-dark">
+                                                <i class="bi bi-person-check"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-clock h1"></i>
+                                    <p>No recent activities</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if not is_agriculturist %}
+            <!-- Municipality Overview (Only for Administrators) -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="card-title text-secondary mb-0">
+                                <i class="bi bi-geo-alt me-2"></i>Municipality Overview
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if municipalities_data %}
+                                <div class="row">
+                                    {% for municipality in municipalities_data %}
+                                    <div class="col-md-4 col-lg-3 mb-3">
+                                        <div class="card border-light">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-title">{{ municipality.municipality }}</h6>
+                                                <div class="h4 text-success">{{ municipality.farmer_count|default:0 }}</div>
+                                                <small class="text-muted">Registered Farmers</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-map h1"></i>
+                                    <p>No municipality data available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
     </div>
 </div>
+
+<style>
+.icon {
+    width: 3rem;
+    height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+}
+
+.icon-shape {
+    border-radius: 0.375rem;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.list-group-item {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+@media (max-width: 768px) {
+    .h2 {
+        font-size: 1.5rem;
+    }
     
+    .icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1rem;
+    }
+}
+</style>
 {% endblock content %}
 
