@@ -54,6 +54,11 @@ class CommodityTypeForm(forms.ModelForm):
         }
         
 class VerifiedHarvestRecordForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Exclude pk=1 (usually 'Not Listed' or similar) from commodity choices
+        self.fields['commodity_id'].queryset = CommodityType.objects.exclude(pk=1)
+    
     class Meta:
         model = VerifiedHarvestRecord
         fields = [

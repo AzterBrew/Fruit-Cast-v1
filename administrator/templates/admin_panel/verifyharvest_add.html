@@ -26,19 +26,19 @@ Fruit Cast | Add Verified Harvest Record
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label for="id_harvest_date" class="form-label">
-                                    <i class="bi bi-calendar-date me-1"></i>Harvest Date
+                                    <i class="bi bi-calendar-date me-1"></i>Harvest Date *
                                 </label>
                                 {{ form.harvest_date }}
                             </div>
                             <div class="col-md-4">
                                 <label for="id_commodity_id" class="form-label">
-                                    <i class="bi bi-basket me-1"></i>Commodity
+                                    <i class="bi bi-basket me-1"></i>Commodity *
                                 </label>
                                 {{ form.commodity_id }}
                             </div>
                             <div class="col-md-4">
                                 <label for="id_total_weight_kg" class="form-label">
-                                    <i class="bi bi-weight me-1"></i>Total Weight (kg)
+                                    <i class="bi bi-weight me-1"></i>Total Weight (kg) *
                                 </label>
                                 {{ form.total_weight_kg }}
                             </div>
@@ -50,7 +50,7 @@ Fruit Cast | Add Verified Harvest Record
                             </div>
                             <div class="col-md-4">
                                 <label for="id_municipality" class="form-label">
-                                    <i class="bi bi-geo-alt me-1"></i>Municipality
+                                    <i class="bi bi-geo-alt me-1"></i>Municipality * 
                                 </label>
                                 <select id="id_municipality" name="municipality" class="form-select">
                                     <option value="">Select Municipality</option>
@@ -61,10 +61,11 @@ Fruit Cast | Add Verified Harvest Record
                             </div>
                             <div class="col-md-4">
                                 <label for="id_barangay" class="form-label">
-                                    <i class="bi bi-map me-1"></i>Barangay
+                                    <i class="bi bi-map me-1"></i>Barangay 
+                                    <small class="text-muted">(Optional)</small>
                                 </label>
                                 <select id="id_barangay" name="barangay" class="form-select">
-                                    <option value="">Select Barangay</option>
+                                    <option value="">No Barangay Selected</option>
                                     <!-- Barangays will be dynamically loaded -->
                                 </select>
                             </div>
@@ -251,13 +252,7 @@ Fruit Cast | Add Verified Harvest Record
                     }
                 }
                 
-                // Check if barangay is selected when municipality is selected
-                if (municipality && municipality.value && (!barangay || !barangay.value)) {
-                    e.preventDefault();
-                    alert('Please select a barangay for the chosen municipality.');
-                    if (barangay) barangay.focus();
-                    return false;
-                }
+                // No need to validate barangay since it's optional
             });
         }
     });
@@ -280,7 +275,7 @@ Fruit Cast | Add Verified Harvest Record
                     return response.json();
                 })
                 .then(data => {
-                    barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                    barangaySelect.innerHTML = '<option value="">No Barangay Selected</option>';
                     data.forEach(function(barangay) {
                         barangaySelect.innerHTML += '<option value="' + barangay.id + '">' + barangay.barangay + '</option>';
                     });
@@ -288,12 +283,12 @@ Fruit Cast | Add Verified Harvest Record
                 })
                 .catch(error => {
                     console.error('Error fetching barangays:', error);
-                    barangaySelect.innerHTML = '<option value="">Error loading barangays</option>';
+                    barangaySelect.innerHTML = '<option value="">No Barangay Selected</option>';
                     barangaySelect.disabled = false;
                 });
         } else {
-            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-            barangaySelect.disabled = true;
+            barangaySelect.innerHTML = '<option value="">No Barangay Selected</option>';
+            barangaySelect.disabled = false;
         }
     });
 

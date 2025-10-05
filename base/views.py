@@ -1221,11 +1221,11 @@ def get_barangays(request, municipality_id):
         
         # Get barangays
         barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('barangay_id', 'barangay')
-        barangay_list = [{'id': b['barangay_id'], 'name': b['barangay']} for b in barangays]
+        barangay_list = [{'id': b['barangay_id'], 'barangay': b['barangay']} for b in barangays]
         
         print(f"🏠 Found {len(barangay_list)} barangays for {municipality.municipality}:")
         for barangay in barangay_list:
-            print(f"   🔸 {barangay['name']} (ID: {barangay['id']})")
+            print(f"   🔸 {barangay['barangay']} (ID: {barangay['id']})")
             
         if municipality_id == 9:
             print("🏘️"*30)
