@@ -20,7 +20,7 @@ from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecor
 from prophet import Prophet
 import pandas as pd
 from django.db.models import Q, Count
-from datetime import datetime
+from datetime import datetime, date
 from calendar import monthrange
 from shapely.geometry import shape
 import csv, io, joblib, json, os, logging
@@ -341,7 +341,6 @@ def farmer_transaction_history(request, account_id):
         ).select_related('municipality', 'barangay')
         
         # Calculate age from birthdate
-        from datetime import date
         today = date.today()
         birthdate = farmer_account.userinfo_id.birthdate
         age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
@@ -1417,10 +1416,119 @@ def admin_add_verifyharvestrec(request):
 @login_required
 @admin_or_agriculturist_required
 def admin_harvestverified(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        selected_records = request.POST.getlist('selected_records')
+        
+        if action == 'delete' and selected_records:
+            try:
+                # Delete selected records
+                deleted_count = 0
+                for record_id in selected_records:
+                    record = VerifiedHarvestRecord.objects.get(pk=record_id)
+                    record.delete()
+                    deleted_count += 1
+                
+                if deleted_count > 0:
+                    messages.success(request, f'Successfully deleted {deleted_count} harvest record{"s" if deleted_count > 1 else ""}.')
+                    
+                    # Trigger model retraining and forecast generation
+                    try:
+                        # Import here to avoid circular imports
+                        from .tasks import retrain_and_generate_forecasts_task
+                        retrain_and_generate_forecasts_task.delay()
+                        messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                    except Exception as e:
+                        messages.warning(request, f'Records deleted successfully, but forecast regeneration failed: {str(e)}')
+                
+            except Exception as e:
+                messages.error(request, f'Error deleting records: {str(e)}')
+        
+        return redirect('administrator:admin_harvestverified')
+    
+    # Handle filtering
+    municipality_filter = request.GET.get('municipality')
+    commodity_filter = request.GET.get('commodity')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
     records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
+    
+    if municipality_filter:
+        records = records.filter(municipality_id=municipality_filter)
+    if commodity_filter:
+        records = records.filter(commodity_id=commodity_filter)
+    if date_from:
+        records = records.filter(harvest_date__gte=date_from)
+    if date_to:
+        records = records.filter(harvest_date__lte=date_to)
+    
+    # Get filter options
+    municipalities = MunicipalityName.objects.all()
+    commodities = CommodityType.objects.all()
+    
     context = get_admin_context(request)
-    context.update({'records': records})
+    context.update({
+        'records': records,
+        'municipalities': municipalities,
+        'commodities': commodities,
+        'selected_municipality': municipality_filter,
+        'selected_commodity': commodity_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    })
     return render(request, 'admin_panel/admin_harvestverified.html', context)
+
+
+@login_required
+@admin_or_agriculturist_required
+def admin_harvestverified_view(request, record_id):
+    """View details of a specific verified harvest record"""
+    record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
+    context = get_admin_context(request)
+    context.update({'record': record})
+    return render(request, 'admin_panel/admin_harvestverified_view.html', context)
+
+
+@login_required
+@admin_or_agriculturist_required
+def admin_harvestverified_edit(request, record_id):
+    """Edit a specific verified harvest record"""
+    record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
+    
+    if request.method == 'POST':
+        form = VerifiedHarvestRecordForm(request.POST, instance=record)
+        if form.is_valid():
+            updated_record = form.save(commit=False)
+            # Keep the original verification info
+            updated_record.verified_by = record.verified_by
+            updated_record.date_verified = record.date_verified
+            updated_record.save()
+            
+            messages.success(request, 'Harvest record updated successfully.')
+            
+            # Trigger model retraining and forecast generation
+            try:
+                from .tasks import retrain_and_generate_forecasts_task
+                retrain_and_generate_forecasts_task.delay()
+                messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+            except Exception as e:
+                messages.warning(request, f'Record updated successfully, but forecast regeneration failed: {str(e)}')
+            
+            return redirect('administrator:admin_harvestverified_view', record_id=record.pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = VerifiedHarvestRecordForm(instance=record)
+    
+    context = get_admin_context(request)
+    context.update({
+        'form': form, 
+        'record': record,
+        'municipalities': MunicipalityName.objects.all(),
+        'commodities': CommodityType.objects.all(),
+    })
+    return render(request, 'admin_panel/admin_harvestverified_edit.html', context)
 
 
 # def accinfo(request):

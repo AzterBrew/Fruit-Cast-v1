@@ -76,21 +76,39 @@ Fruit Cast | Verified Harvest Records
                         <h5 class="text-primary mb-0">
                             <i class="bi bi-table me-2"></i>Records Found: <span class="badge bg-success">{{ records|length }}</span>
                         </h5>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-download me-2"></i>Export
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-file-excel me-2"></i>Export to Excel</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-file-pdf me-2"></i>Export to PDF</a></li>
-                            </ul>
+                        <div class="d-flex gap-2">
+                            <!-- Delete Mode Toggle -->
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="deleteMode" />
+                                <label class="form-check-label fw-medium text-danger" for="deleteMode">
+                                    <i class="bi bi-trash me-1"></i>Delete Records
+                                </label>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-download me-2"></i>Export
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-excel me-2"></i>Export to Excel</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-pdf me-2"></i>Export to PDF</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
+
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
 
                     <div class="table-responsive">
                         <table class="table table-striped table-hover align-middle">
                             <thead class="table-success">
                                 <tr>
+                                    <th scope="col" class="delete-column" style="width: 50px; display: none;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAll">
+                                            <label class="form-check-label" for="selectAll"></label>
+                                        </div>
+                                    </th>
                                     <th scope="col">
                                         <i class="bi bi-hash me-1"></i>ID
                                     </th>
@@ -126,6 +144,12 @@ Fruit Cast | Verified Harvest Records
                             <tbody>
                                 {% for rec in records %}
                                 <tr>
+                                    <td class="delete-column" style="display: none;">
+                                        <div class="form-check">
+                                            <input class="form-check-input record-checkbox" type="checkbox" name="selected_records" value="{{ rec.pk }}" id="record_{{ rec.pk }}">
+                                            <label class="form-check-label" for="record_{{ rec.pk }}"></label>
+                                        </div>
+                                    </td>
                                     <td>
                                         <span class="badge bg-light text-dark">{{ rec.pk }}</span>
                                     </td>
@@ -154,15 +178,16 @@ Fruit Cast | Verified Harvest Records
                                         <span class="text-muted">{{ rec.weight_per_unit_kg }} kg</span>
                                     </td>
                                     <td>
-                                        <span class="text-truncate" style="max-width: 150px; display: inline-block;" 
-                                              data-bs-toggle="tooltip" title="{{ rec.remarks|default:'No remarks' }}">
-                                            {{ rec.remarks|default:"-"|truncatechars:30 }}
-                                        </span>
+                                        {% if rec.remarks %}
+                                            <i class="bi bi-chat-left-quote text-success" data-bs-toggle="tooltip" title="{{ rec.remarks }}"></i>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if rec.verified_by %}
                                             <div class="small">
-                                                <i class="bi bi-person-check-fill text-success me-1"></i>
+                                                {% comment %} <i class="bi bi-person-check-fill text-success me-1"></i> {% endcomment %}
                                                 <strong>{{ rec.verified_by.userinfo_id.firstname }} {{ rec.verified_by.userinfo_id.lastname }}</strong>
                                             </div>
                                         {% else %}
@@ -182,10 +207,10 @@ Fruit Cast | Verified Harvest Records
                                                 <i class="bi bi-three-dots"></i>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2"></i>View Details</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'administrator:admin_harvestverified_view' rec.pk %}"><i class="bi bi-eye me-2"></i>View Details</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'administrator:admin_harvestverified_edit' rec.pk %}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
                                                 <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                                                <li><a class="dropdown-item text-danger delete-single" href="#" data-record-id="{{ rec.pk }}"><i class="bi bi-trash me-2"></i>Delete</a></li>
                                             </ul>
                                         </div>
                                     </td>
@@ -194,6 +219,32 @@ Fruit Cast | Verified Harvest Records
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Bulk Delete Actions (initially hidden) -->
+                    <div class="card border-danger shadow-sm mt-3 delete-card" id="bulkDeleteCard" style="display: none;">
+                        <div class="card-body bg-light">
+                            <h6 class="card-title text-danger mb-3">
+                                <i class="bi bi-trash me-2"></i>Bulk Delete Actions
+                            </h6>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        <strong>Warning:</strong> Deleting verified harvest records will trigger model retraining and forecast regeneration.
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button type="submit" name="action" value="delete" class="btn btn-danger" id="bulkDeleteBtn" disabled>
+                                        <i class="bi bi-trash me-2"></i>Delete Selected Records
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="cancelDeleteMode()">
+                                        <i class="bi bi-x-lg me-2"></i>Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -262,7 +313,128 @@ Fruit Cast | Verified Harvest Records
                 document.getElementById('filterForm').submit();
             });
         }
+
+        // Delete Mode Toggle
+        const deleteMode = document.getElementById('deleteMode');
+        const deleteColumns = document.querySelectorAll('.delete-column');
+        const bulkDeleteCard = document.getElementById('bulkDeleteCard');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+
+        if (deleteMode) {
+            deleteMode.addEventListener('change', function() {
+                if (this.checked) {
+                    // Show delete columns and bulk delete card
+                    deleteColumns.forEach(col => col.style.display = 'table-cell');
+                    if (bulkDeleteCard) bulkDeleteCard.style.display = 'block';
+                } else {
+                    // Hide delete columns and bulk delete card
+                    deleteColumns.forEach(col => col.style.display = 'none');
+                    if (bulkDeleteCard) bulkDeleteCard.style.display = 'none';
+                    // Uncheck all checkboxes
+                    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                    recordCheckboxes.forEach(cb => cb.checked = false);
+                    updateBulkDeleteButton();
+                }
+            });
+        }
+
+        // Select All functionality
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                recordCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateBulkDeleteButton();
+            });
+        }
+
+        // Individual checkbox functionality
+        recordCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectAllState();
+                updateBulkDeleteButton();
+            });
+        });
+
+        function updateSelectAllState() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = checkedBoxes.length === recordCheckboxes.length;
+                selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < recordCheckboxes.length;
+            }
+        }
+
+        function updateBulkDeleteButton() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.disabled = checkedBoxes.length === 0;
+                
+                const count = checkedBoxes.length;
+                if (count === 0) {
+                    bulkDeleteBtn.innerHTML = '<i class="bi bi-trash me-2"></i>Delete Selected Records';
+                } else {
+                    bulkDeleteBtn.innerHTML = `<i class="bi bi-trash me-2"></i>Delete ${count} Record${count > 1 ? 's' : ''}`;
+                }
+            }
+        }
+
+        // Single delete functionality
+        const deleteSingleBtns = document.querySelectorAll('.delete-single');
+        deleteSingleBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const recordId = this.getAttribute('data-record-id');
+                if (confirm('Are you sure you want to delete this harvest record? This action cannot be undone and will trigger model retraining.')) {
+                    // Create a form and submit
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.innerHTML = `
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="selected_records" value="${recordId}">
+                    `;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        });
+
+        // Bulk delete form validation
+        const deleteForm = document.getElementById('deleteForm');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function(e) {
+                const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+                
+                if (checkedBoxes.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one record to delete.');
+                    return false;
+                }
+                
+                const confirmMessage = `Are you sure you want to delete ${checkedBoxes.length} harvest record${checkedBoxes.length > 1 ? 's' : ''}?\n\nThis action cannot be undone and will trigger:\n- Model retraining\n- Forecast regeneration\n\nClick OK to proceed.`;
+                if (!confirm(confirmMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        // Initialize button states
+        updateBulkDeleteButton();
     });
+
+    // Global functions
+    function cancelDeleteMode() {
+    // Global functions
+    function cancelDeleteMode() {
+        const deleteMode = document.getElementById('deleteMode');
+        if (deleteMode) {
+            deleteMode.checked = false;
+            deleteMode.dispatchEvent(new Event('change'));
+        }
+    }
 
     function clearFilters() {
         document.getElementById('municipality').value = '';
@@ -277,7 +449,11 @@ Fruit Cast | Verified Harvest Records
     }
 
     function bulkOperations() {
-        alert('Bulk operations feature coming soon!');
+        const deleteMode = document.getElementById('deleteMode');
+        if (deleteMode) {
+            deleteMode.checked = !deleteMode.checked;
+            deleteMode.dispatchEvent(new Event('change'));
+        }
     }
 </script>
 {% endblock content %}

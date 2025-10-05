@@ -1,0 +1,202 @@
+{% extends "admin_login/layout.html" %}
+{% load number_filters %}
+
+{% block title %}
+Fruit Cast | Harvest Record Details
+{% endblock title %}
+
+{% block content %}
+<div class="main-user">
+    <div class="monitor-user-content justify-content-center">
+        <div class="card shadow-sm rounded-4 p-4 mb-3" style="max-width: 800px; margin: 0 auto;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="text-success fw-bold mb-0">
+                    <i class="bi bi-eye me-2"></i>Harvest Record Details
+                </h1>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'administrator:admin_harvestverified_edit' record.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Record
+                    </a>
+                    <a href="{% url 'administrator:admin_harvestverified' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+
+            <!-- Record Information -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Record Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Record ID</label>
+                            <div class="form-control-plaintext">
+                                <span class="badge bg-primary fs-6">{{ record.pk }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Harvest Date</label>
+                            <div class="form-control-plaintext">
+                                <i class="bi bi-calendar-date text-success me-2"></i>
+                                <strong>{{ record.harvest_date|date:"F d, Y" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Commodity</label>
+                            <div class="form-control-plaintext">
+                                <i class="bi bi-basket-fill text-success me-2"></i>
+                                <strong>{{ record.commodity_id.name }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Total Weight</label>
+                            <div class="form-control-plaintext">
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-weight me-1"></i>{{ record.total_weight_kg|format_weight }} kg
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Weight per Unit</label>
+                            <div class="form-control-plaintext">
+                                <span class="badge bg-info fs-6">{{ record.weight_per_unit_kg }} kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Location</label>
+                            <div class="form-control-plaintext">
+                                <div>
+                                    <i class="bi bi-geo-alt-fill text-primary me-1"></i>
+                                    <strong>{{ record.municipality.municipality }}</strong>
+                                </div>
+                                <div class="text-muted ms-3 small">
+                                    {{ record.barangay.barangay }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small fw-bold">Remarks</label>
+                            <div class="form-control-plaintext">
+                                {% if record.remarks %}
+                                    <div class="border rounded p-3 bg-light">
+                                        <i class="bi bi-chat-left-quote text-success me-2"></i>
+                                        {{ record.remarks }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted fst-italic">No remarks provided</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verification Information -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-check me-2"></i>Verification Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Verified By</label>
+                            <div class="form-control-plaintext">
+                                {% if record.verified_by %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                             style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                            {{ record.verified_by.userinfo_id.firstname|first }}{{ record.verified_by.userinfo_id.lastname|first }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">
+                                                {{ record.verified_by.userinfo_id.firstname }} {{ record.verified_by.userinfo_id.lastname }}
+                                            </div>
+                                            <small class="text-muted">Administrator</small>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted fst-italic">Not specified</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Date Verified</label>
+                            <div class="form-control-plaintext">
+                                <div>
+                                    <i class="bi bi-clock-fill text-info me-2"></i>
+                                    <strong>{{ record.date_verified|date:"F d, Y" }}</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    {{ record.date_verified|time:"g:i A" }}
+                                </div>
+                            </div>
+                        </div>
+                        {% if record.prev_record %}
+                        <div class="col-12">
+                            <label class="form-label text-muted small fw-bold">Original Record Reference</label>
+                            <div class="form-control-plaintext">
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-link-45deg me-1"></i>Initial Record #{{ record.prev_record.pk }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'administrator:admin_harvestverified' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'administrator:admin_harvestverified_edit' record.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Record
+                    </a>
+                    <button type="button" class="btn btn-danger" onclick="deleteRecord()">
+                        <i class="bi bi-trash me-2"></i>Delete Record
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mt-3" role="alert">
+                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function deleteRecord() {
+        if (confirm('Are you sure you want to delete this harvest record?\n\nThis action cannot be undone and will trigger:\n- Model retraining\n- Forecast regeneration\n\nClick OK to proceed.')) {
+            // Create a form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "administrator:admin_harvestverified" %}';
+            form.innerHTML = `
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="selected_records" value="{{ record.pk }}">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
+{% endblock content %}

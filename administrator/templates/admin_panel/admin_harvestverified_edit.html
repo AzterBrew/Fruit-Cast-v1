@@ -1,0 +1,269 @@
+{% extends "admin_login/layout.html" %}
+{% load number_filters %}
+
+{% block title %}
+Fruit Cast | Edit Harvest Record
+{% endblock title %}
+
+{% block content %}
+<div class="main-user">
+    <div class="monitor-user-content justify-content-center">
+        <div class="card shadow-sm rounded-4 p-4 mb-3" style="max-width: 800px; margin: 0 auto;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="text-warning fw-bold mb-0">
+                    <i class="bi bi-pencil-square me-2"></i>Edit Harvest Record
+                </h1>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'administrator:admin_harvestverified_view' record.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-eye me-2"></i>View Details
+                    </a>
+                    <a href="{% url 'administrator:admin_harvestverified' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+
+            <!-- Edit Form -->
+            <form method="POST" novalidate id="harvest-edit-form">
+                {% csrf_token %}
+                
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pencil me-2"></i>Record Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="id_harvest_date" class="form-label">
+                                    <i class="bi bi-calendar-date me-2"></i>Harvest Date *
+                                </label>
+                                {{ form.harvest_date }}
+                                {% if form.harvest_date.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.harvest_date.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_commodity_id" class="form-label">
+                                    <i class="bi bi-basket me-2"></i>Commodity *
+                                </label>
+                                {{ form.commodity_id }}
+                                {% if form.commodity_id.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.commodity_id.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_total_weight_kg" class="form-label">
+                                    <i class="bi bi-weight me-2"></i>Total Weight (kg) *
+                                </label>
+                                {{ form.total_weight_kg }}
+                                {% if form.total_weight_kg.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.total_weight_kg.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_weight_per_unit_kg" class="form-label">
+                                    <i class="bi bi-speedometer2 me-2"></i>Weight per Unit (kg) *
+                                </label>
+                                {{ form.weight_per_unit_kg }}
+                                {% if form.weight_per_unit_kg.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.weight_per_unit_kg.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_municipality" class="form-label">
+                                    <i class="bi bi-geo-alt me-2"></i>Municipality *
+                                </label>
+                                {{ form.municipality }}
+                                {% if form.municipality.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.municipality.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_barangay" class="form-label">
+                                    <i class="bi bi-map me-2"></i>Barangay
+                                </label>
+                                {{ form.barangay }}
+                                {% if form.barangay.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.barangay.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="id_remarks" class="form-label">
+                                    <i class="bi bi-chat-text me-2"></i>Remarks
+                                </label>
+                                {{ form.remarks }}
+                                {% if form.remarks.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.remarks.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Information (Read-only) -->
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 text-muted">
+                            <i class="bi bi-shield-check me-2"></i>Verification Information (Read-only)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Verified By</label>
+                                <div class="form-control-plaintext">
+                                    {% if record.verified_by %}
+                                        {{ record.verified_by.userinfo_id.firstname }} {{ record.verified_by.userinfo_id.lastname }}
+                                    {% else %}
+                                        <span class="text-muted">Not specified</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Date Verified</label>
+                                <div class="form-control-plaintext">
+                                    {{ record.date_verified|date:"F d, Y - g:i A" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'administrator:admin_harvestverified_view' record.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-2"></i>Cancel
+                        </a>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check-lg me-2"></i>Update Record
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mt-3" role="alert">
+                        <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.getElementById('harvest-edit-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const harvestDate = document.getElementById('id_harvest_date').value;
+            const commodity = document.getElementById('id_commodity_id').value;
+            const totalWeight = document.getElementById('id_total_weight_kg').value;
+            const weightPerUnit = document.getElementById('id_weight_per_unit_kg').value;
+            const municipality = document.getElementById('id_municipality').value;
+            
+            // Basic validation
+            if (!harvestDate || !commodity || !totalWeight || !weightPerUnit || !municipality) {
+                e.preventDefault();
+                alert('Please fill in all required fields.');
+                return false;
+            }
+            
+            // Confirm update
+            if (!confirm('Are you sure you want to update this harvest record?\n\nThis will trigger model retraining and forecast regeneration.')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+
+    // Municipality and barangay dynamic selection
+    const municipalitySelect = document.getElementById('id_municipality');
+    const barangaySelect = document.getElementById('id_barangay');
+
+    // Store the initial selected barangay
+    let initialBarangay = barangaySelect ? barangaySelect.value : null;
+
+    function updateBarangayOptions(keepSelected = false) {
+        const municipalityId = municipalitySelect.value;
+        const currentBarangay = keepSelected ? initialBarangay : null;
+        
+        barangaySelect.innerHTML = '<option value="">Loading...</option>';
+        barangaySelect.disabled = true;
+
+        if (municipalityId) {
+            fetch(`/administrator/get_barangays/${municipalityId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    barangaySelect.innerHTML = '<option value="">No Barangay Selected</option>';
+                    data.forEach(function(barangay) {
+                        const option = document.createElement('option');
+                        option.value = barangay.barangay_id;
+                        option.textContent = barangay.barangay;
+                        if (currentBarangay && barangay.barangay_id == currentBarangay) {
+                            option.selected = true;
+                        }
+                        barangaySelect.appendChild(option);
+                    });
+                    barangaySelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading barangays:', error);
+                    barangaySelect.innerHTML = '<option value="">Error loading barangays</option>';
+                    barangaySelect.disabled = false;
+                });
+        } else {
+            barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+            barangaySelect.disabled = false;
+        }
+    }
+
+    if (municipalitySelect && barangaySelect) {
+        municipalitySelect.addEventListener('change', function() {
+            updateBarangayOptions(false);
+        });
+        
+        // On page load, keep the initial selection
+        updateBarangayOptions(true);
+    }
+});
+</script>
+{% endblock content %}
