@@ -28,12 +28,17 @@ Fruit Cast | Plant Record Verification
                                     <label for="municipality" class="form-label">
                                         <i class="bi bi-geo-alt me-1"></i>Municipality
                                     </label>
-                                    <select name="municipality" id="municipality" class="form-select">
-                                        <option value="">All Municipalities</option>
-                                        {% for m in municipalities %}
-                                            <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
-                                        {% endfor %}
-                                    </select>
+                                    {% if is_agriculturist %}
+                                        <input type="text" class="form-control" value="{{ assigned_municipality.municipality }}" readonly>
+                                        <input type="hidden" name="municipality" value="{{ assigned_municipality.pk }}">
+                                    {% else %}
+                                        <select name="municipality" id="municipality" class="form-select">
+                                            <option value="">All Municipalities</option>
+                                            {% for m in municipalities %}
+                                                <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-4">
                                     <label for="commodity" class="form-label">
@@ -243,11 +248,13 @@ Fruit Cast | Plant Record Verification
         const commoditySelect = document.getElementById('commodity');
         const statusSelect = document.getElementById('status');
         
+        {% if not is_agriculturist %}
         if (municipalitySelect) {
             municipalitySelect.addEventListener('change', function() {
                 document.getElementById('filterForm').submit();
             });
         }
+        {% endif %}
         
         if (commoditySelect) {
             commoditySelect.addEventListener('change', function() {

@@ -2092,7 +2092,7 @@ def change_password_new(request):
             if key in request.session:
                 del request.session[key]
         
-        messages.success(request, "Your password has been changed successfully!")
+        messages.success(request, "Your password has been reset successfully! You can now login with your new password.")
         return redirect("base:account_info_panel")
     
     return render(request, 'loggedin/change_password_new.html')

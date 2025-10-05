@@ -125,22 +125,52 @@ def admin_dashboard(request):
 def update_account_status(request, account_id):
     if request.method == 'POST':
         account = get_object_or_404(AccountsInformation, pk=account_id)
-        new_status_id = int(request.POST.get('status'))
-
-        account.acc_status_id = new_status_id
-        account.account_isverified = new_status_id == 1  # If Active
-        account.account_verified_date = timezone.now()
-
-        # Link the admin who verified
+        
+        # Try both possible field names from the form
+        new_status_value = request.POST.get('new_status') or request.POST.get('status')
+        
+        if new_status_value is None:
+            messages.error(request, 'No status provided for update.')
+            return redirect('administrator:show_allaccounts')
+        
         try:
-            user_info = UserInformation.objects.get(auth_user=request.user)
-            admin = AdminInformation.objects.get(userinfo_id=user_info)
-            account.account_verified_by = admin
-        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
-            pass  # Skip linking if not a recognized admin
+            new_status_id = int(new_status_value)
+            new_status = get_object_or_404(AccountStatus, pk=new_status_id)
+            
+            # Store old status for logging
+            old_status = account.acc_status_id.acc_status if account.acc_status_id else "None"
+            
+            account.acc_status_id = new_status
+            account.account_isverified = new_status_id == 2  # If Verified (pk=2)
+            if account.account_verified_date is None and new_status_id == 2:
+                account.account_verified_date = timezone.now()
 
-        account.save()
-        return redirect('administrator:verify_accounts')
+            # Link the admin who verified
+            try:
+                user_info = UserInformation.objects.get(auth_user=request.user)
+                admin = AdminInformation.objects.get(userinfo_id=user_info)
+                if new_status_id == 2:  # Only set verified_by for verified status
+                    account.account_verified_by = admin
+                    
+                # Create AdminUserManagement log entry
+                AdminUserManagement.objects.create(
+                    admin_id=admin,
+                    action=f"Account ID {account.account_id} status changed from '{old_status}' to '{new_status.acc_status}'",
+                    content_type=ContentType.objects.get_for_model(AccountsInformation),
+                    object_id=account.account_id
+                )
+            except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+                pass  # Skip linking if not a recognized admin
+
+            account.save()
+            messages.success(request, f'Account status updated to {new_status.acc_status}.')
+            
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid status value provided.')
+        except Exception as e:
+            messages.error(request, f'Error updating account status: {str(e)}')
+            
+        return redirect('administrator:show_allaccounts')
 
 @admin_or_agriculturist_required    
 def verify_accounts(request):
@@ -1166,19 +1196,24 @@ def admin_verifyplantrec(request):
     userinfo = UserInformation.objects.get(auth_user=user)
     admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
     municipality_assigned = admin_info.municipality_incharge
+    is_superuser = user.is_superuser
+    is_pk14 = municipality_assigned.pk == 14
 
     # Filters
     filter_municipality = request.GET.get('municipality')
     filter_commodity = request.GET.get('commodity')
     filter_status = request.GET.get('status')
 
-    # Municipality filter logic
-    if user.is_superuser or municipality_assigned.pk == 14:
+    # Municipality filter logic - always use initPlantRecord for all users
+    if is_superuser or is_pk14:
         municipalities = MunicipalityName.objects.all()
         records = initPlantRecord.objects.all()
     else:
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
-        records = VerifiedPlantRecord.objects.filter(municipality=municipality_assigned)
+        records = initPlantRecord.objects.filter(
+            Q(transaction__farm_land__municipality=municipality_assigned) |
+            Q(transaction__manual_municipality=municipality_assigned)
+        )
 
     # Apply filters
     if filter_municipality:
@@ -1186,6 +1221,13 @@ def admin_verifyplantrec(request):
             Q(transaction__farm_land__municipality__pk=filter_municipality) |
             Q(transaction__manual_municipality__pk=filter_municipality)
         )
+    elif not (is_superuser or is_pk14):
+        # For non-superuser/non-pk14 users, ensure they only see their municipality records
+        records = records.filter(
+            Q(transaction__farm_land__municipality=municipality_assigned) |
+            Q(transaction__manual_municipality=municipality_assigned)
+        )
+    
     if filter_commodity:
         records = records.filter(commodity_id__pk=filter_commodity)
     if filter_status:
@@ -1263,6 +1305,8 @@ def admin_verifyplantrec(request):
         'selected_municipality': filter_municipality,
         'selected_commodity': filter_commodity,
         'selected_status': filter_status,
+        'is_agriculturist': not (is_superuser or is_pk14),
+        'assigned_municipality': municipality_assigned,
     })
     return render(request, 'admin_panel/admin_verifyplantrec.html', context)
 
@@ -1298,7 +1342,10 @@ def admin_verifyharvestrec(request):
             Q(transaction__manual_municipality__pk=selected_municipality)
         )
     elif not (is_superuser or is_pk14):
-        records = records.filter(municipality=admin_info.municipality_incharge)
+        records = records.filter(
+            Q(transaction__farm_land__municipality=admin_info.municipality_incharge) |
+            Q(transaction__manual_municipality=admin_info.municipality_incharge)
+        )
     if selected_commodity:
         records = records.filter(commodity_id__pk=selected_commodity)
     if selected_status:
@@ -1390,6 +1437,8 @@ def admin_verifyharvestrec(request):
         'selected_municipality': selected_municipality,
         'selected_commodity': selected_commodity,
         'selected_status': selected_status,
+        'is_agriculturist': not (is_superuser or is_pk14),
+        'assigned_municipality': admin_info.municipality_incharge,
     })
     return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
 

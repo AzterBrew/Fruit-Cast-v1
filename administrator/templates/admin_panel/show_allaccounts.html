@@ -164,7 +164,7 @@ Fruit Cast | Account Management
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% if account.account_type_id.account_type == "Agriculturist" %}
+                                            {% comment %} {% if account.account_type_id.account_type == "Agriculturist" %}
                                                 <div class="d-flex align-items-center gap-2">
                                                     <form method="POST" action="{% url 'administrator:update_account_status' account.account_id %}" class="d-flex align-items-center gap-1">
                                                         {% csrf_token %}
@@ -180,7 +180,7 @@ Fruit Cast | Account Management
                                                         </button>
                                                     </form>
                                                 </div>
-                                            {% else %}
+                                            {% else %} {% endcomment %}
                                                 {% if account.acc_status_id.acc_status == "Verified" %}
                                                     <span class="badge bg-success">{{ account.acc_status_id.acc_status }}</span>
                                                 {% elif account.acc_status_id.acc_status == "Pending" %}
@@ -190,7 +190,7 @@ Fruit Cast | Account Management
                                                 {% else %}
                                                     <span class="badge bg-secondary">{{ account.acc_status_id.acc_status }}</span>
                                                 {% endif %}
-                                            {% endif %}
+                                            {% comment %} {% endif %} {% endcomment %}
                                         </td>
                                         <td class="text-center">
                                             <a href="{% url 'administrator:admin_account_detail' account.account_id %}" class="btn btn-outline-warning btn-sm" data-bs-toggle="tooltip" title="View Details">
