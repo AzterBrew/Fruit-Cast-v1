@@ -149,13 +149,17 @@ Fruit Cast | Account Details
             </div>
             {% endif %}
 
-            <!-- Detailed Personal Information (Superuser Only) -->
+            <!-- Detailed Personal Information (Hierarchical Access Control) -->
             {% if can_view_full_details %}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
                         <i class="bi bi-shield-lock me-2"></i>Detailed Personal Information
-                        <small class="badge bg-danger ms-2">Superuser Access Only</small>
+                        {% if is_superuser %}
+                            <small class="badge bg-danger ms-2">Superuser Access</small>
+                        {% elif user_role_id == 2 %}
+                            <small class="badge bg-info ms-2">Administrator Access</small>
+                        {% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -213,15 +217,17 @@ Fruit Cast | Account Details
                     <h6 class="text-warning">Limited Access</h6>
                     {% if user_role_id == 2 and target_account_type_id == 2 %}
                         <p class="text-muted mb-0">Additional personal details of other administrators are restricted. Only basic information is available.</p>
+                    {% elif user_role_id == 3 %}
+                        <p class="text-muted mb-0">As an agriculturist, you have limited access to account details.</p>
                     {% else %}
-                        <p class="text-muted mb-0">Additional personal details are restricted to superuser access only.</p>
+                        <p class="text-muted mb-0">Additional personal details are restricted based on your access level.</p>
                     {% endif %}
                 </div>
             </div>
             {% endif %}
 
             <!-- Admin Action History Section -->
-            {% if target_admin_info and admin_actions %}
+            {% if target_admin_info and can_view_histories and admin_actions %}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-light">
                     <h5 class="mb-0 text-success">
@@ -314,14 +320,115 @@ Fruit Cast | Account Details
                     </div>
                 </div>
             </div>
-            {% elif target_admin_info %}
+            {% endif %}
+
+            <!-- Login History Section -->
+            {% if can_view_histories and login_history %}
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body text-center py-4">
-                    <div class="text-muted mb-3">
-                        <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 text-primary">
+                        <i class="bi bi-person-check me-2"></i>Administrative Login History
+                        <span class="badge bg-secondary ms-2">{{ login_history|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Recent login sessions for this {{ target_account.account_type_id.account_type|lower }}.</p>
+                    
+                    <!-- Desktop Table View -->
+                    <div class="d-none d-lg-block">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Login Date & Time</th>
+                                        <th scope="col">Session Duration</th>
+                                        <th scope="col">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for login in login_history %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ login.login_date|date:"M d, Y" }}</strong><br>
+                                                <small class="text-muted">{{ login.login_date|time:"g:i:s A" }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">Session started</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">Successful Login</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <h6 class="text-muted">No Action History</h6>
-                    <p class="text-muted mb-0">This {{ target_account.account_type_id.account_type|lower }} hasn't performed any administrative actions yet.</p>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-lg-none">
+                        {% for login in login_history %}
+                        <div class="card border-start border-primary border-3 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-success mb-1">Successful Login</span>
+                                    <small class="text-muted">
+                                        {{ login.login_date|date:"M d, Y" }}<br>
+                                        {{ login.login_date|time:"g:i:s A" }}
+                                    </small>
+                                </div>
+                                <small class="text-muted">Session started</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- No History Messages -->
+            {% if target_admin_info and can_view_histories %}
+                {% if not admin_actions and not login_history %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body text-center py-4">
+                        <div class="text-muted mb-3">
+                            <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                        </div>
+                        <h6 class="text-muted">No Activity History</h6>
+                        <p class="text-muted mb-0">This {{ target_account.account_type_id.account_type|lower }} hasn't performed any administrative actions or logins yet.</p>
+                    </div>
+                </div>
+                {% elif not admin_actions %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body text-center py-4">
+                        <div class="text-muted mb-3">
+                            <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                        </div>
+                        <h6 class="text-muted">No Action History</h6>
+                        <p class="text-muted mb-0">This {{ target_account.account_type_id.account_type|lower }} hasn't performed any administrative actions yet.</p>
+                    </div>
+                </div>
+                {% elif not login_history %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body text-center py-4">
+                        <div class="text-muted mb-3">
+                            <i class="bi bi-person-check" style="font-size: 2rem;"></i>
+                        </div>
+                        <h6 class="text-muted">No Login History</h6>
+                        <p class="text-muted mb-0">No recent login records found for this {{ target_account.account_type_id.account_type|lower }}.</p>
+                    </div>
+                </div>
+                {% endif %}
+            {% elif target_admin_info and not can_view_histories %}
+            <div class="card border-warning">
+                <div class="card-body text-center py-4">
+                    <div class="text-warning mb-3">
+                        <i class="bi bi-shield-lock" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="text-warning">History Access Restricted</h6>
+                    <p class="text-muted mb-0">Administrative action history and login records are restricted based on your access level.</p>
                 </div>
             </div>
             {% endif %}

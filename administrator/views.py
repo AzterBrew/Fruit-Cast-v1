@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord, initPlantRecord, FarmLand, RecordTransaction
+from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord, initPlantRecord, FarmLand, RecordTransaction, UserLoginLog
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseForbidden, HttpResponse
@@ -292,9 +292,15 @@ def update_account_status(request, account_id):
 @admin_or_agriculturist_required    
 def verify_accounts(request):
     # this is the view for the verify accounts page which is the farmers list
+    user = request.user
+    userinfo = UserInformation.objects.get(auth_user=user)
+    admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+    municipality_assigned = admin_info.municipality_incharge
+    is_superuser = user.is_superuser
+    is_pk14 = municipality_assigned.pk == 14
+
     pending_accounts = AccountsInformation.objects.filter(acc_status_id=2).select_related('userinfo_id', 'account_type_id', 'acc_status_id')    
     print(pending_accounts)
-    
     
     status_filter = request.GET.get('status')
     municipality_filter = request.GET.get('municipality')
@@ -303,12 +309,20 @@ def verify_accounts(request):
 
     accounts_query = AccountsInformation.objects.filter(account_type_id=1).select_related('userinfo_id', 'account_type_id', 'acc_status_id')
 
+    # Filter by agriculturist's assigned municipality if not superuser or administrator (pk=14)
+    if not is_superuser and not is_pk14:
+        # Filter farmers by multiple criteria: municipality, farmland, or past transactions
+        accounts_query = accounts_query.filter(
+            Q(userinfo_id__municipality_id=municipality_assigned) |  # Farmer's municipality matches
+            Q(recordtransaction__farm_land__municipality=municipality_assigned) |  # Has farmland in municipality
+            Q(recordtransaction__manual_municipality=municipality_assigned)  # Has transactions in municipality
+        ).distinct()
+
     if status_filter:
         accounts_query = accounts_query.filter(acc_status_id=status_filter)
         
     if municipality_filter:
         accounts_query = accounts_query.filter(userinfo_id__municipality_id__municipality=municipality_filter)
-
 
     accounts_query = accounts_query.annotate(record_count=Count('recordtransaction'))
 
@@ -341,9 +355,12 @@ def verify_accounts(request):
             messages.success(request, f"Updated {len(selected_ids)} account(s).")
             return redirect('administrator:verify_accounts')
     
-    # Pass status choices for filter dropdown
+    # Pass status choices for filter dropdown - filter municipalities if agriculturist
     status_choices = AccountStatus.objects.all()
-    municipalities = MunicipalityName.objects.all()
+    if is_superuser or is_pk14:
+        municipalities = MunicipalityName.objects.all()
+    else:
+        municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
     
     context = get_admin_context(request)
     context.update({
@@ -354,6 +371,7 @@ def verify_accounts(request):
         'current_municipality': municipality_filter,
         'current_sort': sort_by,
         'current_order': order,
+        'is_agriculturist': not is_superuser and not is_pk14,
     })
 
     return render(request, 'admin_panel/verify_accounts.html', context)
@@ -623,14 +641,17 @@ def assign_account(request):
                             civil_status="",
                         )
 
-                        # Create AccountsInformation
+                        # Create AccountsInformation with Verified status instead of Pending
                         acct_type = AccountType.objects.get(account_type=account_type)
-                        acct_status = AccountStatus.objects.get(acc_status="Pending")
+                        acct_status = AccountStatus.objects.get(pk=2)  # pk=2 = Verified
                         account_info = AccountsInformation.objects.create(
                             userinfo_id=userinfo,
                             account_type_id=acct_type,
                             acc_status_id=acct_status,
-                            account_register_date=timezone.now()
+                            account_register_date=timezone.now(),
+                            account_isverified=True,  # Set as verified
+                            account_verified_date=timezone.now(),  # Set verification date
+                            account_verified_by=AdminInformation.objects.get(userinfo_id__auth_user=user)  # Set verified by current admin
                         )
 
                         # Create AdminInformation (even for agriculturist)
@@ -1918,8 +1939,9 @@ def admin_account_detail(request, account_id):
     """
     Display account details for administrators and agriculturists
     Access levels:
-    - Superuser: Full information
-    - Administrator: Limited information (name, age, sex, contact, address, assigned municipality)
+    - Superuser: Full information for all accounts
+    - Administrator: Full information for agriculturists, partial for administrators
+    - Agriculturist: Partial information for all accounts
     """
     try:
         # Get the account to view
@@ -1936,21 +1958,31 @@ def admin_account_detail(request, account_id):
         current_account = AccountsInformation.objects.get(userinfo_id=current_user_info)
         current_admin_info = AdminInformation.objects.filter(userinfo_id=current_user_info).first()
         
-        # Determine access level based on new rules
+        # Determine access level based on hierarchical rules
         is_superuser = request.user.is_superuser
         user_role_id = current_account.account_type_id.pk
         target_account_type_id = target_account.account_type_id.pk
         
-        # New access control logic:
-        # - Superuser: full info for everyone
-        # - Administrator: full info for agriculturists, partial for administrators
+        # Hierarchical access control:
+        # - Superuser: full access to everyone
+        # - Administrator (pk=2): full access to Agriculturists (pk=3), partial to Administrators
+        # - Agriculturist (pk=3): partial access to everyone
         can_view_full_details = False
+        can_view_histories = False
+        
         if is_superuser:
             can_view_full_details = True
-        elif user_role_id == 2:  # Administrator
+            can_view_histories = True
+        elif user_role_id == 2:  # Current user is Administrator
             if target_account_type_id == 3:  # Target is Agriculturist
                 can_view_full_details = True
-            # If target is Administrator, partial info only (can_view_full_details remains False)
+                can_view_histories = True
+            elif target_account_type_id == 2:  # Target is Administrator
+                can_view_full_details = False  # Partial info only
+                can_view_histories = False
+        elif user_role_id == 3:  # Current user is Agriculturist
+            can_view_full_details = False  # Partial info for everyone
+            can_view_histories = False
         
         # Calculate age
         today = date.today()
@@ -1960,17 +1992,27 @@ def admin_account_detail(request, account_id):
         # Get admin information if target is admin/agriculturist
         target_admin_info = AdminInformation.objects.filter(userinfo_id=target_userinfo).first()
         
-        # Get admin action history (if target has AdminInformation)
+        # Get admin action history (only if allowed to view histories)
         admin_actions = []
-        if target_admin_info:
+        if target_admin_info and can_view_histories:
             try:
                 admin_actions = AdminUserManagement.objects.filter(
                     admin_id=target_admin_info
                 ).order_by('-action_timestamp')[:20]  # Latest 20 actions
             except Exception as e:
                 print(f"Warning: Could not fetch admin actions - database schema issue: {e}")
-                # If there's a database schema issue, set empty list
                 admin_actions = []
+        
+        # Get login history (only if allowed to view histories)
+        login_history = []
+        if can_view_histories:
+            try:
+                login_history = UserLoginLog.objects.filter(
+                    account_id=target_account
+                ).order_by('-login_date')[:20]  # Latest 20 logins
+            except Exception as e:
+                print(f"Warning: Could not fetch login history: {e}")
+                login_history = []
         
         context = {
             **get_admin_context(request),
@@ -1982,7 +2024,9 @@ def admin_account_detail(request, account_id):
             'user_role_id': user_role_id,
             'target_account_type_id': target_account_type_id,
             'can_view_full_details': can_view_full_details,
+            'can_view_histories': can_view_histories,
             'admin_actions': admin_actions,
+            'login_history': login_history,
         }
         
         return render(request, 'admin_panel/admin_account_detail.html', context)
