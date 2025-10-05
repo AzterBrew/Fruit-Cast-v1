@@ -75,6 +75,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'base.context_processors.user_role_id',  # Custom context processor pang user role ID
+                'base.context_processors.current_year',  # Current year for footer
                 'dashboard.context_processors.unread_notifications',
             ],
         },
