@@ -230,6 +230,11 @@ EMAIL_HOST_USER = 'fruitcast.bataan@gmail.com'
 EMAIL_HOST_PASSWORD = 'pjxr njjv veck thyz'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+# Console backend for development/testing when SMTP fails
+if DEBUG:
+    # Fallback to console backend if SMTP fails
+    EMAIL_BACKEND_FALLBACK = 'django.core.mail.backends.console.EmailBackend'
+
 
 # Celery Configuration
 # Get the URL from the environment variable

@@ -1523,15 +1523,18 @@ def admin_add_verifyharvestrec(request):
 @login_required
 @admin_or_agriculturist_required
 def admin_harvestverified(request):
+    user = request.user
+    userinfo = UserInformation.objects.get(auth_user=user)
+    admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+    is_superuser = user.is_superuser
+    is_pk14 = admin_info.municipality_incharge.pk == 14
+    
     if request.method == 'POST':
         action = request.POST.get('action')
         selected_records = request.POST.getlist('selected_records')
         
         if action == 'delete' and selected_records:
-            try:
-                # Get admin info for logging
-                admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
-                
+            try:                
                 # Delete selected records
                 deleted_count = 0
                 for record_id in selected_records:
@@ -1567,14 +1570,34 @@ def admin_harvestverified(request):
     
     # Handle filtering
     municipality_filter = request.GET.get('municipality')
+    barangay_filter = request.GET.get('barangay')
     commodity_filter = request.GET.get('commodity')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
+    
+    # Only show allowed municipalities (same logic as admin_verifyharvestrec)
+    if is_superuser or is_pk14:
+        municipalities = MunicipalityName.objects.all()
+    else:
+        municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
+    
+    # Filter barangays based on selected municipality if applicable
+    if municipality_filter:
+        barangays = BarangayName.objects.filter(municipality_id=municipality_filter)
+    else:
+        barangays = BarangayName.objects.all()
+    
+    commodities = CommodityType.objects.all()
     
     records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
     
     if municipality_filter:
         records = records.filter(municipality_id=municipality_filter)
+    elif not (is_superuser or is_pk14):
+        # If not superuser or pk14, filter by admin's municipality
+        records = records.filter(municipality=admin_info.municipality_incharge)
+    if barangay_filter:
+        records = records.filter(barangay_id=barangay_filter)
     if commodity_filter:
         records = records.filter(commodity_id=commodity_filter)
     if date_from:
@@ -1582,16 +1605,14 @@ def admin_harvestverified(request):
     if date_to:
         records = records.filter(harvest_date__lte=date_to)
     
-    # Get filter options
-    municipalities = MunicipalityName.objects.all()
-    commodities = CommodityType.objects.all()
-    
     context = get_admin_context(request)
     context.update({
         'records': records,
         'municipalities': municipalities,
+        'barangays': barangays,
         'commodities': commodities,
         'selected_municipality': municipality_filter,
+        'selected_barangay': barangay_filter,
         'selected_commodity': commodity_filter,
         'date_from': date_from,
         'date_to': date_to,

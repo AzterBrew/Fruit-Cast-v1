@@ -9,16 +9,26 @@ Fruit Cast | Verified Harvest Records
 <div class="main-user">
     <div class="monitor-user-content justify-content-center">
         <div class="card shadow-sm rounded-4 p-4 mb-3">
-            <h1 class="mb-4 text-success fw-bold text-center">
+            <h1 class="mb-4 text-success fw-bold text-center" id="top-section">
                 <i class="bi bi-check-circle"></i> Verified Harvest Records
             </h1>
             
             <!-- Filter Section -->
-            <div class="card border-0 shadow-sm mb-4">
+            <div class="card border-0 shadow-sm mb-4" id="filter-section">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-funnel me-2"></i>Filter Records
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-funnel me-2"></i>Filter Records
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'administrator:admin_verifyharvestrec' %}" class="btn btn-light btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>Back to Verification
+                            </a>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="scrollToBottom()">
+                                <i class="bi bi-arrow-down me-1"></i>Go to Actions
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body bg-light">
                     <form method="get" id="filterForm">
@@ -29,37 +39,54 @@ Fruit Cast | Verified Harvest Records
                                 </label>
                                 <select id="municipality" name="municipality" class="form-select">
                                     <option value="">All Municipalities</option>
-                                    <!-- Add municipalities dynamically -->
+                                    {% for m in municipalities %}
+                                        {% if m.pk != 14 %}
+                                            <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="barangay" class="form-label">
+                                    <i class="bi bi-geo me-1"></i>Barangay
+                                </label>
+                                <select id="barangay" name="barangay" class="form-select">
+                                    <option value="">All Barangays</option>
+                                    {% for b in barangays %}
+                                        <option value="{{ b.pk }}" {% if b.pk|stringformat:"s" == selected_barangay %}selected{% endif %}>{{ b.barangay }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label for="commodity" class="form-label">
-                                    <i class="bi bi-basket me-1"></i>Commodity
+                                    <i class="bi bi-droplet me-1"></i>Commodity
                                 </label>
                                 <select id="commodity" name="commodity" class="form-select">
                                     <option value="">All Commodities</option>
-                                    <!-- Add commodities dynamically -->
+                                    {% for c in commodities %}
+                                        <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == selected_commodity %}selected{% endif %}>{{ c.name }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label for="date_from" class="form-label">
                                     <i class="bi bi-calendar me-1"></i>Date From
                                 </label>
-                                <input type="date" id="date_from" name="date_from" class="form-control">
-                            </div>
-                            <div class="col-md-3">
-                                <label for="date_to" class="form-label">
-                                    <i class="bi bi-calendar me-1"></i>Date To
-                                </label>
-                                <input type="date" id="date_to" name="date_to" class="form-control">
+                                <input type="date" id="date_from" name="date_from" class="form-control" value="{{ date_from|default:'' }}">
                             </div>
                         </div>
                         <div class="row g-3 mt-2">
                             <div class="col-md-3">
-                                <button type="submit" class="btn btn-success">
+                                <label for="date_to" class="form-label">
+                                    <i class="bi bi-calendar me-1"></i>Date To
+                                </label>
+                                <input type="date" id="date_to" name="date_to" class="form-control" value="{{ date_to|default:'' }}">
+                            </div>
+                            <div class="col-md-9 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success me-2">
                                     <i class="bi bi-search me-2"></i>Filter
                                 </button>
-                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="clearFilters()">
+                                <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
                                     <i class="bi bi-x-circle me-2"></i>Clear
                                 </button>
                             </div>
@@ -249,20 +276,20 @@ Fruit Cast | Verified Harvest Records
             </div>
 
             <!-- Additional Actions -->
-            <div class="card border-0 shadow-sm mt-4">
+            <div class="card border-0 shadow-sm mt-4" id="bottom-section">
                 <div class="card-body">
                     <h5 class="card-title text-primary mb-3">
                         <i class="bi bi-plus-circle me-2"></i>Quick Actions
                     </h5>
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="{% url 'administrator:admin_harvestverified' %}" class="btn btn-success">
+                        <a href="{% url 'administrator:admin_add_verifyharvestrec' %}" class="btn btn-success">
                             <i class="bi bi-plus-lg me-2"></i>Add New Record
                         </a>
-                        <button class="btn btn-outline-info" onclick="refreshData()">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
-                        </button>
-                        <button class="btn btn-outline-warning" onclick="bulkOperations()">
-                            <i class="bi bi-collection me-2"></i>Bulk Operations
+                        <a href="{% url 'administrator:admin_verifyharvestrec' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Harvest Record Verification
+                        </a>
+                        <button type="button" class="btn btn-outline-info" onclick="scrollToTop()">
+                            <i class="bi bi-arrow-up me-2"></i>Go to Top
                         </button>
                     </div>
                 </div>
@@ -276,7 +303,7 @@ Fruit Cast | Verified Harvest Records
                     <h5 class="text-muted">No Verified Records Found</h5>
                     <p class="text-muted">No verified harvest records match your current filters.</p>
                     <div class="mt-4">
-                        <a href="{% url 'administrator:admin_verifyharvest_add' %}" class="btn btn-success me-2">
+                        <a href="{% url 'administrator:admin_add_verifyharvestrec' %}" class="btn btn-success me-2">
                             <i class="bi bi-plus-lg me-2"></i>Add First Record
                         </a>
                         <button class="btn btn-outline-secondary" onclick="clearFilters()">
@@ -300,10 +327,17 @@ Fruit Cast | Verified Harvest Records
 
         // Auto-submit form on filter change
         const municipalitySelect = document.getElementById('municipality');
+        const barangaySelect = document.getElementById('barangay');
         const commoditySelect = document.getElementById('commodity');
         
         if (municipalitySelect) {
             municipalitySelect.addEventListener('change', function() {
+                document.getElementById('filterForm').submit();
+            });
+        }
+        
+        if (barangaySelect) {
+            barangaySelect.addEventListener('change', function() {
                 document.getElementById('filterForm').submit();
             });
         }
@@ -427,8 +461,6 @@ Fruit Cast | Verified Harvest Records
 
     // Global functions
     function cancelDeleteMode() {
-    // Global functions
-    function cancelDeleteMode() {
         const deleteMode = document.getElementById('deleteMode');
         if (deleteMode) {
             deleteMode.checked = false;
@@ -438,6 +470,7 @@ Fruit Cast | Verified Harvest Records
 
     function clearFilters() {
         document.getElementById('municipality').value = '';
+        document.getElementById('barangay').value = '';
         document.getElementById('commodity').value = '';
         document.getElementById('date_from').value = '';
         document.getElementById('date_to').value = '';
@@ -454,6 +487,20 @@ Fruit Cast | Verified Harvest Records
             deleteMode.checked = !deleteMode.checked;
             deleteMode.dispatchEvent(new Event('change'));
         }
+    }
+
+    function scrollToTop() {
+        document.getElementById('top-section').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+
+    function scrollToBottom() {
+        document.getElementById('bottom-section').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
     }
 </script>
 {% endblock content %}

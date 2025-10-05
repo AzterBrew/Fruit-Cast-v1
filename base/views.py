@@ -1971,9 +1971,31 @@ def change_password(request):
             to=[request.user.email],
         )
         email_msg.content_subtype = "html"
-        email_msg.send()
         
-        return redirect("base:change_password_verify")
+        try:
+            email_msg.send()
+            messages.success(request, f"Verification code sent to {request.user.email}. Please check your email.")
+            return redirect("base:change_password_verify")
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Email sending failed: {str(e)}")
+            
+            # If email fails, provide error message but still allow user to proceed for development
+            if settings.DEBUG:  # Only in development mode
+                messages.warning(request, f"Email service temporarily unavailable. Your verification code is: {verification_code}")
+                messages.info(request, "Please use this code to continue (Development Mode)")
+                print(f"🔐 PASSWORD CHANGE VERIFICATION CODE: {verification_code}")  # Console log for debugging
+                return redirect("base:change_password_verify")
+            else:
+                # In production, show error and don't proceed
+                messages.error(request, "Email service is currently unavailable. Please try again later or contact support.")
+                # Clear session data
+                for key in ['change_pwd_email', 'change_pwd_code', 'change_pwd_code_time']:
+                    if key in request.session:
+                        del request.session[key]
+                return render(request, 'loggedin/change_password.html')
     
     return render(request, 'loggedin/change_password.html')
 
