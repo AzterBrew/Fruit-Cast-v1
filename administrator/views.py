@@ -1365,6 +1365,9 @@ def admin_add_verifyharvestrec(request):
         csv_file = request.FILES["csv_file"]
         decoded_file = csv_file.read().decode("utf-8-sig")
         reader = csv.DictReader(io.StringIO(decoded_file))
+        created_count = 0
+        error_count = 0
+        
         for row in reader:
             row = {k.strip(): v.strip() for k, v in row.items()}
             try:
@@ -1374,6 +1377,7 @@ def admin_add_verifyharvestrec(request):
                 except CommodityType.DoesNotExist:
                     print(f"Commodity '{commodity_name}' does not exist in CommodityType model.")
                     messages.error(request, f"Commodity '{commodity_name}' does not exist in CommodityType model. Row skipped.")
+                    error_count += 1
                     continue  # Skip this row
                 municipality = MunicipalityName.objects.get(pk=int(row['municipality']))
                 barangay_id_str = row.get("barangay", "")
@@ -1393,8 +1397,26 @@ def admin_add_verifyharvestrec(request):
                     verified_by=admin_info,
                     prev_record=None,
                 )
+                created_count += 1
             except Exception as e:
                 print("Error processing row:", row, e)
+                error_count += 1
+        
+        # Show success/error messages
+        if created_count > 0:
+            messages.success(request, f'Successfully created {created_count} harvest record{"s" if created_count > 1 else ""} from CSV upload.')
+            
+            # Trigger model retraining and forecast generation
+            try:
+                from .tasks import retrain_and_generate_forecasts_task
+                retrain_and_generate_forecasts_task.delay()
+                messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+            except Exception as e:
+                messages.warning(request, f'Records created successfully, but forecast regeneration failed: {str(e)}')
+        
+        if error_count > 0:
+            messages.warning(request, f'{error_count} row{"s" if error_count > 1 else ""} could not be processed due to errors.')
+            print(f'{error_count} row(s) could not be processed due to errors.')
         return redirect("administrator:admin_harvestverified")
 
     elif request.method == "POST":
@@ -1405,6 +1427,17 @@ def admin_add_verifyharvestrec(request):
             rec.verified_by = admin_info
             rec.prev_record = None
             rec.save()
+            
+            messages.success(request, 'Harvest record has been successfully added.')
+            
+            # Trigger model retraining and forecast generation
+            try:
+                from .tasks import retrain_and_generate_forecasts_task
+                retrain_and_generate_forecasts_task.delay()
+                messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+            except Exception as e:
+                messages.warning(request, f'Record created successfully, but forecast regeneration failed: {str(e)}')
+            
             return redirect("administrator:admin_verifyharvestrec")
         context["form"] = form
     else:
