@@ -742,6 +742,16 @@ footer {
     margin-top: auto;
     background: linear-gradient(135deg, #416e3f 0%, #2d5a2b 100%);
     box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    overflow-x: hidden;
+}
+
+footer .container {
+    max-width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
 }
 
 footer h5, footer h6 {
@@ -754,11 +764,19 @@ footer h5::after, footer h6::after {
     content: '';
     position: absolute;
     bottom: 0;
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 30px;
     height: 2px;
     background: linear-gradient(90deg, #28a745, #20c997);
     border-radius: 1px;
+}
+
+@media (min-width: 992px) {
+    footer h5::after, footer h6::after {
+        left: 0;
+        transform: none;
+    }
 }
 
 footer a {
@@ -814,18 +832,52 @@ footer .border-top {
 }
 
 /* Responsive footer adjustments */
-@media (max-width: 768px) {
-    footer .col-md-6.text-md-end {
+@media (max-width: 991.98px) {
+    footer .text-lg-start {
         text-align: center !important;
-        margin-top: 1rem;
+    }
+    
+    footer .justify-content-lg-start {
+        justify-content: center !important;
     }
     
     footer .contact-info .d-flex {
         margin-bottom: 1rem;
+        justify-content: center;
     }
     
     footer .d-flex.gap-3 {
         justify-content: center;
         margin-top: 1rem;
+    }
+    
+    footer .col-lg-2 {
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    footer .container {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+    
+    footer .py-4.py-md-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    footer h5, footer h6 {
+        font-size: 1.1rem;
+    }
+    
+    footer p {
+        font-size: 0.9rem;
+    }
+    
+    footer .bi {
+        font-size: 1rem !important;
     }
 }
