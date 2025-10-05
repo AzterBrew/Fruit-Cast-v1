@@ -96,6 +96,46 @@ Fruit Cast | Commodity Management
                         </table>
                     </div>
 
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-body bg-light">
+                            <h6 class="card-title text-primary mb-3">
+                                <i class="bi bi-gear-wide-connected me-2"></i>Bulk Actions
+                            </h6>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="bulk_action" class="form-label">
+                                        <i class="bi bi-list-task me-2"></i>Select Action
+                                    </label>
+                                    <select id="bulk_action" name="bulk_action" class="form-select">
+                                        <option value="">Choose action...</option>
+                                        <option value="delete">Delete Selected</option>
+                                        <option value="export">Export Selected</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary" id="updateBtn" disabled>
+                                        <i class="bi bi-check-circle me-2"></i>Execute Action
+                                    </button>
+                                    <a href="{% url 'administrator:admin_commodity_add' %}" class="btn btn-success">
+                                        <i class="bi bi-plus-lg me-2"></i>Add New
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mt-3" role="alert">
+                            <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </form>
+
                     <!-- Helper Note -->
                     <div class="alert alert-info mt-3">
                         <i class="bi bi-info-circle me-2"></i>
