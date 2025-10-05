@@ -1371,6 +1371,7 @@ def admin_add_verifyharvestrec(request):
         for row in reader:
             row = {k.strip(): v.strip() for k, v in row.items()}
             try:
+                # Process commodity name as string
                 commodity_name = row['commodity'].strip()
                 try:
                     commodity_obj = CommodityType.objects.get(name__iexact=commodity_name)
@@ -1379,12 +1380,28 @@ def admin_add_verifyharvestrec(request):
                     messages.error(request, f"Commodity '{commodity_name}' does not exist in CommodityType model. Row skipped.")
                     error_count += 1
                     continue  # Skip this row
-                municipality = MunicipalityName.objects.get(pk=int(row['municipality']))
-                barangay_id_str = row.get("barangay", "")
-                if barangay_id_str:
-                    barangay = BarangayName.objects.get(pk=int(barangay_id_str), municipality_id=municipality)
-                else:
-                    barangay = None
+                
+                # Process municipality name as string
+                municipality_name = row['municipality'].strip()
+                try:
+                    municipality = MunicipalityName.objects.get(municipality__iexact=municipality_name)
+                except MunicipalityName.DoesNotExist:
+                    print(f"Municipality '{municipality_name}' does not exist in MunicipalityName model.")
+                    messages.error(request, f"Municipality '{municipality_name}' does not exist in MunicipalityName model. Row skipped.")
+                    error_count += 1
+                    continue  # Skip this row
+                
+                # Process barangay name as string (optional)
+                barangay_name = row.get("barangay", "").strip()
+                barangay = None
+                if barangay_name:
+                    try:
+                        barangay = BarangayName.objects.get(barangay__iexact=barangay_name, municipality_id=municipality)
+                    except BarangayName.DoesNotExist:
+                        print(f"Barangay '{barangay_name}' does not exist in municipality '{municipality_name}'. Proceeding without barangay.")
+                        messages.warning(request, f"Barangay '{barangay_name}' not found in '{municipality_name}'. Record created without barangay.")
+                        # Don't skip the row, just proceed without barangay
+                
                 VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
                     commodity_id=commodity_obj,
