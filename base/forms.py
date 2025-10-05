@@ -105,6 +105,23 @@ class RegistrationForm(forms.ModelForm):
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if Not Applicable'}),
             'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Last Name, First Name Middle Name'}),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Initialize barangay queryset as empty
+        self.fields['barangay_id'].queryset = BarangayName.objects.none()
+        
+        # If we have initial data with municipality, populate barangays
+        if 'municipality_id' in self.data:
+            try:
+                municipality_id = int(self.data.get('municipality_id'))
+                self.fields['barangay_id'].queryset = BarangayName.objects.filter(municipality_id=municipality_id).order_by('barangay')
+            except (ValueError, TypeError):
+                pass  # Invalid municipality_id, keep empty queryset
+        elif self.instance.pk and self.instance.municipality_id:
+            # If editing an existing instance, populate barangays for the selected municipality
+            self.fields['barangay_id'].queryset = BarangayName.objects.filter(municipality_id=self.instance.municipality_id).order_by('barangay')
+    
     # def clean(self):
     #     cleaned_data = super().clean()
     #     # Add password match validation, etc.
