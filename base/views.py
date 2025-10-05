@@ -1699,9 +1699,9 @@ def forgot_password(request):
                     <p>We received a request to reset your password for your Fruit Cast account. Use the verification code below to proceed with resetting your password:</p>
                     
                     <div class="otp-code">{otp_code}</div>
-                    
-                    <p>This verification code will expire in 10 minutes for security reasons.</p>
-                    
+
+                    <p>This verification code will expire in 3 minutes for security reasons.</p>
+
                     <p class="warning">⚠️ If you didn't request this password reset, please ignore this email. Your account remains secure.</p>
                     
                     <div class="footer">
@@ -1759,7 +1759,7 @@ def forgot_password_verify(request):
         
         # Check if OTP is expired (10 minutes)
         otp_time = timezone.datetime.fromisoformat(otp_time_str)
-        if timezone.now() - otp_time > timezone.timedelta(minutes=10):
+        if timezone.now() - otp_time > timezone.timedelta(minutes=3):
             messages.error(request, 'Verification code has expired. Please request a new one.')
             # Clear session data
             for key in ['reset_email', 'reset_otp', 'reset_otp_time']:

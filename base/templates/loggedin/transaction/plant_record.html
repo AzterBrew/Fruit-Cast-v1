@@ -206,13 +206,18 @@
                             data.forEach(barangay => {
                                 const option = document.createElement('option');
                                 option.value = barangay.id;
-                                option.textContent = barangay.name;
+                                option.textContent = barangay.barangay;
                                 barangaySelect.appendChild(option);
                             });
                         } else {
                             barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
                             barangaySelect.disabled = true;
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching barangays:', error);
+                        barangaySelect.innerHTML = '<option value="">Error loading barangays</option>';
+                        barangaySelect.disabled = true;
                     });
             } else {
                 barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
@@ -294,24 +299,11 @@
                             data.forEach(barangay => {
                             const option = document.createElement('option');
                             option.value = barangay.id;
-                            option.textContent = barangay.name;
+                            option.textContent = barangay.barangay;
                             barangaySelect.appendChild(option);
                             });
                         }
                         });
-                        .then(data => {
-                        if (data.length > 0) {
-                            barangaySelect.disabled = false;
-                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-                            // Place this code here:
-                            data.forEach(barangay => {
-                                const option = document.createElement('option');
-                                option.value = barangay.id; // This should be the PK
-                                option.textContent = barangay.name;
-                                barangaySelect.appendChild(option);
-                            });
-                        }
-                    });
                     } else {
                         barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
                         barangaySelect.disabled = true;

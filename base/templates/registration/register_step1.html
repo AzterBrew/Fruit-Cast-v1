@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data.forEach(barangay => {
               const option = document.createElement('option');
               option.value = barangay.id;
-              option.textContent = barangay.name;
+              option.textContent = barangay.barangay;
               barangaySelect.appendChild(option);
             });
             
