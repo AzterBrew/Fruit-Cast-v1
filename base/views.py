@@ -1267,9 +1267,21 @@ def register_email(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
         
-        # Check if email already exists
+        # Check if email already exists (excluding removed accounts pk=7)
         if AuthUser.objects.filter(email=email).exists():
-            return render(request, "registration/register_email.html", {"email_error": "Email already registered."})
+            # Check if this email belongs to a removed account (pk=7)
+            try:
+                existing_user = AuthUser.objects.get(email=email)
+                user_info = UserInformation.objects.get(auth_user=existing_user)
+                account_info = AccountsInformation.objects.get(userinfo_id=user_info)
+                
+                # If account is removed (pk=7), allow registration with this email
+                if account_info.acc_status_id.acc_stat_id != 7:
+                    return render(request, "registration/register_email.html", {"email_error": "Email already registered."})
+                # If it's a removed account, we allow the registration to proceed
+            except (UserInformation.DoesNotExist, AccountsInformation.DoesNotExist):
+                # If user exists but no account info, treat as existing registration
+                return render(request, "registration/register_email.html", {"email_error": "Email already registered."})
         # Generate verification code
         
         if password != confirm_password:
@@ -1817,68 +1829,89 @@ def user_login(request):
 
             if user is not None:
                 
-                if user.is_superuser:
-                    # Check if UserInformation exists for this user
-                    if not UserInformation.objects.filter(auth_user=user).exists():
-                        admin_type = AccountType.objects.get(account_type='Administrator')
-                        active_status = AccountStatus.objects.get(pk=2)  # Adjust if needed
-                        barangay = BarangayName.objects.get(pk=1)
-                        municipality = MunicipalityName.objects.get(pk=1)
-                        municipality_assigned = MunicipalityName.objects.get(pk=14)  # Adjust if needed
+                # First check if user has account information
+                try:
+                    user_info = UserInformation.objects.get(auth_user=user)
+                    account_info = AccountsInformation.objects.get(userinfo_id=user_info)
+                    
+                    # Check account status before allowing login
+                    if account_info.acc_status_id.acc_stat_id == 6:  # Suspended
+                        messages.error(request, 'Your account has been suspended. Please contact the administrators to make an appeal to unsuspend your account.')
+                        return render(request, 'registration/login.html')
+                    
+                    elif account_info.acc_status_id.acc_stat_id == 5:  # Archived - change to verified
+                        verified_status = AccountStatus.objects.get(pk=2)  # Verified
+                        account_info.acc_status_id = verified_status
+                        account_info.save()
+                        print("🔥 Account status changed from Archived to Verified")
+                    
+                    elif account_info.acc_status_id.acc_stat_id != 2:  # Only allow verified accounts (pk=2)
+                        messages.error(request, 'Your account is not verified. Please contact administrators for assistance.')
+                        return render(request, 'registration/login.html')
+                    
+                except (UserInformation.DoesNotExist, AccountsInformation.DoesNotExist):
+                    # Handle superuser case or create missing account info
+                    if user.is_superuser:
+                        # Check if UserInformation exists for this user
+                        if not UserInformation.objects.filter(auth_user=user).exists():
+                            admin_type = AccountType.objects.get(account_type='Administrator')
+                            active_status = AccountStatus.objects.get(pk=2)  # Verified
+                            barangay = BarangayName.objects.get(pk=1)
+                            municipality = MunicipalityName.objects.get(pk=1)
+                            municipality_assigned = MunicipalityName.objects.get(pk=14)  # Adjust if needed
 
-                        userinfo = UserInformation.objects.create(
-                            auth_user=user,
-                            firstname='Admin',
-                            lastname='User',
-                            middlename='',
-                            nameextension='',
-                            sex='',
-                            contact_number='',
-                            user_email=user.email,
-                            birthdate='1950-01-01',
-                            emergency_contact_person='',
-                            emergency_contact_number='',
-                            address_details='',
-                            barangay_id=barangay,
-                            municipality_id=municipality,
-                            religion='None',
-                            civil_status='Single',
-                        )
+                            userinfo = UserInformation.objects.create(
+                                auth_user=user,
+                                firstname='Admin',
+                                lastname='User',
+                                middlename='',
+                                nameextension='',
+                                sex='',
+                                contact_number='',
+                                user_email=user.email,
+                                birthdate='1950-01-01',
+                                emergency_contact_person='',
+                                emergency_contact_number='',
+                                address_details='',
+                                barangay_id=barangay,
+                                municipality_id=municipality,
+                                religion='None',
+                                civil_status='Single',
+                            )
 
-                        account_info = AccountsInformation.objects.create(
-                            userinfo_id=userinfo,
-                            account_type_id=admin_type,
-                            acc_status_id=active_status,
-                            account_isverified=True,
-                            account_register_date=timezone.now(),
-                        )
+                            account_info = AccountsInformation.objects.create(
+                                userinfo_id=userinfo,
+                                account_type_id=admin_type,
+                                acc_status_id=active_status,
+                                account_isverified=True,
+                                account_register_date=timezone.now(),
+                            )
 
-                        admin_info = AdminInformation.objects.create(
-                            userinfo_id=userinfo,
-                            municipality_incharge=municipality_assigned,
-                        )
+                            admin_info = AdminInformation.objects.create(
+                                userinfo_id=userinfo,
+                                municipality_incharge=municipality_assigned,
+                            )
+                            
+                            user_info = userinfo  # Set for session creation below
+                    else:
+                        print("no acc info record for this user")
+                        messages.error(request, 'Account not registered')
+                        return render(request, 'registration/login.html')
                 
-                        
+                # Login the user after all checks pass
                 login(request, user)
                 
-                try:
-                    user_info = UserInformation.objects.get(auth_user=request.user)
-                    account_info = AccountsInformation.objects.get(userinfo_id__auth_user=user)
-                    
-                    UserLoginLog.objects.create(
-                        account_id=account_info, 
-                    )
-                    
-                    request.session['account_id'] = account_info.account_id
-                    request.session['userinfo_id'] = user_info.userinfo_id
-                     
-                    print("🔥 Logged IN...logged to userloginlog")  # Debugging log
+                # Create login log and set session variables
+                UserLoginLog.objects.create(
+                    account_id=account_info, 
+                )
                 
-                except AccountsInformation.DoesNotExist:
-                    print("no acc info record for this user")
-                    messages.error(request, 'Account not registered')  
+                request.session['account_id'] = account_info.account_id
+                request.session['userinfo_id'] = user_info.userinfo_id
+                 
+                print("🔥 Logged IN...logged to userloginlog")  # Debugging log
 
-                if account_info.account_type_id == 2 or account_info.account_type_id == 3:
+                if account_info.account_type_id.account_type_id == 2 or account_info.account_type_id.account_type_id == 3:
                     return redirect('administrator:admin_dashboard')
                 else:                    
                     return redirect('base:home')
