@@ -43,14 +43,16 @@ class AssignAdminAgriForm(forms.Form):
 class CommodityTypeForm(forms.ModelForm):
     seasonal_months = forms.ModelMultipleChoiceField(queryset=Month.objects.all(),widget=forms.CheckboxSelectMultiple,required=False,label="Seasonal Months")
     years_to_mature = forms.DecimalField(label="Years to Mature", required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter years (e.g., 2.5)', 'step': '0.01'}))
+    years_to_bearfruit = forms.DecimalField(label="Years to Bear Fruit after Maturing", required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter years (e.g., 0.5)', 'step': '0.01'}))
     
     class Meta:
         model = CommodityType
-        fields = ['name', 'average_weight_per_unit_kg', 'seasonal_months', 'years_to_mature']
+        fields = ['name', 'average_weight_per_unit_kg', 'seasonal_months', 'years_to_mature', 'years_to_bearfruit']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter commodity name (e.g., Mango)'}),
             'average_weight_per_unit_kg': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter weight in kg (e.g., 4.50)', 'step': '0.001'}),
             'years_to_mature': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter years (e.g., 2.5)', 'step': '0.01'}),
+            'years_to_bearfruit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter years (e.g., 0.5)', 'step': '0.01'}),
         }
         
 class VerifiedHarvestRecordForm(forms.ModelForm):

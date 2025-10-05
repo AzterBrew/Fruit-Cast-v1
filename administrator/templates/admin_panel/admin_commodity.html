@@ -47,6 +47,7 @@ Fruit Cast | Commodity Management
                                     </th>
                                     <th scope="col">Name</th>
                                     <th scope="col">Average Weight (kg)</th>
+                                    <th scope="col">Seasonal Months</th>
                                     <th scope="col">Years to Mature</th>
                                     <th scope="col">Years to Bear Fruit after first harvest</th>
                                     <th scope="col" class="text-center">Actions</th>
@@ -70,6 +71,17 @@ Fruit Cast | Commodity Management
                                     </td>
                                     <td>
                                         <span class="badge bg-light text-dark">{{ commodity.average_weight_per_unit_kg }} kg</span>
+                                    </td>
+                                    <td>
+                                        {% if commodity.seasonal_months.all %}
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for month in commodity.seasonal_months.all %}
+                                                    <span class="badge bg-info text-white" style="font-size: 0.75rem;">{{ month.name|slice:":3" }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">All year</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if commodity.years_to_mature %}

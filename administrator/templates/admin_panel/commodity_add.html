@@ -44,7 +44,14 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                                 </label>
                                 {{ form.years_to_mature }}
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="bi bi-clock-history me-1"></i>Years to Bear Fruit after Maturing
+                                    <small class="text-muted">[no. of months / 12]</small>
+                                </label>
+                                {{ form.years_to_bearfruit }}
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label">
                                     <i class="bi bi-calendar3 me-1"></i>Seasonal Months of Harvest
                                 </label>
@@ -150,9 +157,11 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
     function downloadCommodityTemplate() {
         // Create a sample CSV content for commodities
         const csvContent = "name,average_weight_per_unit_kg,seasonal_months,years_to_mature,years_to_bearfruit\n" +
-                          "Mango,4.00,\"January;February;March\",2.0,0.5\n" +
+                          "Mango,4.00,\"January;February;March\",3.0,0.5\n" +
                           "Banana,0.80,\"June;July;August;September\",1.5,1.0\n" +
-                          "Coconut,1.50,\"October;November;December\",5.0,3.0";
+                          "Coconut,1.50,\"October;November;December\",5.0,2.0\n" +
+                          "Avocado,0.25,\"April;May;June\",4.0,1.0\n" +
+                          "Papaya,1.20,\"March;April;May;June\",1.0,0.5";
         
         // Create and download the file
         const blob = new Blob([csvContent], { type: 'text/csv' });
