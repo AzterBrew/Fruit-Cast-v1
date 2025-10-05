@@ -1,156 +1,130 @@
 {% load static %}
 <footer class="bg-green-fc text-white mt-5">
     <div class="container py-5">
-        <div class="row g-4">
-            <!-- About Section -->
-            <div class="col-lg-4 col-md-6">
-                <div class="d-flex align-items-center mb-3">
-                    <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" class="me-3" style="width: 40px; height: 40px;">
-                    <h5 class="mb-0 fw-bold">Fruit Cast</h5>
+            <div class="row g-4">
+                <!-- About Section -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3 bg-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-tree-fill text-success"></i>
+                        </div>
+                        <h5 class="mb-0 fw-bold">Fruit Cast</h5>
+                    </div>
+                    <p class="text-light mb-3">
+                        Your partner in forecasting and monitoring Bataan's fruit supply. 
+                        Empowering farmers and agriculturists with data-driven insights.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white" title="Facebook">
+                            <i class="bi bi-facebook fs-5"></i>
+                        </a>
+                        <a href="#" class="text-white" title="Twitter">
+                            <i class="bi bi-twitter fs-5"></i>
+                        </a>
+                        <a href="#" class="text-white" title="Email">
+                            <i class="bi bi-envelope fs-5"></i>
+                        </a>
+                        <a href="#" class="text-white" title="Phone">
+                            <i class="bi bi-telephone fs-5"></i>
+                        </a>
+                    </div>
                 </div>
-                <p class="text-light mb-3">
-                    Your partner in forecasting and monitoring Bataan's fruit supply. 
-                    Empowering farmers and agriculturists with data-driven insights.
-                </p>
-                <div class="d-flex gap-3">
-                    <a href="#" class="text-white" title="Facebook">
-                        <i class="bi bi-facebook fs-5"></i>
-                    </a>
-                    <a href="#" class="text-white" title="Twitter">
-                        <i class="bi bi-twitter fs-5"></i>
-                    </a>
-                    <a href="#" class="text-white" title="Email">
-                        <i class="bi bi-envelope fs-5"></i>
-                    </a>
-                    <a href="#" class="text-white" title="Phone">
-                        <i class="bi bi-telephone fs-5"></i>
-                    </a>
-                </div>
-            </div>
 
-            <!-- Quick Links -->
-            <div class="col-lg-2 col-md-6">
-                <h6 class="fw-bold mb-3">Quick Links</h6>
-                <ul class="list-unstyled">
-                    {% if user.is_authenticated %}
+                <!-- Quick Links -->
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="fw-bold mb-3">Quick Links</h6>
+                    <ul class="list-unstyled">
                         <li class="mb-2">
-                            <a href="{% url 'base:home' %}" class="text-light text-decoration-none">
+                            <a href="#" class="text-light text-decoration-none">
                                 <i class="bi bi-house me-2"></i>Home
                             </a>
                         </li>
                         <li class="mb-2">
-                            <a href="{% url 'dashboard:forecast' %}" class="text-light text-decoration-none">
+                            <a href="#" class="text-light text-decoration-none">
                                 <i class="bi bi-bar-chart-line me-2"></i>Forecast
                             </a>
                         </li>
                         <li class="mb-2">
-                            <a href="{% url 'dashboard:monitor' %}" class="text-light text-decoration-none">
+                            <a href="#" class="text-light text-decoration-none">
                                 <i class="bi bi-graph-up-arrow me-2"></i>Monitor
                             </a>
                         </li>
-                        <li class="mb-2">
-                            <a href="{% url 'base:newrecord' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-journal-plus me-2"></i>New Record
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="mb-2">
-                            <a href="{% url 'base:home' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-house me-2"></i>Home
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a href="{% url 'base:about' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-info-circle me-2"></i>About Us
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a href="{% url 'base:register_email' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-person-plus me-2"></i>Register
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a href="{% url 'base:login' %}" class="text-light text-decoration-none">
-                                <i class="bi bi-box-arrow-in-right me-2"></i>Login
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+                    </ul>
+                </div>
 
-            <!-- Resources -->
-            <div class="col-lg-3 col-md-6">
-                <h6 class="fw-bold mb-3">Resources</h6>
-                <ul class="list-unstyled">
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="bi bi-book me-2"></i>User Guide
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="bi bi-question-circle me-2"></i>FAQs
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="bi bi-headset me-2"></i>Support
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="bi bi-shield-check me-2"></i>Privacy Policy
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="bi bi-file-text me-2"></i>Terms of Service
-                        </a>
-                    </li>
-                </ul>
-            </div>
+                <!-- Resources -->
+                <!-- <div class="col-lg-3 col-md-6">
+                    <h6 class="fw-bold mb-3">Resources</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="#" class="text-light text-decoration-none">
+                                <i class="bi bi-book me-2"></i>User Guide
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-light text-decoration-none">
+                                <i class="bi bi-question-circle me-2"></i>FAQs
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-light text-decoration-none">
+                                <i class="bi bi-headset me-2"></i>Support
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-light text-decoration-none">
+                                <i class="bi bi-shield-check me-2"></i>Privacy Policy
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-light text-decoration-none">
+                                <i class="bi bi-file-text me-2"></i>Terms of Service
+                            </a>
+                        </li>
+                    </ul>
+                </div> -->
 
-            <!-- Contact Info -->
-            <div class="col-lg-3 col-md-6">
-                <h6 class="fw-bold mb-3">Contact Information</h6>
-                <div class="contact-info">
-                    <div class="mb-3">
-                        <div class="d-flex align-items-start">
-                            <i class="bi bi-geo-alt-fill me-3 mt-1 text-success"></i>
-                            <div>
-                                <strong>Address:</strong><br>
-                                <span class="text-light">Bataan Peninsula State University<br>
-                                Capitol Drive, Balanga City<br>
-                                Bataan, Philippines</span>
+                <!-- Contact Info -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="fw-bold mb-3">Contact Information</h6>
+                    <div class="contact-info">
+                        <div class="mb-3">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-geo-alt-fill me-3 mt-1 text-success"></i>
+                                <div>
+                                    <strong>Address:</strong><br>
+                                    <span class="text-light">Bataan Peninsula State University<br>
+                                    Capitol Drive, Balanga City<br>
+                                    Bataan, Philippines</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-envelope-fill me-3 text-success"></i>
-                            <div>
-                                <strong>Email:</strong><br>
-                                <a href="mailto:info@fruitcast.ph" class="text-light text-decoration-none">
-                                    info@fruitcast.ph
-                                </a>
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-envelope-fill me-3 text-success"></i>
+                                <div>
+                                    <strong>Email:</strong><br>
+                                    <a href="mailto:fruitcast.bataan@gmail.com" class="text-light text-decoration-none">
+                                        fruitcast.bataan@gmail.com
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-telephone-fill me-3 text-success"></i>
-                            <div>
-                                <strong>Phone:</strong><br>
-                                <a href="tel:+639123456789" class="text-light text-decoration-none">
-                                    +63 912 345 6789
-                                </a>
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-telephone-fill me-3 text-success"></i>
+                                <div>
+                                    <strong>Phone:</strong><br>
+                                    <a href="tel:+639765868588" class="text-light text-decoration-none">
+                                        +63 976 586 8588
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Bottom Bar -->
     <div class="border-top border-light border-opacity-25">
