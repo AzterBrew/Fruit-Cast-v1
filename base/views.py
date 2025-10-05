@@ -1289,7 +1289,9 @@ def register_email(request):
                     </p>
                     <div style="background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 25px; text-align: center; margin: 25px 0;">
                         <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">Verification Code</div>
-                        <div style="font-family: Courier, monospace; font-size: 24px; font-weight: bold; color: #2c3e50;">{{ verification_code }}</div>
+                        <div style="font-family: Courier, monospace; font-size: 24px; font-weight: bold; color: #2c3e50;">
+                            {verification_code}
+                        </div>
                         <div style="color: #999; font-size: 11px; margin-top: 10px;">Expires: 10 minutes from now</div>
                     </div>
                     <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
@@ -1309,7 +1311,7 @@ def register_email(request):
                     </p>
                 </div>
             </div>
-            """
+            """.format(verification_code=verification_code)
             
             # Use EmailMessage for HTML email
             email_msg = EmailMessage(
