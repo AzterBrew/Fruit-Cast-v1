@@ -1197,10 +1197,22 @@ def admin_verifyplantrec(request):
         verified_status_pk = 2  # pk for "Verified"
         new_status = AccountStatus.objects.get(pk=new_status_pk)
         for rec in records.filter(pk__in=selected_ids):
+            # Store old status for logging
+            old_status = rec.record_status.acc_status if rec.record_status else "None"
+            
             rec.record_status = new_status
             if not rec.verified_by:
                 rec.verified_by = admin_info
             rec.save()
+            
+            # Create AdminUserManagement log entry for status change
+            AdminUserManagement.objects.create(
+                admin_id=admin_info,
+                action=f"Plant Record ID {rec.plant_id} changed status from '{old_status}' to '{new_status.acc_status}'",
+                content_type=ContentType.objects.get_for_model(initPlantRecord),
+                object_id=rec.plant_id
+            )
+            
             # Only create VerifiedPlantRecord if status is "Verified" and not already created
             if new_status_pk == verified_status_pk:
                 if not VerifiedPlantRecord.objects.filter(prev_record=rec).exists():
@@ -1214,7 +1226,7 @@ def admin_verifyplantrec(request):
                     # Calculate average and estimated weight
                     est_weight = (rec.min_expected_harvest + rec.max_expected_harvest) / 2
                     # est_weight = avg_units * float(rec.commodity_id.average_weight_per_unit_kg)
-                    VerifiedPlantRecord.objects.create(
+                    verified_plant_record = VerifiedPlantRecord.objects.create(
                         plant_date=rec.plant_date,
                         commodity_id=rec.commodity_id,
                         min_expected_harvest=rec.min_expected_harvest,
@@ -1226,6 +1238,14 @@ def admin_verifyplantrec(request):
                         barangay=barangay,
                         verified_by=admin_info,
                         prev_record=rec,
+                    )
+                    
+                    # Log the creation of verified plant record
+                    AdminUserManagement.objects.create(
+                        admin_id=admin_info,
+                        action=f"Created Verified Plant Record ID {verified_plant_record.id} from Plant Record ID {rec.plant_id}",
+                        content_type=ContentType.objects.get_for_model(VerifiedPlantRecord),
+                        object_id=verified_plant_record.id
                     )
         messages.success(request, "Selected records updated successfully.")
     else:
@@ -1291,10 +1311,22 @@ def admin_verifyharvestrec(request):
         verified_status_pk = 2  # pk for "Verified"
         new_status = AccountStatus.objects.get(pk=new_status_pk)
         for rec in records.filter(pk__in=selected_ids):
+            # Store old status for logging
+            old_status = rec.record_status.acc_status if rec.record_status else "None"
+            
             rec.record_status = new_status
             if not rec.verified_by:
                 rec.verified_by = admin_info
             rec.save()
+            
+            # Create AdminUserManagement log entry for status change
+            AdminUserManagement.objects.create(
+                admin_id=admin_info,
+                action=f"Harvest Record ID {rec.harvest_id} changed status from '{old_status}' to '{new_status.acc_status}'",
+                content_type=ContentType.objects.get_for_model(initHarvestRecord),
+                object_id=rec.harvest_id
+            )
+            
             # Only create VerifiedHarvestRecord if status is "Verified" and not already created
             if new_status_pk == verified_status_pk and selected_ids:
                 if not VerifiedHarvestRecord.objects.filter(prev_record=rec).exists():
@@ -1307,7 +1339,7 @@ def admin_verifyharvestrec(request):
                             municipality = rec.transaction.manual_municipality
                             barangay = rec.transaction.manual_barangay
 
-                        VerifiedHarvestRecord.objects.create(
+                        verified_harvest_record = VerifiedHarvestRecord.objects.create(
                             harvest_date=rec.harvest_date,
                             commodity_id=rec.commodity_id,
                             total_weight_kg=rec.total_weight,
@@ -1317,6 +1349,14 @@ def admin_verifyharvestrec(request):
                             barangay=barangay,
                             verified_by=admin_info,  # set this to the current admin
                             prev_record=rec,
+                        )
+                        
+                        # Log the creation of verified harvest record
+                        AdminUserManagement.objects.create(
+                            admin_id=admin_info,
+                            action=f"Created Verified Harvest Record ID {verified_harvest_record.id} from Harvest Record ID {rec.harvest_id}",
+                            content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                            object_id=verified_harvest_record.id
                         )
                         
                         # ...
@@ -1402,7 +1442,7 @@ def admin_add_verifyharvestrec(request):
                         messages.warning(request, f"Barangay '{barangay_name}' not found in '{municipality_name}'. Record created without barangay.")
                         # Don't skip the row, just proceed without barangay
                 
-                VerifiedHarvestRecord.objects.create(
+                verified_harvest_record = VerifiedHarvestRecord.objects.create(
                     harvest_date=row["harvest_date"],
                     commodity_id=commodity_obj,
                     total_weight_kg=row["total_weight_kg"],
@@ -1414,6 +1454,15 @@ def admin_add_verifyharvestrec(request):
                     verified_by=admin_info,
                     prev_record=None,
                 )
+                
+                # Log the creation from CSV upload
+                AdminUserManagement.objects.create(
+                    admin_id=admin_info,
+                    action=f"Created Verified Harvest Record ID {verified_harvest_record.id} via CSV upload - {commodity_obj.name} ({row['total_weight_kg']}kg) from {municipality_name}",
+                    content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                    object_id=verified_harvest_record.id
+                )
+                
                 created_count += 1
             except Exception as e:
                 print("Error processing row:", row, e)
@@ -1445,6 +1494,14 @@ def admin_add_verifyharvestrec(request):
             rec.prev_record = None
             rec.save()
             
+            # Log the individual record creation
+            AdminUserManagement.objects.create(
+                admin_id=admin_info,
+                action=f"Created Verified Harvest Record ID {rec.id} via manual entry - {rec.commodity_id.name} ({rec.total_weight_kg}kg) from {rec.municipality.municipality if rec.municipality else 'Unknown'}",
+                content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                object_id=rec.id
+            )
+            
             messages.success(request, 'Harvest record has been successfully added.')
             
             # Trigger model retraining and forecast generation
@@ -1472,10 +1529,22 @@ def admin_harvestverified(request):
         
         if action == 'delete' and selected_records:
             try:
+                # Get admin info for logging
+                admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
+                
                 # Delete selected records
                 deleted_count = 0
                 for record_id in selected_records:
                     record = VerifiedHarvestRecord.objects.get(pk=record_id)
+                    
+                    # Log the deletion before deleting the record
+                    AdminUserManagement.objects.create(
+                        admin_id=admin_info,
+                        action=f"Deleted Verified Harvest Record ID {record.id} - {record.commodity_id.name} ({record.total_weight_kg}kg) from {record.harvest_date}",
+                        content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                        object_id=record.id
+                    )
+                    
                     record.delete()
                     deleted_count += 1
                 
@@ -1549,11 +1618,57 @@ def admin_harvestverified_edit(request, record_id):
     if request.method == 'POST':
         form = VerifiedHarvestRecordForm(request.POST, instance=record)
         if form.is_valid():
+            # Get admin info for logging
+            admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
+            
+            # Store original values for comparison
+            original_data = {
+                'harvest_date': record.harvest_date,
+                'commodity': record.commodity_id.name,
+                'total_weight_kg': record.total_weight_kg,
+                'weight_per_unit_kg': record.weight_per_unit_kg,
+                'municipality': record.municipality.municipality if record.municipality else 'None',
+                'barangay': record.barangay.barangay if record.barangay else 'None',
+                'remarks': record.remarks or 'None'
+            }
+            
             updated_record = form.save(commit=False)
             # Keep the original verification info
             updated_record.verified_by = record.verified_by
             updated_record.date_verified = record.date_verified
             updated_record.save()
+            
+            # Log the edit with details of what changed
+            changes = []
+            if str(original_data['harvest_date']) != str(updated_record.harvest_date):
+                changes.append(f"harvest_date: {original_data['harvest_date']} → {updated_record.harvest_date}")
+            if original_data['commodity'] != updated_record.commodity_id.name:
+                changes.append(f"commodity: {original_data['commodity']} → {updated_record.commodity_id.name}")
+            if original_data['total_weight_kg'] != updated_record.total_weight_kg:
+                changes.append(f"total_weight_kg: {original_data['total_weight_kg']} → {updated_record.total_weight_kg}")
+            if original_data['weight_per_unit_kg'] != updated_record.weight_per_unit_kg:
+                changes.append(f"weight_per_unit_kg: {original_data['weight_per_unit_kg']} → {updated_record.weight_per_unit_kg}")
+            
+            new_municipality = updated_record.municipality.municipality if updated_record.municipality else 'None'
+            if original_data['municipality'] != new_municipality:
+                changes.append(f"municipality: {original_data['municipality']} → {new_municipality}")
+                
+            new_barangay = updated_record.barangay.barangay if updated_record.barangay else 'None'
+            if original_data['barangay'] != new_barangay:
+                changes.append(f"barangay: {original_data['barangay']} → {new_barangay}")
+                
+            new_remarks = updated_record.remarks or 'None'
+            if original_data['remarks'] != new_remarks:
+                changes.append(f"remarks: {original_data['remarks']} → {new_remarks}")
+            
+            if changes:
+                change_details = "; ".join(changes)
+                AdminUserManagement.objects.create(
+                    admin_id=admin_info,
+                    action=f"Edited Verified Harvest Record ID {updated_record.id} - Changes: {change_details}",
+                    content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                    object_id=updated_record.id
+                )
             
             messages.success(request, 'Harvest record updated successfully.')
             
