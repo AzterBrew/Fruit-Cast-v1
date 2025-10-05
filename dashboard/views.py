@@ -837,7 +837,7 @@ def monitor(request):
     total_harvests = harvest_records_muni_commodity_filtered.aggregate(total=Count('id'))['total'] or 0
     most_abundant_fruit = harvest_records_muni_commodity_filtered.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight').first()
     most_abundant_fruit = most_abundant_fruit['commodity_id__name'] if most_abundant_fruit else None
-    total_users = AccountsInformation.objects.count()
+    total_users = AccountsInformation.objects.filter(account_type_id=1).count()
 
     # --- L-a: Total Harvested Weight for every month - affected by municipality AND commodity filters ---
     monthly_harvest_data = harvest_records_muni_commodity_filtered.annotate(month=TruncMonth('harvest_date')).values('month').annotate(total_weight=Sum('total_weight_kg')).order_by('month')

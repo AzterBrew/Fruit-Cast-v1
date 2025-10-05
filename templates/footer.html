@@ -5,9 +5,7 @@
                 <!-- About Section -->
                 <div class="col-lg-4 col-md-6 col-12">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="me-3 bg-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                            <i class="bi bi-tree-fill text-success"></i>
-                        </div>
+                        <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 50px;" class="me-2">
                         <h5 class="mb-0 fw-bold">Fruit Cast</h5>
                     </div>
                     <p class="text-light mb-3">
@@ -15,12 +13,6 @@
                         Empowering farmers and agriculturists with data-driven insights.
                     </p>
                     <div class="d-flex gap-3 justify-content-center justify-content-md-start">
-                        <a href="#" class="text-white" title="Facebook">
-                            <i class="bi bi-facebook fs-5"></i>
-                        </a>
-                        <a href="#" class="text-white" title="Twitter">
-                            <i class="bi bi-twitter fs-5"></i>
-                        </a>
                         <a href="mailto:fruitcast.bataan@gmail.com" class="text-white" title="Email">
                             <i class="bi bi-envelope fs-5"></i>
                         </a>
@@ -108,11 +100,11 @@
                 </div> -->
 
                 <!-- Contact Info -->
-                <div class="col-lg-3 col-md-6 col-12">
+                <div class="col-lg-6 col-md-6 col-12">
                     <h6 class="fw-bold mb-3 text-center text-md-start">Contact Information</h6>
-                    <div class="contact-info">
+                    <div class="contact-info row">
                         <!-- Address -->
-                        <div class="mb-3">
+                        <div class="mb-3 col-6">
                             <div class="d-flex align-items-start justify-content-center justify-content-md-start">
                                 <i class="bi bi-geo-alt-fill me-3 mt-1 text-success flex-shrink-0"></i>
                                 <div class="text-center text-md-start">
@@ -125,7 +117,7 @@
                         </div>
                         
                         <!-- Email and Phone in responsive layout -->
-                        <div class="row g-3">
+                        <div class="col-6">
                             <div class="col-md-6 col-12">
                                 <div class="d-flex align-items-start justify-content-center justify-content-md-start">
                                     <i class="bi bi-envelope-fill me-3 mt-1 text-success flex-shrink-0"></i>
@@ -162,11 +154,6 @@
                 <div class="col-md-6">
                     <p class="mb-0 text-light">
                         &copy; {{ current_year|default:"2024" }} Fruit Cast. All rights reserved.
-                    </p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="mb-0 text-light">
-                        Developed with <i class="bi bi-heart-fill text-danger"></i> for Bataan's Agriculture
                     </p>
                 </div>
             </div>
