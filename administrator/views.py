@@ -1252,7 +1252,7 @@ def admin_verifyplantrec(request):
         messages.error(request, "No records selected or status not chosen.")
 
     commodities = CommodityType.objects.all()
-    status_choices = AccountStatus.objects.all()
+    status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
     context = get_admin_context(request)
     context.update({
@@ -1288,7 +1288,7 @@ def admin_verifyharvestrec(request):
         municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
 
     commodities = CommodityType.objects.all()
-    status_choices = AccountStatus.objects.all()
+    status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
     # Query records 
     records = initHarvestRecord.objects.all()
