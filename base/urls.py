@@ -17,6 +17,10 @@ urlpatterns = [
     path('register/step1/', views.register_step1, name='register_step1'),
     path('register/step2/', views.register_step2, name='register_step2'),
     path('register/cancel/', views.cancel_registration, name='cancel_registration'),
+    # Forgot Password URLs
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('forgot-password/verify/', views.forgot_password_verify, name='forgot_password_verify'),
+    path('reset-password/', views.reset_password, name='reset_password'),
     # path('signup/', register_step1, name='registerauth'),
     path('login/', custom_login, name='login'),
     path('accounts/', include('django.contrib.auth.urls')),

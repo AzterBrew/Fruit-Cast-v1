@@ -13,6 +13,8 @@ from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.http import HttpResponseForbidden
 from django.core.mail import send_mail, EmailMessage
+from django.utils.crypto import get_random_string
+from django.conf import settings
 import json, time
 from dateutil.relativedelta import relativedelta
 #from .forms import CustomUserCreationForm  # make sure this is imported
@@ -1615,6 +1617,214 @@ def cancel_registration(request):
 
  
 def custom_login(request):
+    if request.method == 'POST':
+        email_or_contact = request.POST.get('email_or_contact')
+        password = request.POST.get('password')
+        
+        # Authenticate user
+        user = authenticate(request, username=email_or_contact, password=password)
+        
+        if user is not None:
+            login(request, user)
+            try:
+                userinfo = UserInformation.objects.get(auth_user=user)
+                account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
+                
+                # Store session data
+                request.session['userinfo_id'] = userinfo.userinfo_id
+                request.session['account_id'] = account_info.account_id
+                
+                # Check account type and redirect accordingly
+                if account_info.account_type_id.account_type in ['Administrator', 'Agriculturist']:
+                    return redirect('administrator:admin_dashboard')
+                else:
+                    return redirect('base:home')
+                    
+            except (UserInformation.DoesNotExist, AccountsInformation.DoesNotExist):
+                messages.error(request, 'Account information not found.')
+                return redirect('base:login')
+        else:
+            messages.error(request, 'Invalid email or password.')
+    
+    return render(request, 'registration/login.html')
+
+
+def forgot_password(request):
+    """Step 1: User enters email to receive OTP"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            messages.error(request, 'Please enter your email address.')
+            return render(request, 'registration/forgot_password.html')
+        
+        try:
+            # Check if email exists in the system
+            user = AuthUser.objects.get(email=email)
+            userinfo = UserInformation.objects.get(auth_user=user)
+            
+            # Generate OTP
+            otp_code = get_random_string(6, allowed_chars='0123456789')
+            
+            # Store OTP and email in session
+            request.session['reset_email'] = email
+            request.session['reset_otp'] = otp_code
+            request.session['reset_otp_time'] = timezone.now().isoformat()
+            
+            # Send OTP email
+            subject = 'Password Reset - Fruit Cast'
+            html_message = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+                    .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                    .header {{ text-align: center; margin-bottom: 30px; }}
+                    .logo {{ color: #28a745; font-size: 24px; font-weight: bold; }}
+                    .otp-code {{ font-size: 32px; font-weight: bold; color: #28a745; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; letter-spacing: 4px; }}
+                    .warning {{ color: #dc3545; font-size: 14px; margin-top: 20px; }}
+                    .footer {{ margin-top: 30px; text-align: center; color: #6c757d; font-size: 12px; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <div class="logo">🍊 Fruit Cast</div>
+                        <h2>Password Reset Request</h2>
+                    </div>
+                    
+                    <p>Hello {userinfo.firstname},</p>
+                    
+                    <p>We received a request to reset your password for your Fruit Cast account. Use the verification code below to proceed with resetting your password:</p>
+                    
+                    <div class="otp-code">{otp_code}</div>
+                    
+                    <p>This verification code will expire in 10 minutes for security reasons.</p>
+                    
+                    <p class="warning">⚠️ If you didn't request this password reset, please ignore this email. Your account remains secure.</p>
+                    
+                    <div class="footer">
+                        <p>This is an automated message from Fruit Cast.<br>
+                        Bataan Peninsula State University</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            email_message = EmailMessage(
+                subject=subject,
+                body=html_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email]
+            )
+            email_message.content_subtype = 'html'
+            email_message.send()
+            
+            messages.success(request, f'A verification code has been sent to {email}. Please check your email.')
+            return redirect('base:forgot_password_verify')
+            
+        except AuthUser.DoesNotExist:
+            messages.error(request, 'No account found with this email address.')
+        except UserInformation.DoesNotExist:
+            messages.error(request, 'Account information not found.')
+        except Exception as e:
+            print(f"Error sending reset email: {e}")
+            messages.error(request, 'Failed to send verification email. Please try again.')
+    
+    return render(request, 'registration/forgot_password.html')
+
+
+def forgot_password_verify(request):
+    """Step 2: User enters OTP to verify identity"""
+    reset_email = request.session.get('reset_email')
+    
+    if not reset_email:
+        messages.error(request, 'Session expired. Please start the password reset process again.')
+        return redirect('base:forgot_password')
+    
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp_code', '').strip()
+        stored_otp = request.session.get('reset_otp')
+        otp_time_str = request.session.get('reset_otp_time')
+        
+        if not entered_otp:
+            messages.error(request, 'Please enter the verification code.')
+            return render(request, 'registration/forgot_password_verify.html', {'email': reset_email})
+        
+        if not stored_otp or not otp_time_str:
+            messages.error(request, 'Verification code expired. Please request a new one.')
+            return redirect('base:forgot_password')
+        
+        # Check if OTP is expired (10 minutes)
+        otp_time = timezone.datetime.fromisoformat(otp_time_str)
+        if timezone.now() - otp_time > timezone.timedelta(minutes=10):
+            messages.error(request, 'Verification code has expired. Please request a new one.')
+            # Clear session data
+            for key in ['reset_email', 'reset_otp', 'reset_otp_time']:
+                if key in request.session:
+                    del request.session[key]
+            return redirect('base:forgot_password')
+        
+        if entered_otp == stored_otp:
+            # OTP is correct, mark as verified
+            request.session['reset_verified'] = True
+            messages.success(request, 'Verification successful! Please enter your new password.')
+            return redirect('base:reset_password')
+        else:
+            messages.error(request, 'Invalid verification code. Please try again.')
+    
+    return render(request, 'registration/forgot_password_verify.html', {'email': reset_email})
+
+
+def reset_password(request):
+    """Step 3: User sets new password after OTP verification"""
+    reset_email = request.session.get('reset_email')
+    reset_verified = request.session.get('reset_verified')
+    
+    if not reset_email or not reset_verified:
+        messages.error(request, 'Unauthorized access. Please complete the verification process.')
+        return redirect('base:forgot_password')
+    
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+        
+        if not new_password or not confirm_password:
+            messages.error(request, 'Please fill in both password fields.')
+            return render(request, 'registration/reset_password.html', {'email': reset_email})
+        
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long.')
+            return render(request, 'registration/reset_password.html', {'email': reset_email})
+        
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match. Please try again.')
+            return render(request, 'registration/reset_password.html', {'email': reset_email})
+        
+        try:
+            # Update user password
+            user = AuthUser.objects.get(email=reset_email)
+            user.set_password(new_password)
+            user.save()
+            
+            # Clear all reset session data
+            for key in ['reset_email', 'reset_otp', 'reset_otp_time', 'reset_verified']:
+                if key in request.session:
+                    del request.session[key]
+            
+            messages.success(request, 'Password reset successful! You can now log in with your new password.')
+            return redirect('base:login')
+            
+        except AuthUser.DoesNotExist:
+            messages.error(request, 'Account not found.')
+            return redirect('base:forgot_password')
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            messages.error(request, 'Failed to reset password. Please try again.')
+    
+    return render(request, 'registration/reset_password.html', {'email': reset_email})
     
     if request.method == 'POST':
         contact = request.POST['email_or_contact']
