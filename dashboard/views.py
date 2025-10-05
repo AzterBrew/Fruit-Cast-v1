@@ -38,6 +38,18 @@ from base.models import *
 from dashboard.models import *
 # from dashboard.forms import CommodityTypeForm
 
+# Format number with commas and 2 decimal places
+def format_number(value):
+    """Format a number with commas and 2 decimal places"""
+    if value is None:
+        return "0.00"
+    try:
+        # Convert to float first to handle Decimal objects
+        num_value = float(value)
+        return f"{num_value:,.2f}"
+    except (ValueError, TypeError):
+        return "0.00"
+
 def notifications(request):
     account_id = request.session.get('account_id')
     crops = []
@@ -857,7 +869,7 @@ def monitor(request):
     for data in harvest_by_municipality[:5]:
         top_municipalities.append({
             'municipality': data['municipality__municipality'],
-            'total_weight': float(data['total_weight'])
+            'total_weight': format_number(data['total_weight'])
         })
 
     municipality_labels = [data['municipality__municipality'] for data in harvest_by_municipality]

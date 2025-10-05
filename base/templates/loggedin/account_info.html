@@ -61,8 +61,11 @@
     </div>
     <hr>
     <div class="mt-3 text-end">
-        <a href="{% url 'base:account_edit_panel' %}" class="btn btn-success">
+        <a href="{% url 'base:account_edit_panel' %}" class="btn btn-success me-2">
             <i class="bi bi-pencil-square me-2"></i>Edit your Account Information
+        </a>
+        <a href="{% url 'base:change_password' %}" class="btn btn-warning">
+            <i class="bi bi-key me-2"></i>Change Password
         </a>
     </div>
 </div>

@@ -28,6 +28,18 @@ from .forms import RegistrationForm, EditUserInformation, HarvestRecordCreate, P
 from .utils import get_alternative_recommendations
 from django.core.files.storage import default_storage
 
+# Format number with commas and 2 decimal places
+def format_number(value):
+    """Format a number with commas and 2 decimal places"""
+    if value is None:
+        return "0.00"
+    try:
+        # Convert to float first to handle Decimal objects
+        num_value = float(value)
+        return f"{num_value:,.2f}"
+    except (ValueError, TypeError):
+        return "0.00"
+
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
 
 def schedule_monthly_fruit_recommendations(account, municipality_id):
@@ -616,7 +628,8 @@ def transaction_recordlist(request, transaction_id):
         'harvest_record': harvest_records,  # Changed to support multiple records
         'view_to_show': 'recordlist',  # So transaction.html knows what to include
         'user_firstname': transaction.account_id.userinfo_id.firstname,
-        'plant_notification': plant_notification
+        'plant_notification': plant_notification,
+        'format_number': format_number  # Add the formatting function to context
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 
@@ -1650,183 +1663,144 @@ def custom_login(request):
 
 
 def forgot_password(request):
-    """Step 1: User enters email to receive OTP"""
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip()
+    if request.method == "POST":
+        email = request.POST.get("email")
         
-        if not email:
-            messages.error(request, 'Please enter your email address.')
+        # Check if email exists
+        try:
+            user = AuthUser.objects.get(email=email)
+        except AuthUser.DoesNotExist:
+            messages.error(request, "No account found with this email address.")
             return render(request, 'registration/forgot_password.html')
         
-        try:
-            # Check if email exists in the system
-            user = AuthUser.objects.get(email=email)
-            userinfo = UserInformation.objects.get(auth_user=user)
-            
-            # Generate OTP
-            otp_code = get_random_string(6, allowed_chars='0123456789')
-            
-            # Store OTP and email in session
-            request.session['reset_email'] = email
-            request.session['reset_otp'] = otp_code
-            request.session['reset_otp_time'] = timezone.now().isoformat()
-            
-            # Send OTP email
-            subject = 'Password Reset - Fruit Cast'
-            html_message = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
-                    .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                    .header {{ text-align: center; margin-bottom: 30px; }}
-                    .logo {{ color: #28a745; font-size: 24px; font-weight: bold; }}
-                    .otp-code {{ font-size: 32px; font-weight: bold; color: #28a745; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; letter-spacing: 4px; }}
-                    .warning {{ color: #dc3545; font-size: 14px; margin-top: 20px; }}
-                    .footer {{ margin-top: 30px; text-align: center; color: #6c757d; font-size: 12px; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <div class="logo">🍊 Fruit Cast</div>
-                        <h2>Password Reset Request</h2>
-                    </div>
-                    
-                    <p>Hello {userinfo.firstname},</p>
-                    
-                    <p>We received a request to reset your password for your Fruit Cast account. Use the verification code below to proceed with resetting your password:</p>
-                    
-                    <div class="otp-code">{otp_code}</div>
-
-                    <p>This verification code will expire in 3 minutes for security reasons.</p>
-
-                    <p class="warning">⚠️ If you didn't request this password reset, please ignore this email. Your account remains secure.</p>
-                    
-                    <div class="footer">
-                        <p>This is an automated message from Fruit Cast.<br>
-                        Bataan Peninsula State University</p>
-                    </div>
+        # Generate OTP code
+        verification_code = str(random.randint(100000, 999999))
+        request.session["forgot_pwd_email"] = email
+        request.session["forgot_pwd_code"] = verification_code
+        request.session['forgot_pwd_code_time'] = int(time.time())
+        
+        # Send email with updated HTML format to match register_email
+        subject = "Fruit Cast Password Reset Verification"
+        
+        html_message = """
+        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="color: #416e3f; padding: 20px; text-align: center; border-radius: 6px;">
+                <a href="https://fruitcast-spro7.ondigitalocean.app/" style="text-decoration: none; color: #416e3f;">
+                    <img src="https://raw.githubusercontent.com/AzterBrew/fruitcast-logo/refs/heads/main/3.png" style="max-height: 100px;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700">FRUIT CAST PASSWORD RESET</h1>
+                </a>
+            </div>
+            <div style="padding: 30px; background: white;">
+                <div style="background: #fffadc;border-left: 4px solid #416e3f;padding: 20px;margin-bottom: 25px;">
+                    <h2 style="margin: 0 0 10px;color: #104e0d;font-size: 20px;">🔓 Password Reset Request</h2>
+                    <p style="margin: 0; color: #104e0d;">Your account password reset requires verification</p>
                 </div>
-            </body>
-            </html>
-            """
-            
-            email_message = EmailMessage(
-                subject=subject,
-                body=html_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[email]
-            )
-            email_message.content_subtype = 'html'
-            email_message.send()
-            
-            messages.success(request, f'A verification code has been sent to {email}. Please check your email.')
-            return redirect('base:forgot_password_verify')
-            
-        except AuthUser.DoesNotExist:
-            messages.error(request, 'No account found with this email address.')
-        except UserInformation.DoesNotExist:
-            messages.error(request, 'Account information not found.')
-        except Exception as e:
-            print(f"Error sending reset email: {e}")
-            messages.error(request, 'Failed to send verification email. Please try again.')
+                <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hello Farmer,</p>
+                <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                    We've received a request to reset your account password. To ensure security and authorize this reset, please verify your identity using the code below.
+                </p>
+                <div style="background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 25px; text-align: center; margin: 25px 0;">
+                    <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">Verification Code</div>
+                    <div style="font-family: Courier, monospace; font-size: 24px; font-weight: bold; color: #2c3e50;">
+                        {verification_code}
+                    </div>
+                    <div style="color: #999; font-size: 11px; margin-top: 10px;">Expires: 10 minutes from now</div>
+                </div>
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 0; font-size: 14px; color: #2d5a27;">
+                        <strong>🎯 Next Steps:</strong> Enter this code on the verification page to continue your password reset.
+                    </p>
+                </div>
+                <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+                    <p style="font-size: 12px; color: #888; text-align: center;">
+                        If you didn't request a password reset, please disregard this notification and ensure your account is secure.
+                    </p>
+                </div>
+            </div>
+            <div style="background: #f8f8f8; padding: 15px; text-align: center;">
+                <p style="margin: 0; color: #666; font-size: 13px;">
+                    🌱 &copy; 2025 Fruit Cast. All rights reserved.
+                </p>
+            </div>
+        </div>
+        """.format(verification_code=verification_code)
+        
+        # Send email
+        email_msg = EmailMessage(
+            subject=subject,
+            body=html_message,
+            from_email="fruitcast.bataan@gmail.com",
+            to=[email],
+        )
+        email_msg.content_subtype = "html"
+        email_msg.send()
+        
+        return redirect("base:forgot_password_verify")
     
     return render(request, 'registration/forgot_password.html')
 
 
 def forgot_password_verify(request):
-    """Step 2: User enters OTP to verify identity"""
-    reset_email = request.session.get('reset_email')
+    if not request.session.get("forgot_pwd_email") or not request.session.get("forgot_pwd_code"):
+        return redirect("base:forgot_password")
     
-    if not reset_email:
-        messages.error(request, 'Session expired. Please start the password reset process again.')
-        return redirect('base:forgot_password')
-    
-    if request.method == 'POST':
-        entered_otp = request.POST.get('otp_code', '').strip()
-        stored_otp = request.session.get('reset_otp')
-        otp_time_str = request.session.get('reset_otp_time')
+    if request.method == "POST":
+        input_code = request.POST.get("otp_code")
+        session_code = request.session.get("forgot_pwd_code")
         
-        if not entered_otp:
-            messages.error(request, 'Please enter the verification code.')
-            return render(request, 'registration/forgot_password_verify.html', {'email': reset_email})
-        
-        if not stored_otp or not otp_time_str:
-            messages.error(request, 'Verification code expired. Please request a new one.')
-            return redirect('base:forgot_password')
-        
-        # Check if OTP is expired (10 minutes)
-        otp_time = timezone.datetime.fromisoformat(otp_time_str)
-        if timezone.now() - otp_time > timezone.timedelta(minutes=3):
-            messages.error(request, 'Verification code has expired. Please request a new one.')
-            # Clear session data
-            for key in ['reset_email', 'reset_otp', 'reset_otp_time']:
+        # Check if code has expired
+        code_time = request.session.get('forgot_pwd_code_time')
+        if not code_time or (int(time.time()) - code_time > 600):
+            messages.error(request, "Verification code has expired. Please request a new one.")
+            for key in ['forgot_pwd_email', 'forgot_pwd_code', 'forgot_pwd_code_time']:
                 if key in request.session:
                     del request.session[key]
-            return redirect('base:forgot_password')
+            return redirect("base:forgot_password")
         
-        if entered_otp == stored_otp:
-            # OTP is correct, mark as verified
-            request.session['reset_verified'] = True
-            messages.success(request, 'Verification successful! Please enter your new password.')
-            return redirect('base:reset_password')
+        if input_code == session_code:
+            request.session["forgot_pwd_verified"] = True
+            return redirect("base:reset_password")
         else:
-            messages.error(request, 'Invalid verification code. Please try again.')
+            messages.error(request, "Invalid verification code. Please try again.")
     
-    return render(request, 'registration/forgot_password_verify.html', {'email': reset_email})
+    email = request.session.get("forgot_pwd_email")
+    return render(request, 'registration/forgot_password_verify.html', {'email': email})
 
 
 def reset_password(request):
-    """Step 3: User sets new password after OTP verification"""
-    reset_email = request.session.get('reset_email')
-    reset_verified = request.session.get('reset_verified')
+    if not request.session.get("forgot_pwd_verified"):
+        return redirect("base:forgot_password")
     
-    if not reset_email or not reset_verified:
-        messages.error(request, 'Unauthorized access. Please complete the verification process.')
-        return redirect('base:forgot_password')
-    
-    if request.method == 'POST':
-        new_password = request.POST.get('new_password', '').strip()
-        confirm_password = request.POST.get('confirm_password', '').strip()
-        
-        if not new_password or not confirm_password:
-            messages.error(request, 'Please fill in both password fields.')
-            return render(request, 'registration/reset_password.html', {'email': reset_email})
-        
-        if len(new_password) < 8:
-            messages.error(request, 'Password must be at least 8 characters long.')
-            return render(request, 'registration/reset_password.html', {'email': reset_email})
+    if request.method == "POST":
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password")
         
         if new_password != confirm_password:
-            messages.error(request, 'Passwords do not match. Please try again.')
-            return render(request, 'registration/reset_password.html', {'email': reset_email})
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'registration/reset_password.html')
         
-        try:
-            # Update user password
-            user = AuthUser.objects.get(email=reset_email)
-            user.set_password(new_password)
-            user.save()
-            
-            # Clear all reset session data
-            for key in ['reset_email', 'reset_otp', 'reset_otp_time', 'reset_verified']:
-                if key in request.session:
-                    del request.session[key]
-            
-            messages.success(request, 'Password reset successful! You can now log in with your new password.')
-            return redirect('base:login')
-            
-        except AuthUser.DoesNotExist:
-            messages.error(request, 'Account not found.')
-            return redirect('base:forgot_password')
-        except Exception as e:
-            print(f"Error resetting password: {e}")
-            messages.error(request, 'Failed to reset password. Please try again.')
+        if len(new_password) < 8:
+            messages.error(request, "Password must be at least 8 characters long.")
+            return render(request, 'registration/reset_password.html')
+        
+        # Get the user and update password
+        email = request.session.get("forgot_pwd_email")
+        user = AuthUser.objects.get(email=email)
+        user.set_password(new_password)
+        user.save()
+        
+        # Clear session
+        for key in ['forgot_pwd_email', 'forgot_pwd_code', 'forgot_pwd_code_time', 'forgot_pwd_verified']:
+            if key in request.session:
+                del request.session[key]
+        
+        messages.success(request, "Your password has been reset successfully! You can now login with your new password.")
+        return redirect("base:login")
     
-    return render(request, 'registration/reset_password.html', {'email': reset_email})
-    
-    if request.method == 'POST':
+    return render(request, 'registration/reset_password.html')
+
+
+def user_login(request):
         contact = request.POST['email_or_contact']
         password = request.POST['password']
 
@@ -1919,6 +1893,155 @@ def reset_password(request):
         return render(request, 'registration/login.html')
 
     return render(request, 'registration/login.html')
+
+
+@login_required
+def change_password(request):
+    """First step: Enter current password"""
+    if request.method == "POST":
+        current_password = request.POST.get("current_password")
+        confirm_password = request.POST.get("confirm_password")
+        
+        if current_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'loggedin/change_password.html')
+        
+        # Check if current password is correct
+        if not request.user.check_password(current_password):
+            messages.error(request, "Current password is incorrect.")
+            return render(request, 'loggedin/change_password.html')
+        
+        # Store email in session and generate OTP
+        request.session["change_pwd_email"] = request.user.email
+        verification_code = str(random.randint(100000, 999999))
+        request.session["change_pwd_code"] = verification_code
+        request.session['change_pwd_code_time'] = int(time.time())  # Store timestamp
+        
+        # Send email with similar format to register_email
+        subject = "Fruit Cast Password Change Verification"
+        
+        # HTML message
+        html_message = """
+        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="color: #416e3f; padding: 20px; text-align: center; border-radius: 6px;">
+                <a href="https://fruitcast-spro7.ondigitalocean.app/" style="text-decoration: none; color: #416e3f;">
+                    <img src="https://raw.githubusercontent.com/AzterBrew/fruitcast-logo/refs/heads/main/3.png" style="max-height: 100px;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700">FRUIT CAST PASSWORD CHANGE</h1>
+                </a>
+            </div>
+            <div style="padding: 30px; background: white;">
+                <div style="background: #fffadc;border-left: 4px solid #416e3f;padding: 20px;margin-bottom: 25px;">
+                    <h2 style="margin: 0 0 10px;color: #104e0d;font-size: 20px;">🔐 Password Change Request</h2>
+                    <p style="margin: 0; color: #104e0d;">Your account password change requires verification</p>
+                </div>
+                <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hello Farmer,</p>
+                <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                    We've received a request to change your account password. To ensure security and authorize this change, please verify your identity using the code below.
+                </p>
+                <div style="background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 25px; text-align: center; margin: 25px 0;">
+                    <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">Verification Code</div>
+                    <div style="font-family: Courier, monospace; font-size: 24px; font-weight: bold; color: #2c3e50;">
+                        {verification_code}
+                    </div>
+                    <div style="color: #999; font-size: 11px; margin-top: 10px;">Expires: 10 minutes from now</div>
+                </div>
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 0; font-size: 14px; color: #2d5a27;">
+                        <strong>🎯 Next Steps:</strong> Enter this code on the verification page to continue your password change.
+                    </p>
+                </div>
+                <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+                    <p style="font-size: 12px; color: #888; text-align: center;">
+                        If you didn't request a password change, please disregard this notification and ensure your account is secure.
+                    </p>
+                </div>
+            </div>
+            <div style="background: #f8f8f8; padding: 15px; text-align: center;">
+                <p style="margin: 0; color: #666; font-size: 13px;">
+                    🌱 &copy; 2025 Fruit Cast. All rights reserved.
+                </p>
+            </div>
+        </div>
+        """.format(verification_code=verification_code)
+        
+        # Use EmailMessage for HTML email
+        email_msg = EmailMessage(
+            subject=subject,
+            body=html_message,
+            from_email="fruitcast.bataan@gmail.com",
+            to=[request.user.email],
+        )
+        email_msg.content_subtype = "html"
+        email_msg.send()
+        
+        return redirect("base:change_password_verify")
+    
+    return render(request, 'loggedin/change_password.html')
+
+
+@login_required 
+def change_password_verify(request):
+    """Second step: Verify OTP code"""
+    if not request.session.get("change_pwd_email") or not request.session.get("change_pwd_code"):
+        # User hasn't started password change properly
+        return redirect("base:change_password")
+    
+    if request.method == "POST":
+        input_code = request.POST.get("otp_code")
+        session_code = request.session.get("change_pwd_code")
+        
+        # Check if code has expired (10 minutes)
+        code_time = request.session.get('change_pwd_code_time')
+        if not code_time or (int(time.time()) - code_time > 600):  # 600 seconds = 10 minutes
+            messages.error(request, "Verification code has expired. Please request a new one.")
+            # Clear session
+            for key in ['change_pwd_email', 'change_pwd_code', 'change_pwd_code_time']:
+                if key in request.session:
+                    del request.session[key]
+            return redirect("base:change_password")
+        
+        if input_code == session_code:
+            request.session["change_pwd_verified"] = True
+            return redirect("base:change_password_new")
+        else:
+            messages.error(request, "Invalid verification code. Please check your email and try again.")
+    
+    email = request.session.get("change_pwd_email")
+    return render(request, 'loggedin/change_password_verify.html', {'email': email})
+
+
+@login_required
+def change_password_new(request):
+    """Third step: Enter new password"""
+    if not request.session.get("change_pwd_verified"):
+        # User hasn't completed verification
+        return redirect("base:change_password")
+    
+    if request.method == "POST":
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password")
+        
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'loggedin/change_password_new.html')
+        
+        if len(new_password) < 8:
+            messages.error(request, "Password must be at least 8 characters long.")
+            return render(request, 'loggedin/change_password_new.html')
+        
+        # Update password
+        request.user.set_password(new_password)
+        request.user.save()
+        
+        # Clear session
+        for key in ['change_pwd_email', 'change_pwd_code', 'change_pwd_code_time', 'change_pwd_verified']:
+            if key in request.session:
+                del request.session[key]
+        
+        messages.success(request, "Your password has been changed successfully!")
+        return redirect("base:account_info_panel")
+    
+    return render(request, 'loggedin/change_password_new.html')
 
 
 

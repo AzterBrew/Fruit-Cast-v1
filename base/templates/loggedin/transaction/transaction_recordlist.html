@@ -1,3 +1,4 @@
+{% load number_filters %}
 {% block content %}
 <div class="container p-4">
 
@@ -59,7 +60,7 @@
                     <div class="col-md-6">
                         <div class="border-start border-success border-3 ps-3">
                             <label class="small text-muted fw-semibold">Expected Harvest Range</label>
-                            <p class="fw-medium mb-0">{{ plant_record.min_expected_harvest }} - {{ plant_record.max_expected_harvest }} kg</p>
+                            <p class="fw-medium mb-0">{{ plant_record.min_expected_harvest|format_weight }} - {{ plant_record.max_expected_harvest|format_weight }} kg</p>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -110,7 +111,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <span class="fw-bold text-primary">{{ record.total_weight }}</span> {{ record.unit.unit_abrv }}
+                                        <span class="fw-bold text-primary">{{ record.total_weight|format_weight }}</span> {{ record.unit.unit_abrv }}
                                     </td>
                                     <td>
                                         <span class="fw-medium">{{ record.weight_per_unit }}</span> {{ record.unit.unit_abrv }}
@@ -155,7 +156,7 @@
                         <div class="col-md-6">
                             <div class="border-start border-warning border-3 ps-3">
                                 <label class="small text-muted fw-semibold">Total Weight</label>
-                                <p class="fw-bold text-primary mb-0">{{ record.total_weight }} {{ record.unit.unit_abrv }}</p>
+                                <p class="fw-bold text-primary mb-0">{{ record.total_weight|format_weight }} {{ record.unit.unit_abrv }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">

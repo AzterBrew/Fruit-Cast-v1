@@ -1,3 +1,4 @@
+{% load number_filters %}
 {% extends "admin_login/layout.html" %}
 
 {% block title %}
@@ -146,7 +147,7 @@ Fruit Cast | Verified Harvest Records
                                     </td>
                                     <td>
                                         <span class="badge bg-success-subtle text-success">
-                                            <i class="bi bi-weight me-1"></i>{{ rec.total_weight_kg }} kg
+                                            <i class="bi bi-weight me-1"></i>{{ rec.total_weight_kg|format_weight }} kg
                                         </span>
                                     </td>
                                     <td>
