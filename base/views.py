@@ -1801,6 +1801,7 @@ def reset_password(request):
 
 
 def user_login(request):
+    if request.method == 'POST':
         contact = request.POST['email_or_contact']
         password = request.POST['password']
 
@@ -1857,7 +1858,6 @@ def user_login(request):
                             municipality_incharge=municipality_assigned,
                         )
                 
-                
                         
                 login(request, user)
                 
@@ -1865,10 +1865,9 @@ def user_login(request):
                     user_info = UserInformation.objects.get(auth_user=request.user)
                     account_info = AccountsInformation.objects.get(userinfo_id__auth_user=user)
                     
-                    
                     UserLoginLog.objects.create(
                         account_id=account_info, 
-                        )
+                    )
                     
                     request.session['account_id'] = account_info.account_id
                     request.session['userinfo_id'] = user_info.userinfo_id

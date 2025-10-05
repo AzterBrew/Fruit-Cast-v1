@@ -1,6 +1,7 @@
 superuser : 
 emmsumbad@bpsu.edu.ph 
 moasumbad
+new pass: 
 
 farmer : (3)
 ark@gmail.com

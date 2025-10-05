@@ -1049,6 +1049,56 @@ def admin_forecastbatchdetails(request, batch_id):
 @login_required
 @admin_or_agriculturist_required
 def admin_commodity_list(request):
+    if request.method == 'POST':
+        selected_commodities = request.POST.getlist('selected_commodities')
+        bulk_action = request.POST.get('bulk_action')
+        
+        if selected_commodities and bulk_action:
+            try:
+                if bulk_action == 'delete':
+                    # Delete selected commodities
+                    deleted_count = 0
+                    for commodity_id in selected_commodities:
+                        commodity = CommodityType.objects.get(pk=commodity_id)
+                        # Don't allow deletion of 'Not Listed' or if there are related records
+                        if commodity.pk != 1:  # Don't delete 'Not Listed'
+                            commodity.delete()
+                            deleted_count += 1
+                    
+                    if deleted_count > 0:
+                        messages.success(request, f'Successfully deleted {deleted_count} commodit{"y" if deleted_count == 1 else "ies"}.')
+                    else:
+                        messages.warning(request, 'No commodities were deleted.')
+                        
+                elif bulk_action == 'export':
+                    # Export selected commodities as CSV
+                    response = HttpResponse(content_type='text/csv')
+                    response['Content-Disposition'] = 'attachment; filename="selected_commodities.csv"'
+                    
+                    writer = csv.writer(response)
+                    writer.writerow(['Name', 'Average Weight (kg)', 'Years to Mature', 'Years to Bear Fruit', 'Seasonal Months'])
+                    
+                    for commodity_id in selected_commodities:
+                        commodity = CommodityType.objects.get(pk=commodity_id)
+                        seasonal_months = ";".join([month.name for month in commodity.seasonal_months.all()])
+                        writer.writerow([
+                            commodity.name,
+                            commodity.average_weight_per_unit_kg,
+                            commodity.years_to_mature or '',
+                            commodity.years_to_bearfruit or '',
+                            seasonal_months
+                        ])
+                    
+                    return response
+                    
+            except Exception as e:
+                messages.error(request, f'Error performing bulk action: {str(e)}')
+        else:
+            if not selected_commodities:
+                messages.warning(request, 'Please select at least one commodity.')
+            if not bulk_action:
+                messages.warning(request, 'Please select an action to perform.')
+    
     commodities = CommodityType.objects.exclude(pk=1)  # Exclude 'Not Listed' commodity
     context = get_admin_context(request)
     context.update({'commodities': commodities})
