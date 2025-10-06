@@ -1,11 +1,10 @@
 from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from base.models import AuthUser, UserInformation, AdminInformation, AccountsInformation, AccountStatus, AccountType, MunicipalityName, BarangayName, CommodityType, Month, initHarvestRecord, initPlantRecord, FarmLand, RecordTransaction, UserLoginLog
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseForbidden, HttpResponse
-from django.shortcuts import render, redirect, get_object_or_404
 from base.forms import EditUserInformation
 from django.utils import timezone
 from django.utils.timezone import now
@@ -23,19 +22,7 @@ import logging
 from django.db.models import Q, Count
 from datetime import datetime, date
 from calendar import monthrange
-from shapely.geometry import shape
-import geojson
-import csv
-from django.core.paginator import Paginator
-from collections import OrderedDict
-from pathlib import Path
-from django.core.management import call_command
-from .tasks import retrain_and_generate_forecasts_task
-from django.core.files.storage import default_storage
-from django.contrib.contenttypes.models import ContentType
-from base.models import AdminUserManagement
-from shapely.geometry import shape
-import csv, io, joblib, json, os, logging
+import csv, io, joblib, json, os
 from django.core.paginator import Paginator
 from collections import OrderedDict
 from pathlib import Path
@@ -50,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render, redirect
 from dateutil.relativedelta import relativedelta 
 
 def get_admin_context(request):
