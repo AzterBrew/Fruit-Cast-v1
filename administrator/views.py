@@ -303,7 +303,7 @@ def verify_accounts(request):
     status_filter = request.GET.get('status')
     municipality_filter = request.GET.get('municipality')
     sort_by = request.GET.get('sort', 'account_register_date')  # Default sort by date
-    order = request.GET.get('order', 'asc')  # 'asc' or 'desc'
+    order = request.GET.get('order', 'desc')  # Default to desc (most recent first)
 
     accounts_query = AccountsInformation.objects.filter(account_type_id=1).select_related('userinfo_id', 'account_type_id', 'acc_status_id')
 
@@ -337,12 +337,18 @@ def verify_accounts(request):
 
     all_accounts = accounts_query.order_by(sort_field)
     
+    # Pagination
+    paginator = Paginator(all_accounts, 10)  # Show 10 accounts per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     if request.method == 'POST':
         selected_ids = [sid for sid in request.POST.getlist('selected_records') if sid]
         new_status_id = request.POST.get('new_status')
         admin_info = AdminInformation.objects.filter(userinfo_id=request.user.userinformation).first()
         if selected_ids and new_status_id and admin_info:
-            for acc in AccountsInformation.objects.filter(pk__in=selected_ids):
+            # Work with all_accounts queryset for batch operations, not just current page
+            for acc in all_accounts.filter(pk__in=selected_ids):
                 acc.acc_status_id_id = new_status_id
                 acc.account_verified_by = admin_info
                 if int(new_status_id) == 2:  # 2 = Verified
@@ -362,7 +368,9 @@ def verify_accounts(request):
     
     context = get_admin_context(request)
     context.update({
-        'accounts': all_accounts,
+        'accounts': page_obj.object_list,  # Paginated accounts for display
+        'page_obj': page_obj,
+        'paginator': paginator,
         'status_choices': status_choices,
         'municipalities': municipalities,
         'current_status': status_filter,
@@ -450,11 +458,17 @@ def show_allaccounts(request):
 
     all_accounts = accounts_query.order_by(sort_field)
     
+    # Pagination
+    paginator = Paginator(all_accounts, 10)  # Show 10 accounts per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     if request.method == 'POST':
         selected_ids = [sid for sid in request.POST.getlist('selected_records') if sid]
         new_status_id = request.POST.get('new_status')
         if selected_ids and new_status_id and admin_info:
-            for acc in AccountsInformation.objects.filter(pk__in=selected_ids):
+            # Work with all_accounts queryset for batch operations, not just current page
+            for acc in all_accounts.filter(pk__in=selected_ids):
                 acc.acc_status_id_id = new_status_id
                 acc.account_verified_by = admin_info
                 if int(new_status_id) == 2:  # 2 = Verified
@@ -477,7 +491,9 @@ def show_allaccounts(request):
     
     context = get_admin_context(request)
     context.update({
-        'allAccounts': all_accounts,
+        'allAccounts': page_obj.object_list,  # Paginated accounts for display
+        'page_obj': page_obj,
+        'paginator': paginator,
         'account_types': AccountType.objects.exclude(account_type='Farmer'),
         'status_choices': status_choices,
         'municipalities': municipalities,
@@ -1408,13 +1424,13 @@ def admin_verifyplantrec(request):
     # Municipality filter logic - always use initPlantRecord for all users
     if is_superuser or is_pk14:
         municipalities = MunicipalityName.objects.all()
-        records = initPlantRecord.objects.select_related('commodity_id', 'record_status').order_by('plant_id')
+        records = initPlantRecord.objects.select_related('commodity_id', 'record_status').order_by('-plant_id')
     else:
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
         records = initPlantRecord.objects.select_related('commodity_id', 'record_status').filter(
             Q(transaction__farm_land__municipality=municipality_assigned) |
             Q(transaction__manual_municipality=municipality_assigned)
-        ).order_by('plant_id')
+        ).order_by('-plant_id')
 
     # Apply filters
     if filter_municipality:
@@ -1434,12 +1450,21 @@ def admin_verifyplantrec(request):
     if filter_status:
         records = records.filter(record_status__pk=filter_status)
 
+    # Pagination
+    paginator = Paginator(records, 10)  # Show 10 records per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     if request.method == "POST":
         selected_ids = request.POST.getlist('selected_records')
         new_status_pk = int(request.POST.get('new_status'))
         verified_status_pk = 2  # pk for "Verified"
         new_status = AccountStatus.objects.get(pk=new_status_pk)
-        for rec in records.filter(pk__in=selected_ids):
+        
+        # Get all matching records (not just the current page) for batch operations
+        all_records = records  # Use the already filtered queryset
+        
+        for rec in all_records.filter(pk__in=selected_ids):
             # Store old status for logging
             old_status = rec.record_status.acc_status if rec.record_status else "None"
             
@@ -1499,7 +1524,7 @@ def admin_verifyplantrec(request):
 
     context = get_admin_context(request)
     context.update({
-        'records': records,
+        'records': page_obj,
         'municipalities': municipalities,
         'commodities': commodities,
         'status_choices': status_choices,
@@ -1508,6 +1533,8 @@ def admin_verifyplantrec(request):
         'selected_status': filter_status,
         'is_agriculturist': not (is_superuser or is_pk14),
         'assigned_municipality': municipality_assigned,
+        'page_obj': page_obj,
+        'is_paginated': paginator.num_pages > 1,
     })
     return render(request, 'admin_panel/admin_verifyplantrec.html', context)
 
@@ -1535,8 +1562,8 @@ def admin_verifyharvestrec(request):
     commodities = CommodityType.objects.all()
     status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
-    # Query records with sorting by ID (creation order)
-    records = initHarvestRecord.objects.select_related('unit', 'commodity_id', 'record_status').order_by('harvest_id')
+    # Query records with sorting by ID (most recent first) and pagination
+    records = initHarvestRecord.objects.select_related('unit', 'commodity_id', 'record_status').order_by('-harvest_id')
     if selected_municipality:
         records = records.filter(
             Q(transaction__farm_land__municipality__pk=selected_municipality) |
@@ -1552,8 +1579,13 @@ def admin_verifyharvestrec(request):
     if selected_status:
         records = records.filter(record_status__pk=selected_status)
 
-    # Add converted weight in kg for each record
-    for record in records:
+    # Pagination
+    paginator = Paginator(records, 10)  # Show 10 records per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Add converted weight in kg for each record in the current page
+    for record in page_obj:
         record.total_weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
         record.weight_per_unit_kg = convert_to_kg(record.weight_per_unit, record.unit.unit_abrv)
 
@@ -1563,7 +1595,25 @@ def admin_verifyharvestrec(request):
         new_status_pk = int(request.POST.get('new_status'))
         verified_status_pk = 2  # pk for "Verified"
         new_status = AccountStatus.objects.get(pk=new_status_pk)
-        for rec in records.filter(pk__in=selected_ids):
+        
+        # Get all matching records (not just the current page) for batch operations
+        all_records = initHarvestRecord.objects.select_related('unit', 'commodity_id', 'record_status')
+        if selected_municipality:
+            all_records = all_records.filter(
+                Q(transaction__farm_land__municipality__pk=selected_municipality) |
+                Q(transaction__manual_municipality__pk=selected_municipality)
+            )
+        elif not (is_superuser or is_pk14):
+            all_records = all_records.filter(
+                Q(transaction__farm_land__municipality=admin_info.municipality_incharge) |
+                Q(transaction__manual_municipality=admin_info.municipality_incharge)
+            )
+        if selected_commodity:
+            all_records = all_records.filter(commodity_id__pk=selected_commodity)
+        if selected_status:
+            all_records = all_records.filter(record_status__pk=selected_status)
+        
+        for rec in all_records.filter(pk__in=selected_ids):
             # Store old status for logging
             old_status = rec.record_status.acc_status if rec.record_status else "None"
             
@@ -1643,12 +1693,14 @@ def admin_verifyharvestrec(request):
         'municipalities': municipalities,
         'commodities': commodities,
         'status_choices': status_choices,
-        'records': records,
+        'records': page_obj,
         'selected_municipality': selected_municipality,
         'selected_commodity': selected_commodity,
         'selected_status': selected_status,
         'is_agriculturist': not (is_superuser or is_pk14),
         'assigned_municipality': admin_info.municipality_incharge,
+        'page_obj': page_obj,
+        'is_paginated': paginator.num_pages > 1,
     })
     return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
 
@@ -1794,21 +1846,39 @@ def admin_harvestverified(request):
         
         if action == 'delete' and selected_records:
             try:                
+                # Get all matching records for deletion (not just current page)
+                all_records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
+                
+                # Apply same filters as display logic
+                if municipality_filter:
+                    all_records = all_records.filter(municipality_id=municipality_filter)
+                elif not (is_superuser or is_pk14):
+                    all_records = all_records.filter(municipality=admin_info.municipality_incharge)
+                if barangay_filter:
+                    all_records = all_records.filter(barangay_id=barangay_filter)
+                if commodity_filter:
+                    all_records = all_records.filter(commodity_id=commodity_filter)
+                if date_from:
+                    all_records = all_records.filter(harvest_date__gte=date_from)
+                if date_to:
+                    all_records = all_records.filter(harvest_date__lte=date_to)
+                
                 # Delete selected records
                 deleted_count = 0
                 for record_id in selected_records:
-                    record = VerifiedHarvestRecord.objects.get(pk=record_id)
-                    
-                    # Log the deletion before deleting the record
-                    AdminUserManagement.objects.create(
-                        admin_id=admin_info,
-                        action=f"Deleted Verified Harvest Record ID {record.id} - {record.commodity_id.name} ({record.total_weight_kg}kg) from {record.harvest_date}",
-                        content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
-                        object_id=record.id
-                    )
-                    
-                    record.delete()
-                    deleted_count += 1
+                    record = all_records.filter(pk=record_id).first()
+                    if record:
+                    if record:
+                        # Log the deletion before deleting the record
+                        AdminUserManagement.objects.create(
+                            admin_id=admin_info,
+                            action=f"Deleted Verified Harvest Record ID {record.id} - {record.commodity_id.name} ({record.total_weight_kg}kg) from {record.harvest_date}",
+                            content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                            object_id=record.id
+                        )
+                        
+                        record.delete()
+                        deleted_count += 1
                 
                 if deleted_count > 0:
                     messages.success(request, f'Successfully deleted {deleted_count} harvest record{"s" if deleted_count > 1 else ""}.')
@@ -1848,7 +1918,7 @@ def admin_harvestverified(request):
     
     commodities = CommodityType.objects.all()
     
-    records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
+    records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id').order_by('-date_verified')
     
     if municipality_filter:
         records = records.filter(municipality_id=municipality_filter)
@@ -1864,9 +1934,14 @@ def admin_harvestverified(request):
     if date_to:
         records = records.filter(harvest_date__lte=date_to)
     
+    # Pagination
+    paginator = Paginator(records, 10)  # Show 10 records per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = get_admin_context(request)
     context.update({
-        'records': records,
+        'records': page_obj,
         'municipalities': municipalities,
         'barangays': barangays,
         'commodities': commodities,
@@ -1875,6 +1950,8 @@ def admin_harvestverified(request):
         'selected_commodity': commodity_filter,
         'date_from': date_from,
         'date_to': date_to,
+        'page_obj': page_obj,
+        'is_paginated': paginator.num_pages > 1,
     })
     return render(request, 'admin_panel/admin_harvestverified.html', context)
 

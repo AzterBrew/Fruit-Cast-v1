@@ -1664,6 +1664,9 @@ def custom_login(request):
                 userinfo = UserInformation.objects.get(auth_user=user)
                 account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
                 
+                # Log user login
+                UserLoginLog.objects.create(account_id=account_info)
+                
                 # Store session data
                 request.session['userinfo_id'] = userinfo.userinfo_id
                 request.session['account_id'] = account_info.account_id

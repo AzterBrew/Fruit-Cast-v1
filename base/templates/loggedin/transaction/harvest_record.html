@@ -28,7 +28,7 @@
                             {% if transaction.initplantrecord.commodity_id.pk == 1 %}
                                 {{ transaction.initplantrecord.commodity_custom }}
                             {% else %}
-                                {{ transaction.initplantrecord.commoditytype.name }}
+                                {{ transaction.initplantrecord.commodity_id.name }}
                             {% endif %}
                         </span>
                     </div>
