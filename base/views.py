@@ -2098,5 +2098,14 @@ def change_password_new(request):
     return render(request, 'loggedin/change_password_new.html')
 
 
+def custom_logout(request):
+    """
+    Custom logout view that redirects to the guest home page instead of login page
+    """
+    logout(request)
+    messages.success(request, "You have been successfully logged out.")
+    return redirect('base:home')  # Redirect to the guest home page
+
+
 
 
