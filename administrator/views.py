@@ -32,6 +32,17 @@ from django.core.files.storage import default_storage
 from django.contrib.contenttypes.models import ContentType
 from base.models import AdminUserManagement
 
+# PDF generation imports
+try:
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -2382,9 +2393,9 @@ def admin_account_detail(request, account_id):
 #                 request.user.email = updated_info.user_email
 #                 request.user.save()
 
-# Export functions for CSV generation
+# Export functions for CSV and PDF generation
 def export_harvest_records_csv(records, filename, format_type='csv'):
-    """Export harvest records to CSV format"""
+    """Export harvest records to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2410,12 +2421,11 @@ def export_harvest_records_csv(records, filename, format_type='csv'):
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_harvest_records_pdf(records, filename)
 
 def export_harvest_records_summary_csv(records, filename, format_type='csv'):
-    """Export harvest records summary to CSV format"""
+    """Export harvest records summary to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2462,12 +2472,11 @@ def export_harvest_records_summary_csv(records, filename, format_type='csv'):
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_harvest_records_summary_pdf(records, filename)
 
 def export_plant_records_csv(records, filename, format_type='csv'):
-    """Export plant records to CSV format"""
+    """Export plant records to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2493,12 +2502,11 @@ def export_plant_records_csv(records, filename, format_type='csv'):
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_plant_records_pdf(records, filename)
 
 def export_plant_records_summary_csv(records, filename, format_type='csv'):
-    """Export plant records summary to CSV format"""
+    """Export plant records summary to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2548,12 +2556,11 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_plant_records_summary_pdf(records, filename)
 
 def export_accounts_csv(accounts, filename, format_type='csv'):
-    """Export accounts to CSV format"""
+    """Export accounts to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2580,12 +2587,11 @@ def export_accounts_csv(accounts, filename, format_type='csv'):
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_accounts_pdf(accounts, filename)
 
 def export_accounts_summary_csv(accounts, filename, format_type='csv'):
-    """Export accounts summary to CSV format"""
+    """Export accounts summary to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2637,12 +2643,11 @@ def export_accounts_summary_csv(accounts, filename, format_type='csv'):
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_accounts_summary_pdf(accounts, filename)
 
 def export_verified_harvest_records_csv(records, filename, format_type='csv'):
-    """Export verified harvest records to CSV format"""
+    """Export verified harvest records to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2668,12 +2673,11 @@ def export_verified_harvest_records_csv(records, filename, format_type='csv'):
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_verified_harvest_records_pdf(records, filename)
 
 def export_verified_harvest_records_summary_csv(records, filename, format_type='csv'):
-    """Export verified harvest records summary to CSV format"""
+    """Export verified harvest records summary to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
@@ -2716,9 +2720,481 @@ def export_verified_harvest_records_summary_csv(records, filename, format_type='
             ])
         
         return response
-    else:
-        # TODO: Implement PDF export
-        pass
+    elif format_type == 'pdf':
+        return generate_verified_harvest_records_summary_pdf(records, filename)
+
+# PDF Generation Functions
+def generate_harvest_records_pdf(records, filename):
+    """Generate PDF for harvest records"""
+    if not PDF_AVAILABLE:
+        # Fallback to CSV if ReportLab is not available
+        return export_harvest_records_csv(records, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    # Create PDF document
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter), 
+                          rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    
+    # Container for the 'Flowable' objects
+    elements = []
+    
+    # Define styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    
+    # Add title
+    title = Paragraph("Harvest Records Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    # Prepare data for table
+    data = [['Date Created', 'Farmer Name', 'Commodity', 'Harvest Date', 
+             'Total Weight', 'Location', 'Status', 'Verified By']]
+    
+    for record in records:
+        row = [
+            record.transaction.transaction_date.strftime('%Y-%m-%d'),
+            f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"[:20],
+            record.commodity_id.name,
+            record.harvest_date.strftime('%Y-%m-%d'),
+            f"{record.total_weight} {record.unit.unit_abrv}",
+            record.transaction.get_location_display()[:15],
+            record.record_status.acc_status if record.record_status else 'N/A',
+            f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}"[:20] if record.verified_by else 'Not Verified'
+        ]
+        data.append(row)
+    
+    # Create table
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    
+    # Build PDF
+    doc.build(elements)
+    return response
+
+def generate_harvest_records_summary_pdf(records, filename):
+    """Generate PDF for harvest records summary"""
+    if not PDF_AVAILABLE:
+        return export_harvest_records_summary_csv(records, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=30, alignment=1)
+    
+    title = Paragraph("Harvest Records Summary Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    # Group by commodity and municipality for summary
+    summary_data = {}
+    for record in records:
+        commodity = record.commodity_id.name
+        location = record.transaction.get_location_display()
+        key = f"{commodity} - {location}"
+        
+        if key not in summary_data:
+            summary_data[key] = {
+                'commodity': commodity, 'location': location, 'total_records': 0,
+                'total_weight': 0, 'verified_count': 0, 'pending_count': 0
+            }
+        
+        summary_data[key]['total_records'] += 1
+        summary_data[key]['total_weight'] += float(record.total_weight)
+        
+        if record.record_status and record.record_status.acc_status == 'Verified':
+            summary_data[key]['verified_count'] += 1
+        else:
+            summary_data[key]['pending_count'] += 1
+    
+    data = [['Commodity', 'Location', 'Total Records', 'Total Weight (kg)', 'Verified', 'Pending']]
+    for item in summary_data.values():
+        data.append([item['commodity'], item['location'][:20], item['total_records'], 
+                    f"{item['total_weight']:.2f}", item['verified_count'], item['pending_count']])
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_plant_records_pdf(records, filename):
+    """Generate PDF for plant records"""
+    if not PDF_AVAILABLE:
+        return export_plant_records_csv(records, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter), 
+                          rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=30, alignment=1)
+    
+    title = Paragraph("Plant Records Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    data = [['Date Created', 'Farmer Name', 'Commodity', 'Plant Date', 
+             'Min Expected', 'Max Expected', 'Location', 'Status']]
+    
+    for record in records:
+        row = [
+            record.transaction.transaction_date.strftime('%Y-%m-%d'),
+            f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"[:20],
+            record.commodity_id.name,
+            record.plant_date.strftime('%Y-%m-%d'),
+            str(record.min_expected_harvest),
+            str(record.max_expected_harvest),
+            record.transaction.get_location_display()[:15],
+            record.record_status.acc_status if record.record_status else 'N/A'
+        ]
+        data.append(row)
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_plant_records_summary_pdf(records, filename):
+    """Generate PDF for plant records summary"""
+    if not PDF_AVAILABLE:
+        return export_plant_records_summary_csv(records, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=30, alignment=1)
+    
+    title = Paragraph("Plant Records Summary Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    summary_data = {}
+    for record in records:
+        commodity = record.commodity_id.name
+        location = record.transaction.get_location_display()
+        key = f"{commodity} - {location}"
+        
+        if key not in summary_data:
+            summary_data[key] = {
+                'commodity': commodity, 'location': location, 'total_records': 0,
+                'total_expected_min': 0, 'total_expected_max': 0, 'verified_count': 0, 'pending_count': 0
+            }
+        
+        summary_data[key]['total_records'] += 1
+        summary_data[key]['total_expected_min'] += float(record.min_expected_harvest)
+        summary_data[key]['total_expected_max'] += float(record.max_expected_harvest)
+        
+        if record.record_status and record.record_status.acc_status == 'Verified':
+            summary_data[key]['verified_count'] += 1
+        else:
+            summary_data[key]['pending_count'] += 1
+    
+    data = [['Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected', 'Verified', 'Pending']]
+    for item in summary_data.values():
+        data.append([item['commodity'], item['location'][:20], item['total_records'], 
+                    f"{item['total_expected_min']:.2f}", f"{item['total_expected_max']:.2f}",
+                    item['verified_count'], item['pending_count']])
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_accounts_pdf(accounts, filename):
+    """Generate PDF for accounts"""
+    if not PDF_AVAILABLE:
+        return export_accounts_csv(accounts, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter), 
+                          rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=30, alignment=1)
+    
+    title = Paragraph("Accounts Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    data = [['Account ID', 'Full Name', 'Email', 'Municipality', 'Account Type', 'Status', 'Registration Date']]
+    
+    for account in accounts:
+        row = [
+            account.account_id,
+            f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname}"[:25],
+            account.userinfo_id.user_email[:25],
+            account.userinfo_id.municipality_id.municipality[:15],
+            account.account_type_id.account_type,
+            account.acc_status_id.acc_status,
+            account.account_register_date.strftime('%Y-%m-%d') if account.account_register_date else 'N/A'
+        ]
+        data.append(row)
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_accounts_summary_pdf(accounts, filename):
+    """Generate PDF for accounts summary"""
+    if not PDF_AVAILABLE:
+        return export_accounts_summary_csv(accounts, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=30, alignment=1)
+    
+    title = Paragraph("Accounts Summary Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    summary_data = {}
+    for account in accounts:
+        municipality = account.userinfo_id.municipality_id.municipality
+        status = account.acc_status_id.acc_status
+        account_type = account.account_type_id.account_type
+        key = f"{municipality} - {account_type}"
+        
+        if key not in summary_data:
+            summary_data[key] = {
+                'municipality': municipality, 'account_type': account_type, 'total_accounts': 0,
+                'verified_count': 0, 'pending_count': 0, 'rejected_count': 0, 'other_count': 0
+            }
+        
+        summary_data[key]['total_accounts'] += 1
+        
+        if status == 'Verified':
+            summary_data[key]['verified_count'] += 1
+        elif status == 'Pending':
+            summary_data[key]['pending_count'] += 1
+        elif status == 'Rejected':
+            summary_data[key]['rejected_count'] += 1
+        else:
+            summary_data[key]['other_count'] += 1
+    
+    data = [['Municipality', 'Account Type', 'Total Accounts', 'Verified', 'Pending', 'Rejected', 'Other']]
+    for item in summary_data.values():
+        data.append([item['municipality'], item['account_type'], item['total_accounts'], 
+                    item['verified_count'], item['pending_count'], item['rejected_count'], item['other_count']])
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_verified_harvest_records_pdf(records, filename):
+    """Generate PDF for verified harvest records"""
+    if not PDF_AVAILABLE:
+        return export_verified_harvest_records_csv(records, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter), 
+                          rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=30, alignment=1)
+    
+    title = Paragraph("Verified Harvest Records Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    data = [['Record ID', 'Commodity', 'Harvest Date', 'Total Weight (kg)', 'Weight/Unit (kg)', 'Municipality', 'Verified By']]
+    
+    for record in records:
+        row = [
+            str(record.id),
+            record.commodity_id.name,
+            record.harvest_date.strftime('%Y-%m-%d'),
+            str(record.total_weight_kg),
+            str(record.weight_per_unit_kg),
+            record.municipality.municipality if record.municipality else 'N/A',
+            f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}"[:20] if record.verified_by else 'N/A'
+        ]
+        data.append(row)
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_verified_harvest_records_summary_pdf(records, filename):
+    """Generate PDF for verified harvest records summary"""
+    if not PDF_AVAILABLE:
+        return export_verified_harvest_records_summary_csv(records, filename + '_fallback', 'csv')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=30, alignment=1)
+    
+    title = Paragraph("Verified Harvest Records Summary Report", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    summary_data = {}
+    for record in records:
+        commodity = record.commodity_id.name
+        municipality = record.municipality.municipality if record.municipality else 'Unknown'
+        key = f"{commodity} - {municipality}"
+        
+        if key not in summary_data:
+            summary_data[key] = {
+                'commodity': commodity, 'municipality': municipality, 'total_records': 0,
+                'total_weight': 0, 'avg_weight_per_unit': 0, 'weight_count': 0
+            }
+        
+        summary_data[key]['total_records'] += 1
+        summary_data[key]['total_weight'] += float(record.total_weight_kg)
+        summary_data[key]['avg_weight_per_unit'] += float(record.weight_per_unit_kg)
+        summary_data[key]['weight_count'] += 1
+    
+    data = [['Commodity', 'Municipality', 'Total Records', 'Total Weight (kg)', 'Avg Weight/Unit (kg)']]
+    for item in summary_data.values():
+        avg_weight_per_unit = item['avg_weight_per_unit'] / item['weight_count'] if item['weight_count'] > 0 else 0
+        data.append([item['commodity'], item['municipality'], item['total_records'], 
+                    f"{item['total_weight']:.2f}", f"{avg_weight_per_unit:.2f}"])
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
                 
 #                 return redirect('administrator:accinfo')                
         
