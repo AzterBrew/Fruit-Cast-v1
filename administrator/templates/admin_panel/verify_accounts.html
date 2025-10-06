@@ -238,17 +238,6 @@ Fruit Cast | Farmer Account Verification
                 </div>
             </div>
 
-            {% else %}
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="text-muted mb-3">
-                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                    </div>
-                    <h5 class="text-muted">No Farmer Accounts Found</h5>
-                    <p class="text-muted">Try adjusting your filters to see more results.</p>
-                </div>
-            </div>
-
             <!-- Export Section -->
             <div class="card border-0 shadow-sm mt-4">
                 <div class="card-body">
@@ -293,6 +282,19 @@ Fruit Cast | Farmer Account Verification
                     </div>
                 </div>
             </div>
+
+            {% else %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted mb-3">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-muted">No Farmer Accounts Found</h5>
+                    <p class="text-muted">Try adjusting your filters to see more results.</p>
+                </div>
+            </div>
+
+            
             {% endif %}
 
             {% else %}

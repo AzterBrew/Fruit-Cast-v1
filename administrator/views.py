@@ -34,7 +34,7 @@ from base.models import AdminUserManagement
 
 # PDF generation imports
 try:
-    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.pagesizes import letter, A4, landscape
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib import colors
@@ -2403,17 +2403,25 @@ def export_harvest_records_csv(records, filename, format_type='csv'):
         writer = csv.writer(response)
         writer.writerow([
             'Date Created', 'Farmer Name', 'Commodity', 'Harvest Date', 
-            'Total Weight', 'Unit', 'Location', 'Status', 'Verified By', 'Date Verified'
+            'Total Weight (kg)', 'Estimated Hectare', 'Location', 'Status', 'Verified By', 'Date Verified'
         ])
         
         for record in records:
+            # Get estimated hectare
+            estimated_hectare = 0
+            if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+                estimated_hectare = record.transaction.farm_land.estimated_area or 0
+            
+            # Convert weight to kg
+            weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
+            
             writer.writerow([
                 record.transaction.transaction_date.strftime('%Y-%m-%d %H:%M'),
                 f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}",
                 record.commodity_id.name,
                 record.harvest_date.strftime('%Y-%m-%d'),
-                f"{record.total_weight} {record.unit.unit_abrv}",
-                record.unit.unit_abrv,
+                f"{weight_kg:.2f}",
+                f"{estimated_hectare:.2f}",
                 record.transaction.get_location_display(),
                 record.record_status.acc_status if record.record_status else 'N/A',
                 f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}" if record.verified_by else 'Not Verified',
@@ -2443,12 +2451,20 @@ def export_harvest_records_summary_csv(records, filename, format_type='csv'):
                     'location': location,
                     'total_records': 0,
                     'total_weight': 0,
+                    'total_hectare': 0,
                     'verified_count': 0,
                     'pending_count': 0
                 }
             
             summary_data[key]['total_records'] += 1
-            summary_data[key]['total_weight'] += float(record.total_weight)
+            
+            # Convert weight to kg and add estimated hectare
+            weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
+            summary_data[key]['total_weight'] += weight_kg
+            
+            # Add estimated hectare
+            if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+                summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
             
             if record.record_status and record.record_status.acc_status == 'Verified':
                 summary_data[key]['verified_count'] += 1
@@ -2457,7 +2473,7 @@ def export_harvest_records_summary_csv(records, filename, format_type='csv'):
         
         writer = csv.writer(response)
         writer.writerow([
-            'Commodity', 'Location', 'Total Records', 'Total Weight (kg)', 
+            'Commodity', 'Location', 'Total Records', 'Total Weight (kg)', 'Total Estimated Hectare',
             'Verified Records', 'Pending Records'
         ])
         
@@ -2467,6 +2483,7 @@ def export_harvest_records_summary_csv(records, filename, format_type='csv'):
                 data['location'],
                 data['total_records'],
                 f"{data['total_weight']:.2f}",
+                f"{data['total_hectare']:.2f}",
                 data['verified_count'],
                 data['pending_count']
             ])
@@ -2484,10 +2501,15 @@ def export_plant_records_csv(records, filename, format_type='csv'):
         writer = csv.writer(response)
         writer.writerow([
             'Date Created', 'Farmer Name', 'Commodity', 'Plant Date', 
-            'Min Expected Harvest', 'Max Expected Harvest', 'Location', 'Status', 'Verified By', 'Date Verified'
+            'Min Expected Harvest', 'Max Expected Harvest', 'Estimated Hectare', 'Location', 'Status', 'Verified By', 'Date Verified'
         ])
         
         for record in records:
+            # Get estimated hectare
+            estimated_hectare = 0
+            if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+                estimated_hectare = record.transaction.farm_land.estimated_area or 0
+            
             writer.writerow([
                 record.transaction.transaction_date.strftime('%Y-%m-%d %H:%M'),
                 f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}",
@@ -2495,6 +2517,7 @@ def export_plant_records_csv(records, filename, format_type='csv'):
                 record.plant_date.strftime('%Y-%m-%d'),
                 record.min_expected_harvest,
                 record.max_expected_harvest,
+                f"{estimated_hectare:.2f}",
                 record.transaction.get_location_display(),
                 record.record_status.acc_status if record.record_status else 'N/A',
                 f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}" if record.verified_by else 'Not Verified',
@@ -2525,6 +2548,7 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
                     'total_records': 0,
                     'total_expected_min': 0,
                     'total_expected_max': 0,
+                    'total_hectare': 0,
                     'verified_count': 0,
                     'pending_count': 0
                 }
@@ -2533,6 +2557,10 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
             summary_data[key]['total_expected_min'] += float(record.min_expected_harvest)
             summary_data[key]['total_expected_max'] += float(record.max_expected_harvest)
             
+            # Add estimated hectare
+            if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+                summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
+            
             if record.record_status and record.record_status.acc_status == 'Verified':
                 summary_data[key]['verified_count'] += 1
             else:
@@ -2540,7 +2568,7 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
         
         writer = csv.writer(response)
         writer.writerow([
-            'Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected',
+            'Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected', 'Total Estimated Hectare',
             'Verified Records', 'Pending Records'
         ])
         
@@ -2551,6 +2579,7 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
                 data['total_records'],
                 f"{data['total_expected_min']:.2f}",
                 f"{data['total_expected_max']:.2f}",
+                f"{data['total_hectare']:.2f}",
                 data['verified_count'],
                 data['pending_count']
             ])
@@ -2757,18 +2786,26 @@ def generate_harvest_records_pdf(records, filename):
     
     # Prepare data for table
     data = [['Date Created', 'Farmer Name', 'Commodity', 'Harvest Date', 
-             'Total Weight', 'Location', 'Status', 'Verified By']]
+             'Total Weight (kg)', 'Est. Hectare', 'Location', 'Status']]
     
     for record in records:
+        # Get estimated hectare
+        estimated_hectare = 0
+        if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+            estimated_hectare = record.transaction.farm_land.estimated_area or 0
+            
+        # Convert weight to kg
+        weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
+        
         row = [
             record.transaction.transaction_date.strftime('%Y-%m-%d'),
             f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"[:20],
             record.commodity_id.name,
             record.harvest_date.strftime('%Y-%m-%d'),
-            f"{record.total_weight} {record.unit.unit_abrv}",
+            f"{weight_kg:.2f}",
+            f"{estimated_hectare:.2f}",
             record.transaction.get_location_display()[:15],
-            record.record_status.acc_status if record.record_status else 'N/A',
-            f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}"[:20] if record.verified_by else 'Not Verified'
+            record.record_status.acc_status if record.record_status else 'N/A'
         ]
         data.append(row)
     
@@ -2821,21 +2858,29 @@ def generate_harvest_records_summary_pdf(records, filename):
         if key not in summary_data:
             summary_data[key] = {
                 'commodity': commodity, 'location': location, 'total_records': 0,
-                'total_weight': 0, 'verified_count': 0, 'pending_count': 0
+                'total_weight': 0, 'total_hectare': 0, 'verified_count': 0, 'pending_count': 0
             }
         
         summary_data[key]['total_records'] += 1
-        summary_data[key]['total_weight'] += float(record.total_weight)
+        
+        # Convert weight to kg and add estimated hectare
+        weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
+        summary_data[key]['total_weight'] += weight_kg
+        
+        # Add estimated hectare
+        if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+            summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
         
         if record.record_status and record.record_status.acc_status == 'Verified':
             summary_data[key]['verified_count'] += 1
         else:
             summary_data[key]['pending_count'] += 1
     
-    data = [['Commodity', 'Location', 'Total Records', 'Total Weight (kg)', 'Verified', 'Pending']]
+    data = [['Commodity', 'Location', 'Total Records', 'Total Weight (kg)', 'Total Hectare', 'Verified', 'Pending']]
     for item in summary_data.values():
         data.append([item['commodity'], item['location'][:20], item['total_records'], 
-                    f"{item['total_weight']:.2f}", item['verified_count'], item['pending_count']])
+                    f"{item['total_weight']:.2f}", f"{item['total_hectare']:.2f}",
+                    item['verified_count'], item['pending_count']])
     
     table = Table(data)
     table.setStyle(TableStyle([
@@ -2875,9 +2920,14 @@ def generate_plant_records_pdf(records, filename):
     elements.append(Spacer(1, 12))
     
     data = [['Date Created', 'Farmer Name', 'Commodity', 'Plant Date', 
-             'Min Expected', 'Max Expected', 'Location', 'Status']]
+             'Min Expected', 'Max Expected', 'Est. Hectare', 'Location']]
     
     for record in records:
+        # Get estimated hectare
+        estimated_hectare = 0
+        if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+            estimated_hectare = record.transaction.farm_land.estimated_area or 0
+            
         row = [
             record.transaction.transaction_date.strftime('%Y-%m-%d'),
             f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"[:20],
@@ -2885,8 +2935,8 @@ def generate_plant_records_pdf(records, filename):
             record.plant_date.strftime('%Y-%m-%d'),
             str(record.min_expected_harvest),
             str(record.max_expected_harvest),
-            record.transaction.get_location_display()[:15],
-            record.record_status.acc_status if record.record_status else 'N/A'
+            f"{estimated_hectare:.2f}",
+            record.transaction.get_location_display()[:15]
         ]
         data.append(row)
     
@@ -2935,23 +2985,28 @@ def generate_plant_records_summary_pdf(records, filename):
         if key not in summary_data:
             summary_data[key] = {
                 'commodity': commodity, 'location': location, 'total_records': 0,
-                'total_expected_min': 0, 'total_expected_max': 0, 'verified_count': 0, 'pending_count': 0
+                'total_expected_min': 0, 'total_expected_max': 0, 'total_hectare': 0,
+                'verified_count': 0, 'pending_count': 0
             }
         
         summary_data[key]['total_records'] += 1
         summary_data[key]['total_expected_min'] += float(record.min_expected_harvest)
         summary_data[key]['total_expected_max'] += float(record.max_expected_harvest)
         
+        # Add estimated hectare
+        if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+            summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
+        
         if record.record_status and record.record_status.acc_status == 'Verified':
             summary_data[key]['verified_count'] += 1
         else:
             summary_data[key]['pending_count'] += 1
     
-    data = [['Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected', 'Verified', 'Pending']]
+    data = [['Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected', 'Total Hectare', 'Verified', 'Pending']]
     for item in summary_data.values():
         data.append([item['commodity'], item['location'][:20], item['total_records'], 
                     f"{item['total_expected_min']:.2f}", f"{item['total_expected_max']:.2f}",
-                    item['verified_count'], item['pending_count']])
+                    f"{item['total_hectare']:.2f}", item['verified_count'], item['pending_count']])
     
     table = Table(data)
     table.setStyle(TableStyle([
