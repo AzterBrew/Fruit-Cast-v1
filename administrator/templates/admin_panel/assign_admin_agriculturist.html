@@ -11,15 +11,22 @@ Fruit Cast | Create Administrator/Agriculturist Account
         <div class="card shadow-sm rounded-4 p-4 mb-3" style="max-width: 900px; margin: 0 auto;">
             <h1 class="mb-4 text-success fw-bold text-center">
                 <i class="bi bi-person-plus"></i>
-                Create Administrator/Agriculturist Account
+                {% if user.is_superuser %}
+                    Create Administrator/Agriculturist Account
+                {% else %}
+                    Create Agriculturist Account
+                {% endif %}
             </h1>
 
-            {% if user_role_id == 2 and user.is_superuser %}
+            {% if user_role_id == 2 %}
                 <!-- Account Creation Form Section -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
                             <i class="bi bi-person-badge me-2"></i>Account Information
+                            {% if not user.is_superuser %}
+                                <small class="ms-2 badge bg-info">Agriculturist Only</small>
+                            {% endif %}
                         </h5>
                     </div>
                     <div class="card-body bg-light">
@@ -94,8 +101,19 @@ Fruit Cast | Create Administrator/Agriculturist Account
                                 <div class="col-md-6">
                                     <label for="{{ form.account_type.id_for_label }}" class="form-label">
                                         <i class="bi bi-shield-check me-1"></i>Account Type *
+                                        {% if not user.is_superuser %}
+                                            <small class="badge bg-warning text-dark ms-2">Restricted</small>
+                                        {% endif %}
                                     </label>
                                     {{ form.account_type }}
+                                    {% if not user.is_superuser %}
+                                        <!-- Hidden input to ensure account type is submitted since disabled fields don't submit -->
+                                        <input type="hidden" name="account_type" value="Agriculturist">
+                                        <div class="form-text text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            As an administrator, you can only create Agriculturist accounts.
+                                        </div>
+                                    {% endif %}
                                     {{ form.account_type.errors }}
                                 </div>
                                 <div class="col-md-6">
@@ -139,7 +157,7 @@ Fruit Cast | Create Administrator/Agriculturist Account
                     <div class="card-body text-center py-5">
                         <i class="bi bi-shield-exclamation text-warning" style="font-size: 4rem;"></i>
                         <h3 class="text-warning mt-3">Access Denied</h3>
-                        <p class="text-muted">You do not have permission to view this page.</p>
+                        <p class="text-muted">Only administrators can create new accounts. Please contact a system administrator if you need access to this feature.</p>
                         <a href="{% url 'administrator:admin_dashboard' %}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
                         </a>
@@ -162,14 +180,22 @@ Fruit Cast | Create Administrator/Agriculturist Account
         // Account type and municipality logic
         const accountTypeSelect = document.getElementById("id_account_type");
         const municipalitySelect = document.getElementById("municipality-select");
+        const isNonSuperuser = {% if not user.is_superuser %}true{% else %}false{% endif %};
 
         function updateMunicipalityField() {
-            if (accountTypeSelect.value === "Agriculturist") {
+            if (isNonSuperuser) {
+                // For non-superusers, always enable municipality (they can only create agriculturists)
                 municipalitySelect.disabled = false;
                 municipalitySelect.classList.remove("visually-locked");
-            } else if (accountTypeSelect.value === "Administrator") {
-                municipalitySelect.classList.add("visually-locked");
-                municipalitySelect.disabled = true;
+            } else {
+                // For superusers, use the normal logic
+                if (accountTypeSelect.value === "Agriculturist") {
+                    municipalitySelect.disabled = false;
+                    municipalitySelect.classList.remove("visually-locked");
+                } else if (accountTypeSelect.value === "Administrator") {
+                    municipalitySelect.classList.add("visually-locked");
+                    municipalitySelect.disabled = true;
+                }
             }
         }
 

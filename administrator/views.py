@@ -606,15 +606,29 @@ def farmer_transaction_detail(request, transaction_id):
     return render(request, 'admin_panel/farmer_transaction_detail.html', context)
 
 @admin_or_agriculturist_required
-@superuser_required
 def assign_account(request):
     user = request.user
-
-    if not user.is_superuser:
-        return HttpResponseForbidden("Only superusers may assign accounts.")
+    
+    # Get user role info for access control
+    user_info = user.userinformation
+    account_info = AccountsInformation.objects.get(userinfo_id=user_info)
+    user_role_id = account_info.account_type_id.pk
+    
+    # Allow both superusers and administrators (pk=2) to access
+    if not user.is_superuser and user_role_id != 2:
+        return render(request, 'admin_panel/access_denied.html', {
+            'error_message': 'Access denied. Only administrators and superusers can create accounts.'
+        })
 
     if request.method == 'POST':
-        form = AssignAdminAgriForm(request.POST)
+        form = AssignAdminAgriForm(request.POST, user=user)
+        
+        # For non-superusers, force account type to Agriculturist
+        if not user.is_superuser:
+            mutable_post = request.POST.copy()
+            mutable_post['account_type'] = 'Agriculturist'
+            form = AssignAdminAgriForm(mutable_post, user=user)
+        
         if form.is_valid():
             email = form.cleaned_data['email']
             first_name = form.cleaned_data['first_name']
@@ -624,8 +638,11 @@ def assign_account(request):
             account_type = form.cleaned_data['account_type']
             municipality = form.cleaned_data.get('municipality')  # Required only for agriculturist
 
+            # Additional server-side validation: non-superusers can only create Agriculturists
+            if not user.is_superuser and account_type != 'Agriculturist':
+                form.add_error('account_type', 'You can only create Agriculturist accounts.')
             # Check if email already exists
-            if AuthUser.objects.filter(email=email).exists():
+            elif AuthUser.objects.filter(email=email).exists():
                 form.add_error('email', 'Email already exists in the system.')
             else:
                 try:
@@ -699,11 +716,14 @@ def assign_account(request):
                 except Exception as e:
                     form.add_error(None, f"Something went wrong: {e}")
     else:
-        form = AssignAdminAgriForm()
+        form = AssignAdminAgriForm(user=user)
+        # For non-superusers, additional setup is handled by the form's __init__ method
 
     context = get_admin_context(request)
     context.update({
-        'form': form
+        'form': form,
+        'is_superuser': user.is_superuser,
+        'user_role_id': user_role_id
     })
 
     return render(request, 'admin_panel/assign_admin_agriculturist.html', context)

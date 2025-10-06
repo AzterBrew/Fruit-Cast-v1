@@ -27,8 +27,23 @@ class AssignAdminAgriForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # Extract user from kwargs
         super().__init__(*args, **kwargs)
         self.fields['municipality'].widget.attrs['disabled'] = True  # Default disabled
+        
+        # If user is not a superuser, restrict account type to Agriculturist only
+        if user and not user.is_superuser:
+            self.fields['account_type'].choices = [('Agriculturist', 'Agriculturist')]
+            self.fields['account_type'].initial = 'Agriculturist'
+            self.fields['account_type'].widget.attrs.update({
+                'readonly': True,
+                'disabled': True,
+                'class': 'form-select',
+                'style': 'background-color: #f8f9fa; cursor: not-allowed;'
+            })
+            # Always enable municipality for non-superusers since they can only create agriculturists
+            self.fields['municipality'].widget.attrs['disabled'] = False
+            self.fields['municipality'].required = True
 
 
     def clean(self):
