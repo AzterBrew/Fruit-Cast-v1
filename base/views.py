@@ -1341,17 +1341,26 @@ def register_email(request):
             """.format(verification_code=verification_code)
             
             # Use EmailMessage for HTML email
-            email_msg = EmailMessage(
-                subject=subject,
-                body=html_message,
-                from_email="fruitcast.bataan@gmail.com",  # Change to your sender email
-                to=[email],
-            )
-            email_msg.content_subtype = "html"  # Set the content type to HTML
-            email_msg.send()
-            
+            try:
+                email_msg = EmailMessage(
+                    subject=subject,
+                    body=html_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,  # Use settings instead of hardcoded email
+                    to=[email],
+                )
+                email_msg.content_subtype = "html"  # Set the content type to HTML
+                email_msg.send()
+                
+                return redirect("base:register_verify_code")
+                
+            except Exception as e:
+                print(f"Email sending error: {e}")  # For debugging
+                return render(request, "registration/register_email.html", {
+                    "email_error": "Failed to send verification email. Please try again later.",
+                    "password_error": password_error,
+                })
+        
         # MODIFY THIS EMAIL PAGKA OKS NA
-        return redirect("base:register_verify_code")
     return render(request, "registration/register_email.html", {"email_error": email_error,"password_error": password_error,})
 
 
@@ -1737,17 +1746,24 @@ def forgot_password(request):
         </div>
         """.format(verification_code=verification_code)
         
-        # Send email
-        email_msg = EmailMessage(
-            subject=subject,
-            body=html_message,
-            from_email="fruitcast.bataan@gmail.com",
-            to=[email],
-        )
-        email_msg.content_subtype = "html"
-        email_msg.send()
-        
-        return redirect("base:forgot_password_verify")
+        # Send email with proper error handling
+        try:
+            email_msg = EmailMessage(
+                subject=subject,
+                body=html_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,  # Use settings instead of hardcoded email
+                to=[email],
+            )
+            email_msg.content_subtype = "html"
+            email_msg.send()
+            
+            messages.success(request, f"Verification code sent to {email}. Please check your email.")
+            return redirect("base:forgot_password_verify")
+            
+        except Exception as e:
+            print(f"Email sending error: {e}")  # For debugging
+            messages.error(request, "Failed to send verification email. Please try again later.")
+            return render(request, 'registration/forgot_password.html')
     
     return render(request, 'registration/forgot_password.html')
 
