@@ -532,8 +532,12 @@ def forecast_bycommodity(request):
         )['total_kg']
         summary_dict[commodity.name] = round(total, 2) if total else 0
 
-    # Sort by descending forecast values
-    sorted_summary = sorted(summary_dict.items(), key=lambda x: x[1], reverse=True)
+    # Sort by descending forecast values and filter out zero values
+    sorted_summary = sorted(
+        [(k, v) for k, v in summary_dict.items() if v > 0], 
+        key=lambda x: x[1], 
+        reverse=True
+    )
     
     forecast_summary = [
         {'commodity': k, 'forecasted_kg': v} for k, v in sorted_summary
