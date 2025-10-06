@@ -326,6 +326,17 @@ Fruit Cast | Verified Harvest Records
                 </div>
             </div>
 
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-success-circle me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
             <!-- Additional Actions -->
             <div class="card border-0 shadow-sm mt-4" id="bottom-section">
                 <div class="card-body">
