@@ -367,6 +367,16 @@ def verify_accounts(request):
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
     
     context = get_admin_context(request)
+    # Handle export requests
+    export_type = request.GET.get('export')
+    export_format = request.GET.get('format')
+    
+    if export_type and export_format:
+        if export_type == 'records':
+            return export_accounts_csv(all_accounts, 'farmer_accounts', export_format)
+        elif export_type == 'summary':
+            return export_accounts_summary_csv(all_accounts, 'farmer_accounts_summary', export_format)
+
     context.update({
         'accounts': page_obj.object_list,  # Paginated accounts for display
         'page_obj': page_obj,
@@ -488,6 +498,16 @@ def show_allaccounts(request):
         )
 
     status_choices = AccountStatus.objects.all()
+    
+    # Handle export requests
+    export_type = request.GET.get('export')
+    export_format = request.GET.get('format')
+    
+    if export_type and export_format:
+        if export_type == 'records':
+            return export_accounts_csv(all_accounts, 'all_accounts', export_format)
+        elif export_type == 'summary':
+            return export_accounts_summary_csv(all_accounts, 'all_accounts_summary', export_format)
     
     context = get_admin_context(request)
     context.update({
@@ -1539,6 +1559,16 @@ def admin_verifyplantrec(request):
     commodities = CommodityType.objects.all()
     status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
+    # Handle export requests
+    export_type = request.GET.get('export')
+    export_format = request.GET.get('format')
+    
+    if export_type and export_format:
+        if export_type == 'records':
+            return export_plant_records_csv(records, 'plant_verification_records', export_format)
+        elif export_type == 'summary':
+            return export_plant_records_summary_csv(records, 'plant_verification_summary', export_format)
+
     context = get_admin_context(request)
     context.update({
         'records': page_obj.object_list,  # Pass the actual records for display
@@ -1710,7 +1740,15 @@ def admin_verifyharvestrec(request):
     else:
         messages.error(request, "No records selected or status not chosen.")
 
+    # Handle export requests
+    export_type = request.GET.get('export')
+    export_format = request.GET.get('format')
     
+    if export_type and export_format:
+        if export_type == 'records':
+            return export_harvest_records_csv(records, 'harvest_verification_records', export_format)
+        elif export_type == 'summary':
+            return export_harvest_records_summary_csv(records, 'harvest_verification_summary', export_format)
     
     context = get_admin_context(request)
     context.update({
@@ -1963,6 +2001,16 @@ def admin_harvestverified(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Handle export requests
+    export_type = request.GET.get('export')
+    export_format = request.GET.get('format')
+    
+    if export_type and export_format:
+        if export_type == 'records':
+            return export_verified_harvest_records_csv(records, 'verified_harvest_records', export_format)
+        elif export_type == 'summary':
+            return export_verified_harvest_records_summary_csv(records, 'verified_harvest_summary', export_format)
+
     context = get_admin_context(request)
     context.update({
         'records': page_obj.object_list,  # Pass the actual records for display
@@ -2333,6 +2381,344 @@ def admin_account_detail(request, account_id):
                 
 #                 request.user.email = updated_info.user_email
 #                 request.user.save()
+
+# Export functions for CSV generation
+def export_harvest_records_csv(records, filename, format_type='csv'):
+    """Export harvest records to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Date Created', 'Farmer Name', 'Commodity', 'Harvest Date', 
+            'Total Weight', 'Unit', 'Location', 'Status', 'Verified By', 'Date Verified'
+        ])
+        
+        for record in records:
+            writer.writerow([
+                record.transaction.transaction_date.strftime('%Y-%m-%d %H:%M'),
+                f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}",
+                record.commodity_id.name,
+                record.harvest_date.strftime('%Y-%m-%d'),
+                f"{record.total_weight} {record.unit.unit_abrv}",
+                record.unit.unit_abrv,
+                record.transaction.get_location_display(),
+                record.record_status.acc_status if record.record_status else 'N/A',
+                f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}" if record.verified_by else 'Not Verified',
+                record.date_verified.strftime('%Y-%m-%d %H:%M') if record.date_verified else 'Not Verified'
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
+
+def export_harvest_records_summary_csv(records, filename, format_type='csv'):
+    """Export harvest records summary to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        # Group by commodity and municipality for summary
+        summary_data = {}
+        for record in records:
+            commodity = record.commodity_id.name
+            location = record.transaction.get_location_display()
+            key = f"{commodity} - {location}"
+            
+            if key not in summary_data:
+                summary_data[key] = {
+                    'commodity': commodity,
+                    'location': location,
+                    'total_records': 0,
+                    'total_weight': 0,
+                    'verified_count': 0,
+                    'pending_count': 0
+                }
+            
+            summary_data[key]['total_records'] += 1
+            summary_data[key]['total_weight'] += float(record.total_weight)
+            
+            if record.record_status and record.record_status.acc_status == 'Verified':
+                summary_data[key]['verified_count'] += 1
+            else:
+                summary_data[key]['pending_count'] += 1
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Commodity', 'Location', 'Total Records', 'Total Weight (kg)', 
+            'Verified Records', 'Pending Records'
+        ])
+        
+        for data in summary_data.values():
+            writer.writerow([
+                data['commodity'],
+                data['location'],
+                data['total_records'],
+                f"{data['total_weight']:.2f}",
+                data['verified_count'],
+                data['pending_count']
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
+
+def export_plant_records_csv(records, filename, format_type='csv'):
+    """Export plant records to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Date Created', 'Farmer Name', 'Commodity', 'Plant Date', 
+            'Min Expected Harvest', 'Max Expected Harvest', 'Location', 'Status', 'Verified By', 'Date Verified'
+        ])
+        
+        for record in records:
+            writer.writerow([
+                record.transaction.transaction_date.strftime('%Y-%m-%d %H:%M'),
+                f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}",
+                record.commodity_id.name,
+                record.plant_date.strftime('%Y-%m-%d'),
+                record.min_expected_harvest,
+                record.max_expected_harvest,
+                record.transaction.get_location_display(),
+                record.record_status.acc_status if record.record_status else 'N/A',
+                f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}" if record.verified_by else 'Not Verified',
+                record.date_verified.strftime('%Y-%m-%d %H:%M') if record.date_verified else 'Not Verified'
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
+
+def export_plant_records_summary_csv(records, filename, format_type='csv'):
+    """Export plant records summary to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        # Group by commodity and municipality for summary
+        summary_data = {}
+        for record in records:
+            commodity = record.commodity_id.name
+            location = record.transaction.get_location_display()
+            key = f"{commodity} - {location}"
+            
+            if key not in summary_data:
+                summary_data[key] = {
+                    'commodity': commodity,
+                    'location': location,
+                    'total_records': 0,
+                    'total_expected_min': 0,
+                    'total_expected_max': 0,
+                    'verified_count': 0,
+                    'pending_count': 0
+                }
+            
+            summary_data[key]['total_records'] += 1
+            summary_data[key]['total_expected_min'] += float(record.min_expected_harvest)
+            summary_data[key]['total_expected_max'] += float(record.max_expected_harvest)
+            
+            if record.record_status and record.record_status.acc_status == 'Verified':
+                summary_data[key]['verified_count'] += 1
+            else:
+                summary_data[key]['pending_count'] += 1
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected',
+            'Verified Records', 'Pending Records'
+        ])
+        
+        for data in summary_data.values():
+            writer.writerow([
+                data['commodity'],
+                data['location'],
+                data['total_records'],
+                f"{data['total_expected_min']:.2f}",
+                f"{data['total_expected_max']:.2f}",
+                data['verified_count'],
+                data['pending_count']
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
+
+def export_accounts_csv(accounts, filename, format_type='csv'):
+    """Export accounts to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Account ID', 'Full Name', 'Email', 'Contact Number', 'Municipality', 'Barangay',
+            'Account Type', 'Status', 'Registration Date', 'Verified Date', 'Verified By'
+        ])
+        
+        for account in accounts:
+            writer.writerow([
+                account.account_id,
+                f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname} {account.userinfo_id.middlename}".strip(),
+                account.userinfo_id.user_email,
+                account.userinfo_id.contact_number,
+                account.userinfo_id.municipality_id.municipality,
+                account.userinfo_id.barangay_id.barangay,
+                account.account_type_id.account_type,
+                account.acc_status_id.acc_status,
+                account.account_register_date.strftime('%Y-%m-%d %H:%M') if account.account_register_date else 'N/A',
+                account.account_verified_date.strftime('%Y-%m-%d %H:%M') if account.account_verified_date else 'Not Verified',
+                f"{account.account_verified_by.userinfo_id.lastname}, {account.account_verified_by.userinfo_id.firstname}" if account.account_verified_by else 'Not Verified'
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
+
+def export_accounts_summary_csv(accounts, filename, format_type='csv'):
+    """Export accounts summary to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        # Group by municipality and status for summary
+        summary_data = {}
+        for account in accounts:
+            municipality = account.userinfo_id.municipality_id.municipality
+            status = account.acc_status_id.acc_status
+            account_type = account.account_type_id.account_type
+            key = f"{municipality} - {account_type}"
+            
+            if key not in summary_data:
+                summary_data[key] = {
+                    'municipality': municipality,
+                    'account_type': account_type,
+                    'total_accounts': 0,
+                    'verified_count': 0,
+                    'pending_count': 0,
+                    'rejected_count': 0,
+                    'other_count': 0
+                }
+            
+            summary_data[key]['total_accounts'] += 1
+            
+            if status == 'Verified':
+                summary_data[key]['verified_count'] += 1
+            elif status == 'Pending':
+                summary_data[key]['pending_count'] += 1
+            elif status == 'Rejected':
+                summary_data[key]['rejected_count'] += 1
+            else:
+                summary_data[key]['other_count'] += 1
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Municipality', 'Account Type', 'Total Accounts', 'Verified', 'Pending', 'Rejected', 'Other'
+        ])
+        
+        for data in summary_data.values():
+            writer.writerow([
+                data['municipality'],
+                data['account_type'],
+                data['total_accounts'],
+                data['verified_count'],
+                data['pending_count'],
+                data['rejected_count'],
+                data['other_count']
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
+
+def export_verified_harvest_records_csv(records, filename, format_type='csv'):
+    """Export verified harvest records to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Record ID', 'Commodity', 'Harvest Date', 'Total Weight (kg)', 'Weight per Unit (kg)',
+            'Municipality', 'Barangay', 'Date Verified', 'Verified By', 'Remarks'
+        ])
+        
+        for record in records:
+            writer.writerow([
+                record.id,
+                record.commodity_id.name,
+                record.harvest_date.strftime('%Y-%m-%d'),
+                record.total_weight_kg,
+                record.weight_per_unit_kg,
+                record.municipality.municipality if record.municipality else 'N/A',
+                record.barangay.barangay if record.barangay else 'N/A',
+                record.date_verified.strftime('%Y-%m-%d %H:%M'),
+                f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}" if record.verified_by else 'N/A',
+                record.remarks or 'No remarks'
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
+
+def export_verified_harvest_records_summary_csv(records, filename, format_type='csv'):
+    """Export verified harvest records summary to CSV format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        # Group by commodity and municipality for summary
+        summary_data = {}
+        for record in records:
+            commodity = record.commodity_id.name
+            municipality = record.municipality.municipality if record.municipality else 'Unknown'
+            key = f"{commodity} - {municipality}"
+            
+            if key not in summary_data:
+                summary_data[key] = {
+                    'commodity': commodity,
+                    'municipality': municipality,
+                    'total_records': 0,
+                    'total_weight': 0,
+                    'avg_weight_per_unit': 0,
+                    'weight_count': 0
+                }
+            
+            summary_data[key]['total_records'] += 1
+            summary_data[key]['total_weight'] += float(record.total_weight_kg)
+            summary_data[key]['avg_weight_per_unit'] += float(record.weight_per_unit_kg)
+            summary_data[key]['weight_count'] += 1
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Commodity', 'Municipality', 'Total Records', 'Total Weight (kg)', 'Average Weight per Unit (kg)'
+        ])
+        
+        for data in summary_data.values():
+            avg_weight_per_unit = data['avg_weight_per_unit'] / data['weight_count'] if data['weight_count'] > 0 else 0
+            writer.writerow([
+                data['commodity'],
+                data['municipality'],
+                data['total_records'],
+                f"{data['total_weight']:.2f}",
+                f"{avg_weight_per_unit:.2f}"
+            ])
+        
+        return response
+    else:
+        # TODO: Implement PDF export
+        pass
                 
 #                 return redirect('administrator:accinfo')                
         

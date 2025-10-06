@@ -291,6 +291,51 @@ Fruit Cast | Account Management
                     <p class="text-muted">Try adjusting your filters to see more results.</p>
                 </div>
             </div>
+
+            <!-- Export Section -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="card-title text-info mb-3">
+                        <i class="bi bi-download me-2"></i>Export Data
+                    </h5>
+                    <div class="alert alert-info border-0 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle text-info me-3"></i>
+                            <p class="mb-0 small">
+                                <strong>Note:</strong> Export will apply current filters. Only the filtered accounts will be exported.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-file-earmark-text me-2"></i>Export Records
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="exportRecords('csv')">
+                                    <i class="bi bi-filetype-csv me-2"></i>CSV Format
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportRecords('pdf')">
+                                    <i class="bi bi-filetype-pdf me-2"></i>PDF Format
+                                </a></li>
+                            </ul>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-file-earmark-bar-graph me-2"></i>Export Summary
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="exportSummary('csv')">
+                                    <i class="bi bi-filetype-csv me-2"></i>CSV Format
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportSummary('pdf')">
+                                    <i class="bi bi-filetype-pdf me-2"></i>PDF Format
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% endif %}
 
             {% else %}
@@ -415,5 +460,20 @@ Fruit Cast | Account Management
         // Initialize button state
         updateButtonState();
     });
+
+    // Export functions
+    function exportRecords(format) {
+        const currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('export', 'records');
+        currentParams.set('format', format);
+        window.location.href = `${window.location.pathname}?${currentParams.toString()}`;
+    }
+
+    function exportSummary(format) {
+        const currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('export', 'summary');
+        currentParams.set('format', format);
+        window.location.href = `${window.location.pathname}?${currentParams.toString()}`;
+    }
 </script>
 {% endblock %}

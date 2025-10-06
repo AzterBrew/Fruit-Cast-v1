@@ -13,6 +13,16 @@ Fruit Cast | Verified Harvest Records
                 <i class="bi bi-check-circle"></i> Verified Harvest Records
             </h1>
             
+            <!-- Information Alert -->
+            <div class="alert alert-warning border-0 mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle text-warning me-3 fs-5"></i>
+                    <p class="mb-0 small">
+                        <strong>Note:</strong> The displayed data are all the verified records which includes the verified records submitted by farmers and also the harvest records uploaded by agriculturist.
+                    </p>
+                </div>
+            </div>
+            
             <!-- Filter Section -->
             <div class="card border-0 shadow-sm mb-4" id="filter-section">
                 <div class="card-header bg-success text-white">
@@ -110,15 +120,6 @@ Fruit Cast | Verified Harvest Records
                                 <label class="form-check-label fw-medium text-danger" for="deleteMode">
                                     <i class="bi bi-trash me-1"></i>Delete Records
                                 </label>
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-download me-2"></i>Export
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-excel me-2"></i>Export to Excel</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-pdf me-2"></i>Export to PDF</a></li>
-                                </ul>
                             </div>
                         </div>
                     </div>
@@ -374,6 +375,51 @@ Fruit Cast | Verified Harvest Records
                     </div>
                 </div>
             </div>
+
+            <!-- Export Section -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="card-title text-info mb-3">
+                        <i class="bi bi-download me-2"></i>Export Data
+                    </h5>
+                    <div class="alert alert-info border-0 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle text-info me-3"></i>
+                            <p class="mb-0 small">
+                                <strong>Note:</strong> Export will apply current filters. Only the filtered records will be exported.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-file-earmark-text me-2"></i>Export Records
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="exportRecords('csv')">
+                                    <i class="bi bi-filetype-csv me-2"></i>CSV Format
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportRecords('pdf')">
+                                    <i class="bi bi-filetype-pdf me-2"></i>PDF Format
+                                </a></li>
+                            </ul>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-file-earmark-bar-graph me-2"></i>Export Summary
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="exportSummary('csv')">
+                                    <i class="bi bi-filetype-csv me-2"></i>CSV Format
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportSummary('pdf')">
+                                    <i class="bi bi-filetype-pdf me-2"></i>PDF Format
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -563,6 +609,21 @@ Fruit Cast | Verified Harvest Records
             behavior: 'smooth',
             block: 'start'
         });
+    }
+
+    // Export functions
+    function exportRecords(format) {
+        const currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('export', 'records');
+        currentParams.set('format', format);
+        window.location.href = `${window.location.pathname}?${currentParams.toString()}`;
+    }
+
+    function exportSummary(format) {
+        const currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('export', 'summary');
+        currentParams.set('format', format);
+        window.location.href = `${window.location.pathname}?${currentParams.toString()}`;
     }
 </script>
 {% endblock content %}
