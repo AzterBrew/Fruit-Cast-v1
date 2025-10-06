@@ -392,8 +392,9 @@ def show_allaccounts(request):
     
     # Restrict access to administrators only
     if user_role_id != 2:  # Only administrators (pk=2) can access
-        messages.error(request, "Access denied. Only administrators can view this page.")
-        return redirect('administrator:admin_dashboard')
+        return render(request, 'admin_panel/access_denied.html', {
+            'error_message': 'Access denied. Only administrators can view this page.'
+        })
         
     status_filter = request.GET.get('status')
     sort_by = request.GET.get('sort', 'account_register_date')  # Default sort by date
@@ -1967,8 +1968,9 @@ def admin_account_detail(request, account_id):
         
         # Restrict access for agriculturists
         if current_account.account_type_id.pk == 3:  # Agriculturist
-            messages.error(request, "Access denied. Only administrators can view account details.")
-            return redirect('administrator:admin_dashboard')
+            return render(request, 'admin_panel/access_denied.html', {
+                'error_message': 'Access denied. Only administrators can view account details.'
+            })
 
         # Get the account to view
         target_account = get_object_or_404(AccountsInformation, pk=account_id)

@@ -296,7 +296,7 @@ def monitor(request):
             # Dataset 1: by commodity type
             commodity_data = {}
             for record in initHarvestRecord.objects.all():
-                key = record.commodity_type
+                key = record.commodity_id.name if record.commodity_id else "Unknown"
                 commodity_data[key] = commodity_data.get(key, 0) + 1
 
             # Dataset 2: by location
@@ -328,7 +328,7 @@ def dashboard_view(request):
     # Example data: commodity_type counts
     data = {}
     for record in recent_records:
-        key = record.commodity_type
+        key = record.commodity_id.name if record.commodity_id else "Unknown"
         data[key] = data.get(key, 0) + 1
 
     context = {
