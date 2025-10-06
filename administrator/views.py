@@ -1865,6 +1865,13 @@ def admin_harvestverified(request):
     is_superuser = user.is_superuser
     is_pk14 = admin_info.municipality_incharge.pk == 14
     
+    # Define filter variables early to be used in POST handling
+    municipality_filter = request.GET.get('municipality')
+    barangay_filter = request.GET.get('barangay')
+    commodity_filter = request.GET.get('commodity')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
     if request.method == 'POST':
         action = request.POST.get('action')
         selected_records = request.POST.getlist('selected_records')
@@ -1920,13 +1927,6 @@ def admin_harvestverified(request):
                 messages.error(request, f'Error deleting records: {str(e)}')
         
         return redirect('administrator:admin_harvestverified')
-    
-    # Handle filtering
-    municipality_filter = request.GET.get('municipality')
-    barangay_filter = request.GET.get('barangay')
-    commodity_filter = request.GET.get('commodity')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
     
     # Only show allowed municipalities (same logic as admin_verifyharvestrec)
     if is_superuser or is_pk14:

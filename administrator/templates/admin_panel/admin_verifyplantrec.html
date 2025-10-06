@@ -109,8 +109,8 @@ Fruit Cast | Plant Record Verification
                                             <input type="checkbox" name="selected_records" value="{{ rec.pk }}" class="form-check-input record-checkbox">
                                         </td>
                                         <td>
-                                            <div class="fw-medium text-success">{{ rec.transaction.date_registered|date:"M d, Y" }}</div>
-                                            <small class="text-muted">{{ rec.transaction.date_registered|date:"h:i A" }}</small>
+                                            <div class="fw-medium text-success">{{ rec.transaction.transaction_date|date:"M d, Y" }}</div>
+                                            <small class="text-muted">{{ rec.transaction.transaction_date|date:"h:i A" }}</small>
                                         </td>
                                         <td>
                                             <div class="fw-semibold">{{ rec.transaction.account_id.userinfo_id.lastname }},</div>
