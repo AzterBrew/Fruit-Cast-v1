@@ -15,7 +15,7 @@ Fruit Cast | Account Management
     <div class="monitor-user-content justify-content-center">
         <div class="card shadow-sm rounded-4 p-4 mb-3">
             {% if user_role_id == 2 %}  
-            {% comment %} restricting view to non admins {% endcomment %}
+            {% comment %} restricting view to administrators only {% endcomment %}
 
             <h1 class="mb-4 text-success fw-bold text-center">
                 <i class="bi bi-people-fill"></i> Account Management
@@ -145,22 +145,12 @@ Fruit Cast | Account Management
                                             {% endwith %}
                                         </td>
                                         <td>
-                                            {% if account.account_type_id.account_type == "Agriculturist" %}
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <form method="POST" action="{% url 'administrator:change_account_type' account.account_id %}" class="d-flex align-items-center gap-1">
-                                                        {% csrf_token %}
-                                                        <select name="new_type" class="form-select form-select-sm" style="width: auto;">
-                                                            {% for acct_type in account_types %}
-                                                                <option value="{{ acct_type.pk }}" {% if acct_type.pk == account.account_type_id.pk %}selected{% endif %}>{{ acct_type.account_type }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                        <button type="submit" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Update Type">
-                                                            <i class="bi bi-check"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            {% else %}
+                                            {% if account.account_type_id.account_type == "Administrator" %}
                                                 <span class="badge bg-warning">{{ account.account_type_id.account_type }}</span>
+                                            {% elif account.account_type_id.account_type == "Agriculturist" %}
+                                                <span class="badge bg-info">{{ account.account_type_id.account_type }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ account.account_type_id.account_type }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -260,7 +250,7 @@ Fruit Cast | Account Management
                         <i class="bi bi-shield-x" style="font-size: 3rem;"></i>
                     </div>
                     <h5 class="text-muted">Access Denied</h5>
-                    <p class="text-muted">You do not have permission to view this page.</p>
+                    <p class="text-muted">You do not have permission to view this page. Only administrators can access account management.</p>
                 </div>
             </div>
             {% endif %}

@@ -45,6 +45,11 @@
                         <li><a class="dropdown-item" href="{% url 'base:account_info_panel' %}">
                             <i class="bi bi-person me-2"></i>My Account
                         </a></li>
+                        {% if user_role_id == 2 or user_role_id == 3 %}
+                        <li><a class="dropdown-item" href="{% url 'administrator:admin_account_detail' current_account_id %}">
+                            <i class="bi bi-person-badge me-2"></i>Admin Account Details
+                        </a></li>
+                        {% endif %}
                         <li><a class="dropdown-item" href="{% url 'base:home' %}">
                             <i class="bi bi-clock me-2"></i>Return to Public Site
                         </a></li>

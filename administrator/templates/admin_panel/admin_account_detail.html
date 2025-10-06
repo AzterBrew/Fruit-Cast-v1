@@ -127,23 +127,101 @@ Fruit Cast | Account Details
             <!-- Administrative Information -->
             {% if target_admin_info %}
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-light">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-success">
                         <i class="bi bi-building me-2"></i>Administrative Information
                     </h5>
+                    {% if can_edit %}
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleAccountTypeEdit()">
+                            <i class="bi bi-pencil-square me-1"></i>Edit Account Type
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="toggleMunicipalityEdit()">
+                            <i class="bi bi-geo-alt me-1"></i>Edit Municipality
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
+                            <label class="form-label text-muted small">Account Type</label>
+                            <div id="account-type-display">
+                                <p class="fw-medium mb-2">
+                                    <span class="badge bg-{% if target_account.account_type_id.account_type == 'Administrator' %}warning{% elif target_account.account_type_id.account_type == 'Agriculturist' %}info{% else %}secondary{% endif %} fs-6">
+                                        {{ target_account.account_type_id.account_type }}
+                                    </span>
+                                </p>
+                            </div>
+                            {% if can_edit %}
+                            <div id="account-type-edit" style="display: none;">
+                                <form method="post" id="account-type-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="change_account_type">
+                                    <div class="input-group">
+                                        <select class="form-select" name="new_account_type" required>
+                                            <option value="">Select Account Type</option>
+                                            {% for account_type in account_types %}
+                                            <option value="{{ account_type.pk }}" {% if account_type.pk == target_account.account_type_id.pk %}selected{% endif %}>
+                                                {{ account_type.account_type }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="cancelAccountTypeEdit()">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label text-muted small">Municipality In-Charge</label>
-                            <p class="fw-medium mb-2">
-                                <span class="badge bg-primary fs-6">{{ target_admin_info.municipality_incharge.municipality }}</span>
-                            </p>
+                            <div id="municipality-display">
+                                <p class="fw-medium mb-2">
+                                    <span class="badge bg-primary fs-6">{{ target_admin_info.municipality_incharge.municipality }}</span>
+                                </p>
+                            </div>
+                            {% if can_edit %}
+                            <div id="municipality-edit" style="display: none;">
+                                <form method="post" id="municipality-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="change_municipality">
+                                    <div class="input-group">
+                                        <select class="form-select" name="new_municipality" required>
+                                            <option value="">Select Municipality</option>
+                                            {% for municipality in municipalities %}
+                                            <option value="{{ municipality.pk }}" {% if municipality.pk == target_admin_info.municipality_incharge.pk %}selected{% endif %}>
+                                                {{ municipality.municipality }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="cancelMunicipalityEdit()">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted small">Date Assigned</label>
                             <p class="fw-medium mb-2">{{ target_admin_info.first_added|date:"M d, Y" }}</p>
                         </div>
+                        {% if can_edit and is_own_account %}
+                        <div class="col-12">
+                            <div class="alert alert-info d-flex align-items-center" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <small>You cannot edit your own account details. Contact a superuser for changes.</small>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -444,6 +522,47 @@ Fruit Cast | Account Details
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+    });
+
+    // Account Type Editing Functions
+    function toggleAccountTypeEdit() {
+        document.getElementById('account-type-display').style.display = 'none';
+        document.getElementById('account-type-edit').style.display = 'block';
+    }
+
+    function cancelAccountTypeEdit() {
+        document.getElementById('account-type-display').style.display = 'block';
+        document.getElementById('account-type-edit').style.display = 'none';
+    }
+
+    // Municipality Editing Functions
+    function toggleMunicipalityEdit() {
+        document.getElementById('municipality-display').style.display = 'none';
+        document.getElementById('municipality-edit').style.display = 'block';
+    }
+
+    function cancelMunicipalityEdit() {
+        document.getElementById('municipality-display').style.display = 'block';
+        document.getElementById('municipality-edit').style.display = 'none';
+    }
+
+    // Form submission confirmation
+    document.getElementById('account-type-form')?.addEventListener('submit', function(e) {
+        const selectedOption = this.querySelector('select[name="new_account_type"]').selectedOptions[0];
+        const newAccountType = selectedOption ? selectedOption.text : '';
+        
+        if (!confirm(`Are you sure you want to change the account type to "${newAccountType}"?`)) {
+            e.preventDefault();
+        }
+    });
+
+    document.getElementById('municipality-form')?.addEventListener('submit', function(e) {
+        const selectedOption = this.querySelector('select[name="new_municipality"]').selectedOptions[0];
+        const newMunicipality = selectedOption ? selectedOption.text : '';
+        
+        if (!confirm(`Are you sure you want to change the municipality assignment to "${newMunicipality}"?`)) {
+            e.preventDefault();
+        }
     });
 </script>
 
