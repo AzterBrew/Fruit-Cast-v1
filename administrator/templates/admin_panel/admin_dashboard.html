@@ -172,6 +172,15 @@ Fruit Cast | Dashboard
                                     <h6 class="text-muted mb-3">Admin Panel</h6>
                                     <div class="row g-2">
                                         <div class="col-md-6">
+                                            {% if is_agriculturist %}
+                                            <a href="{% url 'administrator:verify_accounts' %}" class="btn btn-outline-success w-100 d-flex align-items-center">
+                                                <i class="bi bi-people me-2"></i>
+                                                <div class="text-start">
+                                                    <div class="small">Manage</div>
+                                                    <div>Farmer Accounts</div>
+                                                </div>
+                                            </a>
+                                            {% else %}
                                             <a href="{% url 'administrator:show_allaccounts' %}" class="btn btn-outline-success w-100 d-flex align-items-center">
                                                 <i class="bi bi-people me-2"></i>
                                                 <div class="text-start">
@@ -179,6 +188,7 @@ Fruit Cast | Dashboard
                                                     <div>Accounts</div>
                                                 </div>
                                             </a>
+                                            {% endif %}
                                         </div>
                                         <div class="col-md-6">
                                             <a href="{% url 'administrator:admin_verifyplantrec' %}" class="btn btn-outline-info w-100 d-flex align-items-center">
