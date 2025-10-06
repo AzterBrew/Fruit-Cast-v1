@@ -1345,9 +1345,20 @@ def admin_commodity_list(request):
             if not bulk_action:
                 messages.warning(request, 'Please select an action to perform.')
     
-    commodities = CommodityType.objects.exclude(pk=1)  # Exclude 'Not Listed' commodity
+    commodities = CommodityType.objects.exclude(pk=1).order_by('name')  # Exclude 'Not Listed' commodity and order alphabetically
+    
+    # Pagination
+    paginator = Paginator(commodities, 10)  # Show 10 commodities per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = get_admin_context(request)
-    context.update({'commodities': commodities})
+    context.update({
+        'commodities': page_obj.object_list,  # Pass the actual commodities for display
+        'page_obj': page_obj,
+        'paginator': page_obj.paginator,
+        'is_paginated': paginator.num_pages > 1,
+    })
     return render(request, 'admin_panel/admin_commodity.html', context)
 
 
@@ -1424,10 +1435,16 @@ def admin_verifyplantrec(request):
     # Municipality filter logic - always use initPlantRecord for all users
     if is_superuser or is_pk14:
         municipalities = MunicipalityName.objects.all()
-        records = initPlantRecord.objects.select_related('commodity_id', 'record_status').order_by('-plant_id')
+        records = initPlantRecord.objects.select_related(
+            'commodity_id', 'record_status', 'transaction', 
+            'transaction__account_id__userinfo_id', 'verified_by__userinfo_id'
+        ).order_by('-plant_id')
     else:
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
-        records = initPlantRecord.objects.select_related('commodity_id', 'record_status').filter(
+        records = initPlantRecord.objects.select_related(
+            'commodity_id', 'record_status', 'transaction', 
+            'transaction__account_id__userinfo_id', 'verified_by__userinfo_id'
+        ).filter(
             Q(transaction__farm_land__municipality=municipality_assigned) |
             Q(transaction__manual_municipality=municipality_assigned)
         ).order_by('-plant_id')
@@ -1524,7 +1541,9 @@ def admin_verifyplantrec(request):
 
     context = get_admin_context(request)
     context.update({
-        'records': page_obj,
+        'records': page_obj.object_list,  # Pass the actual records for display
+        'page_obj': page_obj,
+        'paginator': page_obj.paginator,
         'municipalities': municipalities,
         'commodities': commodities,
         'status_choices': status_choices,
@@ -1533,7 +1552,6 @@ def admin_verifyplantrec(request):
         'selected_status': filter_status,
         'is_agriculturist': not (is_superuser or is_pk14),
         'assigned_municipality': municipality_assigned,
-        'page_obj': page_obj,
         'is_paginated': paginator.num_pages > 1,
     })
     return render(request, 'admin_panel/admin_verifyplantrec.html', context)
@@ -1563,7 +1581,10 @@ def admin_verifyharvestrec(request):
     status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
     # Query records with sorting by ID (most recent first) and pagination
-    records = initHarvestRecord.objects.select_related('unit', 'commodity_id', 'record_status').order_by('-harvest_id')
+    records = initHarvestRecord.objects.select_related(
+        'unit', 'commodity_id', 'record_status', 'transaction', 
+        'transaction__account_id__userinfo_id', 'verified_by__userinfo_id'
+    ).order_by('-harvest_id')
     if selected_municipality:
         records = records.filter(
             Q(transaction__farm_land__municipality__pk=selected_municipality) |
@@ -1597,7 +1618,10 @@ def admin_verifyharvestrec(request):
         new_status = AccountStatus.objects.get(pk=new_status_pk)
         
         # Get all matching records (not just the current page) for batch operations
-        all_records = initHarvestRecord.objects.select_related('unit', 'commodity_id', 'record_status')
+        all_records = initHarvestRecord.objects.select_related(
+            'unit', 'commodity_id', 'record_status', 'transaction', 
+            'transaction__account_id__userinfo_id', 'verified_by__userinfo_id'
+        )
         if selected_municipality:
             all_records = all_records.filter(
                 Q(transaction__farm_land__municipality__pk=selected_municipality) |
@@ -1690,16 +1714,17 @@ def admin_verifyharvestrec(request):
     
     context = get_admin_context(request)
     context.update({
+        'records': page_obj.object_list,  # Pass the actual records for display
+        'page_obj': page_obj,
+        'paginator': page_obj.paginator,
         'municipalities': municipalities,
         'commodities': commodities,
         'status_choices': status_choices,
-        'records': page_obj,
         'selected_municipality': selected_municipality,
         'selected_commodity': selected_commodity,
         'selected_status': selected_status,
         'is_agriculturist': not (is_superuser or is_pk14),
         'assigned_municipality': admin_info.municipality_incharge,
-        'page_obj': page_obj,
         'is_paginated': paginator.num_pages > 1,
     })
     return render(request, 'admin_panel/admin_verifyharvestrec.html', context)
@@ -1940,7 +1965,9 @@ def admin_harvestverified(request):
     
     context = get_admin_context(request)
     context.update({
-        'records': page_obj,
+        'records': page_obj.object_list,  # Pass the actual records for display
+        'page_obj': page_obj,
+        'paginator': page_obj.paginator,
         'municipalities': municipalities,
         'barangays': barangays,
         'commodities': commodities,
@@ -1949,7 +1976,6 @@ def admin_harvestverified(request):
         'selected_commodity': commodity_filter,
         'date_from': date_from,
         'date_to': date_to,
-        'page_obj': page_obj,
         'is_paginated': paginator.num_pages > 1,
     })
     return render(request, 'admin_panel/admin_harvestverified.html', context)
