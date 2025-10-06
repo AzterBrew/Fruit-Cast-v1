@@ -75,12 +75,12 @@ class AccountStatus(models.Model):
     # "Suspended"
     # "Archived"
     # NEWNEWNEW which should be inclusive of recordtransaction status 
-    # Verified
-    # Pending
-    # Rejected
-    # Archived
-    # Suspended
-    # Removed
+    # Verified 2 
+    # Pending 3 
+    # Rejected 4
+    # Archived 5
+    # Suspended 6 
+    # Removed 7
 
 class MunicipalityName(models.Model):
     municipality_id = models.BigAutoField(primary_key=True)

@@ -13,16 +13,16 @@ Fruit Cast | Dashboard
             <!-- Welcome Header -->
             <div class="row mb-4">
                 <div class="col-12">
-                    <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #416e3f 0%, #5a8a57 100%);">
+                    <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #416e3f 0%, #5a8a57 100%);">
                         <div class="card-body text-white p-4">
                             <div class="row align-items-center">
                                 <div class="col-md-8">
                                     <h1 class="h2 mb-2">Welcome back, {{ user_firstname }}! 🌱</h1>
                                     <p class="mb-0 opacity-90">
                                         {% if is_agriculturist %}
-                                            Municipality Agriculturist for <strong>{{ assigned_municipality.municipality }}</strong>
+                                            Agriculturist for <strong>{{ assigned_municipality.municipality }}</strong>
                                         {% else %}
-                                            System Administrator - Managing fruit production data across all municipalities
+                                            System Administrator / Municipal Agriculturist - Managing fruit production data across all municipalities
                                         {% endif %}
                                     </p>
                                 </div>
@@ -133,8 +133,8 @@ Fruit Cast | Dashboard
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col">
-                                    <h6 class="text-uppercase text-muted mb-2">Forecasts</h6>
-                                    <span class="h2 font-weight-bold mb-0">{{ recent_forecasts|length|default:0 }}</span>
+                                    <h6 class="text-uppercase text-muted mb-2">Forecast</h6>
+                                    <span class="h2 font-weight-bold mb-0">{{ recent_forecasts.0.generated_at|date:"M d Y" }}</span>
                                 </div>
                                 <div class="col-auto">
                                     <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
@@ -145,7 +145,7 @@ Fruit Cast | Dashboard
                             <div class="mt-2">
                                 {% if recent_forecasts %}
                                 <span class="text-primary">
-                                    <i class="bi bi-calendar"></i> Last: {{ recent_forecasts.0.generated_at|date:"M d" }}
+                                    <i class="bi bi-calendar"></i> Last Updated
                                 </span>
                                 {% else %}
                                 <span class="text-muted">No forecasts yet</span>
@@ -347,7 +347,7 @@ Fruit Cast | Dashboard
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-white border-0">
                             <h5 class="card-title text-primary mb-0">
-                                <i class="bi bi-clock-history me-2"></i>Recent Activities
+                                <i class="bi bi-clock-history me-2"></i>Your Recent Activities
                             </h5>
                         </div>
                         <div class="card-body">
