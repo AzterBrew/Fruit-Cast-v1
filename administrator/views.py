@@ -1868,7 +1868,6 @@ def admin_harvestverified(request):
                 for record_id in selected_records:
                     record = all_records.filter(pk=record_id).first()
                     if record:
-                    if record:
                         # Log the deletion before deleting the record
                         AdminUserManagement.objects.create(
                             admin_id=admin_info,
