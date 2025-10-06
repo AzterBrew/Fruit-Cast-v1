@@ -1958,7 +1958,7 @@ def admin_account_detail(request, account_id):
     Access levels:
     - Superuser: Full information for all accounts
     - Administrator: Full information for agriculturists, partial for administrators
-    - Agriculturist: Restricted access (redirect to access denied)
+    - Agriculturist: Full access to their own account only, blocked from viewing others
     """
     try:
         # Get current user info
@@ -1966,12 +1966,6 @@ def admin_account_detail(request, account_id):
         current_account = AccountsInformation.objects.get(userinfo_id=current_user_info)
         current_admin_info = AdminInformation.objects.filter(userinfo_id=current_user_info).first()
         
-        # Restrict access for agriculturists
-        if current_account.account_type_id.pk == 3:  # Agriculturist
-            return render(request, 'admin_panel/access_denied.html', {
-                'error_message': 'Access denied. Only administrators can view account details.'
-            })
-
         # Get the account to view
         target_account = get_object_or_404(AccountsInformation, pk=account_id)
         target_userinfo = target_account.userinfo_id
@@ -1980,6 +1974,13 @@ def admin_account_detail(request, account_id):
         if target_account.account_type_id.account_type not in ["Administrator", "Agriculturist"]:
             messages.error(request, "You can only view administrator and agriculturist accounts.")
             return redirect('administrator:show_allaccounts')
+        
+        # Access control for agriculturists: they can only view their own account
+        if current_account.account_type_id.pk == 3:  # Agriculturist
+            if current_account.pk != target_account.pk:  # Not viewing their own account
+                return render(request, 'admin_panel/access_denied.html', {
+                    'error_message': 'Access denied. You can only view your own account details.'
+                })
         
         # Handle POST requests for editing account type and municipality
         if request.method == 'POST':
@@ -2059,7 +2060,7 @@ def admin_account_detail(request, account_id):
         # Hierarchical access control:
         # - Superuser: full access to everyone
         # - Administrator (pk=2): full access to Agriculturists (pk=3), partial to Administrators
-        # - Agriculturist (pk=3): no access (already redirected above)
+        # - Agriculturist (pk=3): full access to their own account only
         can_view_full_details = False
         can_view_histories = False
         can_edit = False
@@ -2077,6 +2078,10 @@ def admin_account_detail(request, account_id):
                 can_view_full_details = False  # Partial info only
                 can_view_histories = False
                 can_edit = False
+        elif user_role_id == 3 and is_own_account:  # Agriculturist viewing own account
+            can_view_full_details = True
+            can_view_histories = True
+            can_edit = False  # Agriculturists cannot edit their own account details
         
         # Calculate age
         today = date.today()
