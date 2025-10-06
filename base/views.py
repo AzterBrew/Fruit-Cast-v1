@@ -302,7 +302,15 @@ def monitor(request):
             # Dataset 2: by location
             location_data = {}
             for record in initHarvestRecord.objects.all():
-                key = record.harvest_municipality
+                if record.transaction:
+                    if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
+                        key = record.transaction.farm_land.municipality.municipality
+                    elif record.transaction.manual_municipality:
+                        key = record.transaction.manual_municipality.municipality
+                    else:
+                        key = "Unknown Location"
+                else:
+                    key = "Unknown Location"
                 location_data[key] = location_data.get(key, 0) + 1
 
             context = {
@@ -863,29 +871,18 @@ def convert_to_kg(weight, unit):
 @require_POST
 def finalize_transaction(request):
     print(f"Pending records: {request.session.get('pending_harvest_records', [])}")
-
-    from django.utils import timezone
-    if request.user.is_authenticated:
-        account_id = request.session.get('account_id')
-        userinfo_id = request.session.get('userinfo_id')
-        if userinfo_id and account_id:
-            # ...existing logic for authenticated user...
-            context = {
-                'user_firstname': request.user.userinformation.firstname,
-                'now': timezone.now(),
-            }
-            return render(request, 'loggedin/home.html', context)
-        else:
-            return redirect('base:home')
-    else:
-        return render(request, 'home.html', {'now': timezone.now()})
+    
+    record_type = request.POST.get('record_type', 'harvest')  # Default to harvest if not provided
+    
     if record_type not in ['harvest', 'plant']:
-        # print(f"not in harvest or plant {record_type}")        
-        # print(f"Not in ['harvest', 'plant']: {record_type}") 
         return redirect('base:transaction_recordlist')  # Fallback
 
     account_id = request.session.get('account_id')
     userinfo_id = request.session.get('userinfo_id')
+    
+    if not (account_id and userinfo_id):
+        return redirect('base:home')
+        
     accountinfo = AccountsInformation.objects.get(pk=account_id)
     userinfo = UserInformation.objects.get(pk=userinfo_id)
 
@@ -906,15 +903,13 @@ def finalize_transaction(request):
         if record_type == 'harvest':
             
             initHarvestRecord.objects.create(
-                transaction_id=transaction,
+                transaction=transaction,
                 harvest_date=data['harvest_date'],
-                commodity_type=data['commodity_type'],
-                commodity_spec=data['commodity_spec'],
+                commodity_id=data['commodity_id'],
+                commodity_custom=data.get('commodity_custom', ''),
                 total_weight=data['total_weight'],
                 unit=data['unit'],
                 weight_per_unit=data['weight_per_unit'],
-                harvest_municipality=data['harvest_municipality'],
-                harvest_barangay=data['harvest_barangay'],
                 remarks=data.get('remarks', '')
             )
             #  this is for verified harvests
