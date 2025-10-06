@@ -35,6 +35,18 @@ from base.models import AdminUserManagement
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Unit conversion functions
+UNIT_CONVERSION_TO_KG = {
+    "kg": 1,
+    "g": 0.001,
+    "ton": 1000,
+    "lbs": 0.453592,
+}
+
+def convert_to_kg(weight, unit_abrv):
+    """Convert weight from any unit to kg using unit abbreviation"""
+    return float(weight) * UNIT_CONVERSION_TO_KG.get(unit_abrv.lower(), 1)
+
 
 from django.contrib.admin.views.decorators import staff_member_required
 from dateutil.relativedelta import relativedelta 
@@ -120,8 +132,8 @@ def admin_dashboard(request):
             pending_accounts = AccountsInformation.objects.filter(account_type_id=1, acc_status_id=3).count()
             total_plant_records = initPlantRecord.objects.count()
             total_harvest_records = initHarvestRecord.objects.count()
-            pending_plant_records = initPlantRecord.objects.filter(record_status=3).count()
-            pending_harvest_records = initHarvestRecord.objects.filter(record_status=3).count()
+            pending_plant_records = initPlantRecord.objects.filter(record_status__acc_stat_id=3).count()
+            pending_harvest_records = initHarvestRecord.objects.filter(record_status__acc_stat_id=3).count()
             verified_plant_records = VerifiedPlantRecord.objects.count()
             verified_harvest_records = VerifiedHarvestRecord.objects.count()
             recent_registrations = AccountsInformation.objects.filter(
@@ -160,8 +172,8 @@ def admin_dashboard(request):
             
             total_plant_records = municipality_plant_records.count()
             total_harvest_records = municipality_harvest_records.count()
-            pending_plant_records = municipality_plant_records.filter(record_status=3).count()
-            pending_harvest_records = municipality_harvest_records.filter(record_status=3).count()
+            pending_plant_records = municipality_plant_records.filter(record_status__acc_stat_id=3).count()
+            pending_harvest_records = municipality_harvest_records.filter(record_status__acc_stat_id=3).count()
             
             verified_plant_records = VerifiedPlantRecord.objects.filter(municipality=assigned_municipality).count()
             verified_harvest_records = VerifiedHarvestRecord.objects.filter(municipality=assigned_municipality).count()
@@ -486,17 +498,31 @@ def show_allaccounts(request):
 def change_account_type(request, account_id):
     user_info = request.user.userinformation
     account_info = AccountsInformation.objects.get(userinfo_id=user_info)
+    admin_info = AdminInformation.objects.get(userinfo_id=user_info)
 
     account = get_object_or_404(AccountsInformation, pk=account_id)
     new_type_id = request.POST.get('new_type')
+    
+    # Get account holder's full name for logging
+    account_holder_name = f"{account.userinfo_id.firstname} {account.userinfo_id.lastname}"
+    old_account_type = account.account_type_id.account_type
 
     if account.account_type_id.account_type == "Agriculturist":
         new_type = get_object_or_404(AccountType, pk=new_type_id)
         account.account_type_id = new_type
         account.save()
-        messages.success(request, "Account type updated successfully.")
+        
+        # Create detailed AdminUserManagement log entry
+        AdminUserManagement.objects.create(
+            admin_id=admin_info,
+            action=f"Changed {account_holder_name}'s account type from '{old_account_type}' to '{new_type.account_type}'",
+            content_type=ContentType.objects.get_for_model(AccountsInformation),
+            object_id=account.account_id
+        )
+        
+        messages.success(request, f"Account type for {account_holder_name} updated successfully from {old_account_type} to {new_type.account_type}.")
     else:
-        messages.warning(request, "Only Agriculturist accounts can be updated.")
+        messages.warning(request, f"Only Agriculturist accounts can be updated. {account_holder_name} has account type: {old_account_type}")
 
     return redirect('administrator:show_allaccounts')  # or wherever the list view lives
 
@@ -1382,13 +1408,13 @@ def admin_verifyplantrec(request):
     # Municipality filter logic - always use initPlantRecord for all users
     if is_superuser or is_pk14:
         municipalities = MunicipalityName.objects.all()
-        records = initPlantRecord.objects.all()
+        records = initPlantRecord.objects.select_related('commodity_id', 'record_status').order_by('plant_id')
     else:
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
-        records = initPlantRecord.objects.filter(
+        records = initPlantRecord.objects.select_related('commodity_id', 'record_status').filter(
             Q(transaction__farm_land__municipality=municipality_assigned) |
             Q(transaction__manual_municipality=municipality_assigned)
-        )
+        ).order_by('plant_id')
 
     # Apply filters
     if filter_municipality:
@@ -1509,8 +1535,8 @@ def admin_verifyharvestrec(request):
     commodities = CommodityType.objects.all()
     status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
-    # Query records 
-    records = initHarvestRecord.objects.all()
+    # Query records with sorting by ID (creation order)
+    records = initHarvestRecord.objects.select_related('unit', 'commodity_id', 'record_status').order_by('harvest_id')
     if selected_municipality:
         records = records.filter(
             Q(transaction__farm_land__municipality__pk=selected_municipality) |
@@ -1525,6 +1551,11 @@ def admin_verifyharvestrec(request):
         records = records.filter(commodity_id__pk=selected_commodity)
     if selected_status:
         records = records.filter(record_status__pk=selected_status)
+
+    # Add converted weight in kg for each record
+    for record in records:
+        record.total_weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
+        record.weight_per_unit_kg = convert_to_kg(record.weight_per_unit, record.unit.unit_abrv)
 
     # Batch update
     if request.method == 'POST':
@@ -1561,11 +1592,15 @@ def admin_verifyharvestrec(request):
                             municipality = rec.transaction.manual_municipality
                             barangay = rec.transaction.manual_barangay
 
+                        # Convert weights to kg before storing
+                        total_weight_kg = convert_to_kg(rec.total_weight, rec.unit.unit_abrv)
+                        weight_per_unit_kg = convert_to_kg(rec.weight_per_unit, rec.unit.unit_abrv)
+
                         verified_harvest_record = VerifiedHarvestRecord.objects.create(
                             harvest_date=rec.harvest_date,
                             commodity_id=rec.commodity_id,
-                            total_weight_kg=rec.total_weight,
-                            weight_per_unit_kg=rec.weight_per_unit,
+                            total_weight_kg=total_weight_kg,
+                            weight_per_unit_kg=weight_per_unit_kg,
                             remarks=rec.remarks,
                             municipality=municipality,
                             barangay=barangay,
@@ -2031,14 +2066,18 @@ def admin_account_detail(request, account_id):
                 new_account_type_id = request.POST.get('new_account_type')
                 if new_account_type_id:
                     try:
+                        old_account_type = target_account.account_type_id.account_type
                         new_account_type = AccountType.objects.get(pk=new_account_type_id)
                         target_account.account_type_id = new_account_type
                         target_account.save()
                         
-                        # Log the action
+                        # Get account holder's full name for logging
+                        account_holder_name = f"{target_account.userinfo_id.firstname} {target_account.userinfo_id.lastname}"
+                        
+                        # Log the action with detailed information
                         AdminUserManagement.objects.create(
                             admin_id=current_admin_info,
-                            action=f"Changed account type to {new_account_type.account_type}",
+                            action=f"Changed {account_holder_name}'s account type from '{old_account_type}' to '{new_account_type.account_type}'",
                             content_type=ContentType.objects.get_for_model(AccountsInformation),
                             object_id=target_account.pk
                         )
@@ -2052,20 +2091,24 @@ def admin_account_detail(request, account_id):
                 new_municipality_id = request.POST.get('new_municipality')
                 if new_municipality_id:
                     try:
+                        old_municipality = AdminInformation.objects.get(userinfo_id=target_userinfo).municipality_incharge.municipality
                         new_municipality = MunicipalityName.objects.get(pk=new_municipality_id)
                         target_admin_info = AdminInformation.objects.get(userinfo_id=target_userinfo)
                         target_admin_info.municipality_incharge = new_municipality
                         target_admin_info.save()
                         
-                        # Log the action
+                        # Get account holder's full name for logging
+                        account_holder_name = f"{target_account.userinfo_id.firstname} {target_account.userinfo_id.lastname}"
+                        
+                        # Log the action with detailed information
                         AdminUserManagement.objects.create(
                             admin_id=current_admin_info,
-                            action=f"Changed municipality assignment to {new_municipality.municipality}",
+                            action=f"Changed {account_holder_name}'s municipality assignment from '{old_municipality}' to '{new_municipality.municipality}'",
                             content_type=ContentType.objects.get_for_model(AdminInformation),
                             object_id=target_admin_info.pk
                         )
                         
-                        messages.success(request, f"Municipality assignment updated to {new_municipality.municipality}")
+                        messages.success(request, f"Municipality assignment for {account_holder_name} updated from {old_municipality} to {new_municipality.municipality}")
                     except Exception as e:
                         messages.error(request, f"Error updating municipality: {str(e)}")
             
