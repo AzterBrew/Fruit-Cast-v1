@@ -2601,11 +2601,18 @@ def export_accounts_csv(accounts, filename, format_type='csv'):
         ])
         
         for account in accounts:
+            # Format contact number as string and handle empty values
+            contact_number = account.userinfo_id.contact_number
+            if contact_number:
+                contact_number_str = str(contact_number)
+            else:
+                contact_number_str = "Not provided"
+                
             writer.writerow([
                 account.account_id,
                 f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname} {account.userinfo_id.middlename}".strip(),
                 account.userinfo_id.user_email,
-                account.userinfo_id.contact_number,
+                contact_number_str,
                 account.userinfo_id.municipality_id.municipality,
                 account.userinfo_id.barangay_id.barangay,
                 account.account_type_id.account_type,
@@ -3045,13 +3052,21 @@ def generate_accounts_pdf(accounts, filename):
     elements.append(title)
     elements.append(Spacer(1, 12))
     
-    data = [['Account ID', 'Full Name', 'Email', 'Municipality', 'Account Type', 'Status', 'Registration Date']]
+    data = [['Account ID', 'Full Name', 'Email', 'Contact Number', 'Municipality', 'Account Type', 'Status', 'Registration Date']]
     
     for account in accounts:
+        # Format contact number as string and handle empty values
+        contact_number = account.userinfo_id.contact_number
+        if contact_number:
+            contact_number_str = str(contact_number)
+        else:
+            contact_number_str = "Not provided"
+            
         row = [
             account.account_id,
             f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname}"[:25],
             account.userinfo_id.user_email[:25],
+            contact_number_str[:15],
             account.userinfo_id.municipality_id.municipality[:15],
             account.account_type_id.account_type,
             account.acc_status_id.acc_status,

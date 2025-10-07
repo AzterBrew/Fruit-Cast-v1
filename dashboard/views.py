@@ -794,6 +794,13 @@ def monitor(request):
     available_years = VerifiedHarvestRecord.objects.annotate(year=ExtractYear('harvest_date')).values_list('year', flat=True).distinct().order_by('year')
     if not available_years: # Fallback if no harvest data
         available_years = VerifiedPlantRecord.objects.annotate(year=ExtractYear('plant_date')).values_list('year', flat=True).distinct().order_by('year')
+    
+    # Ensure we have at least the current year in available years for display
+    current_year = timezone.now().year
+    available_years_list = list(available_years)
+    if current_year not in available_years_list:
+        available_years_list.append(current_year)
+        available_years_list.sort()
 
     # Get available municipalities for the filter
     municipalities = MunicipalityName.objects.exclude(pk=14).order_by('municipality')
@@ -803,7 +810,15 @@ def monitor(request):
 
     # Get filter values from the request
     current_year = timezone.now().year
-    selected_year = request.GET.get('year', str(current_year))  # Default to current year
+    selected_year = request.GET.get('year')
+    
+    # Handle year parameter more robustly
+    if selected_year and selected_year.isdigit() and int(selected_year) > 0:
+        selected_year = int(selected_year)
+    else:
+        # Default to current year if no valid year provided
+        selected_year = current_year
+    
     selected_municipality = request.GET.get('municipality', 'all')
     selected_commodity = request.GET.get('commodity', 'all')
     selected_municipality_name = 'All Municipalities'
@@ -813,15 +828,16 @@ def monitor(request):
     plant_records = VerifiedPlantRecord.objects.all()
 
     # Apply year filter to all datasets
-    if selected_year and selected_year.isdigit():
-        harvest_records = harvest_records.filter(harvest_date__year=selected_year)
-        plant_records = plant_records.filter(plant_date__year=selected_year)
-    else:
-        # Default to the most recent year if no year is selected
-        if available_years:
-            selected_year = str(available_years.last())
-            harvest_records = harvest_records.filter(harvest_date__year=selected_year)
-            plant_records = plant_records.filter(plant_date__year=selected_year)
+    harvest_records = harvest_records.filter(harvest_date__year=selected_year)
+    plant_records = plant_records.filter(plant_date__year=selected_year)
+
+    # If no data for selected year, try to find the most recent year with data
+    if not harvest_records.exists() and not plant_records.exists():
+        if available_years_list:
+            # Use the most recent year with data
+            selected_year = max(available_years_list)
+            harvest_records = VerifiedHarvestRecord.objects.filter(harvest_date__year=selected_year)
+            plant_records = VerifiedPlantRecord.objects.filter(plant_date__year=selected_year)
 
     # Create different filtered datasets for different cards
     
@@ -936,7 +952,7 @@ def monitor(request):
         'selected_municipality': selected_municipality,
         'selected_commodity': selected_commodity,
         'selected_municipality_name': selected_municipality_name,
-        'available_years': available_years,
+        'available_years': available_years_list,
         'municipalities': municipalities,
         'commodities': commodities,
         'total_plantings': total_plantings,
