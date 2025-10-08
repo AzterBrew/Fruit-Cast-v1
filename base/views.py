@@ -1145,7 +1145,7 @@ def delete_transaction(request, transaction_id):
         return JsonResponse({'success': False, 'error': 'Transaction not found or you do not have permission to delete it'})
     except Exception as e:
         print(f"❌ Error deleting transaction {transaction_id}: {e}")
-        return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'}).
+        return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'})
 
 
 def transaction_recordhistory(request, transaction_id):
