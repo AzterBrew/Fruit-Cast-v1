@@ -642,10 +642,26 @@ def solo_harvest_record_view(request):
 
 @login_required
 def transaction_recordlist(request, transaction_id):
-    transaction = RecordTransaction.objects.get(pk=transaction_id)
+    try:
+        transaction = RecordTransaction.objects.get(pk=transaction_id)
+    except RecordTransaction.DoesNotExist:
+        return render(request, 'loggedin/transaction/transaction.html', {
+            'error_message': 'Transaction not found',
+            'view_to_show': 'recordlist'
+        })
+    
     session_account_id = request.session.get('account_id')
     if session_account_id != transaction.account_id.pk:
         return HttpResponseForbidden("Unauthorized access to this transaction.")
+    
+    # Check if the account has been marked as removed (pk=7)
+    if transaction.account_id.acc_status_id.pk == 7:
+        return render(request, 'loggedin/transaction/transaction.html', {
+            'transaction': transaction,
+            'error_message': 'This record has been removed',
+            'view_to_show': 'recordlist',
+            'user_firstname': transaction.account_id.userinfo_id.firstname,
+        })
     
     plant_record = None
     harvest_records = []
@@ -758,7 +774,13 @@ def transaction_history(request):
         return redirect('base:home')
 
     accountinfo = AccountsInformation.objects.get(pk=account_id)
-    transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
+    
+    # Exclude transactions with removed status (pk=7)
+    transactions = RecordTransaction.objects.filter(
+        account_id=accountinfo
+    ).exclude(
+        account_id__acc_status_id=7
+    ).order_by('-transaction_date')
 
     context = {
         'transactions': transactions,
@@ -1087,13 +1109,13 @@ def delete_transaction(request, transaction_id):
     Delete a transaction by setting its account status to 'removed' (pk=7)
     """
     if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     
     try:
         # Get the transaction and verify ownership
         account_id = request.session.get('account_id')
         if not account_id:
-            return JsonResponse({'success': False, 'error': 'User not authenticated'}, status=401)
+            return JsonResponse({'success': False, 'error': 'User not authenticated'})
         
         transaction = RecordTransaction.objects.get(
             transaction_id=transaction_id,
@@ -1104,7 +1126,7 @@ def delete_transaction(request, transaction_id):
         try:
             removed_status = AccountStatus.objects.get(pk=7)
         except AccountStatus.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Removed status not found'}, status=500)
+            return JsonResponse({'success': False, 'error': 'Removed status not found in system'})
         
         # Update the account status to "removed"
         account = transaction.account_id
@@ -1115,15 +1137,15 @@ def delete_transaction(request, transaction_id):
         
         return JsonResponse({
             'success': True, 
-            'message': 'Transaction successfully deleted',
+            'message': 'Transaction successfully deleted and marked as removed',
             'transaction_id': transaction_id
         })
         
     except RecordTransaction.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Transaction not found or access denied'}, status=404)
+        return JsonResponse({'success': False, 'error': 'Transaction not found or you do not have permission to delete it'})
     except Exception as e:
         print(f"❌ Error deleting transaction {transaction_id}: {e}")
-        return JsonResponse({'success': False, 'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'}).
 
 
 def transaction_recordhistory(request, transaction_id):
