@@ -28,11 +28,24 @@ class AssignAdminAgriForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)  # Extract user from kwargs
+        admin_info = kwargs.pop('admin_info', None)  # Extract admin info from kwargs
         super().__init__(*args, **kwargs)
         self.fields['municipality'].widget.attrs['disabled'] = True  # Default disabled
         
-        # If user is not a superuser, restrict account type to Agriculturist only
-        if user and not user.is_superuser:
+        # Determine access level based on user privileges
+        is_superuser = user.is_superuser if user else False
+        is_pk14 = admin_info.municipality_incharge.pk == 14 if admin_info else False
+        
+        if is_superuser:
+            # Superuser: can assign any account type with any municipality including pk=14
+            self.fields['account_type'].choices = ACCOUNT_TYPE_CHOICES
+            self.fields['municipality'].queryset = MunicipalityName.objects.all()
+        elif is_pk14:
+            # Administrator with pk=14: can assign admin and agriculturist but exclude pk=14 from municipalities
+            self.fields['account_type'].choices = ACCOUNT_TYPE_CHOICES
+            self.fields['municipality'].queryset = MunicipalityName.objects.exclude(pk=14)
+        else:
+            # Administrator with municipality != pk=14: can only assign agriculturists in their municipality
             self.fields['account_type'].choices = [('Agriculturist', 'Agriculturist')]
             self.fields['account_type'].initial = 'Agriculturist'
             self.fields['account_type'].widget.attrs.update({
@@ -41,7 +54,14 @@ class AssignAdminAgriForm(forms.Form):
                 'class': 'form-select',
                 'style': 'background-color: #f8f9fa; cursor: not-allowed;'
             })
-            # Always enable municipality for non-superusers since they can only create agriculturists
+            # Filter municipality to only their assigned municipality (excluding pk=14)
+            if admin_info:
+                self.fields['municipality'].queryset = MunicipalityName.objects.filter(
+                    pk=admin_info.municipality_incharge.pk
+                ).exclude(pk=14)
+            else:
+                self.fields['municipality'].queryset = MunicipalityName.objects.exclude(pk=14)
+            # Always enable municipality and make it required
             self.fields['municipality'].widget.attrs['disabled'] = False
             self.fields['municipality'].required = True
 
@@ -54,6 +74,12 @@ class AssignAdminAgriForm(forms.Form):
         # Agriculturists must have a municipality assigned
         if account_type == "Agriculturist" and not municipality:
             self.add_error("municipality", "Municipality is required for Agriculturist accounts.")
+        
+        # Administrators should also have a municipality assigned for proper management
+        if account_type == "Administrator" and not municipality:
+            self.add_error("municipality", "Municipality is required for Administrator accounts.")
+            
+        return cleaned_data
             
 class CommodityTypeForm(forms.ModelForm):
     seasonal_months = forms.ModelMultipleChoiceField(queryset=Month.objects.all(),widget=forms.CheckboxSelectMultiple,required=False,label="Seasonal Months")

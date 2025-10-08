@@ -11,21 +11,53 @@ Fruit Cast | Create Administrator/Agriculturist Account
         <div class="card shadow-sm rounded-4 p-4 mb-3" style="max-width: 900px; margin: 0 auto;">
             <h1 class="mb-4 text-success fw-bold text-center">
                 <i class="bi bi-person-plus"></i>
-                {% if user.is_superuser %}
+                {% if is_superuser %}
                     Create Administrator/Agriculturist Account
+                {% elif is_pk14 %}
+                    Create Administrator/Agriculturist Account
+                    <small class="badge bg-info ms-2">No Overall Bataan Assignment</small>
                 {% else %}
                     Create Agriculturist Account
+                    <small class="badge bg-warning text-dark ms-2">{{ municipality_assigned.municipality }} Only</small>
                 {% endif %}
             </h1>
 
             {% if user_role_id == 2 %}
+                <!-- Access Control Information -->
+                <div class="card border-info mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Access Control Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if is_superuser %}
+                            <div class="alert alert-success border-0 mb-0">
+                                <strong>Superuser Access:</strong> You can create both Administrator and Agriculturist accounts and assign them to any municipality, including "Overall Bataan".
+                            </div>
+                        {% elif is_pk14 %}
+                            <div class="alert alert-warning border-0 mb-0">
+                                <strong>Overall Bataan Administrator:</strong> You can create both Administrator and Agriculturist accounts, but cannot assign them to "Overall Bataan" municipality. You can assign to any other municipality.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info border-0 mb-0">
+                                <strong>Municipal Administrator:</strong> You can only create Agriculturist accounts and must assign them to your municipality: <strong>{{ municipality_assigned.municipality }}</strong>. You cannot assign to "Overall Bataan" or other municipalities.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
                 <!-- Account Creation Form Section -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
                             <i class="bi bi-person-badge me-2"></i>Account Information
-                            {% if not user.is_superuser %}
-                                <small class="ms-2 badge bg-info">Agriculturist Only</small>
+                            {% if is_superuser %}
+                                <small class="ms-2 badge bg-light text-dark">Full Access</small>
+                            {% elif is_pk14 %}
+                                <small class="ms-2 badge bg-warning text-dark">Overall Bataan Admin</small>
+                            {% else %}
+                                <small class="ms-2 badge bg-info">{{ municipality_assigned.municipality }} Admin</small>
                             {% endif %}
                         </h5>
                     </div>
@@ -101,29 +133,55 @@ Fruit Cast | Create Administrator/Agriculturist Account
                                 <div class="col-md-6">
                                     <label for="{{ form.account_type.id_for_label }}" class="form-label">
                                         <i class="bi bi-shield-check me-1"></i>Account Type *
-                                        {% if not user.is_superuser %}
-                                            <small class="badge bg-warning text-dark ms-2">Restricted</small>
+                                        {% if is_superuser %}
+                                            <small class="badge bg-success text-white ms-2">Full Access</small>
+                                        {% elif is_pk14 %}
+                                            <small class="badge bg-warning text-dark ms-2">Admin/Agriculturist</small>
+                                        {% else %}
+                                            <small class="badge bg-info text-white ms-2">Agriculturist Only</small>
                                         {% endif %}
                                     </label>
                                     {{ form.account_type }}
-                                    {% if not user.is_superuser %}
+                                    {% if not is_superuser and not is_pk14 %}
                                         <!-- Hidden input to ensure account type is submitted since disabled fields don't submit -->
                                         <input type="hidden" name="account_type" value="Agriculturist">
                                         <div class="form-text text-muted">
                                             <i class="bi bi-info-circle me-1"></i>
-                                            As an administrator, you can only create Agriculturist accounts.
+                                            As a municipal administrator, you can only create Agriculturist accounts.
+                                        </div>
+                                    {% elif is_pk14 %}
+                                        <div class="form-text text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            You can create Administrator and Agriculturist accounts, but cannot assign them to "Overall Bataan".
                                         </div>
                                     {% endif %}
                                     {{ form.account_type.errors }}
                                 </div>
                                 <div class="col-md-6">
                                     <label for="{{ form.municipality.id_for_label }}" class="form-label">
-                                        <i class="bi bi-geo-alt me-1"></i>Assigned Municipality
-                                        <small class="text-muted">(Required for Agriculturists)</small>
+                                        <i class="bi bi-geo-alt me-1"></i>Assigned Municipality *
+                                        {% if is_superuser %}
+                                            <small class="text-success">(Any Municipality)</small>
+                                        {% elif is_pk14 %}
+                                            <small class="text-warning">(Excluding Overall Bataan)</small>
+                                        {% else %}
+                                            <small class="text-info">({{ municipality_assigned.municipality }} Only)</small>
+                                        {% endif %}
                                     </label>
                                     <div id="municipality-wrapper">
                                         {{ form.municipality }}
                                     </div>
+                                    {% if not is_superuser and not is_pk14 %}
+                                        <div class="form-text text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            You can only assign accounts to your municipality: {{ municipality_assigned.municipality }}.
+                                        </div>
+                                    {% elif is_pk14 %}
+                                        <div class="form-text text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            You can assign to any municipality except "Overall Bataan".
+                                        </div>
+                                    {% endif %}
                                     {{ form.municipality.errors }}
                                 </div>
                             </div>
@@ -179,22 +237,28 @@ Fruit Cast | Create Administrator/Agriculturist Account
 
         // Account type and municipality logic
         const accountTypeSelect = document.getElementById("id_account_type");
-        const municipalitySelect = document.getElementById("municipality-select");
-        const isNonSuperuser = {% if not user.is_superuser %}true{% else %}false{% endif %};
+        const municipalitySelect = document.getElementById("id_municipality");
+        const isSuper = {% if is_superuser %}true{% else %}false{% endif %};
+        const isPk14 = {% if is_pk14 %}true{% else %}false{% endif %};
 
         function updateMunicipalityField() {
-            if (isNonSuperuser) {
-                // For non-superusers, always enable municipality (they can only create agriculturists)
-                municipalitySelect.disabled = false;
-                municipalitySelect.classList.remove("visually-locked");
-            } else {
-                // For superusers, use the normal logic
-                if (accountTypeSelect.value === "Agriculturist") {
+            if (isSuper) {
+                // Superuser: always enable municipality for both admin and agriculturist
+                if (municipalitySelect) {
                     municipalitySelect.disabled = false;
                     municipalitySelect.classList.remove("visually-locked");
-                } else if (accountTypeSelect.value === "Administrator") {
-                    municipalitySelect.classList.add("visually-locked");
-                    municipalitySelect.disabled = true;
+                }
+            } else if (isPk14) {
+                // Administrator with pk=14: enable municipality for both admin and agriculturist
+                if (municipalitySelect) {
+                    municipalitySelect.disabled = false;
+                    municipalitySelect.classList.remove("visually-locked");
+                }
+            } else {
+                // Administrator with municipality != pk=14: only agriculturists, municipality pre-selected
+                if (municipalitySelect) {
+                    municipalitySelect.disabled = false;
+                    municipalitySelect.classList.remove("visually-locked");
                 }
             }
         }

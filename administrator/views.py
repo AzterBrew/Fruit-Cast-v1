@@ -774,22 +774,20 @@ def assign_account(request):
     # Get user role info for access control
     user_info = user.userinformation
     account_info = AccountsInformation.objects.get(userinfo_id=user_info)
+    admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+    municipality_assigned = admin_info.municipality_incharge
+    is_superuser = user.is_superuser
+    is_pk14 = municipality_assigned.pk == 14  # Overall in Bataan
     user_role_id = account_info.account_type_id.pk
     
     # Allow both superusers and administrators (pk=2) to access
-    if not user.is_superuser and user_role_id != 2:
+    if user_role_id != 2:
         return render(request, 'admin_panel/access_denied.html', {
-            'error_message': 'Access denied. Only administrators and superusers can create accounts.'
+            'error_message': 'Access denied. Only administrators can create accounts.'
         })
 
     if request.method == 'POST':
-        form = AssignAdminAgriForm(request.POST, user=user)
-        
-        # For non-superusers, force account type to Agriculturist
-        if not user.is_superuser:
-            mutable_post = request.POST.copy()
-            mutable_post['account_type'] = 'Agriculturist'
-            form = AssignAdminAgriForm(mutable_post, user=user)
+        form = AssignAdminAgriForm(request.POST, user=user, admin_info=admin_info)
         
         if form.is_valid():
             email = form.cleaned_data['email']
@@ -800,9 +798,27 @@ def assign_account(request):
             account_type = form.cleaned_data['account_type']
             municipality = form.cleaned_data.get('municipality')  # Required only for agriculturist
 
-            # Additional server-side validation: non-superusers can only create Agriculturists
-            if not user.is_superuser and account_type != 'Agriculturist':
-                form.add_error('account_type', 'You can only create Agriculturist accounts.')
+            # Server-side validation based on access control rules
+            validation_error = None
+            
+            if is_superuser:
+                # Superuser can assign any type with any municipality
+                pass
+            elif is_pk14:
+                # Administrator with pk=14 can assign admin and agriculturist but not pk=14
+                if municipality and municipality.pk == 14:
+                    validation_error = "You cannot assign accounts to 'Overall in Bataan' municipality."
+            else:
+                # Administrator with municipality != pk=14 can only assign agriculturists in their municipality
+                if account_type != 'Agriculturist':
+                    validation_error = "You can only create Agriculturist accounts."
+                elif municipality and municipality.pk == 14:
+                    validation_error = "You cannot assign accounts to 'Overall in Bataan' municipality."
+                elif municipality and municipality.pk != municipality_assigned.pk:
+                    validation_error = f"You can only assign accounts to your municipality: {municipality_assigned.municipality}."
+            
+            if validation_error:
+                form.add_error(None, validation_error)
             # Check if email already exists
             elif AuthUser.objects.filter(email=email).exists():
                 form.add_error('email', 'Email already exists in the system.')
@@ -812,8 +828,6 @@ def assign_account(request):
                         # Generate a strong password
                         generated_password = get_random_string(length=12)
 
-                        # This is for creating records, itesting ko muna emailing
-                        
                         # Create AuthUser
                         new_auth = AuthUser.objects.create_user(email=email, password=generated_password)
 
@@ -840,27 +854,32 @@ def assign_account(request):
                         # Create AccountsInformation with Verified status instead of Pending
                         acct_type = AccountType.objects.get(account_type=account_type)
                         acct_status = AccountStatus.objects.get(pk=2)  # pk=2 = Verified
-                        account_info = AccountsInformation.objects.create(
+                        account_info_new = AccountsInformation.objects.create(
                             userinfo_id=userinfo,
                             account_type_id=acct_type,
                             acc_status_id=acct_status,
                             account_register_date=timezone.now(),
                             account_isverified=True,  # Set as verified
                             account_verified_date=timezone.now(),  # Set verification date
-                            account_verified_by=AdminInformation.objects.get(userinfo_id__auth_user=user)  # Set verified by current admin
+                            account_verified_by=admin_info  # Set verified by current admin
                         )
 
                         # Create AdminInformation (even for agriculturist)
-                        AdminInformation.objects.create(
+                        new_admin_info = AdminInformation.objects.create(
                             userinfo_id=userinfo,
                             municipality_incharge=municipality
                         )
 
+                        # Log the action in AdminUserManagement for tracking
+                        account_holder_name = f"{first_name} {last_name}"
+                        AdminUserManagement.objects.create(
+                            admin_id=admin_info,
+                            action=f"Created new {account_type} account for {account_holder_name} (Email: {email}) assigned to {municipality.municipality}",
+                            content_type=ContentType.objects.get_for_model(AccountsInformation),
+                            object_id=account_info_new.pk
+                        )
+
                         # Send email with credentials
-                        
-                        # EMAIL TESTING
-                        
-                        
                         email_sent = send_mail(
                             subject="Fruit Cast Admin Account Created",
                             message=f"Hello {first_name},\n\nYour admin account has been created.\nEmail: {email}\nPassword: {generated_password}\n\nPlease log in and change your password.",
@@ -870,7 +889,7 @@ def assign_account(request):
                         )
 
                         if email_sent:
-                            messages.success(request, f"Admin/Agriculturist account for {email} created successfully.")
+                            messages.success(request, f"{account_type} account for {account_holder_name} created successfully and logged in AdminUserManagement.")
                             return redirect('administrator:assign_account')
                         else:
                             raise Exception("Failed to send email. Account creation aborted.")
@@ -878,14 +897,15 @@ def assign_account(request):
                 except Exception as e:
                     form.add_error(None, f"Something went wrong: {e}")
     else:
-        form = AssignAdminAgriForm(user=user)
-        # For non-superusers, additional setup is handled by the form's __init__ method
+        form = AssignAdminAgriForm(user=user, admin_info=admin_info)
 
     context = get_admin_context(request)
     context.update({
         'form': form,
-        'is_superuser': user.is_superuser,
-        'user_role_id': user_role_id
+        'is_superuser': is_superuser,
+        'is_pk14': is_pk14,
+        'user_role_id': user_role_id,
+        'municipality_assigned': municipality_assigned
     })
 
     return render(request, 'admin_panel/assign_admin_agriculturist.html', context)
