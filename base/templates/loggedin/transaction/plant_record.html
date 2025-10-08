@@ -307,6 +307,7 @@
                 barangaySelect.disabled = true;
                 barangaySelect.required = false;
                 barangaySelect.value = '';
+                barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
             }
         } else if (selectedValue === 'manual') {
             if (farmLandSelect) {
@@ -321,8 +322,12 @@
             if (barangaySelect) {
                 barangaySelect.disabled = !municipalitySelect.value;
                 barangaySelect.required = true;
+                if (!municipalitySelect.value) {
+                    barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
+                }
             }
         } else {
+            // No location type selected - disable all
             if (farmLandSelect) {
                 farmLandSelect.disabled = true;
                 farmLandSelect.required = false;
@@ -337,10 +342,26 @@
                 barangaySelect.disabled = true;
                 barangaySelect.required = false;
                 barangaySelect.value = '';
-            }
+                barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
             }
         }
     }
+    
+    // Initialize all fields to disabled state first
+    if (farmLandSelect) {
+        farmLandSelect.disabled = true;
+        farmLandSelect.required = false;
+    }
+    if (municipalitySelect) {
+        municipalitySelect.disabled = true;
+        municipalitySelect.required = false;
+    }
+    if (barangaySelect) {
+        barangaySelect.disabled = true;
+        barangaySelect.required = false;
+    }
+    
+    // Then apply the correct state based on current selection
     toggleLocationFields();
     locationTypeRadios.forEach(radio => {
         radio.addEventListener('change', toggleLocationFields);
