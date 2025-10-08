@@ -30,7 +30,7 @@ class Command(BaseCommand):
                     self.stdout.write(
                         f'Scheduled notification for {account.userinfo_id.firstname} '
                         f'{account.userinfo_id.lastname} (Municipality ID: {municipality_id})'
-                    )
+                    ) 
                 except Exception as e:
                     self.stdout.write(
                         self.style.ERROR(

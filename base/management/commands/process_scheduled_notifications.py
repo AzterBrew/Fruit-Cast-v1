@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         current_time = timezone.now()
-        
+         
         # Find notifications that are scheduled for now or in the past and haven't been "delivered" yet
         # We'll use the is_read field to track if a notification has been "delivered"
         due_notifications = Notification.objects.filter(

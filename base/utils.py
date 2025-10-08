@@ -97,7 +97,7 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
     
     print(f"📊 Calculated Low Supply Threshold (Q1) for Municipality {selected_municipality_id}: {low_supply_threshold}")
     print(f"📋 Forecasted values range: min={min(forecasted_values)}, max={max(forecasted_values)}, count={len(forecasted_values)}")
-    
+     
     # --- END OF DYNAMIC THRESHOLD LOGIC ---
     
     # Step 2: Collect commodities with a forecasted supply below the threshold

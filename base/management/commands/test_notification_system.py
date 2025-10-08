@@ -19,7 +19,7 @@ class Command(BaseCommand):
             action='store_true',
             help='Show existing notifications before creating new ones'
         )
-
+ 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('=== NOTIFICATION SYSTEM TEST ==='))
         

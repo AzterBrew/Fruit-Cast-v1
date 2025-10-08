@@ -13,7 +13,7 @@ class Command(BaseCommand):
             type=int,
             help='Specific account ID to create notifications for (optional)'
         )
-
+ 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('Creating immediate fruit recommendation notifications...'))
         
