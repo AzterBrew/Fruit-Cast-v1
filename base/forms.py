@@ -190,7 +190,7 @@ class EditUserInformation(forms.ModelForm):
     class Meta:
         model = UserInformation
         fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate","municipality_id","barangay_id",  "address_details", "religion", "civil_status","rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "user_email", "contact_number"]
-        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename": "Middle Name","nameextension": "Name Extension", "sex": "Sex", "birthdate": "Date of Birth","municipality_id": "Municipality","barangay_id": "Barangay", "address_details": "Purok, Street Name, Building, House No.", "religion": "Religion","civil_status": "Civil Status", "rsbsa_ref_number": "RSBSA Reference No.","emergency_contact_person": "Emergency Contact Person", "emergency_contact_number": "Emergency Contact No.","user_email": "Email", "contact_number": "Contact No."}
+        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename": "Middle Name","nameextension": "Name Extension", "sex": "Sex", "birthdate": "Date of Birth","municipality_id": "Municipality","barangay_id": "Barangay", "address_details": "House No., Purok, Street Name, Building", "religion": "Religion","civil_status": "Civil Status", "rsbsa_ref_number": "RSBSA Reference No.","emergency_contact_person": "Emergency Contact Person", "emergency_contact_number": "Emergency Contact No.","user_email": "Email", "contact_number": "Contact No."}
         widgets = {
             'firstname': forms.TextInput(attrs={'class': 'form-control form-control'}),
             'lastname': forms.TextInput(attrs={'class': 'form-control form-control'}),

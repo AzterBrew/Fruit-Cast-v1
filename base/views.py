@@ -1644,7 +1644,7 @@ def cancel_registration(request):
     # Redirect to the email registration page
     return redirect('base:home')
 
- 
+  
 def custom_login(request):
     if request.method == 'POST':
         email_or_contact = request.POST.get('email_or_contact')
