@@ -19,12 +19,12 @@ pillow = "*"
 colorama = "*"
 joblib = "*"
 google-generativeai = "*"
-weasyprint = "*"
 celery = "*"
 redis = "*"
 django-storages = "*"
 boto3 = "*"
 reportlab = "*"
+weasyprint = "*"
 
 [dev-packages]
 

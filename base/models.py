@@ -283,7 +283,6 @@ class initHarvestRecord(models.Model):
     record_status = models.ForeignKey(AccountStatus, on_delete=models.CASCADE, null=True, blank=True, related_name='harvest_status_transactions')
     total_weight = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.ForeignKey(UnitMeasurement, on_delete=models.CASCADE)
-    weight_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
     remarks = models.TextField(blank=True)
     verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
     date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
