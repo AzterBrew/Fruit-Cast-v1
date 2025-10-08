@@ -1742,8 +1742,23 @@ def admin_verifyplantrec(request):
                 object_id=rec.plant_id
             )
             
-            # Only create VerifiedPlantRecord if status is "Verified" and not already created
-            if new_status_pk == verified_status_pk:
+            # Handle record status changes
+            if new_status_pk == 4:  # Rejected status
+                # Delete corresponding verified record if it exists
+                verified_record = VerifiedPlantRecord.objects.filter(prev_record=rec).first()
+                if verified_record:
+                    verified_record_id = verified_record.id
+                    verified_record.delete()
+                    
+                    # Log the deletion of verified plant record
+                    AdminUserManagement.objects.create(
+                        admin_id=admin_info,
+                        action=f"Deleted Verified Plant Record ID {verified_record_id} due to rejection of Plant Record ID {rec.plant_id}",
+                        content_type=ContentType.objects.get_for_model(VerifiedPlantRecord),
+                        object_id=verified_record_id
+                    )
+            elif new_status_pk == verified_status_pk:  # Verified status
+                # Only create VerifiedPlantRecord if not already created
                 if not VerifiedPlantRecord.objects.filter(prev_record=rec).exists():
                     # Get location
                     if rec.transaction.farm_land:
@@ -1907,8 +1922,23 @@ def admin_verifyharvestrec(request):
                 object_id=rec.harvest_id
             )
             
-            # Only create VerifiedHarvestRecord if status is "Verified" and not already created
-            if new_status_pk == verified_status_pk and selected_ids:
+            # Handle record status changes
+            if new_status_pk == 4:  # Rejected status
+                # Delete corresponding verified record if it exists
+                verified_record = VerifiedHarvestRecord.objects.filter(prev_record=rec).first()
+                if verified_record:
+                    verified_record_id = verified_record.id
+                    verified_record.delete()
+                    
+                    # Log the deletion of verified harvest record
+                    AdminUserManagement.objects.create(
+                        admin_id=admin_info,
+                        action=f"Deleted Verified Harvest Record ID {verified_record_id} due to rejection of Harvest Record ID {rec.harvest_id}",
+                        content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                        object_id=verified_record_id
+                    )
+            elif new_status_pk == verified_status_pk and selected_ids:  # Verified status
+                # Only create VerifiedHarvestRecord if not already created
                 if not VerifiedHarvestRecord.objects.filter(prev_record=rec).exists():
                     
                     try : 
