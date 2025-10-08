@@ -812,7 +812,7 @@ def monitor(request):
     current_year = timezone.now().year
     selected_year = request.GET.get('year')
     
-    # Handle year parameter more robustly
+    # Handle year parameter more robustly - default to current year
     if selected_year and selected_year.isdigit() and int(selected_year) > 0:
         selected_year = int(selected_year)
     else:
@@ -876,8 +876,8 @@ def monitor(request):
     monthly_labels = [data['month'].strftime('%b %Y') for data in monthly_harvest_data]
     monthly_values = [float(data['total_weight']) for data in monthly_harvest_data]
     
-    # --- b-a: Total Harvested Weight by Commodity - affected by municipality filter only ---
-    harvest_by_commodity = harvest_records_muni_only.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')
+    # --- b-a: Total Harvested Weight by Commodity (Top 10) - affected by municipality filter only ---
+    harvest_by_commodity = harvest_records_muni_only.values('commodity_id__name').annotate(total_weight=Sum('total_weight_kg')).order_by('-total_weight')[:10]  # Limit to top 10
     commodity_labels = [data['commodity_id__name'] for data in harvest_by_commodity]
     commodity_values = [float(data['total_weight']) for data in harvest_by_commodity]
 

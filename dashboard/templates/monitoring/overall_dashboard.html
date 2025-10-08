@@ -154,7 +154,7 @@ Fruit Cast | Monitor
                             </label>
                             <select class="form-select" id="yearFilter">
                                 {% for year in available_years %}
-                                    <option value="{{ year }}" {% if selected_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
                                 {% endfor %}
                             </select>
                         </div>

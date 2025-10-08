@@ -415,8 +415,7 @@ class HarvestRecordCreate(forms.ModelForm):
             'class': 'form-control', 
             'min': '0.01', 
             'step': '0.01', 
-            'placeholder': '0.00',
-            'maxlength': '12'
+            'placeholder': '0.00'
         })
     )
     weight_per_unit = forms.DecimalField(
@@ -428,8 +427,7 @@ class HarvestRecordCreate(forms.ModelForm):
             'class': 'form-control', 
             'min': '0.01', 
             'step': '0.01', 
-            'placeholder': '0.00',
-            'maxlength': '12'
+            'placeholder': '0.00'
         })
     )
 
@@ -495,8 +493,7 @@ class PlantRecordCreate(forms.ModelForm):
             'class': 'form-control', 
             'min': '0.01', 
             'step': '0.01', 
-            'placeholder': '0.00',
-            'maxlength': '12'
+            'placeholder': '0.00'
         })
     )
     max_expected_harvest = forms.DecimalField(
@@ -508,8 +505,7 @@ class PlantRecordCreate(forms.ModelForm):
             'class': 'form-control', 
             'min': '0.01', 
             'step': '0.01', 
-            'placeholder': '0.00',
-            'maxlength': '12'
+            'placeholder': '0.00'
         })
     )
 
@@ -567,8 +563,7 @@ class FarmlandRecordCreate(forms.ModelForm):
             'class': 'form-control', 
             'min': '0.01', 
             'step': '0.01', 
-            'placeholder': 'Enter land area...',
-            'maxlength': '12'
+            'placeholder': 'Enter land area...'
         })
     )
     municipality = forms.ModelChoiceField(label="Municipality of Farm *", queryset=MunicipalityName.objects.exclude(pk=14), widget=forms.Select(attrs={'class': 'form-select'}))
