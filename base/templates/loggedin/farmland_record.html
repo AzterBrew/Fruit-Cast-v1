@@ -206,12 +206,27 @@ document.addEventListener('DOMContentLoaded', function() {
         updateBarangayOptions(true);
     }
 
-    // Simple validation to prevent negative values for estimated area field
+    // Simple validation to prevent negative values and restrict input for estimated area field
     function preventNegativeInput(input) {
         let value = input.value;
         
-        // Let HTML5 and Django handle character restrictions
-        // Only validate minimum value (greater than zero)
+        // Remove any non-numeric characters except decimal point
+        value = value.replace(/[^0-9.]/g, '');
+        
+        // Limit to 13 characters total
+        if (value.length > 13) {
+            value = value.substring(0, 13);
+        }
+        
+        // Ensure only one decimal point
+        const parts = value.split('.');
+        if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+        }
+        
+        input.value = value;
+        
+        // Validate minimum value (greater than zero)
         if (parseFloat(value) <= 0 && value !== '') {
             input.setCustomValidity('Value must be greater than 0');
         } else {

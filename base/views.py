@@ -654,8 +654,8 @@ def transaction_recordlist(request, transaction_id):
     if session_account_id != transaction.account_id.pk:
         return HttpResponseForbidden("Unauthorized access to this transaction.")
     
-    # Check if the account has been marked as removed (pk=7)
-    if transaction.account_id.acc_status_id.pk == 7:
+    # Check if the account has been marked as removed (pk=1)
+    if transaction.account_id.acc_status_id.pk == 1:
         return render(request, 'loggedin/transaction/transaction.html', {
             'transaction': transaction,
             'error_message': 'This record has been removed',
@@ -775,11 +775,11 @@ def transaction_history(request):
 
     accountinfo = AccountsInformation.objects.get(pk=account_id)
     
-    # Exclude transactions with removed status (pk=7)
+    # Exclude transactions with removed status (pk=1)
     transactions = RecordTransaction.objects.filter(
         account_id=accountinfo
     ).exclude(
-        account_id__acc_status_id=7
+        account_id__acc_status_id=1
     ).order_by('-transaction_date')
 
     context = {
@@ -1106,7 +1106,7 @@ def edit_pending_record(request, index):
 @login_required
 def delete_transaction(request, transaction_id):
     """
-    Delete a transaction by setting its account status to 'removed' (pk=7)
+    Delete a transaction by setting its account status to 'removed' (pk=1)
     """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
@@ -1122,9 +1122,9 @@ def delete_transaction(request, transaction_id):
             account_id=account_id
         )
         
-        # Get the "removed" status (pk=7)
+        # Get the "removed" status (pk=1)
         try:
-            removed_status = AccountStatus.objects.get(pk=7)
+            removed_status = AccountStatus.objects.get(pk=1)
         except AccountStatus.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Removed status not found in system'})
         
@@ -1364,16 +1364,16 @@ def register_email(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
         
-        # Check if email already exists (excluding removed accounts pk=7)
+        # Check if email already exists (excluding removed accounts pk=1)
         if AuthUser.objects.filter(email=email).exists():
-            # Check if this email belongs to a removed account (pk=7)
+            # Check if this email belongs to a removed account (pk=1)
             try:
                 existing_user = AuthUser.objects.get(email=email)
                 user_info = UserInformation.objects.get(auth_user=existing_user)
                 account_info = AccountsInformation.objects.get(userinfo_id=user_info)
-                
-                # If account is removed (pk=7), allow registration with this email
-                if account_info.acc_status_id.acc_stat_id != 7:
+
+                # If account is removed (pk=1), allow registration with this email
+                if account_info.acc_status_id.acc_stat_id != 1:
                     return render(request, "registration/register_email.html", {"email_error": "Email already registered."})
                 # If it's a removed account, we allow the registration to proceed
             except (UserInformation.DoesNotExist, AccountsInformation.DoesNotExist):
@@ -1756,10 +1756,17 @@ def custom_login(request):
         user = authenticate(request, username=email_or_contact, password=password)
         
         if user is not None:
-            login(request, user)
             try:
                 userinfo = UserInformation.objects.get(auth_user=user)
                 account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
+                
+                # Check if account status allows login (only pk=2, pk=3, and pk=5)
+                allowed_statuses = [2, 3, 5]  # Approved account statuses
+                if account_info.acc_status_id.acc_stat_id not in allowed_statuses:
+                    messages.error(request, 'Your account is not yet approved or has been suspended.')
+                    return redirect('base:login')
+                
+                login(request, user)
                 
                 # Log user login
                 UserLoginLog.objects.create(account_id=account_info)

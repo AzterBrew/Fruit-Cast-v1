@@ -80,7 +80,7 @@ class AccountStatus(models.Model):
     # Rejected 4
     # Archived 5
     # Suspended 6 
-    # Removed 7
+    # Removed 1
 
 class MunicipalityName(models.Model):
     municipality_id = models.BigAutoField(primary_key=True)
