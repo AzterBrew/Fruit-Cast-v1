@@ -79,12 +79,12 @@ class RegistrationForm(forms.ModelForm):
         max_length=17, 
         widget=forms.TextInput(attrs={
             'type': 'tel', 
-            'placeholder': '+639XX XXX XXXX', 
+            'placeholder': '+63 9XX XXX XXXX', 
             'class': 'form-control phone-input',
             'value': '+63',
-            'data-format': '+639XX XXX XXXX'
+            'data-format': '+63 9XX XXX XXXX'
         })
-    )
+    ) 
     
     emergency_contact_number = forms.CharField(
         label="Emergency Contact Person's Contact No. *", 
@@ -92,10 +92,10 @@ class RegistrationForm(forms.ModelForm):
         max_length=17, 
         widget=forms.TextInput(attrs={
             'type': 'tel', 
-            'placeholder': '+639XX XXX XXXX', 
+            'placeholder': '+63 9XX XXX XXXX', 
             'class': 'form-control phone-input',
             'value': '+63',
-            'data-format': '+639XX XXX XXXX'
+            'data-format': '+63 9XX XXX XXXX'
         })
     )
     

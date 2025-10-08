@@ -1643,7 +1643,7 @@ def cancel_registration(request):
     
     # Redirect to the email registration page
     return redirect('base:home')
-
+ 
   
 def custom_login(request):
     if request.method == 'POST':
