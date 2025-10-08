@@ -55,6 +55,7 @@ urlpatterns = [
     path('record/edit/<int:index>/', views.edit_pending_record, name='edit_pending_record'),
     path('transaction/history/', views.transaction_history, name='transaction_history'),
     path('transaction/history/<int:transaction_id>', views.transaction_recordhistory, name='transaction_recordhistory'),
+    path('transaction/delete/<int:transaction_id>/', views.delete_transaction, name='delete_transaction'),
     path('api/get-recommendations/', views.get_recommendations_api, name='get_recommendations_api'),    
 ]
  

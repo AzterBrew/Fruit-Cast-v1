@@ -153,6 +153,86 @@
             });
         }
     });
+
+    // Date validation for plant_date (limit year to 4 digits)
+    const plantDateInput = document.getElementById('id_plant_date');
+    if (plantDateInput) {
+        plantDateInput.addEventListener('input', function() {
+            const value = this.value;
+            if (value) {
+                const dateParts = value.split('-');
+                // Limit year to 4 digits
+                if (dateParts[0] && dateParts[0].length > 4) {
+                    dateParts[0] = dateParts[0].substring(0, 4);
+                    this.value = dateParts.join('-');
+                }
+            }
+        });
+    }
+
+    // Enhanced numeric validation with 12-character limit for harvest fields
+    function validateDecimalInput(input) {
+        let value = input.value;
+        
+        // Remove any non-numeric characters except decimal point
+        value = value.replace(/[^0-9.]/g, '');
+        
+        // Ensure only one decimal point
+        let parts = value.split('.');
+        if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+            parts = value.split('.');
+        }
+        
+        // Limit to 12 total characters including decimal point
+        if (value.length > 12) {
+            if (parts.length === 2) {
+                // Has decimal point - preserve it in the 12 characters
+                const totalLength = 12;
+                const beforeDecimal = parts[0];
+                const afterDecimal = parts[1];
+                
+                if (beforeDecimal.length >= totalLength - 1) {
+                    // Too many digits before decimal
+                    value = beforeDecimal.substring(0, totalLength - 3) + '.00';
+                } else {
+                    // Trim after decimal
+                    const availableAfterDecimal = totalLength - beforeDecimal.length - 1;
+                    value = beforeDecimal + '.' + afterDecimal.substring(0, Math.max(0, availableAfterDecimal));
+                }
+            } else {
+                // No decimal point
+                value = value.substring(0, 12);
+            }
+        }
+        
+        // Ensure maximum 2 decimal places
+        parts = value.split('.');
+        if (parts.length === 2 && parts[1].length > 2) {
+            parts[1] = parts[1].substring(0, 2);
+            value = parts[0] + '.' + parts[1];
+        }
+        
+        input.value = value;
+        
+        // Validate minimum value
+        if (parseFloat(value) < 0.01 && value !== '') {
+            input.setCustomValidity('Value must be at least 0.01');
+        } else {
+            input.setCustomValidity('');
+        }
+    }
+
+    // Replace the previous numeric validation with enhanced version
+    numericFields.forEach(function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.removeEventListener('input', validateNumericInput);
+            field.addEventListener('input', function(e) {
+                validateDecimalInput(e.target);
+            });
+        }
+    });
     
     // Confirmation on submit
     const form = document.getElementById("plant-record-form");

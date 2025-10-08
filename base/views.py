@@ -1081,6 +1081,51 @@ def edit_pending_record(request, index):
         'user_firstname': accountinfo.userinfo_id.firstname,
     })
 
+@login_required
+def delete_transaction(request, transaction_id):
+    """
+    Delete a transaction by setting its account status to 'removed' (pk=7)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+    
+    try:
+        # Get the transaction and verify ownership
+        account_id = request.session.get('account_id')
+        if not account_id:
+            return JsonResponse({'success': False, 'error': 'User not authenticated'}, status=401)
+        
+        transaction = RecordTransaction.objects.get(
+            transaction_id=transaction_id,
+            account_id=account_id
+        )
+        
+        # Get the "removed" status (pk=7)
+        try:
+            removed_status = AccountStatus.objects.get(pk=7)
+        except AccountStatus.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Removed status not found'}, status=500)
+        
+        # Update the account status to "removed"
+        account = transaction.account_id
+        account.acc_status_id = removed_status
+        account.save()
+        
+        print(f"✅ Transaction {transaction_id} marked as removed for account {account_id}")
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Transaction successfully deleted',
+            'transaction_id': transaction_id
+        })
+        
+    except RecordTransaction.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Transaction not found or access denied'}, status=404)
+    except Exception as e:
+        print(f"❌ Error deleting transaction {transaction_id}: {e}")
+        return JsonResponse({'success': False, 'error': 'An unexpected error occurred'}, status=500)
+
+
 def transaction_recordhistory(request, transaction_id):
     if not request.user.is_authenticated:
         return redirect('base:home')
