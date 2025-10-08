@@ -83,7 +83,8 @@ def schedule_monthly_fruit_recommendations(account, municipality_id, farmland_na
             notification_type="fruit_recommendation",
             scheduled_for__month=target_month.month,
             scheduled_for__year=target_month.year,
-            message__icontains=municipality.municipality,
+            message__icontains=municipality.municipality
+        ).filter(
             message__icontains=location_identifier
         ).first()
         

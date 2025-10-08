@@ -45,7 +45,9 @@ Fruit Cast | Plant Record Verification
                                         <select name="municipality" id="municipality" class="form-select">
                                             <option value="">All Municipalities</option>
                                             {% for m in municipalities %}
-                                                <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                                {% if m.pk != 14 %}
+                                                    <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                                {% endif %}
                                             {% endfor %}
                                         </select>
                                     {% endif %}

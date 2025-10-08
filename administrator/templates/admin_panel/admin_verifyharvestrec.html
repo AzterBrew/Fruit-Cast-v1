@@ -152,12 +152,20 @@ Fruit Cast | Plant and Harvest Records
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <div class="fw-bold text-success">{{ rec.total_weight_kg|floatformat:2 }} kg</div>
-                                            <small class="text-muted">({{ rec.total_weight }} {{ rec.unit.unit_abrv }})</small>
+                                            {% if rec.unit.unit_abrv == "kg" or rec.unit.unit_abrv == "kilogram" %}
+                                                <div class="fw-bold text-success">{{ rec.total_weight|floatformat:2 }} kg</div>
+                                            {% else %}
+                                                <div class="fw-bold text-success">{{ rec.total_weight_kg|floatformat:2 }} kg</div>
+                                                <small class="text-muted">({{ rec.total_weight }} {{ rec.unit.unit_abrv }})</small>
+                                            {% endif %}
                                         </td>
                                         <td>
-                                            <div class="fw-medium">{{ rec.weight_per_unit_kg|floatformat:2 }} kg</div>
-                                            <small class="text-muted">({{ rec.weight_per_unit }} {{ rec.unit.unit_abrv }})</small>
+                                            {% if rec.unit.unit_abrv == "kg" or rec.unit.unit_abrv == "kilogram" %}
+                                                <div class="fw-medium">{{ rec.weight_per_unit|floatformat:2 }} kg</div>
+                                            {% else %}
+                                                <div class="fw-medium">{{ rec.weight_per_unit_kg|floatformat:2 }} kg</div>
+                                                <small class="text-muted">({{ rec.weight_per_unit }} {{ rec.unit.unit_abrv }})</small>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             {% if rec.remarks %}

@@ -373,7 +373,7 @@ def verify_accounts(request):
     # Pass status choices for filter dropdown - filter municipalities if agriculturist
     status_choices = AccountStatus.objects.all()
     if is_superuser or is_pk14:
-        municipalities = MunicipalityName.objects.all()
+        municipalities = MunicipalityName.objects.exclude(pk=14)
     else:
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
     
@@ -1465,7 +1465,7 @@ def admin_verifyplantrec(request):
 
     # Municipality filter logic - always use initPlantRecord for all users
     if is_superuser or is_pk14:
-        municipalities = MunicipalityName.objects.all()
+        municipalities = MunicipalityName.objects.exclude(pk=14)
         records = initPlantRecord.objects.select_related(
             'commodity_id', 'record_status', 'transaction', 
             'transaction__account_id__userinfo_id', 'verified_by__userinfo_id'
@@ -1614,7 +1614,7 @@ def admin_verifyharvestrec(request):
 
     # Only show allowed municipalities
     if is_superuser or is_pk14:
-        municipalities = MunicipalityName.objects.all()
+        municipalities = MunicipalityName.objects.exclude(pk=14)
     else:
         municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
 
@@ -1979,7 +1979,7 @@ def admin_harvestverified(request):
     
     # Only show allowed municipalities (same logic as admin_verifyharvestrec)
     if is_superuser or is_pk14:
-        municipalities = MunicipalityName.objects.all()
+        municipalities = MunicipalityName.objects.exclude(pk=14)
     else:
         municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
     
