@@ -244,6 +244,112 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Enhanced Phone Number Formatting
+  function formatPhoneNumber(input) {
+    let value = input.value.replace(/\D/g, ''); // Remove all non-digits
+    
+    // Ensure it starts with +63
+    if (!input.value.startsWith('+63')) {
+      input.value = '+63';
+      value = '';
+    }
+    
+    // Remove the country code from value for formatting
+    if (value.startsWith('63')) {
+      value = value.substring(2);
+    }
+    
+    // Format as +639XX XXX XXXX
+    if (value.length >= 1 && value.charAt(0) === '9') {
+      if (value.length <= 3) {
+        input.value = '+63 9' + value.substring(1);
+      } else if (value.length <= 6) {
+        input.value = '+63 9' + value.substring(1, 3) + ' ' + value.substring(3);
+      } else if (value.length <= 10) {
+        input.value = '+63 9' + value.substring(1, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
+      } else {
+        // Limit to 10 digits after +63
+        value = value.substring(0, 10);
+        input.value = '+63 9' + value.substring(1, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
+      }
+    } else {
+      // If doesn't start with 9, reset to +639
+      input.value = '+63 9';
+    }
+  }
+
+  function validatePhoneNumber(input) {
+    const phoneRegex = /^\+639\d{2} \d{3} \d{4}$/;
+    const isValid = phoneRegex.test(input.value);
+    
+    if (input.value.length > 4 && !isValid) {
+      input.setCustomValidity('Phone number must be in the format: +63 9XX XXX XXXX');
+    } else {
+      input.setCustomValidity('');
+    }
+    
+    return isValid;
+  }
+
+  // Apply phone formatting to all phone inputs
+  const phoneInputs = document.querySelectorAll('.phone-input');
+  phoneInputs.forEach(function(input) {
+    // Set initial value
+    if (!input.value || input.value === '') {
+      input.value = '+63';
+    }
+    
+    input.addEventListener('input', function(e) {
+      const cursorPosition = e.target.selectionStart;
+      formatPhoneNumber(e.target);
+      
+      // Prevent cursor from moving when typing
+      if (cursorPosition <= 3) {
+        e.target.setSelectionRange(4, 4); // Position after +63
+      }
+    });
+    
+    input.addEventListener('keydown', function(e) {
+      // Prevent deletion of +63
+      if (e.target.selectionStart < 4 && (e.key === 'Backspace' || e.key === 'Delete')) {
+        e.preventDefault();
+        e.target.setSelectionRange(4, 4);
+      }
+    });
+    
+    input.addEventListener('blur', function(e) {
+      validatePhoneNumber(e.target);
+    });
+    
+    input.addEventListener('focus', function(e) {
+      if (e.target.value === '+63') {
+        e.target.setSelectionRange(4, 4);
+      }
+    });
+  });
+
+  // Name validation for character restrictions
+  function validateNameInput(input) {
+    const nameRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s]*$/;
+    const value = input.value;
+    
+    if (!nameRegex.test(value)) {
+      // Remove invalid characters
+      input.value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s]/g, '');
+    }
+  }
+
+  // Apply name validation to name fields
+  const nameFields = ['id_firstname', 'id_lastname', 'id_middlename', 'id_nameextension', 'id_emergency_contact_person'];
+  nameFields.forEach(function(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener('input', function(e) {
+        validateNameInput(e.target);
+      });
+    }
+  });
+
   // Municipality and Barangay handling
   const municipalitySelect = document.getElementById('id_municipality_id');
   const barangaySelect = document.getElementById('id_barangay_id');
@@ -360,6 +466,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
       
+      // Validate phone numbers
+      const phoneFields = ['contact_number', 'emergency_contact_number'];
+      phoneFields.forEach(field => {
+        const phoneInput = document.getElementById('id_' + field);
+        if (phoneInput && !validatePhoneNumber(phoneInput)) {
+          e.preventDefault();
+          phoneInput.focus();
+          alert('Please enter a valid phone number in the format: +639XX XXX XXXX');
+          return false;
+        }
+      });
+      
       if (missingFields.length > 0) {
         console.log('❌ Missing required fields:', missingFields);
       } else {
@@ -374,5 +492,42 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
+
+<style>
+.phone-input {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+.phone-input:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+.phone-input:invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Character limit indicators */
+.form-control[maxlength] {
+    position: relative;
+}
+
+.char-limit-info {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 0.25rem;
+}
+
+.char-limit-warning {
+    color: #ffc107;
+}
+
+.char-limit-danger {
+    color: #dc3545;
+}
+</style>
 
 {% endblock content %}

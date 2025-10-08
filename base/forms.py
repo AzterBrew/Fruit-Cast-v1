@@ -61,34 +61,125 @@ CIVSTAT_CHOICES = [
 
 
 class RegistrationForm(forms.ModelForm):
-    phone_regex = RegexValidator(  #regular expression
-        regex=r'^\+?1?\d{9,15}$', 
-        message="Phone number must be entered in the format: '+639XXXXXXXXX'.")
+    # Enhanced phone number validation for Philippine mobile numbers
+    phone_regex = RegexValidator(
+        regex=r'^\+639\d{2} \d{3} \d{4}$', 
+        message="Phone number must be in the format: +639XX XXX XXXX"
+    )
     
-    contact_number = forms.CharField(label="Your Contact No. *", validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
-    emergency_contact_number = forms.CharField(label="Emergency Contact Person's Contact No. *", validators=[phone_regex], max_length=17, widget=forms.TextInput(attrs={'type': 'tel', 'placeholder': '+639XXXXXXXXX', 'class' : 'form-control'}))
+    # Name validation regex - alphabets, hyphens, apostrophes, and accent marks
+    name_regex = RegexValidator(
+        regex=r"^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s]+$",
+        message="Only letters, hyphens, apostrophes, and accent marks are allowed."
+    )
+    
+    contact_number = forms.CharField(
+        label="Your Contact No. *", 
+        validators=[phone_regex], 
+        max_length=17, 
+        widget=forms.TextInput(attrs={
+            'type': 'tel', 
+            'placeholder': '+639XX XXX XXXX', 
+            'class': 'form-control phone-input',
+            'value': '+63',
+            'data-format': '+639XX XXX XXXX'
+        })
+    )
+    
+    emergency_contact_number = forms.CharField(
+        label="Emergency Contact Person's Contact No. *", 
+        validators=[phone_regex], 
+        max_length=17, 
+        widget=forms.TextInput(attrs={
+            'type': 'tel', 
+            'placeholder': '+639XX XXX XXXX', 
+            'class': 'form-control phone-input',
+            'value': '+63',
+            'data-format': '+639XX XXX XXXX'
+        })
+    )
+    
     civil_status = forms.ChoiceField(label="Civil Status *", choices=CIVSTAT_CHOICES, widget=forms.Select(attrs={'class':'form-select'}))
-    
-    # password1 = forms.CharField(
-    #     label="Password *",
-    #     widget=forms.PasswordInput(attrs={'class': 'form-control'})
-    # )
-    # password2 = forms.CharField(
-    #     label="Confirm Password *",
-    #     widget=forms.PasswordInput(attrs={'class': 'form-control'})
-    # )
     sex = forms.ChoiceField(label="Sex *", choices=SEX_CHOICES, widget=forms.RadioSelect)
 
-    nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank if N/A'}))
+    # Enhanced name fields with length and character restrictions
+    firstname = forms.CharField(
+        label="First Name *",
+        max_length=16,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '16',
+            'placeholder': 'Enter your first name'
+        })
+    )
+    
+    lastname = forms.CharField(
+        label="Last Name *",
+        max_length=21,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '21',
+            'placeholder': 'Enter your last name'
+        })
+    )
+    
+    middlename = forms.CharField(
+        label="Middle Name",
+        max_length=16,
+        required=False,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '16',
+            'placeholder': 'Enter your middle name'
+        })
+    )
+    
+    nameextension = forms.CharField(
+        label="Name Extension", 
+        max_length=7,
+        required=False, 
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'maxlength': '7',
+            'placeholder': 'Jr., Sr., III, etc.'
+        })
+    )
+    
+    emergency_contact_person = forms.CharField(
+        label="Emergency Contact Person *",
+        max_length=50,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '50',
+            'placeholder': 'Enter emergency contact name'
+        })
+    )
 
     class Meta:
         model = UserInformation
         fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay_id", "municipality_id", "address_details", "religion", "civil_status", "rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "contact_number"]
-        labels = {"lastname": "Last Name *","firstname": "First Name *", "middlename": "Middle Name","nameextension": "Name Extension","sex": "Sex *","birthdate": "Date of Birth *","barangay_id": "Barangay *","municipality_id": "Municipality *","address_details": "Address Details *", "religion":"Religion *",  "emergency_contact_person" : "Emergency Contact Person *", "emergency_contact_number" : "Emergency Contact Person's Contact No. *", "contact_number" : "Contact Number *"}
+        labels = {
+            "lastname": "Last Name *",
+            "firstname": "First Name *", 
+            "middlename": "Middle Name",
+            "nameextension": "Name Extension",
+            "sex": "Sex *",
+            "birthdate": "Date of Birth *",
+            "barangay_id": "Barangay *",
+            "municipality_id": "Municipality *",
+            "address_details": "Address Details *", 
+            "religion":"Religion *",  
+            "emergency_contact_person" : "Emergency Contact Person *", 
+            "emergency_contact_number" : "Emergency Contact Person's Contact No. *", 
+            "contact_number" : "Contact Number *",
+            "rsbsa_ref_number": "RSBSA Reference Number"
+        }
         widgets = {
-            'firstname': forms.TextInput(attrs={'class': 'form-control','required': 'required', 'placeholder': 'First Name'}),
-            'lastname': forms.TextInput(attrs={'class': 'form-control','required': 'required', 'placeholder': 'Last Name'}),
-            'middlename': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Middle Name'}),
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input','required': 'required'}),
             'birthdate': forms.DateInput(attrs={
                 'type': 'date', 
@@ -103,7 +194,6 @@ class RegistrationForm(forms.ModelForm):
             'religion': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Religion'}),
             'civil_status': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Civil Status'}),
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if Not Applicable'}),
-            'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Last Name, First Name Middle Name'}),
         }
         
     def __init__(self, *args, **kwargs):
@@ -183,18 +273,125 @@ class RegistrationForm(forms.ModelForm):
 #         }
 
 class EditUserInformation(forms.ModelForm):
+    # Enhanced phone number validation for Philippine mobile numbers
+    phone_regex = RegexValidator(
+        regex=r'^\+639\d{2} \d{3} \d{4}$', 
+        message="Phone number must be in the format: +639XX XXX XXXX"
+    )
+    
+    # Name validation regex - alphabets, hyphens, apostrophes, and accent marks
+    name_regex = RegexValidator(
+        regex=r"^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s]+$",
+        message="Only letters, hyphens, apostrophes, and accent marks are allowed."
+    )
+    
     sex = forms.ChoiceField(choices=SEX_CHOICES, widget=forms.RadioSelect)
     civil_status = forms.ChoiceField(label="Civil Status", choices=CIVSTAT_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
-    nameextension = forms.CharField(label="Name Extension", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank if N/A'}))
+    
+    # Enhanced name fields with length and character restrictions
+    firstname = forms.CharField(
+        label="First Name",
+        max_length=16,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '16',
+            'placeholder': 'Enter your first name'
+        })
+    )
+    
+    lastname = forms.CharField(
+        label="Last Name",
+        max_length=21,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '21',
+            'placeholder': 'Enter your last name'
+        })
+    )
+    
+    middlename = forms.CharField(
+        label="Middle Name",
+        max_length=16,
+        required=False,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '16',
+            'placeholder': 'Enter your middle name'
+        })
+    )
+    
+    nameextension = forms.CharField(
+        label="Name Extension", 
+        max_length=7,
+        required=False, 
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'maxlength': '7',
+            'placeholder': 'Jr., Sr., III, etc.'
+        })
+    )
+    
+    emergency_contact_person = forms.CharField(
+        label="Emergency Contact Person",
+        max_length=50,
+        validators=[name_regex],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'maxlength': '50',
+            'placeholder': 'Enter emergency contact name'
+        })
+    )
+    
+    contact_number = forms.CharField(
+        label="Contact No.", 
+        validators=[phone_regex], 
+        max_length=17, 
+        widget=forms.TextInput(attrs={
+            'type': 'tel', 
+            'placeholder': '+639XX XXX XXXX', 
+            'class': 'form-control phone-input',
+            'data-format': '+639XX XXX XXXX'
+        })
+    )
+    
+    emergency_contact_number = forms.CharField(
+        label="Emergency Contact No.", 
+        validators=[phone_regex], 
+        max_length=17, 
+        widget=forms.TextInput(attrs={
+            'type': 'tel', 
+            'placeholder': '+639XX XXX XXXX', 
+            'class': 'form-control phone-input',
+            'data-format': '+639XX XXX XXXX'
+        })
+    )
 
     class Meta:
         model = UserInformation
         fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate","municipality_id","barangay_id",  "address_details", "religion", "civil_status","rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "user_email", "contact_number"]
-        labels = {"lastname": "Last Name", "firstname": "First Name", "middlename": "Middle Name","nameextension": "Name Extension", "sex": "Sex", "birthdate": "Date of Birth","municipality_id": "Municipality","barangay_id": "Barangay", "address_details": "House No., Purok, Street Name, Building", "religion": "Religion","civil_status": "Civil Status", "rsbsa_ref_number": "RSBSA Reference No.","emergency_contact_person": "Emergency Contact Person", "emergency_contact_number": "Emergency Contact No.","user_email": "Email", "contact_number": "Contact No."}
+        labels = {
+            "lastname": "Last Name", 
+            "firstname": "First Name", 
+            "middlename": "Middle Name",
+            "nameextension": "Name Extension", 
+            "sex": "Sex", 
+            "birthdate": "Date of Birth",
+            "municipality_id": "Municipality",
+            "barangay_id": "Barangay", 
+            "address_details": "House No., Purok, Street Name, Building", 
+            "religion": "Religion",
+            "civil_status": "Civil Status", 
+            "rsbsa_ref_number": "RSBSA Reference No.",
+            "emergency_contact_person": "Emergency Contact Person", 
+            "emergency_contact_number": "Emergency Contact No.",
+            "user_email": "Email", 
+            "contact_number": "Contact No."
+        }
         widgets = {
-            'firstname': forms.TextInput(attrs={'class': 'form-control form-control'}),
-            'lastname': forms.TextInput(attrs={'class': 'form-control form-control'}),
-            'middlename': forms.TextInput(attrs={'class': 'form-control form-control'}),
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'birthdate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'barangay_id': forms.Select(attrs={'class': 'form-control form-select'}),
@@ -203,10 +400,7 @@ class EditUserInformation(forms.ModelForm):
             'religion': forms.TextInput(attrs={'class': 'form-control'}),
             'civil_status': forms.Select(attrs={'class': 'form-control'}),
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank if N/A'}),
-            'emergency_contact_person': forms.TextInput(attrs={'class': 'form-control'}),
-            'emergency_contact_number': forms.TextInput(attrs={'class': 'form-control'}),
             'user_email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'contact_number': forms.TextInput(attrs={'class': 'form-control'})
         }
 
 
