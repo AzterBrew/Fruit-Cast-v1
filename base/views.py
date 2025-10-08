@@ -246,14 +246,49 @@ def get_recommendations_api(request):
             # Handle potential missing municipality_id
             municipality_id = int(municipality_id_str) if municipality_id_str else None
             
+            print(f"🔍 API Request: month={month}, year={year}, municipality_id={municipality_id}")
+            
             recommendations = get_alternative_recommendations(
                 selected_month=month, 
                 selected_year=year,
                 selected_municipality_id=municipality_id
             )
+            
+            # Check if recommendations is None or empty due to API issues
+            if recommendations is None:
+                return JsonResponse({
+                    "error": "Service temporarily unavailable. Please try again later.",
+                    "short_term": [],
+                    "long_term": []
+                }, status=503)
+            
+            print(f"✅ Successfully generated recommendations: {len(recommendations.get('short_term', []))} short-term, {len(recommendations.get('long_term', []))} long-term")
             return JsonResponse(recommendations)
+            
+        except ValueError as ve:
+            print(f"❌ Value error in recommendations API: {ve}")
+            return JsonResponse({"error": "Invalid parameter values"}, status=400)
+        except ConnectionError as ce:
+            print(f"❌ Connection error in recommendations API: {ce}")
+            return JsonResponse({
+                "error": "Unable to connect to recommendation service. Please check your internet connection.",
+                "short_term": [],
+                "long_term": []
+            }, status=503)
+        except TimeoutError as te:
+            print(f"❌ Timeout error in recommendations API: {te}")
+            return JsonResponse({
+                "error": "Request timed out. Please try again with a shorter time frame.",
+                "short_term": [],
+                "long_term": []
+            }, status=504)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            print(f"❌ Unexpected error in recommendations API: {type(e).__name__}: {e}")
+            return JsonResponse({
+                "error": "An unexpected error occurred. Please try again later.",
+                "short_term": [],
+                "long_term": []
+            }, status=500)
     
     return JsonResponse({"error": "Unauthorized"}, status=403)
 

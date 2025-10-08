@@ -188,13 +188,37 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
         """
     )
     
-    # Step 3: Make a single API call
+    # Step 3: Make a single API call with timeout handling
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
-        response = model.generate_content(full_prompt)
+        import signal
+        import concurrent.futures
+        
+        def api_call_with_timeout():
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            return model.generate_content(full_prompt)
+        
+        # Use ThreadPoolExecutor with timeout to prevent hanging
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(api_call_with_timeout)
+            try:
+                # 15 second timeout to prevent Gunicorn worker timeout
+                response = future.result(timeout=15)
+            except concurrent.futures.TimeoutError:
+                print("Gemini API call timed out after 15 seconds")
+                return {'short_term': [], 'long_term': []}
+        
+        if not response or not response.text:
+            print("Empty response from Gemini API")
+            return {'short_term': [], 'long_term': []}
         
         raw_text = response.text.replace("```json", "").replace("```", "").strip()
-        full_recommendations = json.loads(raw_text)
+        
+        try:
+            full_recommendations = json.loads(raw_text)
+        except json.JSONDecodeError as json_error:
+            print(f"Failed to parse JSON response from Gemini: {json_error}")
+            print(f"Raw response: {raw_text[:500]}...")  # Log first 500 chars
+            return {'short_term': [], 'long_term': []}
         
         final_recommendations = {
             'short_term': [],
@@ -222,6 +246,45 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                     
         return final_recommendations
 
+    except ImportError:
+        print("concurrent.futures not available, falling back to basic call")
+        # Fallback for environments without concurrent.futures
+        try:
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            response = model.generate_content(full_prompt)
+            
+            if not response or not response.text:
+                return {'short_term': [], 'long_term': []}
+            
+            raw_text = response.text.replace("```json", "").replace("```", "").strip()
+            full_recommendations = json.loads(raw_text)
+            
+            final_recommendations = {'short_term': [], 'long_term': []}
+            
+            for commodity in low_supply_commodities:
+                commodity_name = commodity['name']
+                if commodity_name in full_recommendations:
+                    rec_data = full_recommendations[commodity_name]
+                    is_long_term = commodity['years_to_mature'] >= 1
+                    
+                    new_rec = {
+                        'commodity_name': commodity_name,
+                        'reason': rec_data.get('reason', 'Reason not provided.'),
+                        'estimated_maturity': f"{commodity['years_to_mature']} years" if is_long_term else f"{int(commodity['years_to_mature'] * 12)} months",
+                        'land_recommendations': rec_data.get('land_recommendations', {})
+                    }
+                    
+                    if is_long_term:
+                        final_recommendations['long_term'].append(new_rec)
+                    else:
+                        final_recommendations['short_term'].append(new_rec)
+                        
+            return final_recommendations
+            
+        except Exception as fallback_error:
+            print(f"Fallback API call also failed: {fallback_error}")
+            return {'short_term': [], 'long_term': []}
+            
     except Exception as e:
         print(f"Error getting Gemini recommendations: {e}")
         return {'short_term': [], 'long_term': []}
