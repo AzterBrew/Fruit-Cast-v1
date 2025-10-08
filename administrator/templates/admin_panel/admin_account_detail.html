@@ -131,14 +131,18 @@ Fruit Cast | Account Details
                     <h5 class="mb-0 text-success">
                         <i class="bi bi-building me-2"></i>Administrative Information
                     </h5>
-                    {% if can_edit %}
+                    {% if can_edit_account_type or can_edit_municipality %}
                     <div class="btn-group" role="group">
+                        {% if can_edit_account_type %}
                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleAccountTypeEdit()">
                             <i class="bi bi-pencil-square me-1"></i>Edit Account Type
                         </button>
+                        {% endif %}
+                        {% if can_edit_municipality %}
                         <button type="button" class="btn btn-outline-success btn-sm" onclick="toggleMunicipalityEdit()">
                             <i class="bi bi-geo-alt me-1"></i>Edit Municipality
                         </button>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -153,7 +157,7 @@ Fruit Cast | Account Details
                                     </span>
                                 </p>
                             </div>
-                            {% if can_edit %}
+                            {% if can_edit_account_type %}
                             <div id="account-type-edit" style="display: none;">
                                 <form method="post" id="account-type-form">
                                     {% csrf_token %}
@@ -185,7 +189,7 @@ Fruit Cast | Account Details
                                     <span class="badge bg-primary fs-6">{{ target_admin_info.municipality_incharge.municipality }}</span>
                                 </p>
                             </div>
-                            {% if can_edit %}
+                            {% if can_edit_municipality %}
                             <div id="municipality-edit" style="display: none;">
                                 <form method="post" id="municipality-form">
                                     {% csrf_token %}

@@ -264,7 +264,7 @@ Fruit Cast | Account Management
                                         <label for="new_status" class="form-label">Set selected accounts to:</label>
                                         <select name="new_status" id="new_status" class="form-select" required>
                                             <option value="">Select Status</option>
-                                            {% for status in status_choices %}
+                                            {% for status in bulk_action_status_choices %}
                                                 <option value="{{ status.pk }}">{{ status.acc_status }}</option>
                                             {% endfor %}
                                         </select>

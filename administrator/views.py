@@ -319,13 +319,17 @@ def verify_accounts(request):
     accounts_query = AccountsInformation.objects.filter(account_type_id=1).select_related('userinfo_id', 'account_type_id', 'acc_status_id')
 
     # Filter by agriculturist's assigned municipality if not superuser or administrator (pk=14)
-    if not is_superuser and not is_pk14:
-        # Filter farmers by multiple criteria: municipality, farmland, or past transactions
-        accounts_query = accounts_query.filter(
-            Q(userinfo_id__municipality_id=municipality_assigned) |  # Farmer's municipality matches
-            Q(recordtransaction__farm_land__municipality=municipality_assigned) |  # Has farmland in municipality
-            Q(recordtransaction__manual_municipality=municipality_assigned)  # Has transactions in municipality
-        ).distinct()
+    if not is_superuser:
+        if is_pk14:
+            # Administrator with pk=14: can see all farmer accounts
+            pass  # No additional filtering needed
+        else:
+            # Administrator with municipality not pk=14: can only see farmers in their municipality
+            accounts_query = accounts_query.filter(
+                Q(userinfo_id__municipality_id=municipality_assigned) |  # Farmer's municipality matches
+                Q(recordtransaction__farm_land__municipality=municipality_assigned) |  # Has farmland in municipality
+                Q(recordtransaction__manual_municipality=municipality_assigned)  # Has transactions in municipality
+            ).distinct()
 
     if status_filter:
         accounts_query = accounts_query.filter(acc_status_id=status_filter)
@@ -449,14 +453,26 @@ def show_allaccounts(request):
     ).filter(account_type_id__account_type__in=["Administrator", "Agriculturist"])
 
     # Apply privilege-based filtering
-    if not is_superuser and not is_pk14:
-        # Non-superuser, non-pk14 administrators can only see:
-        # 1. Accounts assigned to pk=14 (Overall in Bataan)
-        # 2. Accounts assigned to their own municipality
-        accounts_query = accounts_query.filter(
-            Q(userinfo_id__municipality_id=14) |  # Overall in Bataan
-            Q(userinfo_id__municipality_id=municipality_assigned.pk)  # Their municipality
-        )
+    if not is_superuser:
+        if is_pk14:
+            # Administrator with pk=14: can see all agriculturists and administrators
+            accounts_query = accounts_query.filter(
+                account_type_id__account_type__in=["Administrator", "Agriculturist"]
+            )
+        else:
+            # Administrator with municipality not pk=14
+            accounts_query = accounts_query.filter(
+                Q(
+                    # Can see agriculturists in same municipality
+                    account_type_id__account_type="Agriculturist",
+                    userinfo_id__municipality_id=municipality_assigned.pk
+                ) |
+                Q(
+                    # Can see administrators in same municipality and pk=14
+                    account_type_id__account_type="Administrator",
+                    userinfo_id__municipality_id__in=[municipality_assigned.pk, 14]
+                )
+            )
 
     if status_filter:
         accounts_query = accounts_query.filter(acc_status_id=status_filter)
@@ -512,6 +528,8 @@ def show_allaccounts(request):
         )
 
     status_choices = AccountStatus.objects.all()
+    # For bulk actions, limit to Verified (pk=2) and Suspended (pk=6) only
+    bulk_action_status_choices = AccountStatus.objects.filter(pk__in=[2, 6])
     
     # Handle export requests
     export_type = request.GET.get('export')
@@ -530,6 +548,7 @@ def show_allaccounts(request):
         'paginator': paginator,
         'account_types': AccountType.objects.exclude(account_type='Farmer'),
         'status_choices': status_choices,
+        'bulk_action_status_choices': bulk_action_status_choices,  # Limited choices for bulk actions
         'municipalities': municipalities,
         'current_municipality': municipality_filter,
         'current_status': status_filter,
@@ -2412,10 +2431,14 @@ def admin_account_detail(request, account_id):
         current_user_info = request.user.userinformation
         current_account = AccountsInformation.objects.get(userinfo_id=current_user_info)
         current_admin_info = AdminInformation.objects.filter(userinfo_id=current_user_info).first()
+        current_municipality_assigned = current_admin_info.municipality_incharge if current_admin_info else None
+        is_superuser = request.user.is_superuser
+        is_pk14 = current_municipality_assigned.pk == 14 if current_municipality_assigned else False
         
         # Get the account to view
         target_account = get_object_or_404(AccountsInformation, pk=account_id)
         target_userinfo = target_account.userinfo_id
+        target_admin_info = AdminInformation.objects.filter(userinfo_id=target_userinfo).first()
         
         # Check if target account is admin or agriculturist
         if target_account.account_type_id.account_type not in ["Administrator", "Agriculturist"]:
@@ -2429,10 +2452,28 @@ def admin_account_detail(request, account_id):
                     'error_message': 'Access denied. You can only view your own account details.'
                 })
         
+        # Access control for administrators
+        if current_account.account_type_id.pk == 2 and not is_superuser:  # Administrator but not superuser
+            target_municipality = target_admin_info.municipality_incharge if target_admin_info else None
+            target_account_type = target_account.account_type_id.account_type
+            
+            if not is_pk14:  # Administrator with assigned municipality not pk=14
+                # Can't see agriculturists in different municipalities
+                if target_account_type == "Agriculturist":
+                    if not target_municipality or target_municipality.pk != current_municipality_assigned.pk:
+                        return render(request, 'admin_panel/access_denied.html', {
+                            'error_message': 'Unauthorized access. You can only view agriculturists in your assigned municipality.'
+                        })
+                # Can see administrators in same municipality and pk=14
+                elif target_account_type == "Administrator":
+                    if not target_municipality or target_municipality.pk not in [current_municipality_assigned.pk, 14]:
+                        return render(request, 'admin_panel/access_denied.html', {
+                            'error_message': 'Unauthorized access. You can only view administrators in your municipality or assigned to Overall Bataan.'
+                        })
+        
         # Handle POST requests for editing account type and municipality
         if request.method == 'POST':
             action = request.POST.get('action')
-            is_superuser = request.user.is_superuser
             user_role_id = current_account.account_type_id.pk
             target_account_type_id = target_account.account_type_id.pk
             is_own_account = target_account.pk == current_account.pk
@@ -2442,19 +2483,35 @@ def admin_account_detail(request, account_id):
                 messages.error(request, "You cannot edit your own account details.")
                 return redirect('administrator:admin_account_detail', account_id=account_id)
             
-            # Check permissions for editing
-            can_edit = False
+            # Check permissions for editing based on complex rules
+            can_edit_account_type = False
+            can_edit_municipality = False
+            
             if is_superuser:
-                can_edit = True
-            elif user_role_id == 2 and target_account_type_id == 3:  # Admin editing Agriculturist
-                can_edit = True
+                # Superuser can edit everything
+                can_edit_account_type = True
+                can_edit_municipality = True
+            elif user_role_id == 2:  # Administrator
+                if is_pk14:
+                    # Administrator with pk=14
+                    if target_account_type_id == 3:  # Agriculturist
+                        can_edit_municipality = True  # Can edit agriculturist municipality (excluding pk=14)
+                    elif target_account_type_id == 2:  # Administrator
+                        target_municipality = target_admin_info.municipality_incharge if target_admin_info else None
+                        if target_municipality and target_municipality.pk != 14:  # Administrator not pk=14
+                            can_edit_municipality = True  # Can edit administrator municipality (excluding pk=14)
+                else:
+                    # Administrator with municipality not pk=14
+                    if target_account_type_id == 3:  # Agriculturist in same municipality
+                        # Can see agriculturists but can't edit account type or municipality
+                        pass
             
-            if not can_edit:
-                messages.error(request, "You don't have permission to edit this account.")
-                return redirect('administrator:admin_account_detail', account_id=account_id)
-            
-            # Handle account type change
+            # Handle actions based on permissions
             if action == 'change_account_type':
+                if not can_edit_account_type:
+                    messages.error(request, "You don't have permission to edit account types.")
+                    return redirect('administrator:admin_account_detail', account_id=account_id)
+                    
                 new_account_type_id = request.POST.get('new_account_type')
                 if new_account_type_id:
                     try:
@@ -2480,14 +2537,23 @@ def admin_account_detail(request, account_id):
             
             # Handle municipality change
             elif action == 'change_municipality':
+                if not can_edit_municipality:
+                    messages.error(request, "You don't have permission to edit municipality assignments.")
+                    return redirect('administrator:admin_account_detail', account_id=account_id)
+                    
                 new_municipality_id = request.POST.get('new_municipality')
                 if new_municipality_id:
+                    # Prevent assigning pk=14 if not superuser
+                    if not is_superuser and int(new_municipality_id) == 14:
+                        messages.error(request, "You cannot assign Overall Bataan (pk=14) municipality.")
+                        return redirect('administrator:admin_account_detail', account_id=account_id)
+                        
                     try:
-                        old_municipality = AdminInformation.objects.get(userinfo_id=target_userinfo).municipality_incharge.municipality
+                        old_municipality = target_admin_info.municipality_incharge.municipality if target_admin_info else "Unknown"
                         new_municipality = MunicipalityName.objects.get(pk=new_municipality_id)
-                        target_admin_info = AdminInformation.objects.get(userinfo_id=target_userinfo)
-                        target_admin_info.municipality_incharge = new_municipality
-                        target_admin_info.save()
+                        if target_admin_info:
+                            target_admin_info.municipality_incharge = new_municipality
+                            target_admin_info.save()
                         
                         # Get account holder's full name for logging
                         account_holder_name = f"{target_account.userinfo_id.firstname} {target_account.userinfo_id.lastname}"
@@ -2497,7 +2563,7 @@ def admin_account_detail(request, account_id):
                             admin_id=current_admin_info,
                             action=f"Changed {account_holder_name}'s municipality assignment from '{old_municipality}' to '{new_municipality.municipality}'",
                             content_type=ContentType.objects.get_for_model(AdminInformation),
-                            object_id=target_admin_info.pk
+                            object_id=target_admin_info.pk if target_admin_info else None
                         )
                         
                         messages.success(request, f"Municipality assignment for {account_holder_name} updated from {old_municipality} to {new_municipality.municipality}")
@@ -2507,44 +2573,59 @@ def admin_account_detail(request, account_id):
             return redirect('administrator:admin_account_detail', account_id=account_id)
         
         # Determine access level based on hierarchical rules
-        is_superuser = request.user.is_superuser
         user_role_id = current_account.account_type_id.pk
         target_account_type_id = target_account.account_type_id.pk
         is_own_account = target_account.pk == current_account.pk
         
-        # Hierarchical access control:
-        # - Superuser: full access to everyone
-        # - Administrator (pk=2): full access to Agriculturists (pk=3), partial to Administrators
-        # - Agriculturist (pk=3): full access to their own account only
+        # Complex access control based on the specified rules
         can_view_full_details = False
         can_view_histories = False
-        can_edit = False
+        can_edit_account_type = False
+        can_edit_municipality = False
         
         if is_superuser:
+            # Superuser: can see all information and edit everything
             can_view_full_details = True
             can_view_histories = True
-            can_edit = not is_own_account  # Superuser can edit others but not themselves
+            can_edit_account_type = not is_own_account
+            can_edit_municipality = not is_own_account
         elif user_role_id == 2:  # Current user is Administrator
-            if target_account_type_id == 3:  # Target is Agriculturist
-                can_view_full_details = True
-                can_view_histories = True
-                can_edit = True
-            elif target_account_type_id == 2:  # Target is Administrator
-                can_view_full_details = False  # Partial info only
-                can_view_histories = False
-                can_edit = False
+            if is_pk14:
+                # Administrator with pk=14
+                if target_account_type_id == 3:  # Target is Agriculturist
+                    can_view_full_details = True
+                    can_view_histories = True
+                    can_edit_municipality = True  # Can edit agriculturist municipality (excluding pk=14)
+                elif target_account_type_id == 2:  # Target is Administrator
+                    target_municipality = target_admin_info.municipality_incharge if target_admin_info else None
+                    if target_municipality and target_municipality.pk != 14:
+                        # Can see all information of administrators not assigned to pk=14
+                        can_view_full_details = True
+                        can_view_histories = True
+                        can_edit_municipality = True  # Can edit municipality (excluding pk=14)
+                    else:
+                        # Limited access for administrators assigned to pk=14
+                        can_view_full_details = False
+                        can_view_histories = False
+            else:
+                # Administrator with municipality not pk=14
+                if target_account_type_id == 3:  # Target is Agriculturist in same municipality
+                    can_view_full_details = True
+                    can_view_histories = True
+                    # Can't edit account type and municipality for agriculturists
+                elif target_account_type_id == 2:  # Target is Administrator
+                    # Can see administrators with same municipality and pk=14 but restricted content
+                    can_view_full_details = False  # Can't see personal details, login history, actions
+                    can_view_histories = False
         elif user_role_id == 3 and is_own_account:  # Agriculturist viewing own account
             can_view_full_details = True
             can_view_histories = True
-            can_edit = False  # Agriculturists cannot edit their own account details
+            # Agriculturists cannot edit their own account details
         
         # Calculate age
         today = date.today()
         birth_date = target_userinfo.birthdate
         age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-        
-        # Get admin information if target is admin/agriculturist
-        target_admin_info = AdminInformation.objects.filter(userinfo_id=target_userinfo).first()
         
         # Get admin action history (only if allowed to view histories)
         admin_actions = []
@@ -2568,9 +2649,12 @@ def admin_account_detail(request, account_id):
                 print(f"Warning: Could not fetch login history: {e}")
                 login_history = []
         
-        # Get options for editing
+        # Get options for editing - filter municipalities to exclude pk=14 for non-superusers
         account_types = AccountType.objects.exclude(account_type='Farmer')
-        municipalities = MunicipalityName.objects.all()
+        if is_superuser:
+            municipalities = MunicipalityName.objects.all()
+        else:
+            municipalities = MunicipalityName.objects.exclude(pk=14)
         
         context = {
             **get_admin_context(request),
@@ -2579,12 +2663,14 @@ def admin_account_detail(request, account_id):
             'target_admin_info': target_admin_info,
             'calculated_age': age,
             'is_superuser': is_superuser,
+            'is_pk14': is_pk14,
             'user_role_id': user_role_id,
             'target_account_type_id': target_account_type_id,
             'is_own_account': is_own_account,
             'can_view_full_details': can_view_full_details,
             'can_view_histories': can_view_histories,
-            'can_edit': can_edit,
+            'can_edit_account_type': can_edit_account_type,
+            'can_edit_municipality': can_edit_municipality,
             'admin_actions': admin_actions,
             'login_history': login_history,
             'account_types': account_types,
