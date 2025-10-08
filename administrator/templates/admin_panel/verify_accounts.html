@@ -77,9 +77,11 @@ Fruit Cast | Farmer Account Verification
                             <table class="table table-hover align-middle">
                                 <thead class="table-success">
                                     <tr>
+                                        {% if user_role_id == 2 %}
                                         <th scope="col">
                                             <input type="checkbox" id="selectAll" class="form-check-input">
                                         </th>
+                                        {% endif %}
                                         <th scope="col">{% sort_header "date" "Date Registered" current_sort current_order current_status %}</th>
                                         <th scope="col">{% sort_header "name" "Farmer Name" current_sort current_order current_status %}</th>
                                         <th scope="col">Contact Information</th>
@@ -94,9 +96,11 @@ Fruit Cast | Farmer Account Verification
                                 <tbody>
                                     {% for account in accounts %}
                                     <tr>
+                                        {% if user_role_id == 2 %}
                                         <td>
                                             <input type="checkbox" name="selected_records" value="{{ account.pk }}" class="form-check-input record-checkbox">
                                         </td>
+                                        {% endif %}
                                         <td>
                                             <small class="text-muted">{{ account.account_register_date|date:"M d, Y" }}</small>
                                         </td>
@@ -210,7 +214,8 @@ Fruit Cast | Farmer Account Verification
                             {% endfor %}
                         {% endif %}
 
-                        <!-- Action Section -->
+                        <!-- Action Section (Only for Administrators) -->
+                        {% if user_role_id == 2 %}
                         <div class="card border-success mt-4">
                             <div class="card-body">
                                 <h6 class="card-title text-success mb-3">
@@ -234,6 +239,7 @@ Fruit Cast | Farmer Account Verification
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                     </form>
                 </div>
             </div>
@@ -339,14 +345,18 @@ Fruit Cast | Farmer Account Verification
         // Select All functionality
         const selectAllCheckbox = document.getElementById('selectAll');
         const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+        {% if user_role_id == 2 %}
         const updateBtn = document.getElementById('updateBtn');
+        {% endif %}
 
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 recordCheckboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
+                {% if user_role_id == 2 %}
                 updateButtonState();
+                {% endif %}
             });
         }
 
@@ -354,7 +364,9 @@ Fruit Cast | Farmer Account Verification
         recordCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 updateSelectAllState();
+                {% if user_role_id == 2 %}
                 updateButtonState();
+                {% endif %}
             });
         });
 
@@ -366,6 +378,7 @@ Fruit Cast | Farmer Account Verification
             }
         }
 
+        {% if user_role_id == 2 %}
         function updateButtonState() {
             const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
             if (updateBtn) {
@@ -380,9 +393,11 @@ Fruit Cast | Farmer Account Verification
                 }
             }
         }
+        {% endif %}
 
-        // Form validation for bulk actions
-        const actionForm = document.querySelector('form[method="post"]:not(#filterForm)');
+        // Form validation for bulk actions (only for administrators)
+        {% if user_role_id == 2 %}
+        const actionForm = document.querySelector('form[method="post"]:not(#filterForm):not([action*="logout"])');
         if (actionForm) {
             actionForm.addEventListener('submit', function(e) {
                 const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
@@ -408,9 +423,12 @@ Fruit Cast | Farmer Account Verification
                 }
             });
         }
+        {% endif %}
 
-        // Initialize button state
+        // Initialize button state (only for administrators)
+        {% if user_role_id == 2 %}
         updateButtonState();
+        {% endif %}
     });
 
     // Export functions

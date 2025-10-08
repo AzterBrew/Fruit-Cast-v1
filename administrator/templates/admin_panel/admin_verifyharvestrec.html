@@ -453,7 +453,7 @@ Fruit Cast | Plant and Harvest Records
         }
 
         // Form validation
-        const actionForm = document.querySelector('form[method="post"]:not(#filterForm)');
+        const actionForm = document.querySelector('form[method="post"]:not(#filterForm):not([action*="logout"])');
         if (actionForm) {
             actionForm.addEventListener('submit', function(e) {
                 const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
