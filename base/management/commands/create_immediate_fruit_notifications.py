@@ -21,31 +21,46 @@ class Command(BaseCommand):
             # Handle specific account
             try:
                 account = AccountsInformation.objects.get(account_id=options['account_id'])
-                accounts_with_farmland = [account]
+                all_accounts = [account]
             except AccountsInformation.DoesNotExist:
                 self.stdout.write(self.style.ERROR(f'Account with ID {options["account_id"]} not found'))
                 return
         else:
-            # Get all accounts that have farmland records
-            accounts_with_farmland = AccountsInformation.objects.filter(
-                userinfo_id__farmland__isnull=False
-            ).distinct()
+            # Get all accounts
+            all_accounts = AccountsInformation.objects.select_related('userinfo_id').all()
         
         total_notifications = 0
         
-        for account in accounts_with_farmland:
-            # Get distinct municipality IDs from user's farmlands
-            distinct_municipality_ids = FarmLand.objects.filter(
-                userinfo_id=account.userinfo_id
-            ).values_list('municipality_id', flat=True).distinct()
+        for account in all_accounts:
+            account_municipalities = set()
             
-            for municipality_id in distinct_municipality_ids:
-                success = schedule_immediate_fruit_recommendations(account, municipality_id)
+            # 1. Add residential municipality from user information
+            if hasattr(account, 'userinfo_id') and account.userinfo_id.municipality_id:
+                residential_municipality_id = account.userinfo_id.municipality_id.municipality_id
+                account_municipalities.add((residential_municipality_id, None, True))  # (municipality_id, farmland_name, is_residential)
+            
+            # 2. Add farmland municipalities
+            farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
+            for farmland in farmlands:
+                if farmland.municipality_id:
+                    farmland_municipality_id = farmland.municipality_id.municipality_id
+                    farmland_name = farmland.farmland_name
+                    account_municipalities.add((farmland_municipality_id, farmland_name, False))
+            
+            # 3. Create notifications for each unique municipality
+            for municipality_id, farmland_name, is_residential in account_municipalities:
+                success = schedule_immediate_fruit_recommendations(
+                    account, 
+                    municipality_id,
+                    farmland_name=farmland_name,
+                    is_residential=is_residential
+                )
                 if success:
                     total_notifications += 1
+                    location_type = "residential" if is_residential else f"farmland ({farmland_name})"
                     self.stdout.write(
                         f'Created notification for {account.userinfo_id.firstname} '
-                        f'{account.userinfo_id.lastname} (Municipality ID: {municipality_id})'
+                        f'{account.userinfo_id.lastname} - {location_type} (Municipality ID: {municipality_id})'
                     )
         
         self.stdout.write(

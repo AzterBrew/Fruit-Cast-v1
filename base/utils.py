@@ -311,7 +311,10 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                     'commodity_name': commodity_name,
                     'reason': rec_data.get('reason', 'Reason not provided.'),
                     'estimated_maturity': f"{commodity['years_to_mature']} years" if is_long_term else f"{int(commodity['years_to_mature'] * 12)} months",
-                    'land_recommendations': rec_data.get('land_recommendations', {})
+                    'land_recommendations': rec_data.get('land_recommendations', {}),
+                    'forecasted_amount': commodity.get('forecasted_amount', 0),  # Include for sorting
+                    'predicted_month': commodity.get('predicted_month', 'Unknown'),
+                    'predicted_year': commodity.get('predicted_year', 'Unknown')
                 }
                 
                 if is_long_term:
@@ -356,7 +359,10 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                         'commodity_name': commodity_name,
                         'reason': rec_data.get('reason', 'Reason not provided.'),
                         'estimated_maturity': f"{commodity['years_to_mature']} years" if is_long_term else f"{int(commodity['years_to_mature'] * 12)} months",
-                        'land_recommendations': rec_data.get('land_recommendations', {})
+                        'land_recommendations': rec_data.get('land_recommendations', {}),
+                        'forecasted_amount': commodity.get('forecasted_amount', 0),  # Include for sorting
+                        'predicted_month': commodity.get('predicted_month', 'Unknown'),
+                        'predicted_year': commodity.get('predicted_year', 'Unknown')
                     }
                     
                     if is_long_term:

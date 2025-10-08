@@ -42,10 +42,16 @@ def format_number(value):
 
 # @login_required > btw i made this not required so that it doesn't require the usr to login just to view the home page
 
-def schedule_monthly_fruit_recommendations(account, municipality_id):
+def schedule_monthly_fruit_recommendations(account, municipality_id, farmland_name=None, is_residential=False):
     """
     Schedule monthly fruit recommendation notifications for a specific municipality.
     Checks for existing notifications to avoid duplicates and handles dynamic scheduling.
+    
+    Args:
+        account: AccountsInformation object
+        municipality_id: ID of the municipality to get recommendations for
+        farmland_name: Name of the farmland (if recommendation is for a specific farmland)
+        is_residential: True if this is for the user's residential municipality
     """
     try:
         current_time = timezone.now()
@@ -67,36 +73,55 @@ def schedule_monthly_fruit_recommendations(account, municipality_id):
         # Get municipality name for the message
         municipality = MunicipalityName.objects.get(pk=municipality_id)
         
-        # Check if notification already exists for this target month and municipality
+        # Create unique identifier for duplicate checking
+        location_type = "residential" if is_residential else "farmland"
+        location_identifier = farmland_name if farmland_name else location_type
+        
+        # Check if notification already exists for this target month, municipality, and location type
         existing_notification = Notification.objects.filter(
             account=account,
             notification_type="fruit_recommendation",
             scheduled_for__month=target_month.month,
             scheduled_for__year=target_month.year,
-            message__icontains=municipality.municipality
+            message__icontains=municipality.municipality,
+            message__icontains=location_identifier
         ).first()
         
         if existing_notification:
-            print(f"Notification already exists for {municipality.municipality} in {target_month.strftime('%B %Y')} - skipping duplicate")
+            print(f"Notification already exists for {municipality.municipality} ({location_type}) in {target_month.strftime('%B %Y')} - skipping duplicate")
             return False
         
         # Create notifications for both short-term and long-term recommendations
         all_recommendations = recommendations.get('short_term', []) + recommendations.get('long_term', [])
         
         if all_recommendations:
-            # Create a combined message for all recommendations for this municipality
-            fruit_names = [rec['commodity_name'] for rec in all_recommendations]
-            message = f"🌱 {target_month.strftime('%B')} {target_month.year} Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names[:3])}{'...' if len(fruit_names) > 3 else ''} based on forecasted low supply trends."
+            # Limit to top 3 recommendations based on lowest forecasted supply
+            top_3_recommendations = sorted(all_recommendations, 
+                                         key=lambda x: x.get('forecasted_amount', 0))[:3]
+            
+            # Create location-specific message
+            fruit_names = [rec['commodity_name'] for rec in top_3_recommendations]
+            
+            if is_residential:
+                location_context = f"your residential area in {municipality.municipality}"
+            elif farmland_name:
+                location_context = f"your {farmland_name} farmland in {municipality.municipality}"
+            else:
+                location_context = f"your farmland in {municipality.municipality}"
+            
+            message = (f"🌱 {target_month.strftime('%B')} {target_month.year} Fruit Recommendations for "
+                      f"{location_context}: Consider planting {', '.join(fruit_names)} "
+                      f"based on forecasted low supply trends.")
             
             # Dynamic scheduling logic:
             # If target is current month and we're past the 1st, schedule immediately
             # Otherwise, schedule for the 1st of the target month at 8 AM
             if target_month.month == current_time.month and target_month.year == current_time.year and current_time.day > 1:
                 scheduled_datetime = current_time  # Immediate delivery for late account creation
-                print(f"Scheduling immediate notification for {municipality.municipality} (account created mid-month)")
+                print(f"Scheduling immediate notification for {municipality.municipality} ({location_type}) (account created mid-month)")
             else:
                 scheduled_datetime = target_month.replace(day=1, hour=8, minute=0, second=0, microsecond=0)
-                print(f"Scheduling notification for {municipality.municipality} on {scheduled_datetime}")
+                print(f"Scheduling notification for {municipality.municipality} ({location_type}) on {scheduled_datetime}")
             
             Notification.objects.create(
                 account=account,
@@ -107,17 +132,23 @@ def schedule_monthly_fruit_recommendations(account, municipality_id):
             )
             return True
         else:
-            print(f"No recommendations available for {municipality.municipality} in {target_month.strftime('%B %Y')}")
+            print(f"No recommendations available for {municipality.municipality} ({location_type}) in {target_month.strftime('%B %Y')}")
             return False
         
     except Exception as e:
-        print(f"Error scheduling fruit recommendations for municipality {municipality_id}: {e}")
+        print(f"Error scheduling fruit recommendations for municipality {municipality_id} ({location_type}): {e}")
         return False
 
 
-def schedule_immediate_fruit_recommendations(account, municipality_id):
+def schedule_immediate_fruit_recommendations(account, municipality_id, farmland_name=None, is_residential=False):
     """
     Schedule immediate fruit recommendation notifications for testing purposes
+    
+    Args:
+        account: AccountsInformation object
+        municipality_id: ID of the municipality to get recommendations for
+        farmland_name: Name of the farmland (if recommendation is for a specific farmland)
+        is_residential: True if this is for the user's residential municipality
     """
     try:
         # Get recommendations for current month
@@ -135,9 +166,22 @@ def schedule_immediate_fruit_recommendations(account, municipality_id):
         all_recommendations = recommendations.get('short_term', []) + recommendations.get('long_term', [])
         
         if all_recommendations:
-            # Create a combined message for all recommendations for this municipality
-            fruit_names = [rec['commodity_name'] for rec in all_recommendations]
-            message = f"🌱 Fruit Recommendations for {municipality.municipality}: Consider planting {', '.join(fruit_names)} based on forecasted low supply trends."
+            # Limit to top 3 recommendations based on lowest forecasted supply
+            top_3_recommendations = sorted(all_recommendations, 
+                                         key=lambda x: x.get('forecasted_amount', 0))[:3]
+            
+            # Create location-specific message
+            fruit_names = [rec['commodity_name'] for rec in top_3_recommendations]
+            
+            if is_residential:
+                location_context = f"your residential area in {municipality.municipality}"
+            elif farmland_name:
+                location_context = f"your {farmland_name} farmland in {municipality.municipality}"
+            else:
+                location_context = f"your farmland in {municipality.municipality}"
+            
+            message = (f"🌱 Fruit Recommendations for {location_context}: "
+                      f"Consider planting {', '.join(fruit_names)} based on forecasted low supply trends.")
             
             # Schedule for immediate delivery (current time)
             scheduled_datetime = current_time
@@ -149,14 +193,17 @@ def schedule_immediate_fruit_recommendations(account, municipality_id):
                 scheduled_for=scheduled_datetime,
                 redirect_url=reverse('base:home'),
             )
-            print(f"Created immediate fruit recommendation notification for {municipality.municipality}")
+            location_type = "residential" if is_residential else "farmland"
+            print(f"Created immediate fruit recommendation notification for {municipality.municipality} ({location_type})")
             return True
         else:
-            print(f"No recommendations available for {municipality.municipality}")
+            location_type = "residential" if is_residential else "farmland"
+            print(f"No recommendations available for {municipality.municipality} ({location_type})")
             return False
         
     except Exception as e:
-        print(f"Error creating immediate fruit recommendations for municipality {municipality_id}: {e}")
+        location_type = "residential" if is_residential else "farmland"
+        print(f"Error creating immediate fruit recommendations for municipality {municipality_id} ({location_type}): {e}")
         return False
 
 
