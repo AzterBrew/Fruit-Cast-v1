@@ -583,10 +583,10 @@ class FarmlandRecordCreate(forms.ModelForm):
         })
     )
     estimated_area = forms.DecimalField(
-        label="Estimated Farm Area (in hectares)", 
+        label="Estimated Farm Area (in hectares) *", 
         max_digits=12,
         decimal_places=2,
-        required=False,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control', 
             'placeholder': 'Enter land area...',
@@ -598,15 +598,16 @@ class FarmlandRecordCreate(forms.ModelForm):
 
     def clean_estimated_area(self):
         value = self.cleaned_data.get('estimated_area')
-        if value is not None:
-            if value <= 0:
-                raise forms.ValidationError("Estimated area must be greater than 0.")
-            # Check decimal places
-            decimal_str = str(value)
-            if '.' in decimal_str:
-                decimal_places = len(decimal_str.split('.')[1])
-                if decimal_places > 2:
-                    raise forms.ValidationError("Estimated area cannot have more than 2 decimal places.")
+        if value is None:
+            raise forms.ValidationError("Estimated area is required.")
+        if value <= 0:
+            raise forms.ValidationError("Estimated area must be greater than 0.")
+        # Check decimal places
+        decimal_str = str(value)
+        if '.' in decimal_str:
+            decimal_places = len(decimal_str.split('.')[1])
+            if decimal_places > 2:
+                raise forms.ValidationError("Estimated area cannot have more than 2 decimal places.")
         return value
 
     class Meta:

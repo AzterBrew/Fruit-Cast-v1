@@ -384,9 +384,9 @@ def verify_accounts(request):
     
     if export_type and export_format:
         if export_type == 'records':
-            return export_accounts_csv(all_accounts, 'farmer_accounts', export_format)
+            return export_accounts_csv(all_accounts, 'farmer_accounts', export_format, request)
         elif export_type == 'summary':
-            return export_accounts_summary_csv(all_accounts, 'farmer_accounts_summary', export_format)
+            return export_accounts_summary_csv(all_accounts, 'farmer_accounts_summary', export_format, request)
 
     context.update({
         'accounts': page_obj.object_list,  # Paginated accounts for display
@@ -516,9 +516,9 @@ def show_allaccounts(request):
     
     if export_type and export_format:
         if export_type == 'records':
-            return export_accounts_csv(all_accounts, 'all_accounts', export_format)
+            return export_accounts_csv(all_accounts, 'all_accounts', export_format, request)
         elif export_type == 'summary':
-            return export_accounts_summary_csv(all_accounts, 'all_accounts_summary', export_format)
+            return export_accounts_summary_csv(all_accounts, 'all_accounts_summary', export_format, request)
     
     context = get_admin_context(request)
     context.update({
@@ -655,7 +655,9 @@ def farmer_transaction_history(request, account_id):
         messages.error(request, "Admin information not found.")
         return redirect('administrator:verify_accounts')
     
-    return render(request, 'admin_panel/farmer_transaction_history.html', context)@admin_or_agriculturist_required
+    return render(request, 'admin_panel/farmer_transaction_history.html', context)
+
+@admin_or_agriculturist_required
 def farmer_transaction_detail(request, transaction_id):
     """View to display detailed information for a specific transaction"""
     context = get_admin_context(request)
@@ -1745,7 +1747,7 @@ def admin_verifyplantrec(request):
     
     if export_type and export_format:
         if export_type == 'records':
-            return export_plant_records_csv(records, 'plant_verification_records', export_format)
+            return export_plant_records_csv(records, 'plant_verification_records', export_format, request)
         elif export_type == 'summary':
             return export_plant_records_summary_csv(records, 'plant_verification_summary', export_format)
 
@@ -1923,9 +1925,9 @@ def admin_verifyharvestrec(request):
     
     if export_type and export_format:
         if export_type == 'records':
-            return export_harvest_records_csv(records, 'harvest_verification_records', export_format)
+            return export_harvest_records_csv(records, 'harvest_verification_records', export_format, request)
         elif export_type == 'summary':
-            return export_harvest_records_summary_csv(records, 'harvest_verification_summary', export_format)
+            return export_harvest_records_summary_csv(records, 'harvest_verification_summary', export_format, request)
     
     context = get_admin_context(request)
     context.update({
@@ -2620,7 +2622,7 @@ def admin_account_detail(request, account_id):
 #                 request.user.save()
 
 # Export functions for CSV and PDF generation
-def export_harvest_records_csv(records, filename, format_type='csv'):
+def export_harvest_records_csv(records, filename, format_type='csv', request=None):
     """Export harvest records to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -2656,9 +2658,9 @@ def export_harvest_records_csv(records, filename, format_type='csv'):
         
         return response
     elif format_type == 'pdf':
-        return generate_harvest_records_pdf(records, filename)
+        return generate_harvest_records_pdf(records, filename, request)
 
-def export_harvest_records_summary_csv(records, filename, format_type='csv'):
+def export_harvest_records_summary_csv(records, filename, format_type='csv', request=None):
     """Export harvest records summary to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -2716,9 +2718,9 @@ def export_harvest_records_summary_csv(records, filename, format_type='csv'):
         
         return response
     elif format_type == 'pdf':
-        return generate_harvest_records_summary_pdf(records, filename)
+        return generate_harvest_records_summary_pdf(records, filename, request)
 
-def export_plant_records_csv(records, filename, format_type='csv'):
+def export_plant_records_csv(records, filename, format_type='csv', request=None):
     """Export plant records to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -2727,7 +2729,7 @@ def export_plant_records_csv(records, filename, format_type='csv'):
         writer = csv.writer(response)
         writer.writerow([
             'Date Created', 'Farmer Name', 'Commodity', 'Plant Date', 
-            'Min Expected Harvest', 'Max Expected Harvest', 'Estimated Hectare', 'Location', 'Status', 'Verified By', 'Date Verified'
+            'Min Expected (kg)', 'Max Expected (kg)', 'Estimated Hectare', 'Location', 'Status', 'Verified By', 'Date Verified'
         ])
         
         for record in records:
@@ -2752,7 +2754,7 @@ def export_plant_records_csv(records, filename, format_type='csv'):
         
         return response
     elif format_type == 'pdf':
-        return generate_plant_records_pdf(records, filename)
+        return generate_plant_records_pdf(records, filename, request)
 
 def export_plant_records_summary_csv(records, filename, format_type='csv'):
     """Export plant records summary to CSV or PDF format"""
@@ -2794,7 +2796,7 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
         
         writer = csv.writer(response)
         writer.writerow([
-            'Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected', 'Total Estimated Hectare',
+            'Commodity', 'Location', 'Total Records', 'Total Min Expected (kg)', 'Total Max Expected (kg)', 'Total Estimated Hectare',
             'Verified Records', 'Pending Records'
         ])
         
@@ -2814,16 +2816,32 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
     elif format_type == 'pdf':
         return generate_plant_records_summary_pdf(records, filename)
 
-def export_accounts_csv(accounts, filename, format_type='csv'):
+def export_accounts_csv(accounts, filename, format_type='csv', request=None):
     """Export accounts to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         
+        # Get assigned municipality for record count filtering
+        assigned_municipality = None
+        if request and request.user.is_authenticated:
+            try:
+                user_info = UserInformation.objects.get(auth_user=request.user)
+                admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+                municipality_assigned = admin_info.municipality_incharge
+                is_superuser = request.user.is_superuser
+                is_pk14 = municipality_assigned.pk == 14
+                
+                if not is_superuser and not is_pk14:
+                    assigned_municipality = municipality_assigned
+            except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+                pass
+        
         writer = csv.writer(response)
         writer.writerow([
             'Account ID', 'Full Name', 'Email', 'Contact Number', 'Municipality', 'Barangay',
-            'Account Type', 'Status', 'Registration Date', 'Verified Date', 'Verified By'
+            'Account Type', 'Status', 'Registration Date', 'Verified Date', 'Verified By',
+            'Records in Assigned Municipality', 'Farmland Area in Municipality (ha)'
         ])
         
         for account in accounts:
@@ -2833,6 +2851,31 @@ def export_accounts_csv(accounts, filename, format_type='csv'):
                 contact_number_str = str(contact_number)
             else:
                 contact_number_str = "Not provided"
+            
+            # Calculate records in assigned municipality
+            records_count = 0
+            total_farmland_area = 0
+            
+            if assigned_municipality:
+                # Count records in assigned municipality
+                records_count = RecordTransaction.objects.filter(
+                    account_id=account
+                ).filter(
+                    Q(farm_land__municipality=assigned_municipality) |
+                    Q(manual_municipality=assigned_municipality)
+                ).count()
+                
+                # Calculate total farmland area in assigned municipality
+                farmlands = FarmLand.objects.filter(
+                    userinfo_id=account.userinfo_id,
+                    municipality=assigned_municipality
+                )
+                total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
+            else:
+                # For superusers/administrators, show total records and farmlands
+                records_count = RecordTransaction.objects.filter(account_id=account).count()
+                farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
+                total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
                 
             writer.writerow([
                 account.account_id,
@@ -2845,14 +2888,16 @@ def export_accounts_csv(accounts, filename, format_type='csv'):
                 account.acc_status_id.acc_status,
                 account.account_register_date.strftime('%Y-%m-%d %H:%M') if account.account_register_date else 'N/A',
                 account.account_verified_date.strftime('%Y-%m-%d %H:%M') if account.account_verified_date else 'Not Verified',
-                f"{account.account_verified_by.userinfo_id.lastname}, {account.account_verified_by.userinfo_id.firstname}" if account.account_verified_by else 'Not Verified'
+                f"{account.account_verified_by.userinfo_id.lastname}, {account.account_verified_by.userinfo_id.firstname}" if account.account_verified_by else 'Not Verified',
+                records_count,
+                f"{total_farmland_area:.2f}"
             ])
         
         return response
     elif format_type == 'pdf':
-        return generate_accounts_pdf(accounts, filename)
+        return generate_accounts_pdf(accounts, filename, request)
 
-def export_accounts_summary_csv(accounts, filename, format_type='csv'):
+def export_accounts_summary_csv(accounts, filename, format_type='csv', request=None):
     """Export accounts summary to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -2985,7 +3030,7 @@ def export_verified_harvest_records_summary_csv(records, filename, format_type='
         return generate_verified_harvest_records_summary_pdf(records, filename)
 
 # PDF Generation Functions
-def generate_harvest_records_pdf(records, filename):
+def generate_harvest_records_pdf(records, filename, request=None):
     """Generate PDF for harvest records"""
     if not PDF_AVAILABLE:
         # Fallback to CSV if ReportLab is not available
@@ -3007,13 +3052,38 @@ def generate_harvest_records_pdf(records, filename):
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=16,
-        spaceAfter=30,
+        spaceAfter=10,
         alignment=1  # Center alignment
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.grey
     )
     
     # Add title
     title = Paragraph("Harvest Records Report", title_style)
     elements.append(title)
+    
+    # Add municipality information if available
+    if request and request.user.is_authenticated:
+        try:
+            user_info = UserInformation.objects.get(auth_user=request.user)
+            admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+            municipality_assigned = admin_info.municipality_incharge
+            is_superuser = request.user.is_superuser
+            is_pk14 = municipality_assigned.pk == 14
+            
+            if not is_superuser and not is_pk14:
+                subtitle = Paragraph(f"(with {municipality_assigned.municipality} records)", subtitle_style)
+                elements.append(subtitle)
+        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+            pass
+    
     elements.append(Spacer(1, 12))
     
     # Prepare data for table
@@ -3029,30 +3099,41 @@ def generate_harvest_records_pdf(records, filename):
         # Convert weight to kg
         weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
         
+        # Format farmer name and location with line breaks if too long
+        farmer_name = f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"
+        location = record.transaction.get_location_display()
+        
+        # Use Paragraph for text wrapping in cells
+        farmer_name_para = Paragraph(farmer_name, styles['Normal']) if len(farmer_name) > 20 else farmer_name
+        location_para = Paragraph(location, styles['Normal']) if len(location) > 15 else location
+        
         row = [
             record.transaction.transaction_date.strftime('%Y-%m-%d'),
-            f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"[:20],
+            farmer_name_para,
             record.commodity_id.name,
             record.harvest_date.strftime('%Y-%m-%d'),
             f"{weight_kg:.2f}",
             f"{estimated_hectare:.2f}",
-            record.transaction.get_location_display()[:15],
+            location_para,
             record.record_status.acc_status if record.record_status else 'N/A'
         ]
         data.append(row)
     
-    # Create table
-    table = Table(data)
+    # Create table with appropriate column widths
+    col_widths = [80, 120, 80, 80, 80, 80, 120, 80]
+    table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
     
     elements.append(table)
@@ -3061,7 +3142,7 @@ def generate_harvest_records_pdf(records, filename):
     doc.build(elements)
     return response
 
-def generate_harvest_records_summary_pdf(records, filename):
+def generate_harvest_records_summary_pdf(records, filename, request=None):
     """Generate PDF for harvest records summary"""
     if not PDF_AVAILABLE:
         return export_harvest_records_summary_csv(records, filename + '_fallback', 'csv')
@@ -3074,10 +3155,35 @@ def generate_harvest_records_summary_pdf(records, filename):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=30, alignment=1)
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.grey
+    )
     
     title = Paragraph("Harvest Records Summary Report", title_style)
     elements.append(title)
+    
+    # Add municipality information if available
+    if request and request.user.is_authenticated:
+        try:
+            user_info = UserInformation.objects.get(auth_user=request.user)
+            admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+            municipality_assigned = admin_info.municipality_incharge
+            is_superuser = request.user.is_superuser
+            is_pk14 = municipality_assigned.pk == 14
+            
+            if not is_superuser and not is_pk14:
+                subtitle = Paragraph(f"(with {municipality_assigned.municipality} records)", subtitle_style)
+                elements.append(subtitle)
+        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+            pass
+    
     elements.append(Spacer(1, 12))
     
     # Group by commodity and municipality for summary
@@ -3131,7 +3237,7 @@ def generate_harvest_records_summary_pdf(records, filename):
     doc.build(elements)
     return response
 
-def generate_plant_records_pdf(records, filename):
+def generate_plant_records_pdf(records, filename, request=None):
     """Generate PDF for plant records"""
     if not PDF_AVAILABLE:
         return export_plant_records_csv(records, filename + '_fallback', 'csv')
@@ -3145,44 +3251,81 @@ def generate_plant_records_pdf(records, filename):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=30, alignment=1)
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.grey
+    )
     
     title = Paragraph("Plant Records Report", title_style)
     elements.append(title)
+    
+    # Add municipality information if available
+    if request and request.user.is_authenticated:
+        try:
+            user_info = UserInformation.objects.get(auth_user=request.user)
+            admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+            municipality_assigned = admin_info.municipality_incharge
+            is_superuser = request.user.is_superuser
+            is_pk14 = municipality_assigned.pk == 14
+            
+            if not is_superuser and not is_pk14:
+                subtitle = Paragraph(f"(with {municipality_assigned.municipality} records)", subtitle_style)
+                elements.append(subtitle)
+        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+            pass
+    
     elements.append(Spacer(1, 12))
     
     data = [['Date Created', 'Farmer Name', 'Commodity', 'Plant Date', 
-             'Min Expected', 'Max Expected', 'Est. Hectare', 'Location']]
+             'Min Expected (kg)', 'Max Expected (kg)', 'Est. Hectare', 'Location']]
     
     for record in records:
         # Get estimated hectare
         estimated_hectare = 0
         if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
             estimated_hectare = record.transaction.farm_land.estimated_area or 0
+        
+        # Format farmer name and location with line breaks if too long
+        farmer_name = f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"
+        location = record.transaction.get_location_display()
+        
+        # Use Paragraph for text wrapping in cells
+        farmer_name_para = Paragraph(farmer_name, styles['Normal']) if len(farmer_name) > 20 else farmer_name
+        location_para = Paragraph(location, styles['Normal']) if len(location) > 15 else location
             
         row = [
             record.transaction.transaction_date.strftime('%Y-%m-%d'),
-            f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"[:20],
+            farmer_name_para,
             record.commodity_id.name,
             record.plant_date.strftime('%Y-%m-%d'),
             str(record.min_expected_harvest),
             str(record.max_expected_harvest),
             f"{estimated_hectare:.2f}",
-            record.transaction.get_location_display()[:15]
+            location_para
         ]
         data.append(row)
     
-    table = Table(data)
+    # Create table with appropriate column widths
+    col_widths = [80, 120, 80, 80, 80, 80, 80, 120]
+    table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
     
     elements.append(table)
@@ -3234,7 +3377,7 @@ def generate_plant_records_summary_pdf(records, filename):
         else:
             summary_data[key]['pending_count'] += 1
     
-    data = [['Commodity', 'Location', 'Total Records', 'Total Min Expected', 'Total Max Expected', 'Total Hectare', 'Verified', 'Pending']]
+    data = [['Commodity', 'Location', 'Total Records', 'Total Min Expected  (kg)', 'Total Max Expected  (kg)', 'Total Hectare', 'Verified', 'Pending']]
     for item in summary_data.values():
         data.append([item['commodity'], item['location'][:20], item['total_records'], 
                     f"{item['total_expected_min']:.2f}", f"{item['total_expected_max']:.2f}",
@@ -3257,10 +3400,10 @@ def generate_plant_records_summary_pdf(records, filename):
     doc.build(elements)
     return response
 
-def generate_accounts_pdf(accounts, filename):
+def generate_accounts_pdf(accounts, filename, request=None):
     """Generate PDF for accounts"""
     if not PDF_AVAILABLE:
-        return export_accounts_csv(accounts, filename + '_fallback', 'csv')
+        return export_accounts_csv(accounts, filename + '_fallback', 'csv', request)
     
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
@@ -3271,13 +3414,40 @@ def generate_accounts_pdf(accounts, filename):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=30, alignment=1)
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.grey
+    )
     
     title = Paragraph("Accounts Report", title_style)
     elements.append(title)
+    
+    # Get assigned municipality for record count filtering
+    assigned_municipality = None
+    if request and request.user.is_authenticated:
+        try:
+            user_info = UserInformation.objects.get(auth_user=request.user)
+            admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+            municipality_assigned = admin_info.municipality_incharge
+            is_superuser = request.user.is_superuser
+            is_pk14 = municipality_assigned.pk == 14
+            
+            if not is_superuser and not is_pk14:
+                assigned_municipality = municipality_assigned
+                subtitle = Paragraph(f"(with {municipality_assigned.municipality} records)", subtitle_style)
+                elements.append(subtitle)
+        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+            pass
+    
     elements.append(Spacer(1, 12))
     
-    data = [['Account ID', 'Full Name', 'Email', 'Contact Number', 'Municipality', 'Account Type', 'Status', 'Registration Date']]
+    data = [['ID', 'Full Name', 'Email', 'Contact', 'Municipality', 'Type', 'Status', 'Reg Date', 'Records', 'Farmland (ha)']]
     
     for account in accounts:
         # Format contact number as string and handle empty values
@@ -3286,24 +3456,59 @@ def generate_accounts_pdf(accounts, filename):
             contact_number_str = str(contact_number)
         else:
             contact_number_str = "Not provided"
+        
+        # Calculate records in assigned municipality
+        records_count = 0
+        total_farmland_area = 0
+        
+        if assigned_municipality:
+            # Count records in assigned municipality
+            records_count = RecordTransaction.objects.filter(
+                account_id=account
+            ).filter(
+                Q(farm_land__municipality=assigned_municipality) |
+                Q(manual_municipality=assigned_municipality)
+            ).count()
+            
+            # Calculate total farmland area in assigned municipality
+            farmlands = FarmLand.objects.filter(
+                userinfo_id=account.userinfo_id,
+                municipality=assigned_municipality
+            )
+            total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
+        else:
+            # For superusers/administrators, show total records and farmlands
+            records_count = RecordTransaction.objects.filter(account_id=account).count()
+            farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
+            total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
+        
+        # Use Paragraph for text wrapping
+        full_name = f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname}"
+        full_name_para = Paragraph(full_name, styles['Normal']) if len(full_name) > 20 else full_name
+        email_para = Paragraph(account.userinfo_id.user_email, styles['Normal']) if len(account.userinfo_id.user_email) > 20 else account.userinfo_id.user_email
             
         row = [
             account.account_id,
-            f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname}"[:25],
-            account.userinfo_id.user_email[:25],
+            full_name_para,
+            email_para,
             contact_number_str[:16],
             account.userinfo_id.municipality_id.municipality[:15],
             account.account_type_id.account_type,
             account.acc_status_id.acc_status,
-            account.account_register_date.strftime('%Y-%m-%d') if account.account_register_date else 'N/A'
+            account.account_register_date.strftime('%Y-%m-%d') if account.account_register_date else 'N/A',
+            records_count,
+            f"{total_farmland_area:.2f}"
         ]
         data.append(row)
     
-    table = Table(data)
+    # Create table with appropriate column widths
+    col_widths = [30, 100, 120, 80, 80, 60, 60, 70, 50, 60]
+    table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
