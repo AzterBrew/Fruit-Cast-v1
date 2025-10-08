@@ -3226,7 +3226,7 @@ def generate_accounts_pdf(accounts, filename):
             account.account_id,
             f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname}"[:25],
             account.userinfo_id.user_email[:25],
-            contact_number_str[:15],
+            contact_number_str[:16],
             account.userinfo_id.municipality_id.municipality[:15],
             account.account_type_id.account_type,
             account.acc_status_id.acc_status,

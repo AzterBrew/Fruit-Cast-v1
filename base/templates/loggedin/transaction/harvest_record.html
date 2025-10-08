@@ -194,50 +194,22 @@
 
 <script>
 
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
     
-    // Simple validation to prevent negative values and restrict input
-    function preventNegativeInput(input) {
-        let value = input.value;
-        
-        // Remove any non-numeric characters except decimal point
-        value = value.replace(/[^0-9.]/g, '');
-        
-        // Limit to 13 characters total
-        if (value.length > 13) {
-            value = value.substring(0, 13);
-        }
-        
-        // Ensure only one decimal point
-        /* const parts = value.split('.');
-        if (parts.length > 2) {
-            value = parts[0] + '.' + parts.slice(1).join('');
-        } test remove*/
-        
-        input.value = value;
-        
-        // Validate minimum value (greater than zero)
-        if (parseFloat(value) <= 0 && value !== '') {
-            input.setCustomValidity('Value must be greater than 0');
-        } else {
-            input.setCustomValidity('');
+    // Simple character limit validation for weight fields
+    function enforceCharacterLimit(input, maxLength) {
+        if (input.value.length > maxLength) {
+            input.value = input.value.substring(0, maxLength);
         }
     }
 
-    // Apply validation to weight fields
+    // Apply character limit to weight fields
     const numericFields = ['id_total_weight'];
     numericFields.forEach(function(fieldId) {
         const field = document.getElementById(fieldId);
         if (field) {
             field.addEventListener('input', function(e) {
-                preventNegativeInput(e.target);
-            });
-            
-            field.addEventListener('blur', function(e) {
-                // Ensure minimum value on blur if field has value
-                if (e.target.value && parseFloat(e.target.value) <= 0) {
-                    e.target.setCustomValidity('Value must be greater than 0');
-                }
+                enforceCharacterLimit(e.target, 12);
             });
         }
     });

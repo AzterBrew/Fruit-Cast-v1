@@ -410,15 +410,12 @@ class HarvestRecordCreate(forms.ModelForm):
         label="Total Weight of Commodity *",
         max_digits=12,
         decimal_places=2,
-        min_value=0.01,
-        widget=forms.NumberInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control', 
-            'min': '0.01', 
-            'step': '0.01', 
-            'placeholder': '0.00'
+            'placeholder': '0.00',
+            'maxlength': '12'
         })
     )
-
 
     class Meta:
         model = initHarvestRecord
@@ -430,6 +427,19 @@ class HarvestRecordCreate(forms.ModelForm):
             'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom', 'placeholder': 'If not listed, enter commodity here'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
         }
+
+    def clean_total_weight(self):
+        value = self.cleaned_data.get('total_weight')
+        if value is not None:
+            if value <= 0:
+                raise forms.ValidationError("Total weight must be greater than 0.")
+            # Check decimal places
+            decimal_str = str(value)
+            if '.' in decimal_str:
+                decimal_places = len(decimal_str.split('.')[1])
+                if decimal_places > 2:
+                    raise forms.ValidationError("Total weight cannot have more than 2 decimal places.")
+        return value
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -476,24 +486,20 @@ class PlantRecordCreate(forms.ModelForm):
         label="Min Expected Harvest (kg) *", 
         max_digits=12,
         decimal_places=2,
-        min_value=0.01,
-        widget=forms.NumberInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control', 
-            'min': '0.01', 
-            'step': '0.01', 
-            'placeholder': '0.00'
+            'placeholder': '0.00',
+            'maxlength': '12'
         })
     )
     max_expected_harvest = forms.DecimalField(
         label="Max Expected Harvest (kg) *", 
         max_digits=12,
         decimal_places=2,
-        min_value=0.01,
-        widget=forms.NumberInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control', 
-            'min': '0.01', 
-            'step': '0.01', 
-            'placeholder': '0.00'
+            'placeholder': '0.00',
+            'maxlength': '12'
         })
     )
 
@@ -508,6 +514,41 @@ class PlantRecordCreate(forms.ModelForm):
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
         }
 
+    def clean_min_expected_harvest(self):
+        value = self.cleaned_data.get('min_expected_harvest')
+        if value is not None:
+            if value <= 0:
+                raise forms.ValidationError("Minimum expected harvest must be greater than 0.")
+            # Check decimal places
+            decimal_str = str(value)
+            if '.' in decimal_str:
+                decimal_places = len(decimal_str.split('.')[1])
+                if decimal_places > 2:
+                    raise forms.ValidationError("Minimum expected harvest cannot have more than 2 decimal places.")
+        return value
+
+    def clean_max_expected_harvest(self):
+        value = self.cleaned_data.get('max_expected_harvest')
+        if value is not None:
+            if value <= 0:
+                raise forms.ValidationError("Maximum expected harvest must be greater than 0.")
+            # Check decimal places
+            decimal_str = str(value)
+            if '.' in decimal_str:
+                decimal_places = len(decimal_str.split('.')[1])
+                if decimal_places > 2:
+                    raise forms.ValidationError("Maximum expected harvest cannot have more than 2 decimal places.")
+        return value
+
+    def clean(self):
+        cleaned_data = super().clean()
+        min_harvest = cleaned_data.get('min_expected_harvest')
+        max_harvest = cleaned_data.get('max_expected_harvest')
+        
+        if min_harvest and max_harvest and min_harvest > max_harvest:
+            raise forms.ValidationError("Minimum expected harvest cannot be greater than maximum expected harvest.")
+        
+        return cleaned_data
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -545,17 +586,28 @@ class FarmlandRecordCreate(forms.ModelForm):
         label="Estimated Farm Area (in hectares)", 
         max_digits=12,
         decimal_places=2,
-        min_value=0.01,
         required=False,
-        widget=forms.NumberInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control', 
-            'min': '0.01', 
-            'step': '0.01', 
-            'placeholder': 'Enter land area...'
+            'placeholder': 'Enter land area...',
+            'maxlength': '12'
         })
     )
     municipality = forms.ModelChoiceField(label="Municipality of Farm *", queryset=MunicipalityName.objects.exclude(pk=14), widget=forms.Select(attrs={'class': 'form-select'}))
     barangay = forms.ModelChoiceField(label="Barangay of Farm *", queryset=BarangayName.objects.none(), widget=forms.Select(attrs={'class': 'form-select'}))
+
+    def clean_estimated_area(self):
+        value = self.cleaned_data.get('estimated_area')
+        if value is not None:
+            if value <= 0:
+                raise forms.ValidationError("Estimated area must be greater than 0.")
+            # Check decimal places
+            decimal_str = str(value)
+            if '.' in decimal_str:
+                decimal_places = len(decimal_str.split('.')[1])
+                if decimal_places > 2:
+                    raise forms.ValidationError("Estimated area cannot have more than 2 decimal places.")
+        return value
 
     class Meta:
         model = FarmLand
@@ -563,7 +615,7 @@ class FarmlandRecordCreate(forms.ModelForm):
         labels = {"farmland_name": "Farm Name *", "estimated_area": "Farm Area (in hectares) *", "municipality": "Municipality of Farm *", "barangay": "Barangay of Farm *"}
         widgets = {
             'farmland_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'estimated_area': forms.NumberInput(attrs={'class': 'form-control'}),
+            'estimated_area': forms.TextInput(attrs={'class': 'form-control'}),
             'municipality': forms.Select(attrs={'class': 'form-select'}),
             'barangay': forms.Select(attrs={'class': 'form-select'}),
         }
