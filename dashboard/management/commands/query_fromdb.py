@@ -4,7 +4,7 @@ from base.models import AccountStatus
 # Example A: View ALL records
 all_records = AccountStatus.objects.all()
 for record in all_records:
-    print(record.id, record.field_name, record.another_field)
+    print(record.acc_stat_id, record.acc_status)
 
 # Example B: Filter records (e.g., to view the recommendation data)
 # Assuming you have a Model named 'Recommendation'
