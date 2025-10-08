@@ -164,7 +164,8 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                 'name': commodity.name,
                 'years_to_mature': years_to_mature,
                 'predicted_month': calendar.month_name[predicted_month_num],
-                'predicted_year': predicted_year
+                'predicted_year': predicted_year,
+                'forecasted_amount': total_forecasted_kg  # Add forecasted amount for sorting
             })
             print(f"✅ {commodity.name} added to low-supply list (forecast: {total_forecasted_kg} < threshold: {low_supply_threshold})")
 
@@ -174,6 +175,13 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
     if not low_supply_commodities:
         print("💭 No low-supply commodities found, returning empty recommendations")
         return {'short_term': [], 'long_term': []}
+
+    # Limit to maximum 8 commodities to avoid overwhelming the API
+    if len(low_supply_commodities) > 8:
+        print(f"⚠️ Too many commodities ({len(low_supply_commodities)}), limiting to top 8 by lowest forecast")
+        # Sort by forecasted amount (lowest first) and take top 8
+        low_supply_commodities = sorted(low_supply_commodities, key=lambda x: x.get('forecasted_amount', 0))[:8]
+        print(f"🎯 Reduced to {len(low_supply_commodities)} commodities for API call")
 
     # Step 2: Construct a single, comprehensive prompt
     prompt_list = []
@@ -252,12 +260,12 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(api_call_with_timeout)
             try:
-                # 15 second timeout to prevent Gunicorn worker timeout
-                print("⏱️ Waiting for API response (15s timeout)...")
-                response = future.result(timeout=15)
+                # Increase timeout to 30 seconds for better reliability
+                print("⏱️ Waiting for API response (30s timeout)...")
+                response = future.result(timeout=30)
             except concurrent.futures.TimeoutError:
-                print("⏰ Gemini API call timed out after 15 seconds")
-                print("💡 This might be due to network issues or API overload")
+                print("⏰ Gemini API call timed out after 30 seconds")
+                print("💡 Try reducing the number of commodities or checking API performance")
                 return {'short_term': [], 'long_term': []}
             except Exception as future_error:
                 print(f"💥 Future execution failed: {type(future_error).__name__}: {future_error}")
