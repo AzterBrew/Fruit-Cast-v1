@@ -61,31 +61,62 @@ class Command(BaseCommand):
         
         # Get farmlands and test scheduling
         farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
-        municipality_ids = farmlands.values_list('municipality_id', flat=True).distinct()
         
         self.stdout.write(f"\n=== FARMLANDS ({farmlands.count()}) ===")
         for farmland in farmlands:
             self.stdout.write(f"- {farmland.farmland_name} in {farmland.municipality.municipality}")
         
-        self.stdout.write(f"\n=== SCHEDULING TESTS ===")
-        for municipality_id in municipality_ids:
-            municipality_name = farmlands.filter(municipality_id=municipality_id).first().municipality.municipality
-            self.stdout.write(f"\nTesting municipality: {municipality_name} (ID: {municipality_id})")
+        # Test residential municipality
+        if account.userinfo_id.municipality_id:
+            residential_municipality = account.userinfo_id.municipality_id
+            self.stdout.write(f"\n=== TESTING RESIDENTIAL MUNICIPALITY ===")
+            self.stdout.write(f"Municipality: {residential_municipality.municipality} (ID: {residential_municipality.municipality_id})")
             
-            # Count existing notifications for this municipality and month
+            # Count existing notifications for residential municipality
             existing_count = Notification.objects.filter(
                 account=account,
                 notification_type="fruit_recommendation",
-                message__icontains=municipality_name,
+                message__icontains=residential_municipality.municipality,
+                message__icontains="residential",
                 scheduled_for__month=current_time.month,
                 scheduled_for__year=current_time.year
             ).count()
             
-            self.stdout.write(f"Existing notifications for this month: {existing_count}")
+            self.stdout.write(f"Existing residential notifications for this month: {existing_count}")
             
-            # Try to schedule
-            success = schedule_monthly_fruit_recommendations(account, municipality_id)
-            self.stdout.write(f"Scheduling result: {'SUCCESS' if success else 'SKIPPED/FAILED'}")
+            # Try to schedule residential notification
+            success = schedule_monthly_fruit_recommendations(
+                account, 
+                residential_municipality.municipality_id, 
+                farmland_name=None, 
+                is_residential=True
+            )
+            self.stdout.write(f"Residential scheduling result: {'SUCCESS' if success else 'SKIPPED/FAILED'}")
+        
+        self.stdout.write(f"\n=== TESTING INDIVIDUAL FARMLANDS ===")
+        for farmland in farmlands:
+            self.stdout.write(f"\nTesting farmland: {farmland.farmland_name} in {farmland.municipality.municipality} (ID: {farmland.municipality_id})")
+            
+            # Count existing notifications for this specific farmland
+            existing_count = Notification.objects.filter(
+                account=account,
+                notification_type="fruit_recommendation",
+                message__icontains=farmland.municipality.municipality,
+                message__icontains=farmland.farmland_name,
+                scheduled_for__month=current_time.month,
+                scheduled_for__year=current_time.year
+            ).count()
+            
+            self.stdout.write(f"Existing notifications for this farmland this month: {existing_count}")
+            
+            # Try to schedule for this specific farmland
+            success = schedule_monthly_fruit_recommendations(
+                account, 
+                farmland.municipality_id, 
+                farmland_name=farmland.farmland_name, 
+                is_residential=False
+            )
+            self.stdout.write(f"Farmland scheduling result: {'SUCCESS' if success else 'SKIPPED/FAILED'}")
         
         # Show final notification count
         final_count = Notification.objects.filter(

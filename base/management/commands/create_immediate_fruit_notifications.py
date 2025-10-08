@@ -32,23 +32,23 @@ class Command(BaseCommand):
         total_notifications = 0
         
         for account in all_accounts:
-            account_municipalities = set()
+            account_notifications = []  # Store all notifications to create for this account
             
             # 1. Add residential municipality from user information
             if hasattr(account, 'userinfo_id') and account.userinfo_id.municipality_id:
                 residential_municipality_id = account.userinfo_id.municipality_id.municipality_id
-                account_municipalities.add((residential_municipality_id, None, True))  # (municipality_id, farmland_name, is_residential)
+                account_notifications.append((residential_municipality_id, None, True))  # (municipality_id, farmland_name, is_residential)
             
-            # 2. Add farmland municipalities
+            # 2. Add each farmland individually (don't deduplicate by municipality)
             farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
             for farmland in farmlands:
                 if farmland.municipality_id:
                     farmland_municipality_id = farmland.municipality_id.municipality_id
                     farmland_name = farmland.farmland_name
-                    account_municipalities.add((farmland_municipality_id, farmland_name, False))
+                    account_notifications.append((farmland_municipality_id, farmland_name, False))
             
-            # 3. Create notifications for each unique municipality
-            for municipality_id, farmland_name, is_residential in account_municipalities:
+            # 3. Create notifications for each entry (including multiple farmlands in same municipality)
+            for municipality_id, farmland_name, is_residential in account_notifications:
                 success = schedule_immediate_fruit_recommendations(
                     account, 
                     municipality_id,
