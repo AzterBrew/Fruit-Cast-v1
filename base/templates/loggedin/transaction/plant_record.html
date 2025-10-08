@@ -221,12 +221,18 @@
             if (municipalitySelect) {
                 municipalitySelect.disabled = true;
                 municipalitySelect.required = false;
+                municipalitySelect.value = '';
             }
-            if (barangaySelect) barangaySelect.disabled = true;
+            if (barangaySelect) {
+                barangaySelect.disabled = true;
+                barangaySelect.required = false;
+                barangaySelect.value = '';
+            }
         } else if (selectedValue === 'manual') {
             if (farmLandSelect) {
                 farmLandSelect.disabled = true;
                 farmLandSelect.required = false;
+                farmLandSelect.value = '';
             }
             if (municipalitySelect) {
                 municipalitySelect.disabled = false;
@@ -234,20 +240,24 @@
             }
             if (barangaySelect) {
                 barangaySelect.disabled = !municipalitySelect.value;
-                barangaySelect.required = municipalitySelect.value;
+                barangaySelect.required = true;
             }
         } else {
             if (farmLandSelect) {
                 farmLandSelect.disabled = true;
                 farmLandSelect.required = false;
+                farmLandSelect.value = '';
             }
             if (municipalitySelect) {
                 municipalitySelect.disabled = true;
                 municipalitySelect.required = false;
+                municipalitySelect.value = '';
             }
             if (barangaySelect) {
                 barangaySelect.disabled = true;
                 barangaySelect.required = false;
+                barangaySelect.value = '';
+            }
             }
         }
     }

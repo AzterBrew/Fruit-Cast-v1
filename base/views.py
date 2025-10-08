@@ -945,7 +945,7 @@ def finalize_transaction(request):
     print("Transaction finalized, records saved")
 
     del request.session[session_key]
-    return redirect(f"{reverse('base:newrecord')}?view=choose")
+    return redirect('base:newrecord')
 
 
 
@@ -963,7 +963,7 @@ def remove_pending_record(request, index):
         request.session[session_key] = pending_records
         request.session.modified = True
 
-    return redirect(f"{reverse('base:newrecord')}?view=transaction_list")
+    return redirect('base:newrecord')
 
 
 

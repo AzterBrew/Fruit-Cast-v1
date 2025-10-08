@@ -190,7 +190,7 @@ class RegistrationForm(forms.ModelForm):
             }),
             'barangay_id': forms.Select(attrs={'class': 'form-select','required': 'required'}),
             'municipality_id': forms.Select(attrs={'class': 'form-select','required': 'required'}),
-            'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 2,'required': 'required', 'placeholder': 'Purok, Street Name, Building, House No.'}),
+            'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 2,'required': 'required', 'placeholder': 'House No., Purok, Street Name, Building'}),
             'religion': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Religion'}),
             'civil_status': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Civil Status'}),
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if Not Applicable'}),

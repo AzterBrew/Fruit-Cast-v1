@@ -262,6 +262,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Birthdate year validation (limit to 4 digits)
+    const birthdateInput = document.getElementById('id_birthdate');
+    if (birthdateInput) {
+        birthdateInput.addEventListener('input', function() {
+            const value = this.value;
+            if (value) {
+                const dateParts = value.split('-');
+                // Limit year to 4 digits
+                if (dateParts[0] && dateParts[0].length > 4) {
+                    dateParts[0] = dateParts[0].substring(0, 4);
+                    this.value = dateParts.join('-');
+                }
+            }
+        });
+    }
+
     // Form validation and confirmation
     const form = document.getElementById("account-edit-form");
     if (form) {
@@ -335,11 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-.phone-input {
-    font-family: 'Courier New', monospace;
-    letter-spacing: 1px;
-}
-
 .phone-input:focus {
     border-color: #198754;
     box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
