@@ -202,6 +202,57 @@
 <script>
 
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // Numeric input validation for decimal fields
+    function validateNumericInput(input) {
+        let value = input.value;
+        
+        // Remove any non-numeric characters except decimal point
+        value = value.replace(/[^0-9.]/g, '');
+        
+        // Ensure only one decimal point
+        let parts = value.split('.');
+        if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+        }
+        
+        // Limit to 10 digits before decimal and 2 after
+        if (parts.length === 2) {
+            parts[0] = parts[0].substring(0, 10);
+            parts[1] = parts[1].substring(0, 2);
+            value = parts[0] + '.' + parts[1];
+        } else {
+            value = value.substring(0, 10);
+        }
+        
+        input.value = value;
+        
+        // Validate minimum value
+        if (parseFloat(value) < 0.01 && value !== '') {
+            input.setCustomValidity('Value must be at least 0.01');
+        } else {
+            input.setCustomValidity('');
+        }
+    }
+
+    // Apply numeric validation to weight fields
+    const numericFields = ['id_total_weight', 'id_weight_per_unit'];
+    numericFields.forEach(function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', function(e) {
+                validateNumericInput(e.target);
+            });
+            
+            field.addEventListener('blur', function(e) {
+                // Ensure minimum value on blur
+                if (e.target.value && parseFloat(e.target.value) < 0.01) {
+                    e.target.value = '0.01';
+                }
+            });
+        }
+    });
+    
     // confirmation ng form
     const form = document.getElementById("harvest-record-form");
     if (form) {

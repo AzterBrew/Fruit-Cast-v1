@@ -406,8 +406,32 @@ class EditUserInformation(forms.ModelForm):
 
 class HarvestRecordCreate(forms.ModelForm):
     unit = forms.ModelChoiceField(label="Unit of Measurement *",queryset=UnitMeasurement.objects.all(),widget=forms.Select(attrs={'class': 'form-select'}))
-    total_weight = forms.DecimalField(localize=True,label="Total Weight of Commodity *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1', 'placeholder': '0.0'}))
-    weight_per_unit = forms.DecimalField(localize=True,label="Weight per unit *",widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.1', 'placeholder': '0.0'}))
+    total_weight = forms.DecimalField(
+        label="Total Weight of Commodity *",
+        max_digits=12,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control', 
+            'min': '0.01', 
+            'step': '0.01', 
+            'placeholder': '0.00',
+            'maxlength': '12'
+        })
+    )
+    weight_per_unit = forms.DecimalField(
+        label="Weight per unit *",
+        max_digits=12,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control', 
+            'min': '0.01', 
+            'step': '0.01', 
+            'placeholder': '0.00',
+            'maxlength': '12'
+        })
+    )
 
 
     class Meta:
@@ -462,8 +486,32 @@ class RecordTransactionCreate(forms.ModelForm):
             self.fields['farm_land'].queryset = FarmLand.objects.filter(userinfo_id__auth_user=user)
 
 class PlantRecordCreate(forms.ModelForm):
-    min_expected_harvest = forms.DecimalField(label="Min Expected Harvest (kg) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder':'0'}))
-    max_expected_harvest = forms.DecimalField(label="Max Expected Harvest (kg) *", widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder':'0'}))
+    min_expected_harvest = forms.DecimalField(
+        label="Min Expected Harvest (kg) *", 
+        max_digits=12,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control', 
+            'min': '0.01', 
+            'step': '0.01', 
+            'placeholder': '0.00',
+            'maxlength': '12'
+        })
+    )
+    max_expected_harvest = forms.DecimalField(
+        label="Max Expected Harvest (kg) *", 
+        max_digits=12,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control', 
+            'min': '0.01', 
+            'step': '0.01', 
+            'placeholder': '0.00',
+            'maxlength': '12'
+        })
+    )
 
     class Meta:
         model = initPlantRecord
@@ -500,8 +548,29 @@ class PlantRecordCreate(forms.ModelForm):
                 self.fields['commodity_id'].widget.choices = choices
 
 class FarmlandRecordCreate(forms.ModelForm):
-    farmland_name = forms.CharField(label="Farm Name *", max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Enter Farmland name...'}))
-    estimated_area = forms.DecimalField(label="Estimated Farm Area (in hectares) *", localize=True, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder' : 'Enter land area...'}))
+    farmland_name = forms.CharField(
+        label="Farm Name *", 
+        max_length=50, 
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Enter Farmland name...',
+            'maxlength': '50'
+        })
+    )
+    estimated_area = forms.DecimalField(
+        label="Estimated Farm Area (in hectares)", 
+        max_digits=12,
+        decimal_places=2,
+        min_value=0.01,
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control', 
+            'min': '0.01', 
+            'step': '0.01', 
+            'placeholder': 'Enter land area...',
+            'maxlength': '12'
+        })
+    )
     municipality = forms.ModelChoiceField(label="Municipality of Farm *", queryset=MunicipalityName.objects.exclude(pk=14), widget=forms.Select(attrs={'class': 'form-select'}))
     barangay = forms.ModelChoiceField(label="Barangay of Farm *", queryset=BarangayName.objects.none(), widget=forms.Select(attrs={'class': 'form-select'}))
 
