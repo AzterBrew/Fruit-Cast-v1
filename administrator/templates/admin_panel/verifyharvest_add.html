@@ -43,12 +43,6 @@ Fruit Cast | Add Verified Harvest Record
                                 {{ form.total_weight_kg }}
                             </div>
                             <div class="col-md-4">
-                                <label for="id_weight_per_unit_kg" class="form-label">
-                                    <i class="bi bi-speedometer2 me-1"></i>Weight per Unit (kg)
-                                </label>
-                                {{ form.weight_per_unit_kg }}
-                            </div>
-                            <div class="col-md-4">
                                 <label for="id_municipality" class="form-label">
                                     <i class="bi bi-geo-alt me-1"></i>Municipality * 
                                 </label>
@@ -105,9 +99,9 @@ Fruit Cast | Add Verified Harvest Record
                             <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV Format Required:
                         </h6>
                         <p class="mb-2"><strong>Header:</strong></p>
-                        <code>harvest_date,commodity,municipality,barangay,total_weight_kg,weight_per_unit_kg,remarks</code>
+                        <code>harvest_date,commodity,municipality,barangay,total_weight_kg,remarks</code>
                         <p class="mb-2 mt-2"><strong>Example:</strong></p>
-                        <code>2025-08-01,Mango,Balanga,San Jose,100,1.2,Good harvest</code>
+                        <code>2025-08-01,Mango,Balanga,San Jose,100,Good harvest</code>
                         
                         <div class="mt-3">
                             <h6><i class="bi bi-info-circle me-1"></i>Important Notes:</h6>
@@ -294,9 +288,9 @@ Fruit Cast | Add Verified Harvest Record
 
     function downloadTemplate() {
         // Create a sample CSV content
-        const csvContent = "harvest_date,commodity,municipality,barangay,total_weight_kg,weight_per_unit_kg,remarks\n" +
-                          "2024-08-01,Mango,Balanga,San Jose,100.00,1.20,Good harvest\n" +
-                          "2024-08-15,Banana,Dinalupihan,Layac,75.50,0.80,Excellent quality";
+        const csvContent = "harvest_date,commodity,municipality,barangay,total_weight_kg,remarks\n" +
+                          "2024-08-01,Mango,Balanga,San Jose,100.00,Good harvest\n" +
+                          "2024-08-15,Banana,Dinalupihan,Layac,75.50,Excellent quality";
         
         // Create and download the file
         const blob = new Blob([csvContent], { type: 'text/csv' });

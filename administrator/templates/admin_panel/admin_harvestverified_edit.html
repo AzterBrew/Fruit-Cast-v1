@@ -75,19 +75,6 @@ Fruit Cast | Edit Harvest Record
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label for="id_weight_per_unit_kg" class="form-label">
-                                    <i class="bi bi-speedometer2 me-2"></i>Weight per Unit (kg) *
-                                </label>
-                                {{ form.weight_per_unit_kg }}
-                                {% if form.weight_per_unit_kg.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {% for error in form.weight_per_unit_kg.errors %}
-                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
                                 <label for="id_municipality" class="form-label">
                                     <i class="bi bi-geo-alt me-2"></i>Municipality *
                                 </label>
@@ -197,11 +184,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const harvestDate = document.getElementById('id_harvest_date').value;
             const commodity = document.getElementById('id_commodity_id').value;
             const totalWeight = document.getElementById('id_total_weight_kg').value;
-            const weightPerUnit = document.getElementById('id_weight_per_unit_kg').value;
             const municipality = document.getElementById('id_municipality').value;
             
             // Basic validation
-            if (!harvestDate || !commodity || !totalWeight || !weightPerUnit || !municipality) {
+            if (!harvestDate || !commodity || !totalWeight || !municipality) {
                 e.preventDefault();
                 alert('Please fill in all required fields.');
                 return false;

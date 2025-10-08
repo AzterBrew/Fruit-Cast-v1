@@ -1014,7 +1014,6 @@ def finalize_transaction(request):
                 commodity_custom=data.get('commodity_custom', ''),
                 total_weight=data['total_weight'],
                 unit=data['unit'],
-                weight_per_unit=data['weight_per_unit'],
                 remarks=data.get('remarks', '')
             )
             #  this is for verified harvests
@@ -1028,7 +1027,6 @@ def finalize_transaction(request):
         #         commodity_spec=data['commodity_spec'],
         #         total_weight=total_weight_kg,
         #         unit='kg',
-        #         weight_per_unit=data['weight_per_unit'],
         #         harvest_location=data['harvest_location'],
         #         remarks=data.get('remarks', '')
         #     )

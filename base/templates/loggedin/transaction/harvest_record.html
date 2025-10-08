@@ -109,13 +109,6 @@
                             <div class="text-danger small mt-1">{{ form.unit.errors }}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label" for="{{ form.weight_per_unit.id_for_label }}">{{ form.weight_per_unit.label }}</label>
-                        {{ form.weight_per_unit }}
-                        {% if form.weight_per_unit.errors %}
-                            <div class="text-danger small mt-1">{{ form.weight_per_unit.errors }}</div>
-                        {% endif %}
-                    </div>
                     <div class="col-md-12">
                         <label class="form-label" for="{{ form.remarks.id_for_label }}">{{ form.remarks.label }}</label>
                         {{ form.remarks }}
@@ -232,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Apply validation to weight fields
-    const numericFields = ['id_total_weight', 'id_weight_per_unit'];
+    const numericFields = ['id_total_weight'];
     numericFields.forEach(function(fieldId) {
         const field = document.getElementById(fieldId);
         if (field) {

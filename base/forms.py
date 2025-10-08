@@ -418,23 +418,11 @@ class HarvestRecordCreate(forms.ModelForm):
             'placeholder': '0.00'
         })
     )
-    weight_per_unit = forms.DecimalField(
-        label="Weight per unit *",
-        max_digits=12,
-        decimal_places=2,
-        min_value=0.01,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control', 
-            'min': '0.01', 
-            'step': '0.01', 
-            'placeholder': '0.00'
-        })
-    )
 
 
     class Meta:
         model = initHarvestRecord
-        fields = ["harvest_date", "commodity_id", "commodity_custom",  "unit", "total_weight", "weight_per_unit", "remarks"]
+        fields = ["harvest_date", "commodity_id", "commodity_custom",  "unit", "total_weight", "remarks"]
         labels = {"harvest_date": "Harvest Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
             'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),

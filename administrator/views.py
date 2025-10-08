@@ -1649,7 +1649,6 @@ def admin_verifyharvestrec(request):
     # Add converted weight in kg for each record in the current page
     for record in page_obj:
         record.total_weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
-        record.weight_per_unit_kg = convert_to_kg(record.weight_per_unit, record.unit.unit_abrv)
 
     # Batch update
     if request.method == 'POST':
@@ -1709,13 +1708,11 @@ def admin_verifyharvestrec(request):
 
                         # Convert weights to kg before storing
                         total_weight_kg = convert_to_kg(rec.total_weight, rec.unit.unit_abrv)
-                        weight_per_unit_kg = convert_to_kg(rec.weight_per_unit, rec.unit.unit_abrv)
 
                         verified_harvest_record = VerifiedHarvestRecord.objects.create(
                             harvest_date=rec.harvest_date,
                             commodity_id=rec.commodity_id,
                             total_weight_kg=total_weight_kg,
-                            weight_per_unit_kg=weight_per_unit_kg,
                             remarks=rec.remarks,
                             municipality=municipality,
                             barangay=barangay,
@@ -1831,7 +1828,6 @@ def admin_add_verifyharvestrec(request):
                     harvest_date=row["harvest_date"],
                     commodity_id=commodity_obj,
                     total_weight_kg=row["total_weight_kg"],
-                    weight_per_unit_kg=row["weight_per_unit_kg"],
                     municipality=municipality,
                     barangay=barangay,
                     remarks=row.get("remarks", ""),
@@ -2690,7 +2686,7 @@ def export_verified_harvest_records_csv(records, filename, format_type='csv'):
         
         writer = csv.writer(response)
         writer.writerow([
-            'Record ID', 'Commodity', 'Harvest Date', 'Total Weight (kg)', 'Weight per Unit (kg)',
+            'Record ID', 'Commodity', 'Harvest Date', 'Total Weight (kg)',
             'Municipality', 'Barangay', 'Date Verified', 'Verified By', 'Remarks'
         ])
         
@@ -2700,7 +2696,6 @@ def export_verified_harvest_records_csv(records, filename, format_type='csv'):
                 record.commodity_id.name,
                 record.harvest_date.strftime('%Y-%m-%d'),
                 record.total_weight_kg,
-                record.weight_per_unit_kg,
                 record.municipality.municipality if record.municipality else 'N/A',
                 record.barangay.barangay if record.barangay else 'N/A',
                 record.date_verified.strftime('%Y-%m-%d %H:%M'),
@@ -3176,7 +3171,7 @@ def generate_verified_harvest_records_pdf(records, filename):
     elements.append(title)
     elements.append(Spacer(1, 12))
     
-    data = [['Record ID', 'Commodity', 'Harvest Date', 'Total Weight (kg)', 'Weight/Unit (kg)', 'Municipality', 'Verified By']]
+    data = [['Record ID', 'Commodity', 'Harvest Date', 'Total Weight (kg)', 'Municipality', 'Verified By']]
     
     for record in records:
         row = [
@@ -3184,7 +3179,6 @@ def generate_verified_harvest_records_pdf(records, filename):
             record.commodity_id.name,
             record.harvest_date.strftime('%Y-%m-%d'),
             str(record.total_weight_kg),
-            str(record.weight_per_unit_kg),
             record.municipality.municipality if record.municipality else 'N/A',
             f"{record.verified_by.userinfo_id.lastname}, {record.verified_by.userinfo_id.firstname}"[:20] if record.verified_by else 'N/A'
         ]

@@ -79,13 +79,12 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
     class Meta:
         model = VerifiedHarvestRecord
         fields = [
-            "harvest_date", "commodity_id", "total_weight_kg", "weight_per_unit_kg",
+            "harvest_date", "commodity_id", "total_weight_kg",
             "municipality", "barangay", "remarks"
         ]
         widgets = {
             "harvest_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "commodity_id": forms.Select(attrs={"class": "form-select"}),
             "total_weight_kg": forms.NumberInput(attrs={"class": "form-control"}),
-            "weight_per_unit_kg": forms.NumberInput(attrs={"class": "form-control"}),
             "remarks": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }

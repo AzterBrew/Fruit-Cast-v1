@@ -109,7 +109,6 @@ Fruit Cast | Plant and Harvest Records
                                         <th><i class="bi bi-droplet me-1"></i>Commodity</th>
                                         <th><i class="bi bi-geo me-1"></i>Location</th>
                                         <th><i class="bi bi-box me-1"></i>Total Weight</th>
-                                        <th><i class="bi bi-clipboard-data me-1"></i>Unit Weight</th>
                                         <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
                                         <th><i class="bi bi-check-circle me-1"></i>Status</th>
                                         <th><i class="bi bi-person-check me-1"></i>Verified by</th>
@@ -157,14 +156,6 @@ Fruit Cast | Plant and Harvest Records
                                             {% else %}
                                                 <div class="fw-bold text-success">{{ rec.total_weight_kg|floatformat:2 }} kg</div>
                                                 <small class="text-muted">({{ rec.total_weight }} {{ rec.unit.unit_abrv }})</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if rec.unit.unit_abrv == "kg" or rec.unit.unit_abrv == "kilogram" %}
-                                                <div class="fw-medium">{{ rec.weight_per_unit|floatformat:2 }} kg</div>
-                                            {% else %}
-                                                <div class="fw-medium">{{ rec.weight_per_unit_kg|floatformat:2 }} kg</div>
-                                                <small class="text-muted">({{ rec.weight_per_unit }} {{ rec.unit.unit_abrv }})</small>
                                             {% endif %}
                                         </td>
                                         <td>

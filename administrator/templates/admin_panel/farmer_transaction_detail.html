@@ -158,7 +158,6 @@ Fruit Cast | Transaction Details
                                             <th><i class="bi bi-calendar3 me-1"></i>Date</th>
                                             <th><i class="bi bi-droplet me-1"></i>Commodity</th>
                                             <th><i class="bi bi-box me-1"></i>Total Weight</th>
-                                            <th><i class="bi bi-ruler me-1"></i>Avg Unit Weight</th>
                                             <th><i class="bi bi-check-circle me-1"></i>Status</th>
                                             <th><i class="bi bi-person me-1"></i>Verified By</th>
                                             <th><i class="bi bi-chat-left-text me-1"></i>Remarks</th>
@@ -180,9 +179,6 @@ Fruit Cast | Transaction Details
                                             </td>
                                             <td>
                                                 <span class="fw-bold text-primary">{{ record.total_weight }}</span> {{ record.unit.unit_abrv }}
-                                            </td>
-                                            <td>
-                                                <span class="fw-medium">{{ record.weight_per_unit }}</span> {{ record.unit.unit_abrv }}
                                             </td>
                                             <td>
                                                 {% if record.record_status %}
@@ -254,12 +250,6 @@ Fruit Cast | Transaction Details
                                     <div class="border-start border-warning border-3 ps-3">
                                         <label class="small text-muted fw-semibold">Total Weight</label>
                                         <p class="fw-bold text-primary mb-0">{{ record.total_weight }} {{ record.unit.unit_abrv }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="border-start border-warning border-3 ps-3">
-                                        <label class="small text-muted fw-semibold">Average Unit Weight</label>
-                                        <p class="fw-medium mb-0">{{ record.weight_per_unit }} {{ record.unit.unit_abrv }}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-6">

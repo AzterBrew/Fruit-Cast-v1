@@ -153,9 +153,6 @@ Fruit Cast | Verified Harvest Records
                                         <i class="bi bi-weight me-1"></i>Total Weight (kg)
                                     </th>
                                     <th scope="col">
-                                        <i class="bi bi-speedometer2 me-1"></i>Unit Weight (kg)
-                                    </th>
-                                    <th scope="col">
                                         <i class="bi bi-chat-text me-1"></i>Remarks
                                     </th>
                                     <th scope="col">
@@ -202,9 +199,6 @@ Fruit Cast | Verified Harvest Records
                                         <span class="badge bg-success-subtle text-success">
                                             <i class="bi bi-weight me-1"></i>{{ rec.total_weight_kg|format_weight }} kg
                                         </span>
-                                    </td>
-                                    <td>
-                                        <span class="text-muted">{{ rec.weight_per_unit_kg }} kg</span>
                                     </td>
                                     <td>
                                         {% if rec.remarks %}
