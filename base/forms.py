@@ -63,8 +63,8 @@ CIVSTAT_CHOICES = [
 class RegistrationForm(forms.ModelForm):
     # Enhanced phone number validation for Philippine mobile numbers
     phone_regex = RegexValidator(
-        regex=r'^\+639\d{2} \d{3} \d{4}$', 
-        message="Phone number must be in the format: +639XX XXX XXXX"
+        regex=r'^\+63 9\d{2} \d{3} \d{4}$', 
+        message="Phone number must be in the format: +63 9XX XXX XXXX"
     )
     
     # Name validation regex - alphabets, hyphens, apostrophes, and accent marks
@@ -275,8 +275,8 @@ class RegistrationForm(forms.ModelForm):
 class EditUserInformation(forms.ModelForm):
     # Enhanced phone number validation for Philippine mobile numbers
     phone_regex = RegexValidator(
-        regex=r'^\+639\d{2} \d{3} \d{4}$', 
-        message="Phone number must be in the format: +639XX XXX XXXX"
+        regex=r'^\+63 9\d{2} \d{3} \d{4}$', 
+        message="Phone number must be in the format: +63 9XX XXX XXXX"
     )
     
     # Name validation regex - alphabets, hyphens, apostrophes, and accent marks
@@ -352,9 +352,9 @@ class EditUserInformation(forms.ModelForm):
         max_length=17, 
         widget=forms.TextInput(attrs={
             'type': 'tel', 
-            'placeholder': '+639XX XXX XXXX', 
+            'placeholder': '+63 9XX XXX XXXX', 
             'class': 'form-control phone-input',
-            'data-format': '+639XX XXX XXXX'
+            'data-format': '+63 9XX XXX XXXX'
         })
     )
     
@@ -364,9 +364,9 @@ class EditUserInformation(forms.ModelForm):
         max_length=17, 
         widget=forms.TextInput(attrs={
             'type': 'tel', 
-            'placeholder': '+639XX XXX XXXX', 
+            'placeholder': '+63 9XX XXX XXXX', 
             'class': 'form-control phone-input',
-            'data-format': '+639XX XXX XXXX'
+            'data-format': '+63 9XX XXX XXXX'
         })
     )
 

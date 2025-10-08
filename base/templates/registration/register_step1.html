@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function validatePhoneNumber(input) {
-    const phoneRegex = /^\+639\d{2} \d{3} \d{4}$/;
+    const phoneRegex = /^\+63 9\d{2} \d{3} \d{4}$/;
     const isValid = phoneRegex.test(input.value);
     
     if (input.value.length > 4 && !isValid) {
@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (phoneInput && !validatePhoneNumber(phoneInput)) {
           e.preventDefault();
           phoneInput.focus();
-          alert('Please enter a valid phone number in the format: +639XX XXX XXXX');
+          alert('Please enter a valid phone number in the format: +63 9XX XXX XXXX');
           return false;
         }
       });
