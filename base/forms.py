@@ -349,7 +349,7 @@ class EditUserInformation(forms.ModelForm):
     contact_number = forms.CharField(
         label="Contact No.", 
         validators=[phone_regex], 
-        max_length=17, 
+        max_length=20, 
         widget=forms.TextInput(attrs={
             'type': 'tel', 
             'placeholder': '+63 9XX XXX XXXX', 
@@ -361,7 +361,7 @@ class EditUserInformation(forms.ModelForm):
     emergency_contact_number = forms.CharField(
         label="Emergency Contact No.", 
         validators=[phone_regex], 
-        max_length=17, 
+        max_length=20, 
         widget=forms.TextInput(attrs={
             'type': 'tel', 
             'placeholder': '+63 9XX XXX XXXX', 

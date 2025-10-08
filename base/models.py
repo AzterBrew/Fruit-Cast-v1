@@ -105,11 +105,11 @@ class UserInformation(models.Model):
     middlename = models.CharField(max_length=255, blank=True, default="")
     nameextension = models.CharField(max_length=10, blank=True, default="")
     sex = models.CharField(max_length=50)
-    contact_number = models.CharField(max_length=16)
+    contact_number = models.CharField(max_length=20)
     user_email = models.EmailField(max_length=254) #tentative, di normalized ang table
     birthdate = models.DateField()
     emergency_contact_person = models.CharField(max_length=255)
-    emergency_contact_number = models.CharField(max_length=16)
+    emergency_contact_number = models.CharField(max_length=20)
     address_details = models.CharField(max_length=255)
     barangay_id = models.ForeignKey(BarangayName,on_delete=models.CASCADE)
     municipality_id = models.ForeignKey(MunicipalityName,on_delete=models.CASCADE)

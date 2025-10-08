@@ -334,8 +334,6 @@ Fruit Cast | Account Details
                                     <tr>
                                         <th scope="col">Date & Time</th>
                                         <th scope="col">Action</th>
-                                        <th scope="col">Target Type</th>
-                                        <th scope="col">Target ID</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -355,12 +353,6 @@ Fruit Cast | Account Details
                                             {% else %}
                                                 <span class="badge bg-primary">{{ action.action }}</span>
                                             {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="text-muted">{{ action.content_type.model|title }}</span>
-                                        </td>
-                                        <td>
-                                            <code>{{ action.object_id }}</code>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -391,17 +383,6 @@ Fruit Cast | Account Details
                                             {{ action.action_timestamp|date:"M d, Y" }}<br>
                                             {{ action.action_timestamp|time:"g:i A" }}
                                         </small>
-                                    </div>
-                                </div>
-                                
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Target Type:</small>
-                                        <span class="fw-medium">{{ action.content_type.model|title }}</span>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Target ID:</small>
-                                        <code>{{ action.object_id }}</code>
                                     </div>
                                 </div>
                             </div>

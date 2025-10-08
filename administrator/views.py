@@ -573,27 +573,64 @@ def change_account_type(request, account_id):
 
     return redirect('administrator:show_allaccounts')  # or wherever the list view lives
 
-@admin_or_agriculturist_required
+@admin_or_agriculturist_required    
 def farmer_transaction_history(request, account_id):
     """View to display transaction history for a specific farmer account"""
     context = get_admin_context(request)
     
     try:
+        # Get current admin/agriculturist info for municipality filtering
+        user = request.user
+        userinfo = UserInformation.objects.get(auth_user=user)
+        admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+        municipality_assigned = admin_info.municipality_incharge
+        is_superuser = user.is_superuser
+        is_pk14 = municipality_assigned.pk == 14  # Administrator
+        
         # Get the farmer's account information
         farmer_account = AccountsInformation.objects.get(
             pk=account_id, 
             account_type_id=1  # Ensure it's a farmer account
         )
         
-        # Get all transactions for this farmer
-        transactions = RecordTransaction.objects.filter(
+        # Check if agriculturist has access to this farmer
+        if not is_superuser and not is_pk14:
+            # Check if this farmer falls under the agriculturist's assigned municipality
+            farmer_accessible = AccountsInformation.objects.filter(
+                pk=account_id,
+                account_type_id=1
+            ).filter(
+                Q(userinfo_id__municipality_id=municipality_assigned) |  # Farmer's municipality matches
+                Q(recordtransaction__farm_land__municipality=municipality_assigned) |  # Has farmland in municipality
+                Q(recordtransaction__manual_municipality=municipality_assigned)  # Has transactions in municipality
+            ).distinct().exists()
+            
+            if not farmer_accessible:
+                messages.error(request, "You don't have access to view this farmer's information.")
+                return redirect('administrator:verify_accounts')
+        
+        # Get transactions for this farmer, filtered by municipality for agriculturists
+        transactions_query = RecordTransaction.objects.filter(
             account_id=farmer_account
-        ).order_by('-transaction_date')
+        )
+        
+        # Apply municipality filtering for agriculturists
+        if not is_superuser and not is_pk14:
+            transactions_query = transactions_query.filter(
+                Q(farm_land__municipality=municipality_assigned) |  # Farmland in assigned municipality
+                Q(manual_municipality=municipality_assigned)  # Manual location in assigned municipality
+            )
+        
+        transactions = transactions_query.order_by('-transaction_date')
         
         # Get farmer's farm lands
         farm_lands = FarmLand.objects.filter(
             userinfo_id=farmer_account.userinfo_id
         ).select_related('municipality', 'barangay')
+        
+        # Filter farm lands for agriculturists
+        if not is_superuser and not is_pk14:
+            farm_lands = farm_lands.filter(municipality=municipality_assigned)
         
         # Calculate age from birthdate
         today = date.today()
@@ -606,21 +643,32 @@ def farmer_transaction_history(request, account_id):
             'farmer_name': f"{farmer_account.userinfo_id.firstname} {farmer_account.userinfo_id.lastname}",
             'farmer_info': farmer_account.userinfo_id,
             'farm_lands': farm_lands,
-            'farmer_age': age
+            'farmer_age': age,
+            'is_agriculturist': not is_superuser and not is_pk14,
+            'assigned_municipality': municipality_assigned.municipality if not is_superuser and not is_pk14 else None
         })
         
     except AccountsInformation.DoesNotExist:
         messages.error(request, "Farmer account not found.")
         return redirect('administrator:verify_accounts')
+    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+        messages.error(request, "Admin information not found.")
+        return redirect('administrator:verify_accounts')
     
-    return render(request, 'admin_panel/farmer_transaction_history.html', context)
-
-@admin_or_agriculturist_required
+    return render(request, 'admin_panel/farmer_transaction_history.html', context)@admin_or_agriculturist_required
 def farmer_transaction_detail(request, transaction_id):
     """View to display detailed information for a specific transaction"""
     context = get_admin_context(request)
     
     try:
+        # Get current admin/agriculturist info for municipality filtering
+        user = request.user
+        userinfo = UserInformation.objects.get(auth_user=user)
+        admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+        municipality_assigned = admin_info.municipality_incharge
+        is_superuser = user.is_superuser
+        is_pk14 = municipality_assigned.pk == 14  # Administrator
+        
         # Get the transaction with related data
         transaction = RecordTransaction.objects.select_related(
             'account_id__userinfo_id',
@@ -634,6 +682,18 @@ def farmer_transaction_detail(request, transaction_id):
         if transaction.account_id.account_type_id.pk != 1:
             messages.error(request, "Transaction not found or access denied.")
             return redirect('administrator:verify_accounts')
+        
+        # Check municipality access for agriculturists
+        if not is_superuser and not is_pk14:
+            transaction_municipality = None
+            if transaction.location_type == 'farm_land' and transaction.farm_land:
+                transaction_municipality = transaction.farm_land.municipality
+            elif transaction.manual_municipality:
+                transaction_municipality = transaction.manual_municipality
+            
+            if transaction_municipality != municipality_assigned:
+                messages.error(request, "You don't have access to view this transaction.")
+                return redirect('administrator:verify_accounts')
         
         # Get plant record if exists
         plant_record = None
@@ -669,11 +729,16 @@ def farmer_transaction_detail(request, transaction_id):
             'harvest_record': harvest_records,
             'plant_notification': plant_notification,
             'farmer_name': farmer_name,
-            'farmer_account': transaction.account_id
+            'farmer_account': transaction.account_id,
+            'is_agriculturist': not is_superuser and not is_pk14,
+            'assigned_municipality': municipality_assigned.municipality if not is_superuser and not is_pk14 else None
         })
         
     except RecordTransaction.DoesNotExist:
         messages.error(request, "Transaction not found.")
+        return redirect('administrator:verify_accounts')
+    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+        messages.error(request, "Admin information not found.")
         return redirect('administrator:verify_accounts')
     
     return render(request, 'admin_panel/farmer_transaction_detail.html', context)
