@@ -13,6 +13,17 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                 {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif %}
             </h1>
 
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-triangle-fill{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
             <!-- Form Section -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
@@ -118,16 +129,6 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                     </form>
                 </div>
             </div>
-
-            <!-- Messages -->
-            {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mt-3" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-            {% endif %}
 
         </div>
     </div>

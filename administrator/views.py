@@ -1398,33 +1398,134 @@ def admin_commodity_list(request):
 def admin_commodity_add_edit(request, pk=None):
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = request.FILES["csv_file"]
-        decoded_file = csv_file.read().decode("utf-8-sig")
-        reader = csv.DictReader(io.StringIO(decoded_file))
-        for row in reader:
-            # Clean up keys and values
-            row = {k.strip(): v.strip() for k, v in row.items()}
-            print(row)  # Debug: See what keys you have
-            name = row["name"]  # This will now work if the header is correct
-            avg_weight = float(row["average_weight_per_unit_kg"])
-            years_to_mature = float(row["years_to_mature"])
-            years_to_bearfruit = float(row.get("years_to_bearfruit", 0))
-            commodity, _ = CommodityType.objects.get_or_create(
-                name=name,
-                defaults={
-                    "average_weight_per_unit_kg": avg_weight,
-                    "years_to_mature": years_to_mature,
-                    "years_to_bearfruit": years_to_bearfruit,
-                }
-            )
-            commodity.average_weight_per_unit_kg = avg_weight
-            commodity.years_to_mature = years_to_mature
-            commodity.years_to_bearfruit = years_to_bearfruit
-            commodity.save()
-            months = [m.strip() for m in row["seasonal_months"].split(";")]
-            month_objs = Month.objects.filter(name__in=months)
-            commodity.seasonal_months.set(month_objs)
-        messages.success(request, "CSV uploaded successfully.")
-        return redirect("administrator:admin_commodity_list")
+        created_count = 0
+        updated_count = 0
+        error_count = 0
+        error_details = []
+        
+        try:
+            decoded_file = csv_file.read().decode("utf-8-sig")
+            reader = csv.DictReader(io.StringIO(decoded_file))
+            
+            # Check if required headers exist
+            required_headers = ['name', 'average_weight_per_unit_kg', 'seasonal_months', 'years_to_mature', 'years_to_bearfruit']
+            if not all(header in reader.fieldnames for header in required_headers):
+                missing_headers = [h for h in required_headers if h not in reader.fieldnames]
+                messages.error(request, f"CSV file is missing required headers: {', '.join(missing_headers)}. Please check the template format.")
+            else:
+                for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
+                    try:
+                        # Clean up keys and values
+                        row = {k.strip(): v.strip() for k, v in row.items()}
+                        
+                        # Validate required fields
+                        if not row.get("name"):
+                            error_details.append(f"Row {row_num}: Commodity name is required")
+                            error_count += 1
+                            continue
+                            
+                        name = row["name"]
+                        
+                        # Validate numeric fields
+                        try:
+                            avg_weight = float(row["average_weight_per_unit_kg"])
+                            if avg_weight <= 0:
+                                raise ValueError("Average weight must be positive")
+                        except (ValueError, TypeError):
+                            error_details.append(f"Row {row_num}: Invalid average weight per unit - must be a positive number")
+                            error_count += 1
+                            continue
+                            
+                        try:
+                            years_to_mature = float(row["years_to_mature"])
+                            if years_to_mature < 0:
+                                raise ValueError("Years to mature cannot be negative")
+                        except (ValueError, TypeError):
+                            error_details.append(f"Row {row_num}: Invalid years to mature - must be a non-negative number")
+                            error_count += 1
+                            continue
+                            
+                        try:
+                            years_to_bearfruit = float(row.get("years_to_bearfruit", 0))
+                            if years_to_bearfruit < 0:
+                                raise ValueError("Years to bear fruit cannot be negative")
+                        except (ValueError, TypeError):
+                            error_details.append(f"Row {row_num}: Invalid years to bear fruit - must be a non-negative number")
+                            error_count += 1
+                            continue
+                        
+                        # Check if commodity already exists
+                        commodity, created = CommodityType.objects.get_or_create(
+                            name=name,
+                            defaults={
+                                "average_weight_per_unit_kg": avg_weight,
+                                "years_to_mature": years_to_mature,
+                                "years_to_bearfruit": years_to_bearfruit,
+                            }
+                        )
+                        
+                        if not created:
+                            # Update existing commodity
+                            commodity.average_weight_per_unit_kg = avg_weight
+                            commodity.years_to_mature = years_to_mature
+                            commodity.years_to_bearfruit = years_to_bearfruit
+                            commodity.save()
+                            updated_count += 1
+                        else:
+                            created_count += 1
+                        
+                        # Handle seasonal months
+                        seasonal_months_str = row.get("seasonal_months", "")
+                        if seasonal_months_str:
+                            months = [m.strip() for m in seasonal_months_str.split(";") if m.strip()]
+                            month_objs = Month.objects.filter(name__in=months)
+                            
+                            # Check if all months were found
+                            found_month_names = [month.name for month in month_objs]
+                            invalid_months = [m for m in months if m not in found_month_names]
+                            if invalid_months:
+                                error_details.append(f"Row {row_num}: Invalid month names: {', '.join(invalid_months)}")
+                                error_count += 1
+                                continue
+                                
+                            commodity.seasonal_months.set(month_objs)
+                        else:
+                            commodity.seasonal_months.clear()
+                            
+                    except Exception as e:
+                        error_details.append(f"Row {row_num}: Unexpected error - {str(e)}")
+                        error_count += 1
+                        continue
+                
+                # Show appropriate messages
+                if created_count > 0:
+                    messages.success(request, f"Successfully created {created_count} new commodit{'ies' if created_count > 1 else 'y'} from CSV upload.")
+                    
+                if updated_count > 0:
+                    messages.info(request, f"Successfully updated {updated_count} existing commodit{'ies' if updated_count > 1 else 'y'} from CSV upload.")
+                    
+                if error_count > 0:
+                    messages.error(request, f"Failed to process {error_count} row{'s' if error_count > 1 else ''} due to errors:")
+                    for error_detail in error_details[:10]:  # Show first 10 errors to avoid overwhelming UI
+                        messages.error(request, error_detail)
+                    if len(error_details) > 10:
+                        messages.error(request, f"... and {len(error_details) - 10} more errors.")
+                        
+                if created_count == 0 and updated_count == 0 and error_count == 0:
+                    messages.warning(request, "No data was processed from the CSV file.")
+                    
+        except Exception as e:
+            messages.error(request, f"Error reading CSV file: {str(e)}. Please ensure the file is properly formatted.")
+            
+        # Stay on the same page to show messages
+        if pk:
+            commodity = get_object_or_404(CommodityType, pk=pk)
+        else:
+            commodity = None
+        form = CommodityTypeForm(instance=commodity)
+        context = get_admin_context(request)
+        context.update({'form': form, 'commodity': commodity})
+        return render(request, 'admin_panel/commodity_add.html', context)
 
     
     if pk:
@@ -1435,13 +1536,16 @@ def admin_commodity_add_edit(request, pk=None):
     if request.method == 'POST':
         form = CommodityTypeForm(request.POST, instance=commodity)
         if form.is_valid():
-            form.save()
+            commodity_obj = form.save()
+            if pk:
+                messages.success(request, f'Commodity "{commodity_obj.name}" has been successfully updated.')
+            else:
+                messages.success(request, f'Commodity "{commodity_obj.name}" has been successfully created.')
             return redirect('administrator:admin_commodity_list')
         else : 
-            print("⚠️ Not valid Form errors:", form.errors)
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = CommodityTypeForm(instance=commodity)
-        print("⚠️ Not post Form errors:", form.errors)
 
     context = get_admin_context(request)
     context.update({'form': form, 'commodity': commodity})
@@ -1785,86 +1889,147 @@ def admin_add_verifyharvestrec(request):
 
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = request.FILES["csv_file"]
-        decoded_file = csv_file.read().decode("utf-8-sig")
-        reader = csv.DictReader(io.StringIO(decoded_file))
         created_count = 0
         error_count = 0
+        error_details = []
         
-        for row in reader:
-            row = {k.strip(): v.strip() for k, v in row.items()}
-            try:
-                # Process commodity name as string
-                commodity_name = row['commodity'].strip()
-                try:
-                    commodity_obj = CommodityType.objects.get(name__iexact=commodity_name)
-                except CommodityType.DoesNotExist:
-                    print(f"Commodity '{commodity_name}' does not exist in CommodityType model.")
-                    messages.error(request, f"Commodity '{commodity_name}' does not exist in CommodityType model. Row skipped.")
-                    error_count += 1
-                    continue  # Skip this row
-                
-                # Process municipality name as string
-                municipality_name = row['municipality'].strip()
-                try:
-                    municipality = MunicipalityName.objects.get(municipality__iexact=municipality_name)
-                except MunicipalityName.DoesNotExist:
-                    print(f"Municipality '{municipality_name}' does not exist in MunicipalityName model.")
-                    messages.error(request, f"Municipality '{municipality_name}' does not exist in MunicipalityName model. Row skipped.")
-                    error_count += 1
-                    continue  # Skip this row
-                
-                # Process barangay name as string (optional)
-                barangay_name = row.get("barangay", "").strip()
-                barangay = None
-                if barangay_name:
-                    try:
-                        barangay = BarangayName.objects.get(barangay__iexact=barangay_name, municipality_id=municipality)
-                    except BarangayName.DoesNotExist:
-                        print(f"Barangay '{barangay_name}' does not exist in municipality '{municipality_name}'. Proceeding without barangay.")
-                        messages.warning(request, f"Barangay '{barangay_name}' not found in '{municipality_name}'. Record created without barangay.")
-                        # Don't skip the row, just proceed without barangay
-                
-                verified_harvest_record = VerifiedHarvestRecord.objects.create(
-                    harvest_date=row["harvest_date"],
-                    commodity_id=commodity_obj,
-                    total_weight_kg=row["total_weight_kg"],
-                    municipality=municipality,
-                    barangay=barangay,
-                    remarks=row.get("remarks", ""),
-                    date_verified=timezone.now(),
-                    verified_by=admin_info,
-                    prev_record=None,
-                )
-                
-                # Log the creation from CSV upload
-                AdminUserManagement.objects.create(
-                    admin_id=admin_info,
-                    action=f"Created Verified Harvest Record ID {verified_harvest_record.id} via CSV upload - {commodity_obj.name} ({row['total_weight_kg']}kg) from {municipality_name}",
-                    content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
-                    object_id=verified_harvest_record.id
-                )
-                
-                created_count += 1
-            except Exception as e:
-                print("Error processing row:", row, e)
-                error_count += 1
-        
-        # Show success/error messages
-        if created_count > 0:
-            messages.success(request, f'Successfully created {created_count} harvest record{"s" if created_count > 1 else ""} from CSV upload.')
+        try:
+            decoded_file = csv_file.read().decode("utf-8-sig")
+            reader = csv.DictReader(io.StringIO(decoded_file))
             
-            # Trigger model retraining and forecast generation
-            try:
-                from .tasks import retrain_and_generate_forecasts_task
-                retrain_and_generate_forecasts_task.delay()
-                messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
-            except Exception as e:
-                messages.warning(request, f'Records created successfully, but forecast regeneration failed: {str(e)}')
-        
-        if error_count > 0:
-            messages.warning(request, f'{error_count} row{"s" if error_count > 1 else ""} could not be processed due to errors.')
-            print(f'{error_count} row(s) could not be processed due to errors.')
-        return redirect("administrator:admin_harvestverified")
+            # Check if required headers exist
+            required_headers = ['harvest_date', 'commodity', 'municipality', 'total_weight_kg']
+            if not all(header in reader.fieldnames for header in required_headers):
+                missing_headers = [h for h in required_headers if h not in reader.fieldnames]
+                messages.error(request, f"CSV file is missing required headers: {', '.join(missing_headers)}. Please check the template format.")
+            else:
+                for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
+                    try:
+                        row = {k.strip(): v.strip() for k, v in row.items()}
+                        
+                        # Validate required fields
+                        if not row.get("harvest_date"):
+                            error_details.append(f"Row {row_num}: Harvest date is required")
+                            error_count += 1
+                            continue
+                            
+                        if not row.get("commodity"):
+                            error_details.append(f"Row {row_num}: Commodity is required")
+                            error_count += 1
+                            continue
+                            
+                        if not row.get("municipality"):
+                            error_details.append(f"Row {row_num}: Municipality is required")
+                            error_count += 1
+                            continue
+                            
+                        if not row.get("total_weight_kg"):
+                            error_details.append(f"Row {row_num}: Total weight is required")
+                            error_count += 1
+                            continue
+                        
+                        # Validate harvest date format
+                        try:
+                            harvest_date = datetime.strptime(row["harvest_date"], "%Y-%m-%d").date()
+                        except ValueError:
+                            error_details.append(f"Row {row_num}: Invalid harvest date format. Use YYYY-MM-DD format")
+                            error_count += 1
+                            continue
+                        
+                        # Validate total weight
+                        try:
+                            total_weight_kg = float(row["total_weight_kg"])
+                            if total_weight_kg <= 0:
+                                raise ValueError("Weight must be positive")
+                        except (ValueError, TypeError):
+                            error_details.append(f"Row {row_num}: Invalid total weight - must be a positive number")
+                            error_count += 1
+                            continue
+                        
+                        # Process commodity name as string
+                        commodity_name = row['commodity'].strip()
+                        try:
+                            commodity_obj = CommodityType.objects.get(name__iexact=commodity_name)
+                        except CommodityType.DoesNotExist:
+                            error_details.append(f"Row {row_num}: Commodity '{commodity_name}' does not exist in database")
+                            error_count += 1
+                            continue
+                        
+                        # Process municipality name as string
+                        municipality_name = row['municipality'].strip()
+                        try:
+                            municipality = MunicipalityName.objects.get(municipality__iexact=municipality_name)
+                        except MunicipalityName.DoesNotExist:
+                            error_details.append(f"Row {row_num}: Municipality '{municipality_name}' does not exist in database")
+                            error_count += 1
+                            continue
+                        
+                        # Process barangay name as string (optional)
+                        barangay_name = row.get("barangay", "").strip()
+                        barangay = None
+                        if barangay_name:
+                            try:
+                                barangay = BarangayName.objects.get(barangay__iexact=barangay_name, municipality_id=municipality)
+                            except BarangayName.DoesNotExist:
+                                error_details.append(f"Row {row_num}: Barangay '{barangay_name}' not found in '{municipality_name}'. Record will be created without barangay")
+                                # Don't skip the row, just proceed without barangay
+                        
+                        verified_harvest_record = VerifiedHarvestRecord.objects.create(
+                            harvest_date=harvest_date,
+                            commodity_id=commodity_obj,
+                            total_weight_kg=total_weight_kg,
+                            municipality=municipality,
+                            barangay=barangay,
+                            remarks=row.get("remarks", ""),
+                            date_verified=timezone.now(),
+                            verified_by=admin_info,
+                            prev_record=None,
+                        )
+                        
+                        # Log the creation from CSV upload
+                        AdminUserManagement.objects.create(
+                            admin_id=admin_info,
+                            action=f"Created Verified Harvest Record ID {verified_harvest_record.id} via CSV upload - {commodity_obj.name} ({total_weight_kg}kg) from {municipality_name}",
+                            content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                            object_id=verified_harvest_record.id
+                        )
+                        
+                        created_count += 1
+                        
+                    except Exception as e:
+                        error_details.append(f"Row {row_num}: Unexpected error - {str(e)}")
+                        error_count += 1
+                        continue
+                
+                # Show appropriate messages
+                if created_count > 0:
+                    messages.success(request, f'Successfully created {created_count} harvest record{"s" if created_count > 1 else ""} from CSV upload.')
+                    
+                    # Trigger model retraining and forecast generation
+                    try:
+                        from .tasks import retrain_and_generate_forecasts_task
+                        retrain_and_generate_forecasts_task.delay()
+                        messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                    except Exception as e:
+                        messages.warning(request, f'Records created successfully, but forecast regeneration failed: {str(e)}')
+                
+                if error_count > 0:
+                    messages.error(request, f"Failed to process {error_count} row{'s' if error_count > 1 else ''} due to errors:")
+                    for error_detail in error_details[:10]:  # Show first 10 errors to avoid overwhelming UI
+                        messages.error(request, error_detail)
+                    if len(error_details) > 10:
+                        messages.error(request, f"... and {len(error_details) - 10} more errors.")
+                        
+                if created_count == 0 and error_count == 0:
+                    messages.warning(request, "No data was processed from the CSV file.")
+                    
+        except Exception as e:
+            messages.error(request, f"Error reading CSV file: {str(e)}. Please ensure the file is properly formatted.")
+            
+        # Stay on the same page to show messages
+        context = get_admin_context(request)
+        context.update({'municipalities': municipalities, 'form': VerifiedHarvestRecordForm()})
+        return render(request, 'admin_panel/verifyharvest_add.html', context)
 
     elif request.method == "POST":
         form = VerifiedHarvestRecordForm(request.POST)
