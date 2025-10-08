@@ -600,7 +600,7 @@ def harvest_record_for_plant_view(request, transaction_id):
     except initHarvestRecord.DoesNotExist:
         harvest_record = None
     # Pre-fill initial data from plant record
-    pending_status = AccountStatus.objects.get(acc_status__iexact="Pending")
+    pending_status = AccountStatus.objects.get(pk=3)  # Pending status
     
     initial = {}
     if plant_record:
@@ -612,7 +612,7 @@ def harvest_record_for_plant_view(request, transaction_id):
         if harvest_form.is_valid():
             harvest_record = harvest_form.save(commit=False)
             harvest_record.transaction = transaction
-            transaction.harvest_status = pending_status            
+            harvest_record.record_status = pending_status  # Set to pending
             harvest_record.save()
             return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
     else:
@@ -639,7 +639,7 @@ def solo_harvest_record_view(request):
         return redirect('base:home')
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     accountinfo = AccountsInformation.objects.get(pk=account_id)
-    pending_status = AccountStatus.objects.get(acc_status__iexact="Pending")
+    pending_status = AccountStatus.objects.get(pk=3)  # Pending status
 
     if request.method == "POST":
         harvest_form = HarvestRecordCreate(request.POST, user=request.user)

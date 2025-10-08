@@ -400,7 +400,7 @@ class EditUserInformation(forms.ModelForm):
             'religion': forms.TextInput(attrs={'class': 'form-control'}),
             'civil_status': forms.Select(attrs={'class': 'form-control'}),
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank if N/A'}),
-            'user_email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'user_email': forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
         }
 
 

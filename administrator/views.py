@@ -372,6 +372,8 @@ def verify_accounts(request):
     
     # Pass status choices for filter dropdown - filter municipalities if agriculturist
     status_choices = AccountStatus.objects.all()
+    # For bulk actions, limit to Verified (pk=2) and Suspended (pk=6) only
+    bulk_action_status_choices = AccountStatus.objects.filter(pk__in=[2, 6])
     if is_superuser or is_pk14:
         municipalities = MunicipalityName.objects.exclude(pk=14)
     else:
@@ -393,6 +395,7 @@ def verify_accounts(request):
         'page_obj': page_obj,
         'paginator': paginator,
         'status_choices': status_choices,
+        'bulk_action_status_choices': bulk_action_status_choices,  # Limited choices for bulk actions
         'municipalities': municipalities,
         'current_status': status_filter,
         'current_municipality': municipality_filter,
