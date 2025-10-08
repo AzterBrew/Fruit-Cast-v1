@@ -330,12 +330,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Name validation for character restrictions
   function validateNameInput(input) {
-    const nameRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s]*$/;
+    const nameRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
     const value = input.value;
     
     if (!nameRegex.test(value)) {
       // Remove invalid characters
-      input.value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s]/g, '');
+      input.value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]/g, '');
+    }
+  }
+
+  // Religion field validation (character restrictions + 50 character limit)
+  function validateReligionInput(input) {
+    const religionRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
+    let value = input.value;
+    
+    // Remove invalid characters
+    if (!religionRegex.test(value)) {
+      value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]/g, '');
+    }
+    
+    // Limit to 50 characters
+    if (value.length > 50) {
+      value = value.substring(0, 50);
+    }
+    
+    input.value = value;
+  }
+
+  // Address details validation (150 character limit)
+  function validateAddressInput(input) {
+    const maxLength = 150;
+    if (input.value.length > maxLength) {
+      input.value = input.value.substring(0, maxLength);
     }
   }
 
@@ -349,6 +375,22 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   });
+
+  // Apply religion validation
+  const religionField = document.getElementById('id_religion');
+  if (religionField) {
+    religionField.addEventListener('input', function(e) {
+      validateReligionInput(e.target);
+    });
+  }
+
+  // Apply address validation
+  const addressField = document.getElementById('id_address_details');
+  if (addressField) {
+    addressField.addEventListener('input', function(e) {
+      validateAddressInput(e.target);
+    });
+  }
 
   // Municipality and Barangay handling
   const municipalitySelect = document.getElementById('id_municipality_id');

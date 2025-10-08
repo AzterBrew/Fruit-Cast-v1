@@ -852,7 +852,7 @@ def account_edit_view(request):
                 messages.success(request, 'Your account information has been updated successfully!')
                 return redirect('base:account_info_panel')
             else:
-                messages.error(request, 'Please correct the errors below.')
+                messages.danger(request, 'Please correct the errors below.')
         else:
             form = EditUserInformation(instance=userinfo)
 
@@ -865,7 +865,7 @@ def account_edit_view(request):
         return render(request, 'loggedin/account_panel.html', context)
         
     except UserInformation.DoesNotExist:
-        messages.error(request, 'User information not found.')
+        messages.danger(request, 'User information not found.')
         return redirect('base:home') 
 
 
