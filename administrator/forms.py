@@ -30,7 +30,6 @@ class AssignAdminAgriForm(forms.Form):
         user = kwargs.pop('user', None)  # Extract user from kwargs
         admin_info = kwargs.pop('admin_info', None)  # Extract admin info from kwargs
         super().__init__(*args, **kwargs)
-        self.fields['municipality'].widget.attrs['disabled'] = True  # Default disabled
         
         # Determine access level based on user privileges
         is_superuser = user.is_superuser if user else False
@@ -40,10 +39,14 @@ class AssignAdminAgriForm(forms.Form):
             # Superuser: can assign any account type with any municipality including pk=14
             self.fields['account_type'].choices = ACCOUNT_TYPE_CHOICES
             self.fields['municipality'].queryset = MunicipalityName.objects.all()
+            self.fields['municipality'].widget.attrs['disabled'] = False  # Enable municipality
+            self.fields['municipality'].required = True
         elif is_pk14:
             # Administrator with pk=14: can assign admin and agriculturist but exclude pk=14 from municipalities
             self.fields['account_type'].choices = ACCOUNT_TYPE_CHOICES
             self.fields['municipality'].queryset = MunicipalityName.objects.exclude(pk=14)
+            self.fields['municipality'].widget.attrs['disabled'] = False  # Enable municipality
+            self.fields['municipality'].required = True
         else:
             # Administrator with municipality != pk=14: can only assign agriculturists in their municipality
             self.fields['account_type'].choices = [('Agriculturist', 'Agriculturist')]
@@ -61,7 +64,7 @@ class AssignAdminAgriForm(forms.Form):
                 ).exclude(pk=14)
             else:
                 self.fields['municipality'].queryset = MunicipalityName.objects.exclude(pk=14)
-            # Always enable municipality and make it required
+            # Enable municipality and make it required
             self.fields['municipality'].widget.attrs['disabled'] = False
             self.fields['municipality'].required = True
 

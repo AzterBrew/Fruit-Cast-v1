@@ -438,11 +438,16 @@ def show_allaccounts(request):
     is_pk14 = municipality_assigned.pk == 14  # Overall in Bataan
     user_role_id = account_info.account_type_id.pk
     
-    # Restrict access to administrators only
+    # Restrict access to administrators only - agriculturists cannot access
     if user_role_id != 2:  # Only administrators (pk=2) can access
-        return render(request, 'admin_panel/access_denied.html', {
-            'error_message': 'Access denied. Only administrators can view this page.'
-        })
+        if user_role_id == 3:  # Agriculturist trying to access
+            return render(request, 'admin_panel/access_denied.html', {
+                'error_message': 'Access denied. Agriculturists cannot view this page.'
+            })
+        else:
+            return render(request, 'admin_panel/access_denied.html', {
+                'error_message': 'Access denied. Only administrators can view this page.'
+            })
         
     status_filter = request.GET.get('status')
     sort_by = request.GET.get('sort', 'account_register_date')  # Default sort by date
@@ -452,25 +457,31 @@ def show_allaccounts(request):
         'userinfo_id', 'account_type_id', 'acc_status_id'
     ).filter(account_type_id__account_type__in=["Administrator", "Agriculturist"])
 
-    # Apply privilege-based filtering
+    # Apply privilege-based filtering for account visibility
     if not is_superuser:
         if is_pk14:
-            # Administrator with pk=14: can see all agriculturists and administrators
+            # Administrator with pk=14: can see all agriculturists and all administrators
             accounts_query = accounts_query.filter(
                 account_type_id__account_type__in=["Administrator", "Agriculturist"]
             )
         else:
-            # Administrator with municipality not pk=14
+            # Administrator with municipality not pk=14: restricted visibility
+            # Use AdminInformation to filter by municipality assignments
+            admin_info_ids = AdminInformation.objects.values_list('userinfo_id', flat=True)
+            
+            # Filter accounts based on the municipality restrictions
             accounts_query = accounts_query.filter(
+                userinfo_id__in=admin_info_ids
+            ).filter(
                 Q(
-                    # Can see agriculturists in same municipality
+                    # Can see agriculturists only in same municipality
                     account_type_id__account_type="Agriculturist",
-                    userinfo_id__municipality_id=municipality_assigned.pk
+                    userinfo_id__admininformation__municipality_incharge=municipality_assigned
                 ) |
                 Q(
                     # Can see administrators in same municipality and pk=14
                     account_type_id__account_type="Administrator",
-                    userinfo_id__municipality_id__in=[municipality_assigned.pk, 14]
+                    userinfo_id__admininformation__municipality_incharge__in=[municipality_assigned.pk, 14]
                 )
             )
 
@@ -2515,12 +2526,15 @@ def admin_account_detail(request, account_id):
                         return render(request, 'admin_panel/access_denied.html', {
                             'error_message': 'Unauthorized access. You can only view agriculturists in your assigned municipality.'
                         })
-                # Can see administrators in same municipality and pk=14
+                # Can see administrators in same municipality and pk=14, but content is restricted
                 elif target_account_type == "Administrator":
                     if not target_municipality or target_municipality.pk not in [current_municipality_assigned.pk, 14]:
                         return render(request, 'admin_panel/access_denied.html', {
                             'error_message': 'Unauthorized access. You can only view administrators in your municipality or assigned to Overall Bataan.'
                         })
+            else:  # Administrator with pk=14
+                # Can view all accounts but pk=14 administrators have restricted access
+                pass
         
         # Handle POST requests for editing account type and municipality
         if request.method == 'POST':
