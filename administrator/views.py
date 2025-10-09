@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.utils.timezone import now
 from .forms import AssignAdminAgriForm, CommodityTypeForm, VerifiedHarvestRecordForm
 from django.db import transaction
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from .decorators import admin_or_agriculturist_required, superuser_required
@@ -890,14 +890,103 @@ def assign_account(request):
                             object_id=account_info_new.pk
                         )
 
-                        # Send email with credentials
-                        email_sent = send_mail(
-                            subject="Fruit Cast Admin Account Created",
-                            message=f"Hello {first_name},\n\nYour admin account has been created.\nEmail: {email}\nPassword: {generated_password}\n\nPlease log in and change your password.",
-                            from_email="eloisamariemsumbad@gmail.com",
-                            recipient_list=[email],
-                            fail_silently=False,
+                        # Send HTML email with credentials
+                        subject = "Your Fruit Cast Administrator Account Has Been Created"
+                        
+                        # HTML message template similar to verification email
+                        html_message = """
+                        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
+                            <div style="color: #416e3f; padding: 20px; text-align: center; border-radius: 6px;">
+                                <a href="https://fruitcast-spro7.ondigitalocean.app/" style="text-decoration: none; color: #416e3f;">
+                                    <img src="https://raw.githubusercontent.com/AzterBrew/fruitcast-logo/refs/heads/main/3.png" style="max-height: 100px;">
+                                    <h1 style="margin: 0; font-size: 24px; font-weight: 700">FRUIT CAST ADMIN ACCOUNT</h1>
+                                </a>
+                            </div>
+                            <div style="padding: 30px; background: white;">
+                                <div style="background: #e8f5e8;border-left: 4px solid #416e3f;padding: 20px;margin-bottom: 25px;">
+                                    <h2 style="margin: 0 0 10px;color: #104e0d;font-size: 20px;">🎉 Account Created Successfully</h2>
+                                    <p style="margin: 0; color: #104e0d;">Your {account_type} account is now ready to use</p>
+                                </div>
+                                <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hello {first_name},</p>
+                                <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                                    Welcome to Fruit Cast! Your {account_type} account has been successfully created. You can now access the administrative portal using the credentials below.
+                                </p>
+                                
+                                <div style="background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 25px; margin: 25px 0;">
+                                    <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 15px; text-align: center;">Login Credentials</div>
+                                    
+                                    <div style="margin-bottom: 15px;">
+                                        <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Email Address</div>
+                                        <div style="font-family: Courier, monospace; font-size: 16px; font-weight: bold; color: #2c3e50; background: white; padding: 10px; border-radius: 4px;">
+                                            {email}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 10px;">
+                                        <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Temporary Password</div>
+                                        <div style="font-family: Courier, monospace; font-size: 16px; font-weight: bold; color: #2c3e50; background: white; padding: 10px; border-radius: 4px;">
+                                            {password}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="color: #999; font-size: 11px; margin-top: 15px; text-align: center;">⚠️ Please change your password after first login</div>
+                                </div>
+                                
+                                <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                                    <p style="margin: 0; font-size: 14px; color: #856404;">
+                                        <strong>🔐 Security Notice:</strong> This is a temporary password generated for first-time access. For security reasons, please log in and change your password immediately.
+                                    </p>
+                                </div>
+                                
+                                <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p style="margin: 0; font-size: 14px; color: #2d5a27;">
+                                        <strong>🎯 Access Information:</strong><br>
+                                        • Account Type: <strong>{account_type}</strong><br>
+                                        • Municipality Assignment: <strong>{municipality}</strong><br>
+                                        • Status: <strong>Active & Verified</strong>
+                                    </p>
+                                </div>
+                                
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="https://fruitcast-spro7.ondigitalocean.app/admin/login/" style="background: #416e3f; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                                        🚀 Access Admin Portal
+                                    </a>
+                                </div>
+                                
+                                <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+                                    <p style="font-size: 12px; color: #888; text-align: center;">
+                                        If you have any questions about your account, please contact your system administrator.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="background: #f8f8f8; padding: 15px; text-align: center;">
+                                <p style="margin: 0; color: #666; font-size: 13px;">
+                                    🌱 &copy; 2025 Fruit Cast. All rights reserved.
+                                </p>
+                            </div>
+                        </div>
+                        """.format(
+                            first_name=first_name,
+                            account_type=account_type,
+                            email=email,
+                            password=generated_password,
+                            municipality=municipality.municipality
                         )
+                        
+                        # Use EmailMessage for HTML email
+                        try:
+                            email_msg = EmailMessage(
+                                subject=subject,
+                                body=html_message,
+                                from_email=settings.DEFAULT_FROM_EMAIL,  # Use settings instead of hardcoded email
+                                to=[email],
+                            )
+                            email_msg.content_subtype = "html"  # Set the content type to HTML
+                            email_sent = email_msg.send()
+                            
+                        except Exception as e:
+                            print(f"Email sending error: {e}")  # For debugging
+                            email_sent = False
 
                         if email_sent:
                             messages.success(request, f"{account_type} account for {account_holder_name} created successfully and logged in AdminUserManagement.")
