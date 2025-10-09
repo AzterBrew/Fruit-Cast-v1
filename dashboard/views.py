@@ -222,12 +222,13 @@ def forecast(request):
 
     now_dt = datetime.now()
     current_year = now_dt.year
+    # Get available years starting from 2025
     available_years = list(
-    ForecastResult.objects.order_by('forecast_year')
+    ForecastResult.objects.filter(forecast_year__gte=2025).order_by('forecast_year')
         .values_list('forecast_year', flat=True).distinct()
     )
     if not available_years:
-        available_years = [timezone.now().year]
+        available_years = [2025]  # Default to 2025 if no forecast data
 
     # Always show all months
     months = Month.objects.order_by('number')
@@ -313,13 +314,13 @@ def forecast(request):
             hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
             forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
             
-            # Combined data for CSV/table (only future forecasts beyond historical data)
-            last_historical_date = df['ds'].max()
+            # Combined data for CSV/table (only forecasts from January 2025 onwards)
             future_forecast_data = []
             
             for result in forecast_results:
                 forecast_date = datetime(result.forecast_year, result.forecast_month.number, 1)
-                if forecast_date > last_historical_date:
+                # Only include forecasts from January 2025 onwards
+                if forecast_date >= datetime(2025, 1, 1):
                     future_forecast_data.append([
                         forecast_date.strftime('%b %Y'),
                         round(float(result.forecasted_amount_kg), 2),
@@ -347,21 +348,21 @@ def forecast(request):
     # Always show all months regardless of selected year
     months = Month.objects.order_by('number')
     
-    # Set default filters if not provided
+    # Set default filters if not provided - start from 2025
     if not filter_month:
-        filter_month = str(current_month)
+        filter_month = "1"  # Default to January
     if not filter_year:
-        filter_year = str(current_year)
+        filter_year = "2025"  # Default to 2025
         
     print(filter_month, filter_year)
     
-    # Prepare available years for the dropdown based on ForecastResult
+    # Prepare available years for the dropdown starting from 2025
     available_years = list(
-        ForecastResult.objects.order_by('forecast_year')
+        ForecastResult.objects.filter(forecast_year__gte=2025).order_by('forecast_year')
         .values_list('forecast_year', flat=True).distinct()
     )
     if not available_years:
-        available_years = [timezone.now().year]
+        available_years = [2025]  # Default to 2025 if no forecast data
             
     forecast_value_for_selected_month = None
     if forecast_data and filter_month and filter_year:
@@ -485,9 +486,9 @@ def forecast_bycommodity(request):
         if userinfo_id:
             userinfo = UserInformation.objects.get(pk=userinfo_id)
     
-    # Get filter params with defaults
-    filter_month = request.GET.get('filter_month') or str(timezone.now().month)
-    filter_year = request.GET.get('filter_year') or str(timezone.now().year)
+    # Get filter params with defaults starting from 2025
+    filter_month = request.GET.get('filter_month') or "1"  # Default to January
+    filter_year = request.GET.get('filter_year') or "2025"  # Default to 2025
     selected_municipality_id = request.GET.get('municipality_id') or "14"  # Default to "Overall"
     
     print("Bar graph filters:", filter_month, filter_year, selected_municipality_id)
@@ -501,20 +502,25 @@ def forecast_bycommodity(request):
     current_year = now_dt.year
     current_month = now_dt.month
     
+    # Get available years starting from 2025 for forecast by commodity
     available_years = list(
-        ForecastResult.objects.order_by('forecast_year')
+        ForecastResult.objects.filter(forecast_year__gte=2025).order_by('forecast_year')
         .values_list('forecast_year', flat=True).distinct()
     )
     if not available_years:
-        available_years = [timezone.now().year]
+        available_years = [2025]  # Default to 2025 if no forecast data
     
     forecast_summary = None
     forecast_summary_chart = None
 
     forecast_qs = ForecastResult.objects.filter(
         forecast_month__number=filter_month,
-        forecast_year=filter_year
+        forecast_year=filter_year,
+        forecast_year__gte=2025  # Only show forecasts from 2025 onwards
     )
+    # For January specifically, ensure we start from January 2025
+    if int(filter_month) == 1 and int(filter_year) < 2025:
+        forecast_qs = ForecastResult.objects.none()  # No data for January before 2025
     if selected_municipality_id != "14":
         forecast_qs = forecast_qs.filter(municipality__municipality_id=selected_municipality_id)
     # Get the latest batch among these results
