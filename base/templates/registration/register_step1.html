@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   } // Close municipalitySelect && barangaySelect check
 
-  // Simple year validation for birthdate
+  // Enhanced birthdate validation with age limits
   const birthdateInput = document.getElementById('id_birthdate');
   if (birthdateInput) {
     birthdateInput.addEventListener('input', function() {
@@ -463,6 +463,27 @@ document.addEventListener('DOMContentLoaded', function () {
         if (dateParts[0] && dateParts[0].length > 4) {
           dateParts[0] = dateParts[0].substring(0, 4);
           this.value = dateParts.join('-');
+        }
+      }
+    });
+    
+    birthdateInput.addEventListener('blur', function() {
+      const value = this.value;
+      if (value) {
+        const birthDate = new Date(value);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        if (age < 10) {
+          this.setCustomValidity('You must be at least 10 years old to register.');
+        } else if (age > 90) {
+          this.setCustomValidity('Age cannot exceed 90 years. Please contact support if you need assistance.');
+        } else {
+          this.setCustomValidity('');
         }
       }
     });

@@ -760,6 +760,12 @@ def farmland_record_view(request):
             farmland = form.save(commit=False)
             farmland.userinfo_id = userinfo
             farmland.save()
+            
+            # Update hasfarmland field if it's currently False
+            if not userinfo.hasfarmland:
+                userinfo.hasfarmland = True
+                userinfo.save()
+            
             return redirect('base:farmland_owned')  # or wherever you want to redirect after save
     else:
         form = FarmlandRecordCreate()

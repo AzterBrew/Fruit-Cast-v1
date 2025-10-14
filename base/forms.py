@@ -173,7 +173,7 @@ class RegistrationForm(forms.ModelForm):
             "barangay_id": "Barangay *",
             "municipality_id": "Municipality *",
             "address_details": "Address Details *", 
-            "religion":"Religion *",  
+            "religion":"Religion",  
             "emergency_contact_person" : "Emergency Contact Person *", 
             "emergency_contact_number" : "Emergency Contact Person's Contact No. *", 
             "contact_number" : "Contact Number *",
@@ -195,6 +195,22 @@ class RegistrationForm(forms.ModelForm):
             'civil_status': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Civil Status'}),
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if Not Applicable'}),
         }
+    
+    def clean_birthdate(self):
+        from datetime import date
+        from dateutil.relativedelta import relativedelta
+        
+        birthdate = self.cleaned_data.get('birthdate')
+        if birthdate:
+            today = date.today()
+            age = relativedelta(today, birthdate).years
+            
+            if age < 10:
+                raise forms.ValidationError("You must be at least 10 years old to register.")
+            elif age > 90:
+                raise forms.ValidationError("Age cannot exceed 90 years. Please contact support if you need assistance.")
+                
+        return birthdate
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -402,6 +418,22 @@ class EditUserInformation(forms.ModelForm):
             'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank if N/A'}),
             'user_email': forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
         }
+    
+    def clean_birthdate(self):
+        from datetime import date
+        from dateutil.relativedelta import relativedelta
+        
+        birthdate = self.cleaned_data.get('birthdate')
+        if birthdate:
+            today = date.today()
+            age = relativedelta(today, birthdate).years
+            
+            if age < 10:
+                raise forms.ValidationError("You must be at least 10 years old.")
+            elif age > 90:
+                raise forms.ValidationError("Age cannot exceed 90 years. Please contact support if you need assistance.")
+                
+        return birthdate
 
 
 class HarvestRecordCreate(forms.ModelForm):
@@ -422,7 +454,7 @@ class HarvestRecordCreate(forms.ModelForm):
         fields = ["harvest_date", "commodity_id", "commodity_custom",  "unit", "total_weight", "remarks"]
         labels = {"harvest_date": "Harvest Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
-            'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'readonly': True}),
             'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
             'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom', 'placeholder': 'If not listed, enter commodity here'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
@@ -444,6 +476,12 @@ class HarvestRecordCreate(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Set harvest_date to current date and make it read-only
+        from datetime import date
+        if 'harvest_date' in self.fields:
+            self.fields['harvest_date'].initial = date.today()
+            self.fields['harvest_date'].widget.attrs['readonly'] = True
         
         # Custom ordering for commodity dropdown: blank, "Not Listed" (pk=1), then alphabetical
         if 'commodity_id' in self.fields:
@@ -508,7 +546,7 @@ class PlantRecordCreate(forms.ModelForm):
         fields = ["plant_date", "commodity_id", "commodity_custom", "min_expected_harvest", "max_expected_harvest", "remarks"]
         labels = {"plant_date": "Plant Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
-            'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'readonly': True}),
             'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
             'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom','placeholder': 'If not listed, enter commodity here'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
@@ -553,6 +591,12 @@ class PlantRecordCreate(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Set plant_date to current date and make it read-only
+        from datetime import date
+        if 'plant_date' in self.fields:
+            self.fields['plant_date'].initial = date.today()
+            self.fields['plant_date'].widget.attrs['readonly'] = True
         
         # Custom ordering for commodity dropdown: blank, "Not Listed" (pk=1), then alphabetical
         if 'commodity_id' in self.fields:
