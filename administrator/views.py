@@ -1613,7 +1613,23 @@ def admin_commodity_add_edit(request, pk=None):
         error_details = []
         
         try:
-            decoded_file = csv_file.read().decode("utf-8-sig")
+            # Try multiple encodings to handle different file formats
+            file_content = csv_file.read()
+            decoded_file = None
+            
+            # List of encodings to try in order
+            encodings = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+            
+            for encoding in encodings:
+                try:
+                    decoded_file = file_content.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if decoded_file is None:
+                raise UnicodeDecodeError("Unable to decode file with any supported encoding")
+                
             reader = csv.DictReader(io.StringIO(decoded_file))
             
             # Check if required headers exist
@@ -1724,7 +1740,10 @@ def admin_commodity_add_edit(request, pk=None):
                     messages.warning(request, "No data was processed from the CSV file.")
                     
         except Exception as e:
-            messages.error(request, f"Error reading CSV file: {str(e)}. Please ensure the file is properly formatted.")
+            if "decode" in str(e).lower() or "encoding" in str(e).lower():
+                messages.error(request, f"Error reading CSV file: The file contains characters that cannot be read properly. Please save your CSV file using UTF-8 encoding or try a different file format. Error details: {str(e)}")
+            else:
+                messages.error(request, f"Error reading CSV file: {str(e)}. Please ensure the file is properly formatted.")
             
         # Stay on the same page to show messages
         if pk:
@@ -2134,7 +2153,23 @@ def admin_add_verifyharvestrec(request):
         error_details = []
         
         try:
-            decoded_file = csv_file.read().decode("utf-8-sig")
+            # Try multiple encodings to handle different file formats
+            file_content = csv_file.read()
+            decoded_file = None
+            
+            # List of encodings to try in order
+            encodings = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+            
+            for encoding in encodings:
+                try:
+                    decoded_file = file_content.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if decoded_file is None:
+                raise UnicodeDecodeError("Unable to decode file with any supported encoding")
+                
             reader = csv.DictReader(io.StringIO(decoded_file))
             
             # Check if required headers exist
@@ -2264,7 +2299,10 @@ def admin_add_verifyharvestrec(request):
                     messages.warning(request, "No data was processed from the CSV file.")
                     
         except Exception as e:
-            messages.error(request, f"Error reading CSV file: {str(e)}. Please ensure the file is properly formatted.")
+            if "decode" in str(e).lower() or "encoding" in str(e).lower():
+                messages.error(request, f"Error reading CSV file: The file contains characters that cannot be read properly. Please save your CSV file using UTF-8 encoding or try a different file format. Error details: {str(e)}")
+            else:
+                messages.error(request, f"Error reading CSV file: {str(e)}. Please ensure the file is properly formatted.")
             
         # Stay on the same page to show messages
         context = get_admin_context(request)

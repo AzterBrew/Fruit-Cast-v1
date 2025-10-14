@@ -122,6 +122,8 @@ Fruit Cast | Add Verified Harvest Record
                                 <li>Municipality and barangay names must be exact matches</li>
                                 <li>Weight values should be numeric (use decimal point, not comma)</li>
                                 <li>Remarks field is optional</li>
+                                <li><strong>File encoding:</strong> Save your CSV file as UTF-8 encoding to avoid character issues</li>
+                                <li><strong>Special characters:</strong> If your file contains characters like ñ, á, é, etc., ensure proper UTF-8 encoding</li>
                             </ul>
                         </div>
                     </div>
@@ -135,7 +137,7 @@ Fruit Cast | Add Verified Harvest Record
                                 </label>
                                 <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
                                 <div class="form-text">
-                                    <i class="bi bi-info-circle me-1"></i>Maximum file size: 10MB
+                                    <i class="bi bi-info-circle me-1"></i>Max file size: 10MB. If you encounter encoding errors, ensure your CSV is saved as UTF-8.
                                 </div>
                             </div>
                             <div class="col-md-3">
