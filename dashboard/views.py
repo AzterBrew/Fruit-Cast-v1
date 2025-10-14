@@ -545,13 +545,17 @@ def forecast_bycommodity(request):
         reverse=True
     )
     
+    # Keep all data for the table
     forecast_summary = [
         {'commodity': k, 'forecasted_kg': v} for k, v in sorted_summary
     ]
+    
+    # Limit chart data to top 10 commodities only
+    top_10_summary = sorted_summary[:10]
     forecast_summary_chart = {
-        'labels': [item[0] for item in sorted_summary],
-        'values': [item[1] for item in sorted_summary]
-    } if forecast_summary else None
+        'labels': [item[0] for item in top_10_summary],
+        'values': [item[1] for item in top_10_summary]
+    } if top_10_summary else None
     print("Forecast results count:", forecast_qs.count())
 
     context = {
