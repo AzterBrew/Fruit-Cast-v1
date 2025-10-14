@@ -91,13 +91,10 @@ Fruit Cast | Forecast
                 {% if forecast_data %}
                 <!-- Chart Card -->
             <div id="chart-section" class="card shadow-sm mb-4 border-0">
-                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                <div class="card-header" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
                     <h5 class="mb-0 text-white">
                         <i class="bi bi-graph-up me-2"></i>Forecast Trend Analysis
                     </h5>
-                    <button type="button" class="btn btn-outline-light btn-sm" onclick="downloadChartAsPDF()">
-                        <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
-                    </button>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
@@ -123,14 +120,9 @@ Fruit Cast | Forecast
                                 <i class="bi bi-file-earmark-excel me-1"></i>CSV
                             </button>
                         </form>
-                        <form method="get" action="{% url 'dashboard:forecast_pdf' %}" target="_blank" class="d-inline">
-                            <input type="hidden" name="commodity_id" value="{{ selected_commodity_id }}">
-                            <input type="hidden" name="municipality_id" value="{{ selected_municipality }}">
-                            <input type="hidden" name="forecast_combined" value='{{ forecast_combined_json|safe }}'>
-                            <button type="submit" class="btn btn-outline-warning btn-sm">
-                                <i class="bi bi-file-pdf me-1"></i>PDF
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="downloadCombinedPDF()">
+                            <i class="bi bi-file-pdf me-1"></i>PDF
+                        </button>
                         {% comment %} {% if user_role_id == 2 or user_role_id == 3 %}
                             <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-eye me-1"></i>All Batches
@@ -524,8 +516,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('forecastChart').style.display = 'none';
     {% endif %}
 
-// Function to download chart as PDF
-function downloadChartAsPDF() {
+// Function to download combined chart and table as PDF
+function downloadCombinedPDF() {
     {% if forecast_data %}
     const canvas = document.getElementById('forecastChart');
     const ctx = canvas.getContext('2d');
@@ -554,7 +546,7 @@ function downloadChartAsPDF() {
         format: 'a4'
     });
     
-    // Add title
+    // Page 1: Chart
     pdf.setFontSize(16);
     pdf.text('Forecast Trend Analysis{% if selected_commodity_obj %} - {{ selected_commodity_obj.name }}{% endif %}', 15, 15);
     
@@ -563,19 +555,68 @@ function downloadChartAsPDF() {
     const imgHeight = (tempCanvas.height * imgWidth) / tempCanvas.width;
     pdf.addImage(imgData, 'PNG', 15, 25, imgWidth, imgHeight);
     
-    // Add date
+    // Add page info
     pdf.setFontSize(10);
     pdf.text('Generated on: ' + new Date().toLocaleDateString(), 15, 190);
+    pdf.text('Page 1 of 2', 250, 190);
+    
+    // Page 2: Table Data
+    pdf.addPage();
+    pdf.setFontSize(16);
+    pdf.text('Monthly Forecast Data{% if selected_commodity_obj %} - {{ selected_commodity_obj.name }}{% endif %}', 15, 15);
+    
+    // Add commodity and municipality info
+    pdf.setFontSize(12);
+    {% if selected_commodity_obj %}
+    pdf.text('Commodity: {{ selected_commodity_obj.name }}', 15, 30);
+    {% endif %}
+    {% if selected_municipality_obj %}
+    pdf.text('Municipality: {{ selected_municipality_obj.municipality }}', 15, 40);
+    {% else %}
+    pdf.text('Municipality: All of Bataan', 15, 40);
+    {% endif %}
+    
+    // Create table data
+    const tableData = [
+        ['Month & Year', 'Forecasted Amount (kg)']
+    ];
+    
+    {% if forecast_data.combined %}
+    {% for label, value, month_number, year in forecast_data.combined %}
+    tableData.push(['{{ label }}', '{{ value|format_number }}']);
+    {% endfor %}
+    {% endif %}
+    
+    // Add table
+    pdf.autoTable({
+        head: [tableData[0]],
+        body: tableData.slice(1),
+        startY: 50,
+        theme: 'grid',
+        headStyles: { fillColor: [25, 135, 84] },
+        styles: { fontSize: 10 },
+        columnStyles: {
+            0: { cellWidth: 80 },
+            1: { cellWidth: 60, halign: 'right' }
+        }
+    });
+    
+    // Add page info
+    pdf.setFontSize(10);
+    const finalY = pdf.lastAutoTable.finalY || 50;
+    pdf.text('Generated on: ' + new Date().toLocaleDateString(), 15, 190);
+    pdf.text('Page 2 of 2', 250, 190);
     
     // Save the PDF
-    pdf.save('forecast-trend-analysis.pdf');
+    pdf.save('forecast-complete-report.pdf');
     {% else %}
-    alert('No chart data available to download.');
+    alert('No forecast data available to download.');
     {% endif %}
 }
 </script>
 
 <!-- Add jsPDF library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
 {% endblock content %}
