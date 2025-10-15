@@ -2612,6 +2612,27 @@ def admin_harvestverified(request):
 def admin_harvestverified_view(request, record_id):
     """View details of a specific verified harvest record"""
     record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
+    
+    # Get current user's admin info and municipality assignment
+    try:
+        current_user_info = request.user.userinformation
+        current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
+        current_municipality_assigned = current_admin_info.municipality_incharge
+        is_superuser = request.user.is_superuser
+        is_pk14 = current_municipality_assigned.pk == 14
+    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+        return render(request, 'admin_panel/access_denied.html', {
+            'error_message': 'Access denied. Admin information not found.'
+        })
+    
+    # Check access permissions based on municipality assignment
+    if not is_superuser and not is_pk14:
+        # Non-superuser and non-pk14 admin: can only view records from their assigned municipality
+        if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
+            return render(request, 'admin_panel/access_denied.html', {
+                'error_message': f'Access denied. You can only view harvest records from {current_municipality_assigned.municipality}.'
+            })
+    
     context = get_admin_context(request)
     context.update({'record': record})
     return render(request, 'admin_panel/admin_harvestverified_view.html', context)
@@ -2623,9 +2644,41 @@ def admin_harvestverified_edit(request, record_id):
     """Edit a specific verified harvest record"""
     record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
     
+    # Get current user's admin info and municipality assignment
+    try:
+        current_user_info = request.user.userinformation
+        current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
+        current_municipality_assigned = current_admin_info.municipality_incharge
+        is_superuser = request.user.is_superuser
+        is_pk14 = current_municipality_assigned.pk == 14
+    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+        return render(request, 'admin_panel/access_denied.html', {
+            'error_message': 'Access denied. Admin information not found.'
+        })
+    
+    # Check access permissions based on municipality assignment
+    if not is_superuser and not is_pk14:
+        # Non-superuser and non-pk14 admin: can only edit records from their assigned municipality
+        if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
+            return render(request, 'admin_panel/access_denied.html', {
+                'error_message': f'Access denied. You can only edit harvest records from {current_municipality_assigned.municipality}.'
+            })
+    
     if request.method == 'POST':
         form = VerifiedHarvestRecordForm(request.POST, instance=record)
         if form.is_valid():
+            # Validate harvest date is not in the future
+            if form.cleaned_data['harvest_date'] > date.today():
+                messages.error(request, 'Harvest date cannot be in the future. Please select a valid date.')
+                context = get_admin_context(request)
+                context.update({
+                    'form': form, 
+                    'record': record,
+                    'municipalities': MunicipalityName.objects.all(),
+                    'commodities': CommodityType.objects.all(),
+                })
+                return render(request, 'admin_panel/admin_harvestverified_edit.html', context)
+            
             # Get admin info for logging
             admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
             
@@ -2634,7 +2687,6 @@ def admin_harvestverified_edit(request, record_id):
                 'harvest_date': record.harvest_date,
                 'commodity': record.commodity_id.name,
                 'total_weight_kg': record.total_weight_kg,
-                'weight_per_unit_kg': record.weight_per_unit_kg,
                 'municipality': record.municipality.municipality if record.municipality else 'None',
                 'barangay': record.barangay.barangay if record.barangay else 'None',
                 'remarks': record.remarks or 'None'
@@ -2654,8 +2706,6 @@ def admin_harvestverified_edit(request, record_id):
                 changes.append(f"commodity: {original_data['commodity']} → {updated_record.commodity_id.name}")
             if original_data['total_weight_kg'] != updated_record.total_weight_kg:
                 changes.append(f"total_weight_kg: {original_data['total_weight_kg']} → {updated_record.total_weight_kg}")
-            if original_data['weight_per_unit_kg'] != updated_record.weight_per_unit_kg:
-                changes.append(f"weight_per_unit_kg: {original_data['weight_per_unit_kg']} → {updated_record.weight_per_unit_kg}")
             
             new_municipality = updated_record.municipality.municipality if updated_record.municipality else 'None'
             if original_data['municipality'] != new_municipality:

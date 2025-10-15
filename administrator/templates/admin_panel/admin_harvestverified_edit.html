@@ -193,6 +193,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
+            // Validate harvest date is not in the future
+            const selectedDate = new Date(harvestDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate > today) {
+                e.preventDefault();
+                alert('Harvest date cannot be in the future.');
+                document.getElementById('id_harvest_date').focus();
+                return false;
+            }
+            
             // Confirm update
             if (!confirm('Are you sure you want to update this harvest record?\n\nThis will trigger model retraining and forecast regeneration.')) {
                 e.preventDefault();

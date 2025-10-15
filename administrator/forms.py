@@ -105,6 +105,28 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Exclude pk=1 (usually 'Not Listed' or similar) from commodity choices
         self.fields['commodity_id'].queryset = CommodityType.objects.exclude(pk=1)
+        
+        # Add municipality dropdown
+        self.fields['municipality'] = forms.ModelChoiceField(
+            queryset=MunicipalityName.objects.all(),
+            required=True,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            empty_label="Select Municipality"
+        )
+        
+        # Add barangay dropdown
+        self.fields['barangay'] = forms.ModelChoiceField(
+            queryset=BarangayName.objects.none(),  # Empty initially
+            required=False,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            empty_label="Select Barangay"
+        )
+        
+        # If we have an instance with municipality, populate barangays
+        if self.instance and self.instance.municipality:
+            self.fields['barangay'].queryset = BarangayName.objects.filter(
+                municipality_id=self.instance.municipality
+            )
     
     class Meta:
         model = VerifiedHarvestRecord
@@ -114,7 +136,7 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
         ]
         widgets = {
             "harvest_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "commodity_id": forms.Select(attrs={"class": "form-select"}),
+            "commodity_id": forms.Select(attrs={"class": "form-control"}),
             "total_weight_kg": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "placeholder": "Enter weight in kilograms (e.g., 100.50)"}),
             "remarks": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }
