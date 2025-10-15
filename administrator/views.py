@@ -2143,8 +2143,13 @@ def admin_verifyharvestrec(request):
 def admin_add_verifyharvestrec(request):
     municipalities = MunicipalityName.objects.all()
     admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
+    admin_municipality_id = admin_info.municipality_incharge.municipality_id
     context = get_admin_context(request)
-    context.update({'municipalities': municipalities})
+    context.update({
+        'municipalities': municipalities,
+        'admin_municipality_id': admin_municipality_id,
+        'is_overall_admin': admin_municipality_id == 14
+    })
 
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = request.FILES["csv_file"]
@@ -2172,12 +2177,74 @@ def admin_add_verifyharvestrec(request):
                 
             reader = csv.DictReader(io.StringIO(decoded_file))
             
+            # Determine required headers based on admin's municipality assignment
+            is_overall_admin = admin_municipality_id == 14
+            has_municipality_column = 'municipality' in reader.fieldnames
+            
+            if is_overall_admin:
+                # Overall admin must have municipality column
+                required_headers = ['harvest_date', 'commodity', 'municipality', 'total_weight_kg']
+                if not has_municipality_column:
+                    messages.error(request, "Overall administrators must include the 'municipality' column in the CSV file. Please add municipality information to your CSV and try again.")
+                    context = get_admin_context(request)
+                    context.update({
+                        'municipalities': municipalities, 
+                        'form': VerifiedHarvestRecordForm(),
+                        'admin_municipality_id': admin_municipality_id,
+                        'is_overall_admin': True
+                    })
+                    return render(request, 'admin_panel/verifyharvest_add.html', context)
+            else:
+                # Non-overall admin - municipality column is optional
+                if has_municipality_column:
+                    required_headers = ['harvest_date', 'commodity', 'municipality', 'total_weight_kg']
+                else:
+                    required_headers = ['harvest_date', 'commodity', 'total_weight_kg']
+            
             # Check if required headers exist
-            required_headers = ['harvest_date', 'commodity', 'municipality', 'total_weight_kg']
             if not all(header in reader.fieldnames for header in required_headers):
                 missing_headers = [h for h in required_headers if h not in reader.fieldnames]
                 messages.error(request, f"CSV file is missing required headers: {', '.join(missing_headers)}. Please check the template format.")
             else:
+                # Pre-validate municipality restrictions for non-overall admins
+                if not is_overall_admin and has_municipality_column:
+                    admin_municipality_name = admin_info.municipality_incharge.municipality
+                    invalid_municipalities = []
+                    
+                    # Check all rows for municipality validation before processing any
+                    temp_reader = csv.DictReader(io.StringIO(decoded_file))
+                    for row_num, row in enumerate(temp_reader, start=2):
+                        row = {k.strip(): v.strip() for k, v in row.items()}
+                        municipality_name = row.get('municipality', '').strip()
+                        
+                        if municipality_name:
+                            # Handle special case for Balanga/Balanga City
+                            if municipality_name.lower() == 'balanga':
+                                municipality_name = 'Balanga City'
+                            
+                            # Check if municipality matches admin's assigned municipality
+                            if municipality_name.lower() != admin_municipality_name.lower():
+                                invalid_municipalities.append(f"Row {row_num}: '{municipality_name}'")
+                    
+                    if invalid_municipalities:
+                        messages.error(request, f"You can only upload harvest records for your assigned municipality ({admin_municipality_name}). Please remove the following rows with different municipalities:")
+                        for invalid_muni in invalid_municipalities[:10]:  # Show first 10
+                            messages.error(request, invalid_muni)
+                        if len(invalid_municipalities) > 10:
+                            messages.error(request, f"... and {len(invalid_municipalities) - 10} more rows.")
+                        
+                        context = get_admin_context(request)
+                        context.update({
+                            'municipalities': municipalities, 
+                            'form': VerifiedHarvestRecordForm(),
+                            'admin_municipality_id': admin_municipality_id,
+                            'is_overall_admin': False
+                        })
+                        return render(request, 'admin_panel/verifyharvest_add.html', context)
+                
+                # Reset reader for actual processing
+                reader = csv.DictReader(io.StringIO(decoded_file))
+                
                 for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
                     try:
                         row = {k.strip(): v.strip() for k, v in row.items()}
@@ -2193,21 +2260,34 @@ def admin_add_verifyharvestrec(request):
                             error_count += 1
                             continue
                             
-                        if not row.get("municipality"):
-                            error_details.append(f"Row {row_num}: Municipality is required")
-                            error_count += 1
-                            continue
-                            
+                        # Municipality validation based on admin type
+                        if has_municipality_column:
+                            if not row.get("municipality"):
+                                error_details.append(f"Row {row_num}: Municipality is required when municipality column is present")
+                                error_count += 1
+                                continue
+                        elif not is_overall_admin:
+                            # For non-overall admins without municipality column, use their assigned municipality
+                            pass  # Will be handled later
+                        
                         if not row.get("total_weight_kg"):
                             error_details.append(f"Row {row_num}: Total weight is required")
                             error_count += 1
                             continue
                         
-                        # Validate harvest date format
-                        try:
-                            harvest_date = datetime.strptime(row["harvest_date"], "%Y-%m-%d").date()
-                        except ValueError:
-                            error_details.append(f"Row {row_num}: Invalid harvest date format. Use YYYY-MM-DD format")
+                        # Validate and parse harvest date with multiple formats
+                        harvest_date = None
+                        date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"]
+                        
+                        for date_format in date_formats:
+                            try:
+                                harvest_date = datetime.strptime(row["harvest_date"], date_format).date()
+                                break
+                            except ValueError:
+                                continue
+                        
+                        if harvest_date is None:
+                            error_details.append(f"Row {row_num}: Invalid harvest date format. Use YYYY-MM-DD or DD/MM/YYYY format")
                             error_count += 1
                             continue
                         
@@ -2230,14 +2310,23 @@ def admin_add_verifyharvestrec(request):
                             error_count += 1
                             continue
                         
-                        # Process municipality name as string
-                        municipality_name = row['municipality'].strip()
-                        try:
-                            municipality = MunicipalityName.objects.get(municipality__iexact=municipality_name)
-                        except MunicipalityName.DoesNotExist:
-                            error_details.append(f"Row {row_num}: Municipality '{municipality_name}' does not exist in database")
-                            error_count += 1
-                            continue
+                        # Process municipality based on admin type and CSV structure
+                        if has_municipality_column:
+                            municipality_name = row['municipality'].strip()
+                            
+                            # Handle special case for Balanga/Balanga City
+                            if municipality_name.lower() == 'balanga':
+                                municipality_name = 'Balanga City'
+                            
+                            try:
+                                municipality = MunicipalityName.objects.get(municipality__iexact=municipality_name)
+                            except MunicipalityName.DoesNotExist:
+                                error_details.append(f"Row {row_num}: Municipality '{municipality_name}' does not exist in database")
+                                error_count += 1
+                                continue
+                        else:
+                            # Use admin's assigned municipality
+                            municipality = admin_info.municipality_incharge
                         
                         # Process barangay name as string (optional)
                         barangay_name = row.get("barangay", "").strip()
@@ -2246,7 +2335,7 @@ def admin_add_verifyharvestrec(request):
                             try:
                                 barangay = BarangayName.objects.get(barangay__iexact=barangay_name, municipality_id=municipality)
                             except BarangayName.DoesNotExist:
-                                error_details.append(f"Row {row_num}: Barangay '{barangay_name}' not found in '{municipality_name}'. Record will be created without barangay")
+                                error_details.append(f"Row {row_num}: Barangay '{barangay_name}' not found in '{municipality.municipality}'. Record will be created without barangay")
                                 # Don't skip the row, just proceed without barangay
                         
                         verified_harvest_record = VerifiedHarvestRecord.objects.create(
@@ -2264,7 +2353,7 @@ def admin_add_verifyharvestrec(request):
                         # Log the creation from CSV upload
                         AdminUserManagement.objects.create(
                             admin_id=admin_info,
-                            action=f"Created Verified Harvest Record ID {verified_harvest_record.id} via CSV upload - {commodity_obj.name} ({total_weight_kg}kg) from {municipality_name}",
+                            action=f"Created Verified Harvest Record ID {verified_harvest_record.id} via CSV upload - {commodity_obj.name} ({total_weight_kg}kg) from {municipality.municipality}",
                             content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
                             object_id=verified_harvest_record.id
                         )
@@ -2306,7 +2395,12 @@ def admin_add_verifyharvestrec(request):
             
         # Stay on the same page to show messages
         context = get_admin_context(request)
-        context.update({'municipalities': municipalities, 'form': VerifiedHarvestRecordForm()})
+        context.update({
+            'municipalities': municipalities, 
+            'form': VerifiedHarvestRecordForm(),
+            'admin_municipality_id': admin_municipality_id,
+            'is_overall_admin': admin_municipality_id == 14
+        })
         return render(request, 'admin_panel/verifyharvest_add.html', context)
 
     elif request.method == "POST":
@@ -2318,15 +2412,15 @@ def admin_add_verifyharvestrec(request):
             rec.prev_record = None
             rec.save()
             
-            # Log the individual record creation
+            # Log the creation from manual form
             AdminUserManagement.objects.create(
                 admin_id=admin_info,
-                action=f"Created Verified Harvest Record ID {rec.id} via manual entry - {rec.commodity_id.name} ({rec.total_weight_kg}kg) from {rec.municipality.municipality if rec.municipality else 'Unknown'}",
+                action=f"Created Verified Harvest Record ID {rec.id} via manual form - {rec.commodity_id.name} ({rec.total_weight_kg}kg)",
                 content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
                 object_id=rec.id
             )
             
-            messages.success(request, 'Harvest record has been successfully added.')
+            messages.success(request, f'Verified harvest record for {rec.commodity_id.name} has been successfully created.')
             
             # Trigger model retraining and forecast generation
             try:
@@ -2336,12 +2430,26 @@ def admin_add_verifyharvestrec(request):
             except Exception as e:
                 messages.warning(request, f'Record created successfully, but forecast regeneration failed: {str(e)}')
             
-            return redirect("administrator:admin_verifyharvestrec")
-        context["form"] = form
-    else:
-        context["form"] = VerifiedHarvestRecordForm()
-
-    return render(request, "admin_panel/verifyharvest_add.html", context)
+            return redirect('administrator:admin_add_verifyharvestrec')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+            context = get_admin_context(request)
+            context.update({
+                'municipalities': municipalities, 
+                'form': form,
+                'admin_municipality_id': admin_municipality_id,
+                'is_overall_admin': admin_municipality_id == 14
+            })
+            return render(request, 'admin_panel/verifyharvest_add.html', context)
+    
+    # GET request
+    context = get_admin_context(request)
+    context.update({
+        'municipalities': municipalities, 
+        'form': VerifiedHarvestRecordForm(),
+        'admin_municipality_id': admin_municipality_id,
+        'is_overall_admin': admin_municipality_id == 14
+    })
 
 
 @login_required
