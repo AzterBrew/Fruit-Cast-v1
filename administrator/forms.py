@@ -1,5 +1,6 @@
 from django import forms
-from base.models import MunicipalityName, AccountType, CommodityType, Month, VerifiedHarvestRecord
+from base.models import MunicipalityName, AccountType, CommodityType, Month, BarangayName
+from dashboard.models import VerifiedHarvestRecord
 
 ACCOUNT_TYPE_CHOICES = [
     ('Administrator', 'Administrator'),
@@ -114,6 +115,6 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
         widgets = {
             "harvest_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "commodity_id": forms.Select(attrs={"class": "form-select"}),
-            "total_weight_kg": forms.NumberInput(attrs={"class": "form-control"}),
+            "total_weight_kg": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "placeholder": "Enter weight in kilograms (e.g., 100.50)"}),
             "remarks": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }

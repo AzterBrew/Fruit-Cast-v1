@@ -270,7 +270,7 @@ def update_account_status(request, account_id):
             account.account_isverified = new_status_id == 2  # If Verified (pk=2)
             if account.account_verified_date is None and new_status_id == 2:
                 account.account_verified_date = timezone.now()
- 
+
             # Link the admin who verified
             try:
                 user_info = UserInformation.objects.get(auth_user=request.user)
@@ -2407,6 +2407,19 @@ def admin_add_verifyharvestrec(request):
         form = VerifiedHarvestRecordForm(request.POST)
         if form.is_valid():
             rec = form.save(commit=False)
+            
+            # Validate harvest date is not in the future
+            if rec.harvest_date > date.today():
+                messages.error(request, 'Harvest date cannot be in the future. Please select a valid date.')
+                context = get_admin_context(request)
+                context.update({
+                    'municipalities': municipalities, 
+                    'form': form,
+                    'admin_municipality_id': admin_municipality_id,
+                    'is_overall_admin': admin_municipality_id == 14
+                })
+                return render(request, 'admin_panel/verifyharvest_add.html', context)
+            
             rec.date_verified = timezone.now()
             rec.verified_by = admin_info
             rec.prev_record = None
@@ -2450,6 +2463,7 @@ def admin_add_verifyharvestrec(request):
         'admin_municipality_id': admin_municipality_id,
         'is_overall_admin': admin_municipality_id == 14
     })
+    return render(request, 'admin_panel/verifyharvest_add.html', context)
 
 
 @login_required
