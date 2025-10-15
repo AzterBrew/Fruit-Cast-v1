@@ -2611,59 +2611,71 @@ def admin_harvestverified(request):
 @admin_or_agriculturist_required
 def admin_harvestverified_view(request, record_id):
     """View details of a specific verified harvest record"""
-    record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
-    
-    # Get current user's admin info and municipality assignment
     try:
-        current_user_info = request.user.userinformation
-        current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
-        current_municipality_assigned = current_admin_info.municipality_incharge
-        is_superuser = request.user.is_superuser
-        is_pk14 = current_municipality_assigned.pk == 14
-    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
-        return render(request, 'admin_panel/access_denied.html', {
-            'error_message': 'Access denied. Admin information not found.'
-        })
-    
-    # Check access permissions based on municipality assignment
-    if not is_superuser and not is_pk14:
-        # Non-superuser and non-pk14 admin: can only view records from their assigned municipality
-        if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
+        record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
+        
+        # Get current user's admin info and municipality assignment
+        try:
+            current_user_info = request.user.userinformation
+            current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
+            current_municipality_assigned = current_admin_info.municipality_incharge
+            is_superuser = request.user.is_superuser
+            is_pk14 = current_municipality_assigned.pk == 14
+        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
             return render(request, 'admin_panel/access_denied.html', {
-                'error_message': f'Access denied. You can only view harvest records from {current_municipality_assigned.municipality}.'
+                'error_message': 'Access denied. Admin information not found.'
             })
-    
-    context = get_admin_context(request)
-    context.update({'record': record})
-    return render(request, 'admin_panel/admin_harvestverified_view.html', context)
+        
+        # Check access permissions based on municipality assignment
+        if not is_superuser and not is_pk14:
+            # Non-superuser and non-pk14 admin: can only view records from their assigned municipality
+            if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
+                return render(request, 'admin_panel/access_denied.html', {
+                    'error_message': f'Access denied. You can only view harvest records from {current_municipality_assigned.municipality}.'
+                })
+        
+        context = get_admin_context(request)
+        context.update({'record': record})
+        return render(request, 'admin_panel/admin_harvestverified_view.html', context)
+        
+    except Exception as e:
+        messages.error(request, "Harvest record not found or has been deleted.")
+        print(f"Error: Harvest record not found in admin_harvestverified_view - {str(e)}")
+        return redirect('administrator:admin_harvestverified')
 
 
 @login_required
 @admin_or_agriculturist_required
 def admin_harvestverified_edit(request, record_id):
     """Edit a specific verified harvest record"""
-    record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
-    
-    # Get current user's admin info and municipality assignment
     try:
-        current_user_info = request.user.userinformation
-        current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
-        current_municipality_assigned = current_admin_info.municipality_incharge
-        is_superuser = request.user.is_superuser
-        is_pk14 = current_municipality_assigned.pk == 14
-    except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
-        return render(request, 'admin_panel/access_denied.html', {
-            'error_message': 'Access denied. Admin information not found.'
-        })
-    
-    # Check access permissions based on municipality assignment
-    if not is_superuser and not is_pk14:
-        # Non-superuser and non-pk14 admin: can only edit records from their assigned municipality
-        if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
+        record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
+        
+        # Get current user's admin info and municipality assignment
+        try:
+            current_user_info = request.user.userinformation
+            current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
+            current_municipality_assigned = current_admin_info.municipality_incharge
+            is_superuser = request.user.is_superuser
+            is_pk14 = current_municipality_assigned.pk == 14
+        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
             return render(request, 'admin_panel/access_denied.html', {
-                'error_message': f'Access denied. You can only edit harvest records from {current_municipality_assigned.municipality}.'
+                'error_message': 'Access denied. Admin information not found.'
             })
+        
+        # Check access permissions based on municipality assignment
+        if not is_superuser and not is_pk14:
+            # Non-superuser and non-pk14 admin: can only edit records from their assigned municipality
+            if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
+                return render(request, 'admin_panel/access_denied.html', {
+                    'error_message': f'Access denied. You can only edit harvest records from {current_municipality_assigned.municipality}.'
+                })
     
+    except Exception as e:
+        messages.error(request, "Harvest record not found or has been deleted.")
+        print(f"Error: Harvest record not found in admin_harvestverified_edit - {str(e)}")
+        return redirect('administrator:admin_harvestverified')
+
     if request.method == 'POST':
         form = VerifiedHarvestRecordForm(request.POST, instance=record, user=request.user)
         if form.is_valid():
@@ -3061,16 +3073,12 @@ def admin_account_detail(request, account_id):
         }
         
         return render(request, 'admin_panel/admin_account_detail.html', context)
-        
-    except AccountsInformation.DoesNotExist:
+
+    except Exception as e:
         messages.error(request, "Account not found.")
         print("Error: Account not found in admin_account_detail")
         return redirect('administrator:show_allaccounts')
-    except Exception as e:
-        messages.error(request, f"Error loading account details: {str(e)}")
-        print(f"Error in admin_account_detail: {e}")
-        return redirect('administrator:show_allaccounts')
-
+    
 
 # def editacc(request):
 #     print("🔥 DEBUG: editacc view called!")  # This should print when you visit "/"
@@ -3455,46 +3463,46 @@ def export_verified_harvest_records_csv(records, filename, format_type='csv'):
         return generate_verified_harvest_records_pdf(records, filename)
 
 def export_verified_harvest_records_summary_csv(records, filename, format_type='csv'):
-    """Export verified harvest records summary to CSV or PDF format"""
+    """Export verified harvest records summary to CSV or PDF format grouped by commodity, municipality, and month/year"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         
-        # Group by commodity and municipality for summary
+        # Group by commodity, municipality, and month/year for summary
         summary_data = {}
         for record in records:
             commodity = record.commodity_id.name
             municipality = record.municipality.municipality if record.municipality else 'Unknown'
-            key = f"{commodity} - {municipality}"
+            # Format date as YYYY-MM-01 (first day of the month/year)
+            month_year = record.harvest_date.strftime('%Y-%m-01')
+            key = f"{commodity} - {municipality} - {month_year}"
             
             if key not in summary_data:
                 summary_data[key] = {
+                    'harvest_date': month_year,
                     'commodity': commodity,
                     'municipality': municipality,
-                    'total_records': 0,
                     'total_weight': 0,
-                    'avg_weight_per_unit': 0,
-                    'weight_count': 0
+                    'total_records': 0
                 }
             
             summary_data[key]['total_records'] += 1
             summary_data[key]['total_weight'] += float(record.total_weight_kg)
-            summary_data[key]['avg_weight_per_unit'] += float(record.commodity_id.average_weight_per_unit_kg)
-            summary_data[key]['weight_count'] += 1
         
         writer = csv.writer(response)
         writer.writerow([
-            'Commodity', 'Municipality', 'Total Records', 'Total Weight (kg)', 'Average Weight per Unit (kg)'
+            'harvest_date', 'commodity', 'municipality', 'total_weight_kg'
         ])
         
-        for data in summary_data.values():
-            avg_weight_per_unit = data['avg_weight_per_unit'] / data['weight_count'] if data['weight_count'] > 0 else 0
+        # Sort by harvest_date, then commodity, then municipality
+        sorted_data = sorted(summary_data.values(), key=lambda x: (x['harvest_date'], x['commodity'], x['municipality']))
+        
+        for data in sorted_data:
             writer.writerow([
+                data['harvest_date'],
                 data['commodity'],
                 data['municipality'],
-                data['total_records'],
-                f"{data['total_weight']:.2f}",
-                f"{avg_weight_per_unit:.2f}"
+                f"{data['total_weight']:.2f}"
             ])
         
         return response
@@ -4109,7 +4117,7 @@ def generate_verified_harvest_records_pdf(records, filename):
     return response
 
 def generate_verified_harvest_records_summary_pdf(records, filename):
-    """Generate PDF for verified harvest records summary"""
+    """Generate PDF for verified harvest records summary grouped by commodity, municipality, and month/year"""
     if not PDF_AVAILABLE:
         return export_verified_harvest_records_summary_csv(records, filename + '_fallback', 'csv')
     
@@ -4127,28 +4135,35 @@ def generate_verified_harvest_records_summary_pdf(records, filename):
     elements.append(title)
     elements.append(Spacer(1, 12))
     
+    # Group by commodity, municipality, and month/year for summary
     summary_data = {}
     for record in records:
         commodity = record.commodity_id.name
         municipality = record.municipality.municipality if record.municipality else 'Unknown'
-        key = f"{commodity} - {municipality}"
+        # Format date as YYYY-MM-01 (first day of the month/year)
+        month_year = record.harvest_date.strftime('%Y-%m-01')
+        key = f"{commodity} - {municipality} - {month_year}"
         
         if key not in summary_data:
             summary_data[key] = {
-                'commodity': commodity, 'municipality': municipality, 'total_records': 0,
-                'total_weight': 0, 'avg_weight_per_unit': 0, 'weight_count': 0
+                'harvest_date': month_year,
+                'commodity': commodity,
+                'municipality': municipality,
+                'total_weight': 0,
+                'total_records': 0
             }
         
         summary_data[key]['total_records'] += 1
         summary_data[key]['total_weight'] += float(record.total_weight_kg)
-        summary_data[key]['avg_weight_per_unit'] += float(record.commodity_id.average_weight_per_unit_kg)
-        summary_data[key]['weight_count'] += 1
     
-    data = [['Commodity', 'Municipality', 'Total Records', 'Total Weight (kg)', 'Avg Weight/Unit (kg)']]
-    for item in summary_data.values():
-        avg_weight_per_unit = item['avg_weight_per_unit'] / item['weight_count'] if item['weight_count'] > 0 else 0
-        data.append([item['commodity'], item['municipality'], item['total_records'], 
-                    f"{item['total_weight']:.2f}", f"{avg_weight_per_unit:.2f}"])
+    data = [['Harvest Date', 'Commodity', 'Municipality', 'Total Weight (kg)']]
+    
+    # Sort by harvest_date, then commodity, then municipality
+    sorted_data = sorted(summary_data.values(), key=lambda x: (x['harvest_date'], x['commodity'], x['municipality']))
+    
+    for item in sorted_data:
+        data.append([item['harvest_date'], item['commodity'], item['municipality'], 
+                    f"{item['total_weight']:.2f}"])
     
     table = Table(data)
     table.setStyle(TableStyle([
