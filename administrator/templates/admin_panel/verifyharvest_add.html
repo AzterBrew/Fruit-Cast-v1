@@ -283,7 +283,7 @@ Fruit Cast | Add Verified Harvest Record
         barangaySelect.disabled = true;
         
         if (municipalityId) {
-            fetch('/get_barangays/' + municipalityId + '/')
+            fetch('/administrator/get_barangays/' + municipalityId + '/')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');

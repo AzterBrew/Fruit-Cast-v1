@@ -2291,6 +2291,12 @@ def admin_add_verifyharvestrec(request):
                             error_count += 1
                             continue
                         
+                        # Validate harvest date is not in the future
+                        if harvest_date > date.today():
+                            error_details.append(f"Row {row_num}: Harvest date ({harvest_date}) cannot be in the future")
+                            error_count += 1
+                            continue
+                        
                         # Validate total weight
                         try:
                             total_weight_kg = float(row["total_weight_kg"])
@@ -2753,37 +2759,42 @@ def admin_account_detail(request, account_id):
         
         # Check if target account is admin or agriculturist
         if target_account.account_type_id.account_type not in ["Administrator", "Agriculturist"]:
-            messages.error(request, "You can only view administrator and agriculturist accounts.")
+            messages.error(request, "You can only view account details and actions of administrator and agriculturist accounts.")
             return redirect('administrator:show_allaccounts')
+        
+        # Check if user is viewing their own account
+        is_own_account = current_account.pk == target_account.pk
         
         # Access control for agriculturists: they can only view their own account
         if current_account.account_type_id.pk == 3:  # Agriculturist
-            if current_account.pk != target_account.pk:  # Not viewing their own account
+            if not is_own_account:  # Not viewing their own account
                 return render(request, 'admin_panel/access_denied.html', {
                     'error_message': 'Access denied. You can only view your own account details.'
                 })
         
         # Access control for administrators
         if current_account.account_type_id.pk == 2 and not is_superuser:  # Administrator but not superuser
-            target_municipality = target_admin_info.municipality_incharge if target_admin_info else None
-            target_account_type = target_account.account_type_id.account_type
-            
-            if not is_pk14:  # Administrator with assigned municipality not pk=14
-                # Can't see agriculturists in different municipalities
-                if target_account_type == "Agriculturist":
-                    if not target_municipality or target_municipality.pk != current_municipality_assigned.pk:
-                        return render(request, 'admin_panel/access_denied.html', {
-                            'error_message': 'Unauthorized access. You can only view agriculturists in your assigned municipality.'
-                        })
-                # Can see administrators in same municipality and pk=14, but content is restricted
-                elif target_account_type == "Administrator":
-                    if not target_municipality or target_municipality.pk not in [current_municipality_assigned.pk, 14]:
-                        return render(request, 'admin_panel/access_denied.html', {
-                            'error_message': 'Unauthorized access. You can only view administrators in your municipality or assigned to Overall Bataan.'
-                        })
-            else:  # Administrator with pk=14
-                # Can view all accounts but pk=14 administrators have restricted access
-                pass
+            # Allow viewing own account regardless of municipality restrictions
+            if not is_own_account:
+                target_municipality = target_admin_info.municipality_incharge if target_admin_info else None
+                target_account_type = target_account.account_type_id.account_type
+                
+                if not is_pk14:  # Administrator with assigned municipality not pk=14
+                    # Can't see agriculturists in different municipalities
+                    if target_account_type == "Agriculturist":
+                        if not target_municipality or target_municipality.pk != current_municipality_assigned.pk:
+                            return render(request, 'admin_panel/access_denied.html', {
+                                'error_message': 'Unauthorized access. You can only view agriculturists in your assigned municipality.'
+                            })
+                    # Can see administrators in same municipality and pk=14, but content is restricted
+                    elif target_account_type == "Administrator":
+                        if not target_municipality or target_municipality.pk not in [current_municipality_assigned.pk, 14]:
+                            return render(request, 'admin_panel/access_denied.html', {
+                                'error_message': 'Unauthorized access. You can only view administrators in your municipality or assigned to Overall Bataan.'
+                            })
+                else:  # Administrator with pk=14
+                    # Can view all accounts but pk=14 administrators have restricted access
+                    pass
         
         # Handle POST requests for editing account type and municipality
         if request.method == 'POST':
@@ -2889,7 +2900,6 @@ def admin_account_detail(request, account_id):
         # Determine access level based on hierarchical rules
         user_role_id = current_account.account_type_id.pk
         target_account_type_id = target_account.account_type_id.pk
-        is_own_account = target_account.pk == current_account.pk
         
         # Complex access control based on the specified rules
         can_view_full_details = False
@@ -2898,13 +2908,19 @@ def admin_account_detail(request, account_id):
         can_edit_municipality = False
         
         if is_superuser:
-            # Superuser: can see all information and edit everything
+            # Superuser: can see all information and edit everything (except own account type/municipality)
             can_view_full_details = True
             can_view_histories = True
             can_edit_account_type = not is_own_account
             can_edit_municipality = not is_own_account
         elif user_role_id == 2:  # Current user is Administrator
-            if is_pk14:
+            if is_own_account:
+                # Users can view their own account details but cannot edit account type or municipality
+                can_view_full_details = True
+                can_view_histories = True
+                can_edit_account_type = False
+                can_edit_municipality = False
+            elif is_pk14:
                 # Administrator with pk=14
                 if target_account_type_id == 3:  # Target is Agriculturist
                     can_view_full_details = True
@@ -2931,10 +2947,13 @@ def admin_account_detail(request, account_id):
                     # Can see administrators with same municipality and pk=14 but restricted content
                     can_view_full_details = False  # Can't see personal details, login history, actions
                     can_view_histories = False
-        elif user_role_id == 3 and is_own_account:  # Agriculturist viewing own account
-            can_view_full_details = True
-            can_view_histories = True
-            # Agriculturists cannot edit their own account details
+        elif user_role_id == 3:  # Agriculturist
+            if is_own_account:
+                # Agriculturists can view their own account details but cannot edit
+                can_view_full_details = True
+                can_view_histories = True
+                can_edit_account_type = False
+                can_edit_municipality = False
         
         # Calculate age
         today = date.today()

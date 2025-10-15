@@ -151,8 +151,8 @@ Fruit Cast | Plant Record Verification
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <span class="fw-medium">{{ rec.min_expected_harvest }}</span> - 
-                                            <span class="fw-medium">{{ rec.max_expected_harvest }} kg</span>
+                                            <span class="fw-medium">{{ rec.min_expected_harvest|format_weight }}</span> - 
+                                            <span class="fw-medium">{{ rec.max_expected_harvest|format_weight }} kg</span>
                                         </td>
                                         <td>
                                             {% if rec.remarks %}

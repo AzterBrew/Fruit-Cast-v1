@@ -152,7 +152,12 @@ Fruit Cast | Plant and Harvest Records
                                         </td>
                                         <td>
                                             {% if rec.unit.unit_abrv == "kg" or rec.unit.unit_abrv == "kilogram" %}
-                                                <div class="fw-bold text-success">{{ rec.total_weight|floatformat:2 }} kg</div>
+                                                                                            {% if rec.total_weight_kg %}
+                                                <div class="fw-bold text-success">{{ rec.total_weight_kg|format_weight }} kg</div>
+                                            {% else %}
+                                                <div class="fw-bold text-success">{{ rec.total_weight|format_weight }} kg</div>
+                                                <small class="text-muted">({{ rec.total_weight|format_weight }} {{ rec.unit.unit_abrv }})</small>
+                                            {% endif %}
                                             {% else %}
                                                 <div class="fw-bold text-success">{{ rec.total_weight_kg|floatformat:2 }} kg</div>
                                                 <small class="text-muted">({{ rec.total_weight }} {{ rec.unit.unit_abrv }})</small>
