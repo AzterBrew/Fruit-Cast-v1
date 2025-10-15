@@ -270,7 +270,7 @@ def update_account_status(request, account_id):
             account.account_isverified = new_status_id == 2  # If Verified (pk=2)
             if account.account_verified_date is None and new_status_id == 2:
                 account.account_verified_date = timezone.now()
-
+ 
             # Link the admin who verified
             try:
                 user_info = UserInformation.objects.get(auth_user=request.user)
