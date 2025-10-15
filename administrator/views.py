@@ -2189,7 +2189,7 @@ def admin_add_verifyharvestrec(request):
                     context = get_admin_context(request)
                     context.update({
                         'municipalities': municipalities, 
-                        'form': VerifiedHarvestRecordForm(),
+                        'form': VerifiedHarvestRecordForm(user=request.user),
                         'admin_municipality_id': admin_municipality_id,
                         'is_overall_admin': True
                     })
@@ -2236,7 +2236,7 @@ def admin_add_verifyharvestrec(request):
                         context = get_admin_context(request)
                         context.update({
                             'municipalities': municipalities, 
-                            'form': VerifiedHarvestRecordForm(),
+                            'form': VerifiedHarvestRecordForm(user=request.user),
                             'admin_municipality_id': admin_municipality_id,
                             'is_overall_admin': False
                         })
@@ -2403,14 +2403,14 @@ def admin_add_verifyharvestrec(request):
         context = get_admin_context(request)
         context.update({
             'municipalities': municipalities, 
-            'form': VerifiedHarvestRecordForm(),
+            'form': VerifiedHarvestRecordForm(user=request.user),
             'admin_municipality_id': admin_municipality_id,
             'is_overall_admin': admin_municipality_id == 14
         })
         return render(request, 'admin_panel/verifyharvest_add.html', context)
 
     elif request.method == "POST":
-        form = VerifiedHarvestRecordForm(request.POST)
+        form = VerifiedHarvestRecordForm(request.POST, user=request.user)
         if form.is_valid():
             rec = form.save(commit=False)
             
@@ -2465,7 +2465,7 @@ def admin_add_verifyharvestrec(request):
     context = get_admin_context(request)
     context.update({
         'municipalities': municipalities, 
-        'form': VerifiedHarvestRecordForm(),
+        'form': VerifiedHarvestRecordForm(user=request.user),
         'admin_municipality_id': admin_municipality_id,
         'is_overall_admin': admin_municipality_id == 14
     })
@@ -2665,7 +2665,7 @@ def admin_harvestverified_edit(request, record_id):
             })
     
     if request.method == 'POST':
-        form = VerifiedHarvestRecordForm(request.POST, instance=record)
+        form = VerifiedHarvestRecordForm(request.POST, instance=record, user=request.user)
         if form.is_valid():
             # Validate harvest date is not in the future
             if form.cleaned_data['harvest_date'] > date.today():
@@ -2742,7 +2742,7 @@ def admin_harvestverified_edit(request, record_id):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = VerifiedHarvestRecordForm(instance=record)
+        form = VerifiedHarvestRecordForm(instance=record, user=request.user)
     
     context = get_admin_context(request)
     context.update({
@@ -3479,7 +3479,7 @@ def export_verified_harvest_records_summary_csv(records, filename, format_type='
             
             summary_data[key]['total_records'] += 1
             summary_data[key]['total_weight'] += float(record.total_weight_kg)
-            summary_data[key]['avg_weight_per_unit'] += float(record.weight_per_unit_kg)
+            summary_data[key]['avg_weight_per_unit'] += float(record.commodity_id.average_weight_per_unit_kg)
             summary_data[key]['weight_count'] += 1
         
         writer = csv.writer(response)
@@ -4141,7 +4141,7 @@ def generate_verified_harvest_records_summary_pdf(records, filename):
         
         summary_data[key]['total_records'] += 1
         summary_data[key]['total_weight'] += float(record.total_weight_kg)
-        summary_data[key]['avg_weight_per_unit'] += float(record.weight_per_unit_kg)
+        summary_data[key]['avg_weight_per_unit'] += float(record.commodity_id.average_weight_per_unit_kg)
         summary_data[key]['weight_count'] += 1
     
     data = [['Commodity', 'Municipality', 'Total Records', 'Total Weight (kg)', 'Avg Weight/Unit (kg)']]

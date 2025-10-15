@@ -1,5 +1,5 @@
 from django import forms
-from base.models import MunicipalityName, AccountType, CommodityType, Month, BarangayName
+from base.models import MunicipalityName, AccountType, CommodityType, Month, BarangayName, UserInformation, AdminInformation
 from dashboard.models import VerifiedHarvestRecord
 
 ACCOUNT_TYPE_CHOICES = [
@@ -102,9 +102,22 @@ class CommodityTypeForm(forms.ModelForm):
         
 class VerifiedHarvestRecordForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # Extract user from kwargs
         super().__init__(*args, **kwargs)
         # Exclude pk=1 (usually 'Not Listed' or similar) from commodity choices
         self.fields['commodity_id'].queryset = CommodityType.objects.exclude(pk=1)
+        
+        # Determine access level for municipality field
+        is_superuser = user.is_superuser if user else False
+        is_pk14 = False
+        
+        if user:
+            try:
+                user_info = user.userinformation
+                admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+                is_pk14 = admin_info.municipality_incharge.pk == 14
+            except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+                pass
         
         # Add municipality dropdown
         self.fields['municipality'] = forms.ModelChoiceField(
@@ -113,6 +126,18 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
             widget=forms.Select(attrs={'class': 'form-control'}),
             empty_label="Select Municipality"
         )
+        
+        # If user is not superuser and not pk=14, make municipality read-only
+        if not is_superuser and not is_pk14:
+            self.fields['municipality'].widget.attrs.update({
+                'disabled': True,
+                'readonly': True,
+                'style': 'background-color: #f8f9fa; cursor: not-allowed;'
+            })
+            # If we have an instance, set the municipality value and make it required = False for validation
+            if self.instance and self.instance.municipality:
+                self.fields['municipality'].initial = self.instance.municipality
+                self.fields['municipality'].required = False
         
         # Add barangay dropdown
         self.fields['barangay'] = forms.ModelChoiceField(
@@ -127,6 +152,16 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
             self.fields['barangay'].queryset = BarangayName.objects.filter(
                 municipality_id=self.instance.municipality
             )
+    
+    def clean_municipality(self):
+        """Custom clean method for municipality field"""
+        municipality = self.cleaned_data.get('municipality')
+        
+        # If municipality field was disabled and no data was submitted, use the instance value
+        if not municipality and self.instance and self.instance.municipality:
+            municipality = self.instance.municipality
+            
+        return municipality
     
     class Meta:
         model = VerifiedHarvestRecord

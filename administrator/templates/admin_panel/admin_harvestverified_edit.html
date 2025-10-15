@@ -210,6 +210,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 return false;
             }
+            
+            // If municipality field is disabled, enable it temporarily for form submission
+            if (isMunicipalityDisabled && municipalitySelect.disabled) {
+                municipalitySelect.disabled = false;
+            }
         });
     }
 
@@ -219,6 +224,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Store the initial selected barangay
     let initialBarangay = barangaySelect ? barangaySelect.value : null;
+    
+    // Check if municipality field is disabled (read-only access)
+    const isMunicipalityDisabled = municipalitySelect && (municipalitySelect.disabled || municipalitySelect.readOnly);
 
     function updateBarangayOptions(keepSelected = false) {
         const municipalityId = municipalitySelect.value;
@@ -255,12 +263,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (municipalitySelect && barangaySelect) {
-        municipalitySelect.addEventListener('change', function() {
-            updateBarangayOptions(false);
-        });
+        // Only add change listener if municipality field is not disabled
+        if (!isMunicipalityDisabled) {
+            municipalitySelect.addEventListener('change', function() {
+                updateBarangayOptions(false);
+            });
+        }
         
         // On page load, keep the initial selection
         updateBarangayOptions(true);
+        
+        // If municipality is disabled, show a visual indicator
+        if (isMunicipalityDisabled) {
+            const municipalityLabel = document.querySelector('label[for="id_municipality"]');
+            if (municipalityLabel) {
+                municipalityLabel.innerHTML += ' <small class="text-muted">(Read-only based on your access level)</small>';
+            }
+        }
     }
 });
 </script>
