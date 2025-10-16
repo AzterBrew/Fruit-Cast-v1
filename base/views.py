@@ -830,16 +830,24 @@ def transaction_history(request):
     accountinfo = AccountsInformation.objects.get(pk=account_id)
     
     # Exclude transactions with removed status (pk=1)
-    transactions = RecordTransaction.objects.filter(
+    transactions_list = RecordTransaction.objects.filter(
         account_id=accountinfo
     ).exclude(
         account_id__acc_status_id=1
     ).order_by('-transaction_date')
 
+    # Pagination - only show pagination if more than 10 records
+    from django.core.paginator import Paginator
+    paginate = transactions_list.count() > 10
+    paginator = Paginator(transactions_list, 10)  # Show 10 transactions per page
+    page_number = request.GET.get('page')
+    transactions = paginator.get_page(page_number)
+
     context = {
         'transactions': transactions,
         'user_firstname': accountinfo.userinfo_id.firstname,
         'view_to_show': 'transaction_history',  # So transaction.html knows what to include
+        'paginate': paginate,
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 

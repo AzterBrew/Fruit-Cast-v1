@@ -6,7 +6,13 @@
         <h2 class="text-success fw-bold mb-0">
             <i class="bi bi-clock-history me-2"></i>Your Transaction History
         </h2>
-        <span class="badge bg-success">{{ transactions|length }} transaction{{ transactions|length|pluralize }}</span>
+        <span class="badge bg-success">
+            {% if paginate %}
+                {{ transactions.paginator.count }} transaction{{ transactions.paginator.count|pluralize }}
+            {% else %}
+                {{ transactions|length }} transaction{{ transactions|length|pluralize }}
+            {% endif %}
+        </span>
     </div>
     
     <p class="text-muted mb-4">Below is your list of submitted transactions. Click a transaction to view its details.</p>
@@ -51,20 +57,10 @@
                         </td>
                         <td>
                             {% if transaction.initplantrecord %}
-                                {% if transaction.initplantrecord.commodity_id.pk == 1 %}
-                                    <span class="badge bg-warning text-dark">Custom</span>
-                                    <div class="small">{{ transaction.initplantrecord.commodity_custom }}</div>
-                                {% elif transaction.initplantrecord.commodity_id.pk > 1 %}
-                                    <span class="badge bg-success">{{ transaction.initplantrecord.commodity_id.name }}</span>
-                                {% endif %}
+                                <span class="badge bg-success">{{ transaction.initplantrecord.commodity_id.name }}</span>
                             {% elif transaction.initharvestrecord_set.all %}
                                 {% with transaction.initharvestrecord_set.first as first_harvest %}
-                                    {% if first_harvest.commodity_id.pk == 1 %}
-                                        <span class="badge bg-warning text-dark">Custom</span>
-                                        <div class="small">{{ first_harvest.commodity_custom }}</div>
-                                    {% elif first_harvest.commodity_id.pk > 1 %}
-                                        <span class="badge bg-success">{{ first_harvest.commodity_id.name }}</span>
-                                    {% endif %}
+                                    <span class="badge bg-success">{{ first_harvest.commodity_id.name }}</span>
                                 {% endwith %}
                             {% else %}
                                 <span class="text-muted">N/A</span>
@@ -93,6 +89,84 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination Controls - Only show if more than 10 records -->
+        {% if paginate %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        <!-- Previous Button -->
+                        {% if transactions.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ transactions.previous_page_number }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="bi bi-chevron-left"></i>
+                                </span>
+                            </li>
+                        {% endif %}
+
+                        <!-- Page Numbers -->
+                        {% for num in transactions.paginator.page_range %}
+                            {% if transactions.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > transactions.number|add:'-3' and num < transactions.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Next Button -->
+                        {% if transactions.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ transactions.next_page_number }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ transactions.paginator.num_pages }}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="bi bi-chevron-right"></i>
+                                </span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Pagination Info -->
+            <div class="text-center text-muted small mt-2">
+                Showing {{ transactions.start_index }} to {{ transactions.end_index }} of {{ transactions.paginator.count }} entries
+            </div>
+        {% endif %}
+
     {% else %}
         <div class="text-center py-5">
             <div class="mb-3">

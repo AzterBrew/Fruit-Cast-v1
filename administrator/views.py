@@ -2128,7 +2128,7 @@ def admin_verifyplantrec(request):
     else:
         messages.error(request, "No records selected or status not chosen.")
 
-    commodities = CommodityType.objects.all()
+    commodities = CommodityType.objects.exclude(pk=1).order_by('name')
     status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
     # Handle export requests
@@ -2179,7 +2179,7 @@ def admin_verifyharvestrec(request):
     else:
         municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
 
-    commodities = CommodityType.objects.all()
+    commodities = CommodityType.objects.exclude(pk=1).order_by('name')
     status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
 
     # Query records with sorting by ID (most recent first) and pagination
@@ -2769,7 +2769,7 @@ def admin_harvestverified(request):
     else:
         barangays = BarangayName.objects.all()
     
-    commodities = CommodityType.objects.all()
+    commodities = CommodityType.objects.exclude(pk=1).order_by('name')
     
     records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id').order_by('-date_verified')
     
