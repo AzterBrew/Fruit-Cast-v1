@@ -880,7 +880,6 @@ def account_panel_view(request):
             'user_email': userinfo.user_email,
             'user_religion': userinfo.religion,
             'user_civil_status': userinfo.civil_status,
-            'user_rsbsa_ref_number': userinfo.rsbsa_ref_number or 'Not Provided',
             'view_to_show': 'info',
         }            
         return render(request, 'loggedin/account_panel.html', context)
@@ -1660,14 +1659,11 @@ def register_step1(request):
                 print("🔍 This error suggests a database constraint violation")
                 print("   Possible causes:")
                 print("   - Duplicate email address")
-                print("   - Duplicate RSBSA reference number")
                 print("   - Foreign key constraint violation")
                 print("🚫"*50)
                 
                 if 'email' in str(ie).lower():
                     error_msg = "This email address is already registered. Please use a different email."
-                elif 'rsbsa' in str(ie).lower():
-                    error_msg = "This RSBSA reference number is already in use. Please check your RSBSA number."
                 else:
                     error_msg = f"Database integrity error: {str(ie)}"
                 
@@ -1756,7 +1752,6 @@ def register_step2(request):
                         user_email=form.cleaned_data['user_email'],
                         civil_status=form.cleaned_data['civil_status'],
                         religion=form.cleaned_data['religion'],
-                        rsbsa_ref_number=form.cleaned_data['rsbsa_ref_number'],
                         emergency_contact_person=form.cleaned_data['emergency_contact_person'],
                         emergency_contact_number=form.cleaned_data['emergency_contact_number'],
                         **step1_data  # merges all step 1 fields

@@ -162,7 +162,7 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = UserInformation
-        fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay_id", "municipality_id", "address_details", "religion", "civil_status", "rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "contact_number"]
+        fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay_id", "municipality_id", "address_details", "religion", "civil_status", "emergency_contact_person", "emergency_contact_number", "contact_number"]
         labels = {
             "lastname": "Last Name *",
             "firstname": "First Name *", 
@@ -176,8 +176,7 @@ class RegistrationForm(forms.ModelForm):
             "religion":"Religion",  
             "emergency_contact_person" : "Emergency Contact Person *", 
             "emergency_contact_number" : "Emergency Contact Person's Contact No. *", 
-            "contact_number" : "Contact Number *",
-            "rsbsa_ref_number": "RSBSA Reference Number"
+            "contact_number" : "Contact Number *"
         }
         widgets = {
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input','required': 'required'}),
@@ -193,7 +192,6 @@ class RegistrationForm(forms.ModelForm):
             'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 2,'required': 'required', 'placeholder': 'House No., Purok, Street Name, Building'}),
             'religion': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Religion'}),
             'civil_status': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Civil Status'}),
-            'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder' : 'Leave blank if Not Applicable'}),
         }
     
     def clean_birthdate(self):
@@ -388,7 +386,7 @@ class EditUserInformation(forms.ModelForm):
 
     class Meta:
         model = UserInformation
-        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate","municipality_id","barangay_id",  "address_details", "religion", "civil_status","rsbsa_ref_number", "emergency_contact_person", "emergency_contact_number", "user_email", "contact_number"]
+        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate","municipality_id","barangay_id",  "address_details", "religion", "civil_status", "emergency_contact_person", "emergency_contact_number", "user_email", "contact_number"]
         labels = {
             "lastname": "Last Name", 
             "firstname": "First Name", 
@@ -401,7 +399,6 @@ class EditUserInformation(forms.ModelForm):
             "address_details": "House No., Purok, Street Name, Building", 
             "religion": "Religion",
             "civil_status": "Civil Status", 
-            "rsbsa_ref_number": "RSBSA Reference No.",
             "emergency_contact_person": "Emergency Contact Person", 
             "emergency_contact_number": "Emergency Contact No.",
             "user_email": "Email", 
@@ -415,7 +412,6 @@ class EditUserInformation(forms.ModelForm):
             'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'religion': forms.TextInput(attrs={'class': 'form-control'}),
             'civil_status': forms.Select(attrs={'class': 'form-control'}),
-            'rsbsa_ref_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank if N/A'}),
             'user_email': forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
         }
     

@@ -75,16 +75,6 @@ Fruit Cast | Farmer Profile & Transaction History
                                 <span class="fw-medium">Religion:</span>
                                 <span class="text-sm-end">{{ farmer_info.religion }}</span>
                             </li>
-                            <li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
-                                <span class="fw-medium">RSBSA Number:</span>
-                                <span class="text-sm-end">
-                                    {% if farmer_info.rsbsa_ref_number %}
-                                        {{ farmer_info.rsbsa_ref_number }}
-                                    {% else %}
-                                        <span class="text-muted">Not provided</span>
-                                    {% endif %}
-                                </span>
-                            </li>
                         </ul>
                     </div>
                     <div class="col-md-6">
@@ -158,16 +148,6 @@ Fruit Cast | Farmer Profile & Transaction History
                             <li class="list-group-item d-flex justify-content-between">
                                 <span class="fw-medium">Religion:</span>
                                 <span>{{ farmer_info.religion }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span class="fw-medium">RSBSA Number:</span>
-                                <span>
-                                    {% if farmer_info.rsbsa_ref_number %}
-                                        {{ farmer_info.rsbsa_ref_number }}
-                                    {% else %}
-                                        <span class="text-muted">Not provided</span>
-                                    {% endif %}
-                                </span>
                             </li>
                         </ul>
                     </div>
