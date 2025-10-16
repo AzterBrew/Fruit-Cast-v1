@@ -16,7 +16,7 @@ def retrain_and_generate_forecasts_task():
     """
     Asynchronously trains Prophet models in memory and generates forecasts,
     saving the results to the database.
-    """
+    """ 
     try:
         print(f"DEBUG: AWS_STORAGE_BUCKET_NAME is {os.environ.get('AWS_STORAGE_BUCKET_NAME')}")
         print(f"DEBUG: AWS_S3_ENDPOINT_URL is {os.environ.get('AWS_S3_ENDPOINT_URL')}")

@@ -5079,7 +5079,7 @@ def generate_commodity_summary_pdf(commodities, filename, request=None):
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
-    
+     
     elements.append(maturity_table)
     doc.build(elements)
     return response

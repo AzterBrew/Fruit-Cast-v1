@@ -14,7 +14,7 @@ class Command(BaseCommand):
         ).count()
         
         self.stdout.write(f"Found {artificial_count} artificial forecast records to delete")
-        
+         
         if artificial_count > 0:
             # Delete artificial forecasts
             deleted_count = ForecastResult.objects.filter(

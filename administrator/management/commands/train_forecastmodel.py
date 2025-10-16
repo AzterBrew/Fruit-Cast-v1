@@ -27,7 +27,7 @@ class Command(BaseCommand):
                 if qs.count() < 2:
                     self.stdout.write(f"Not enough data for {muni} - {comm}")
                     continue
-
+ 
                 df = pd.DataFrame(list(qs))
                 if df.empty:
                     self.stdout.write(f"No data for {muni} - {comm}")

@@ -11,7 +11,7 @@ from django.db import transaction
 
 class Command(BaseCommand):
     help = 'Generate forecasts using the same logic as dashboard real-time forecasting'
- 
+  
     def handle(self, *args, **options):
         self.stdout.write("Starting forecast generation using dashboard logic...")
         
