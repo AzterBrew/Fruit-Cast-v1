@@ -27,7 +27,7 @@ from django.core.paginator import Paginator
 from collections import OrderedDict
 from pathlib import Path
 from django.core.management import call_command
-from .tasks import retrain_and_generate_forecasts_task
+from .tasks import retrain_and_generate_forecasts_task, retrain_selective_models_task
 from django.core.files.storage import default_storage
 from django.contrib.contenttypes.models import ContentType
 from base.models import AdminUserManagement
@@ -61,6 +61,61 @@ def convert_to_kg(weight, unit_abrv):
 
 from django.contrib.admin.views.decorators import staff_member_required
 from dateutil.relativedelta import relativedelta 
+
+def extract_commodity_municipality_pairs(selected_record_ids, record_type='harvest'):
+    """
+    Extracts unique commodity-municipality pairs from selected records.
+    
+    Args:
+        selected_record_ids: List of record IDs
+        record_type: 'harvest' or 'plant' to specify which type of records
+    
+    Returns:
+        List of dicts with 'commodity_id' and 'municipality_id'
+    """
+    pairs = []
+    
+    if record_type == 'harvest':
+        records = initHarvestRecord.objects.filter(
+            harvest_id__in=selected_record_ids
+        ).select_related('commodity_id', 'transaction__manual_municipality', 'transaction__farm_land__municipality')
+        
+        for record in records:
+            commodity_id = record.commodity_id.commodity_id
+            
+            # Determine municipality (same logic as in verification)
+            if record.transaction.farm_land:
+                municipality_id = record.transaction.farm_land.municipality.municipality_id
+            elif record.transaction.manual_municipality:
+                municipality_id = record.transaction.manual_municipality.municipality_id
+            else:
+                continue  # Skip if no municipality found
+                
+            pair = {'commodity_id': commodity_id, 'municipality_id': municipality_id}
+            if pair not in pairs:
+                pairs.append(pair)
+                
+    elif record_type == 'plant':
+        records = initPlantRecord.objects.filter(
+            plant_id__in=selected_record_ids
+        ).select_related('commodity_id', 'transaction__manual_municipality', 'transaction__farm_land__municipality')
+        
+        for record in records:
+            commodity_id = record.commodity_id.commodity_id
+            
+            # Determine municipality (same logic as in verification)
+            if record.transaction.farm_land:
+                municipality_id = record.transaction.farm_land.municipality.municipality_id
+            elif record.transaction.manual_municipality:
+                municipality_id = record.transaction.manual_municipality.municipality_id
+            else:
+                continue  # Skip if no municipality found
+                
+            pair = {'commodity_id': commodity_id, 'municipality_id': municipality_id}
+            if pair not in pairs:
+                pairs.append(pair)
+    
+    return pairs
 
 def get_admin_context(request):
     """Helper function to get admin context data"""
@@ -2054,6 +2109,9 @@ def admin_verifyplantrec(request):
         verified_status_pk = 2  # pk for "Verified"
         new_status = AccountStatus.objects.get(pk=new_status_pk)
         
+        # Extract commodity-municipality pairs for selective retraining
+        commodity_municipality_pairs = extract_commodity_municipality_pairs(selected_ids, 'plant')
+        
         # Get all matching records (not just the current page) for batch operations
         all_records = records  # Use the already filtered queryset
         
@@ -2124,9 +2182,29 @@ def admin_verifyplantrec(request):
                             content_type=ContentType.objects.get_for_model(VerifiedPlantRecord),
                             object_id=verified_record_id
                         )
-        messages.success(request, "Selected records updated successfully.")
+                        
+        # After processing all records, trigger selective retraining only once  
+        if selected_ids and commodity_municipality_pairs:
+            logger.info("Attempting to delay selective retraining Celery task for plant records...")
+            logger.info(f"Retraining for pairs: {commodity_municipality_pairs}")
+            retrain_selective_models_task.delay(commodity_municipality_pairs)
+            
+            # Create user-friendly message about affected areas
+            affected_commodities = list(set([CommodityType.objects.get(commodity_id=pair['commodity_id']).name for pair in commodity_municipality_pairs]))
+            affected_municipalities = list(set([MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality for pair in commodity_municipality_pairs]))
+            
+            if len(affected_commodities) <= 3 and len(affected_municipalities) <= 3:
+                commodities_str = ", ".join(affected_commodities)
+                municipalities_str = ", ".join(affected_municipalities)
+                messages.success(request, f"Plant records updated. Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.")
+            else:
+                messages.success(request, f"Plant records updated. Forecast models for {len(affected_commodities)} commodities in {len(affected_municipalities)} municipalities and Overall are being updated in the background.")
+        else:
+            messages.success(request, "Selected plant records updated successfully.")
+        return redirect('administrator:admin_verifyplantrec')
     else:
-        messages.error(request, "No records selected or status not chosen.")
+        if request.method == 'POST':
+            messages.error(request, "No records selected or status not chosen.")
 
     commodities = CommodityType.objects.exclude(pk=1).order_by('name')
     status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
@@ -2238,6 +2316,9 @@ def admin_verifyharvestrec(request):
         if selected_status:
             all_records = all_records.filter(record_status__pk=selected_status)
         
+        # Extract commodity-municipality pairs for selective retraining
+        commodity_municipality_pairs = extract_commodity_municipality_pairs(selected_ids, 'harvest')
+        
         for rec in all_records.filter(pk__in=selected_ids):
             # Store old status for logging
             old_status = rec.record_status.acc_status if rec.record_status else "None"
@@ -2298,31 +2379,46 @@ def admin_verifyharvestrec(request):
                     except Exception as e:
                         logger.error(f"Error during verification: {e}")
                         messages.error(request, f"An error occurred during verification: {e}")
-            elif new_status_pk == 4:  # Rejected status
-                # Delete any existing VerifiedHarvestRecord for this init record
-                verified_records = VerifiedHarvestRecord.objects.filter(prev_record=rec)
-                if verified_records.exists():
-                    for verified_record in verified_records:
-                        verified_record_id = verified_record.id
-                        verified_record.delete()
                         
-                        # Log the deletion of verified harvest record
-                        AdminUserManagement.objects.create(
-                            admin_id=admin_info,
-                            action=f"Deleted Verified Harvest Record ID {verified_record_id} due to Harvest Record ID {rec.harvest_id} being rejected",
-                            content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
-                            object_id=verified_record_id
-                        )
+        # After processing all records, trigger selective retraining only once
+        if selected_ids and commodity_municipality_pairs:
+            logger.info("Attempting to delay selective retraining Celery task...")
+            logger.info(f"Retraining for pairs: {commodity_municipality_pairs}")
+            retrain_selective_models_task.delay(commodity_municipality_pairs)
+            
+            # Create user-friendly message about affected areas
+            affected_commodities = list(set([CommodityType.objects.get(commodity_id=pair['commodity_id']).name for pair in commodity_municipality_pairs]))
+            affected_municipalities = list(set([MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality for pair in commodity_municipality_pairs]))
+            
+            if len(affected_commodities) <= 3 and len(affected_municipalities) <= 3:
+                commodities_str = ", ".join(affected_commodities)
+                municipalities_str = ", ".join(affected_municipalities)
+                messages.success(request, f"Records updated. Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.")
+            else:
+                messages.success(request, f"Records updated. Forecast models for {len(affected_commodities)} commodities in {len(affected_municipalities)} municipalities and Overall are being updated in the background.")
+                
+        # Handle rejected records
+        rejected_records = all_records.filter(pk__in=selected_ids, record_status__pk=4)
+        for rec in rejected_records:
+            # Delete any existing VerifiedHarvestRecord for this init record
+            verified_records = VerifiedHarvestRecord.objects.filter(prev_record=rec)
+            if verified_records.exists():
+                for verified_record in verified_records:
+                    verified_record_id = verified_record.id
+                    verified_record.delete()
+                    
+                    # Log the deletion of verified harvest record
+                    AdminUserManagement.objects.create(
+                        admin_id=admin_info,
+                        action=f"Deleted Verified Harvest Record ID {verified_record_id} due to Harvest Record ID {rec.harvest_id} being rejected",
+                        content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                        object_id=verified_record_id
+                    )
 
-
-                       # for rec in records.filter(pk__in=selected_ids):
-                       #     rec.record_status = new_status
-                       #     if not rec.verified_by:
-                       #         rec.verified_by = admin_info
-                       #     rec.save()
-        messages.success(request, "Selected records updated successfully.")
+        return redirect('administrator:admin_verifyharvestrec')
     else:
-        messages.error(request, "No records selected or status not chosen.")
+        if request.method == 'POST':
+            messages.error(request, "No records selected or status not chosen.")
 
     # Handle export requests
     export_type = request.GET.get('export')
@@ -2458,6 +2554,9 @@ def admin_add_verifyharvestrec(request):
                 # Reset reader for actual processing
                 reader = csv.DictReader(io.StringIO(decoded_file))
                 
+                # Track commodity-municipality pairs for selective retraining
+                csv_commodity_municipality_pairs = []
+                
                 for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
                     try:
                         row = {k.strip(): v.strip() for k, v in row.items()}
@@ -2577,6 +2676,11 @@ def admin_add_verifyharvestrec(request):
                             object_id=verified_harvest_record.id
                         )
                         
+                        # Track commodity-municipality pair for selective retraining
+                        pair = {'commodity_id': commodity_obj.commodity_id, 'municipality_id': municipality.municipality_id}
+                        if pair not in csv_commodity_municipality_pairs:
+                            csv_commodity_municipality_pairs.append(pair)
+                        
                         created_count += 1
                         
                     except Exception as e:
@@ -2588,13 +2692,31 @@ def admin_add_verifyharvestrec(request):
                 if created_count > 0:
                     messages.success(request, f'Successfully created {created_count} harvest record{"s" if created_count > 1 else ""} from CSV upload.')
                     
-                    # Trigger model retraining and forecast generation
-                    try:
-                        from .tasks import retrain_and_generate_forecasts_task
-                        retrain_and_generate_forecasts_task.delay()
-                        messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
-                    except Exception as e:
-                        messages.warning(request, f'Records created successfully, but forecast regeneration failed: {str(e)}')
+                    # Extract commodity-municipality pairs from created records for selective retraining
+                    # This needs to be tracked during the CSV processing
+                    if hasattr(locals(), 'csv_commodity_municipality_pairs') and csv_commodity_municipality_pairs:
+                        try:
+                            retrain_selective_models_task.delay(csv_commodity_municipality_pairs)
+                            
+                            affected_commodities = list(set([CommodityType.objects.get(commodity_id=pair['commodity_id']).name for pair in csv_commodity_municipality_pairs]))
+                            affected_municipalities = list(set([MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality for pair in csv_commodity_municipality_pairs]))
+                            
+                            if len(affected_commodities) <= 3 and len(affected_municipalities) <= 3:
+                                commodities_str = ", ".join(affected_commodities)
+                                municipalities_str = ", ".join(affected_municipalities) 
+                                messages.info(request, f'Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.')
+                            else:
+                                messages.info(request, f'Forecast models for {len(affected_commodities)} commodities in {len(affected_municipalities)} municipalities and Overall are being updated in the background.')
+                        except Exception as e:
+                            messages.warning(request, f'Records created successfully, but selective forecast regeneration failed: {str(e)}. Full retraining initiated.')
+                            retrain_and_generate_forecasts_task.delay()
+                    else:
+                        # Fallback to full retraining if we couldn't track pairs
+                        try:
+                            retrain_and_generate_forecasts_task.delay()
+                            messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                        except Exception as e:
+                            messages.warning(request, f'Records created successfully, but forecast regeneration failed: {str(e)}')
                 
                 if error_count > 0:
                     messages.error(request, f"Failed to process {error_count} row{'s' if error_count > 1 else ''} due to errors:")
@@ -2654,13 +2776,23 @@ def admin_add_verifyharvestrec(request):
             
             messages.success(request, f'Verified harvest record for {rec.commodity_id.name} has been successfully created.')
             
-            # Trigger model retraining and forecast generation
+            # Create commodity-municipality pair for selective retraining
+            form_commodity_municipality_pairs = [{
+                'commodity_id': rec.commodity_id.commodity_id,
+                'municipality_id': rec.municipality.municipality_id
+            }]
+            
+            # Trigger selective model retraining and forecast generation
             try:
-                from .tasks import retrain_and_generate_forecasts_task
-                retrain_and_generate_forecasts_task.delay()
-                messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                retrain_selective_models_task.delay(form_commodity_municipality_pairs)
+                messages.info(request, f'Forecast models for {rec.commodity_id.name} in {rec.municipality.municipality} and Overall are being updated in the background.')
             except Exception as e:
-                messages.warning(request, f'Record created successfully, but forecast regeneration failed: {str(e)}')
+                messages.warning(request, f'Record created successfully, but selective forecast regeneration failed: {str(e)}. Full retraining initiated.')
+                try:
+                    retrain_and_generate_forecasts_task.delay()
+                    messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                except Exception as e2:
+                    messages.warning(request, f'Record created successfully, but forecast regeneration failed: {str(e2)}')
             
             return redirect('administrator:admin_add_verifyharvestrec')
         else:
@@ -2725,10 +2857,18 @@ def admin_harvestverified(request):
                     all_records = all_records.filter(harvest_date__lte=date_to)
                 
                 # Delete selected records
+                # Extract commodity-municipality pairs from records being deleted  
+                delete_commodity_municipality_pairs = []
                 deleted_count = 0
+                
                 for record_id in selected_records:
                     record = all_records.filter(pk=record_id).first()
                     if record:
+                        # Track the commodity-municipality pair for selective retraining
+                        pair = {'commodity_id': record.commodity_id.commodity_id, 'municipality_id': record.municipality.municipality_id}
+                        if pair not in delete_commodity_municipality_pairs:
+                            delete_commodity_municipality_pairs.append(pair)
+                        
                         # Log the deletion before deleting the record
                         AdminUserManagement.objects.create(
                             admin_id=admin_info,
@@ -2743,14 +2883,27 @@ def admin_harvestverified(request):
                 if deleted_count > 0:
                     messages.success(request, f'Successfully deleted {deleted_count} harvest record{"s" if deleted_count > 1 else ""}.')
                     
-                    # Trigger model retraining and forecast generation
-                    try:
-                        # Import here to avoid circular imports
-                        from .tasks import retrain_and_generate_forecasts_task
-                        retrain_and_generate_forecasts_task.delay()
-                        messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
-                    except Exception as e:
-                        messages.warning(request, f'Records deleted successfully, but forecast regeneration failed: {str(e)}')
+                    # Trigger selective model retraining for affected commodity-municipality pairs
+                    if delete_commodity_municipality_pairs:
+                        try:
+                            retrain_selective_models_task.delay(delete_commodity_municipality_pairs)
+                            
+                            affected_commodities = list(set([CommodityType.objects.get(commodity_id=pair['commodity_id']).name for pair in delete_commodity_municipality_pairs]))
+                            affected_municipalities = list(set([MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality for pair in delete_commodity_municipality_pairs]))
+                            
+                            if len(affected_commodities) <= 3 and len(affected_municipalities) <= 3:
+                                commodities_str = ", ".join(affected_commodities)
+                                municipalities_str = ", ".join(affected_municipalities)
+                                messages.info(request, f'Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.')
+                            else:
+                                messages.info(request, f'Forecast models for {len(affected_commodities)} commodities in {len(affected_municipalities)} municipalities and Overall are being updated in the background.')
+                        except Exception as e:
+                            messages.warning(request, f'Records deleted successfully, but selective forecast regeneration failed: {str(e)}. Full retraining initiated.')
+                            try:
+                                retrain_and_generate_forecasts_task.delay()
+                                messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                            except Exception as e2:
+                                messages.warning(request, f'Records deleted successfully, but forecast regeneration failed: {str(e2)}')
                 
             except Exception as e:
                 messages.error(request, f'Error deleting records: {str(e)}')
@@ -2959,13 +3112,23 @@ def admin_harvestverified_edit(request, record_id):
             
             messages.success(request, 'Harvest record updated successfully.')
             
-            # Trigger model retraining and forecast generation
+            # Create commodity-municipality pair for selective retraining
+            edit_commodity_municipality_pairs = [{
+                'commodity_id': updated_record.commodity_id.commodity_id,
+                'municipality_id': updated_record.municipality.municipality_id
+            }]
+            
+            # Trigger selective model retraining and forecast generation
             try:
-                from .tasks import retrain_and_generate_forecasts_task
-                retrain_and_generate_forecasts_task.delay()
-                messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                retrain_selective_models_task.delay(edit_commodity_municipality_pairs)
+                messages.info(request, f'Forecast models for {updated_record.commodity_id.name} in {updated_record.municipality.municipality} and Overall are being updated in the background.')
             except Exception as e:
-                messages.warning(request, f'Record updated successfully, but forecast regeneration failed: {str(e)}')
+                messages.warning(request, f'Record updated successfully, but selective forecast regeneration failed: {str(e)}. Full retraining initiated.')
+                try:
+                    retrain_and_generate_forecasts_task.delay()
+                    messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
+                except Exception as e2:
+                    messages.warning(request, f'Record updated successfully, but forecast regeneration failed: {str(e2)}')
             
             return redirect('administrator:admin_harvestverified_view', record_id=record.pk)
         else:
