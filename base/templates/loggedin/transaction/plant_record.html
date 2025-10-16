@@ -12,29 +12,23 @@
         </div>
     </div>
 
-    <!-- Information Alert -->
-    <div class="alert alert-warning border-0 mb-4">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-info-circle text-warning me-3 fs-5"></i>
-            <p class="mb-0 small">
-                <strong>Note:</strong> Proceeding with Record does not mean the record has been saved in the database. 
-                Proceed with Record and Complete the Transaction to successfully submit the record.
-            </p>
-        </div>
-    </div>
-
     <form method="POST" novalidate id="plant-record-form">
         {% csrf_token %}
-        <div class="row g-3">
-            {% for field in form %}
-                <div class="col-md-6">
-                    <label class="form-label">{{ field.label_tag }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small mt-1">{{ field.errors }}</div>
-                    {% endif %}
-                </div>
-            {% endfor %}
+        <div class="mb-4">
+            <h5 class="text-success mb-3">
+                <i class="bi bi-clipboard-data me-2"></i>Harvest Details
+            </h5>
+            <div class="row g-3">
+                {% for field in form %}
+                    <div class="col-md-6">
+                        <label class="form-label">{{ field.label_tag }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
         </div>
 
         <!-- Location Section -->
@@ -189,7 +183,34 @@
         });
     }
 
-    // Date validation for plant_date (limit year to 4 digits)
+    // Date validation for plant_date
+    function validatePlantDate() {
+        const plantDateInput = document.getElementById('id_plant_date');
+        if (plantDateInput && plantDateInput.value) {
+            const selectedDate = new Date(plantDateInput.value);
+            const today = new Date();
+            const tenYearsAgo = new Date();
+            tenYearsAgo.setFullYear(today.getFullYear() - 10);
+            
+            // Clear any previous custom validity
+            plantDateInput.setCustomValidity('');
+            
+            if (selectedDate > today) {
+                plantDateInput.setCustomValidity('Plant date cannot be in the future.');
+                plantDateInput.reportValidity();
+                return false;
+            } else if (selectedDate < tenYearsAgo) {
+                plantDateInput.setCustomValidity('Plant date cannot be more than 10 years ago.');
+                plantDateInput.reportValidity();
+                return false;
+            } else {
+                plantDateInput.setCustomValidity('');
+                return true;
+            }
+        }
+        return true;
+    }
+
     const plantDateInput = document.getElementById('id_plant_date');
     if (plantDateInput) {
         plantDateInput.addEventListener('input', function() {
@@ -203,6 +224,9 @@
                 }
             }
         });
+        
+        plantDateInput.addEventListener('change', validatePlantDate);
+        plantDateInput.addEventListener('blur', validatePlantDate);
     }
     
     // Confirmation on submit
@@ -215,6 +239,12 @@
                 e.preventDefault();
                 const minHarvest = document.getElementById('id_min_expected_harvest');
                 if (minHarvest) minHarvest.focus();
+                return false;
+            }
+            
+            // Validate plant date before submission
+            if (!validatePlantDate()) {
+                e.preventDefault();
                 return false;
             }
             

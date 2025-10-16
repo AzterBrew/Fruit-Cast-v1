@@ -70,8 +70,7 @@
         <div class="d-flex align-items-center">
             <i class="bi bi-info-circle text-warning me-3 fs-5"></i>
             <p class="mb-0 small">
-                <strong>Note:</strong> Proceeding with Record does not mean the record has been saved in the database. 
-                Proceed with Record and Complete the Transaction to successfully submit the record.
+                <strong>Note:</strong> This is for submitting a record of your harvest that is not related to any plant records you submitted.
             </p>
         </div>
     </div>
@@ -230,7 +229,34 @@
         });
     }
  
-    // Date validation for harvest_date (limit year to 4 digits)
+    // Date validation for harvest_date
+    function validateHarvestDate() {
+        const harvestDateInput = document.getElementById('id_harvest_date');
+        if (harvestDateInput && harvestDateInput.value) {
+            const selectedDate = new Date(harvestDateInput.value);
+            const today = new Date();
+            const tenYearsAgo = new Date();
+            tenYearsAgo.setFullYear(today.getFullYear() - 10);
+            
+            // Clear any previous custom validity
+            harvestDateInput.setCustomValidity('');
+            
+            if (selectedDate > today) {
+                harvestDateInput.setCustomValidity('Harvest date cannot be in the future.');
+                harvestDateInput.reportValidity();
+                return false;
+            } else if (selectedDate < tenYearsAgo) {
+                harvestDateInput.setCustomValidity('Harvest date cannot be more than 10 years ago.');
+                harvestDateInput.reportValidity();
+                return false;
+            } else {
+                harvestDateInput.setCustomValidity('');
+                return true;
+            }
+        }
+        return true;
+    }
+
     const harvestDateInput = document.getElementById('id_harvest_date');
     if (harvestDateInput) {
         harvestDateInput.addEventListener('input', function() {
@@ -244,6 +270,9 @@
                 }
             }
         });
+        
+        harvestDateInput.addEventListener('change', validateHarvestDate);
+        harvestDateInput.addEventListener('blur', validateHarvestDate);
     }
 
     
@@ -251,6 +280,12 @@
     const form = document.getElementById("harvest-record-form");
     if (form) {
         form.addEventListener("submit", function (e) {
+            // Validate harvest date before submission
+            if (!validateHarvestDate()) {
+                e.preventDefault();
+                return false;
+            }
+            
             const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
             if (!confirm(message)) {
                 e.preventDefault();
