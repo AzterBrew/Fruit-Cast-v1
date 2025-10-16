@@ -5,9 +5,15 @@ from django.utils import timezone
 from .models import CommodityType, ForecastResult, ForecastBatch, Month, MunicipalityName
 import json, calendar, os, joblib
 from django.db import models
-import numpy as np
-import pandas as pd
-from prophet import Prophet
+try:
+    import numpy as np
+    import pandas as pd
+    from prophet import Prophet
+except ImportError:
+    # Handle missing dependencies gracefully
+    np = None
+    pd = None
+    Prophet = None
 from django.conf import settings
 from django.core.files.storage import default_storage
 from io import BytesIO

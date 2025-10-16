@@ -16,8 +16,14 @@ from django.utils.crypto import get_random_string
 from .decorators import admin_or_agriculturist_required, superuser_required
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from dashboard.models import ForecastBatch, ForecastResult, VerifiedHarvestRecord, VerifiedPlantRecord
-from prophet import Prophet
-import pandas as pd
+try:
+    from prophet import Prophet
+except ImportError:
+    Prophet = None
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 import logging
 from django.db.models import Q, Count
 from datetime import datetime, date

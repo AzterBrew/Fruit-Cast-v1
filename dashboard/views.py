@@ -16,8 +16,14 @@ from django.urls import reverse
 from django.http import HttpResponseForbidden
 from django.db.models import Sum, Avg, Max, Count, Q
 from django.http import JsonResponse
-from prophet import Prophet
-import pandas as pd
+try:
+    from prophet import Prophet
+except ImportError:
+    Prophet = None
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 import json, joblib,csv, os
 from collections import defaultdict, OrderedDict
 import random
@@ -25,7 +31,10 @@ from django.db.models.functions import TruncMonth, ExtractYear, ExtractMonth
 import calendar
 from datetime import datetime
 from django.utils import timezone
-from shapely.geometry import shape
+try:
+    from shapely.geometry import shape
+except ImportError:
+    shape = None
 # from dashboard.utils import generate_notifications, get_current_month
 from calendar import monthrange
 from pathlib import Path
@@ -259,89 +268,89 @@ def forecast(request):
         ).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
         print("Filtered by municipality:", selected_municipality_id, qs)
         
-    if not qs.exists():
+    # Always check for forecast data regardless of historical data availability
+    # Get forecast data from ForecastResult table (pre-computed)
+    # Use utility function to get latest forecast per combination regardless of batch
+    base_forecast_qs = ForecastResult.objects.filter(
+        commodity_id=selected_commodity_id,
+        municipality_id=selected_municipality_id
+    )
+    forecast_results = get_latest_forecasts_by_combination(base_forecast_qs).order_by('forecast_year', 'forecast_month__number')
+    
+    if not forecast_results.exists():
         forecast_data = None
+        print("No forecast results found in database.")
     else:
-        # Prepare historical data - show ALL available historical data
-        df = pd.DataFrame(list(qs))
-        df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
-        df['ds'] = pd.to_datetime(df['ds'])
-        df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
-        df = df.groupby('ds', as_index=False)['y'].sum()
+        print(f"Found {forecast_results.count()} forecast results in database")
         
-        # No date filtering for historical data display - show all available data
-        print(f"All historical data: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
-
-        # Get forecast data from ForecastResult table (pre-computed)
-        # Use utility function to get latest forecast per combination regardless of batch
-        base_forecast_qs = ForecastResult.objects.filter(
-            commodity_id=selected_commodity_id,
-            municipality_id=selected_municipality_id
-        )
-        forecast_results = get_latest_forecasts_by_combination(base_forecast_qs).order_by('forecast_year', 'forecast_month__number')
-        
-        if not forecast_results.exists():
-            forecast_data = None
-            print("No forecast results found in database.")
+        # Prepare historical data if available - show ALL available historical data
+        df = pd.DataFrame()
+        if qs.exists():
+            df = pd.DataFrame(list(qs))
+            df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
+            df['ds'] = pd.to_datetime(df['ds'])
+            df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
+            df = df.groupby('ds', as_index=False)['y'].sum()
+            print(f"Historical data: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
         else:
-            print(f"Found {forecast_results.count()} forecast results in database")
-            
-            # Create a comprehensive timeline that includes both historical and forecast periods
-            forecast_dates = []
-            forecast_values_list = []
-            
-            for result in forecast_results:
-                # Create date from year and month
-                forecast_date = datetime(result.forecast_year, result.forecast_month.number, 1)
-                forecast_dates.append(forecast_date)
-                forecast_values_list.append(float(result.forecasted_amount_kg))
-            
-            # Create combined timeline that includes ALL historical data and forecast data
-            current_year = datetime.now().year
-            
-            # Start timeline from earliest historical data or previous year, whichever is earlier
-            earliest_historical = df['ds'].min() if not df.empty else datetime(current_year - 1, 1, 1)
-            timeline_start = min(earliest_historical, datetime(current_year - 1, 1, 1))
-            
-            # End timeline at end of next year (forecast range)
-            timeline_end = datetime(current_year + 1, 12, 31)
-            
-            all_dates = pd.date_range(start=timeline_start, end=timeline_end, freq='MS')
-            
-            # Create dictionaries for easy lookup
-            hist_dict = dict(zip(df['ds'], df['y']))
-            forecast_dict = dict(zip(forecast_dates, forecast_values_list))
-            
-            # Build aligned arrays for Chart.js
-            all_labels = [d.strftime('%b %Y') for d in all_dates]
-            hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
-            forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
-            
-            # Combined data for CSV/table (only forecasts from January 2025 onwards)
-            future_forecast_data = []
-            
-            for result in forecast_results:
-                forecast_date = datetime(result.forecast_year, result.forecast_month.number, 1)
-                # Only include forecasts from January 2025 onwards
-                if forecast_date >= datetime(2025, 1, 1):
-                    future_forecast_data.append([
-                        forecast_date.strftime('%b %Y'),
-                        round(float(result.forecasted_amount_kg), 2),
-                        result.forecast_month.number,
-                        result.forecast_year
-                    ])
+            print("No historical data available, but forecast data exists - showing forecasts only")
+        
+        # Create a comprehensive timeline that includes both historical and forecast periods
+        forecast_dates = []
+        forecast_values_list = []
+        
+        for result in forecast_results:
+            # Create date from year and month
+            forecast_date = datetime(result.forecast_year, result.forecast_month.number, 1)
+            forecast_dates.append(forecast_date)
+            forecast_values_list.append(float(result.forecasted_amount_kg))
+        
+        # Create combined timeline that includes ALL historical data and forecast data
+        current_year = datetime.now().year
+        
+        # Start timeline from earliest historical data or previous year, whichever is earlier
+        earliest_historical = df['ds'].min() if not df.empty else datetime(current_year - 1, 1, 1)
+        timeline_start = min(earliest_historical, datetime(current_year - 1, 1, 1))
+        
+        # End timeline at end of next year (forecast range)
+        timeline_end = datetime(current_year + 1, 12, 31)
+        
+        all_dates = pd.date_range(start=timeline_start, end=timeline_end, freq='MS')
+        
+        # Create dictionaries for easy lookup
+        hist_dict = dict(zip(df['ds'], df['y'])) if not df.empty else {}
+        forecast_dict = dict(zip(forecast_dates, forecast_values_list))
+        
+        # Build aligned arrays for Chart.js
+        all_labels = [d.strftime('%b %Y') for d in all_dates]
+        hist_values = [float(hist_dict.get(d, 0)) if d in hist_dict else None for d in all_dates]
+        forecast_values = [float(forecast_dict.get(d, 0)) if d in forecast_dict else None for d in all_dates]
+        
+        # Combined data for CSV/table (only forecasts from January 2025 onwards)
+        future_forecast_data = []
+        
+        for result in forecast_results:
+            forecast_date = datetime(result.forecast_year, result.forecast_month.number, 1)
+            # Only include forecasts from January 2025 onwards
+            if forecast_date >= datetime(2025, 1, 1):
+                future_forecast_data.append([
+                    forecast_date.strftime('%b %Y'),
+                    round(float(result.forecasted_amount_kg), 2),
+                    result.forecast_month.number,
+                    result.forecast_year
+                ])
 
-            # Create forecast_data structure for the template
-            forecast_data = {
-                'all_labels': json.dumps(all_labels),
-                'hist_values': json.dumps(hist_values),
-                'forecast_values': json.dumps(forecast_values),
-                'combined': future_forecast_data,
-            }
+        # Create forecast_data structure for the template
+        forecast_data = {
+            'all_labels': json.dumps(all_labels),
+            'hist_values': json.dumps(hist_values),
+            'forecast_values': json.dumps(forecast_values),
+            'combined': future_forecast_data,
+        }
 
-            print("Historical data points:", sum(1 for v in hist_values if v is not None))
-            print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
-            print("Overlapping timeline created with", len(all_labels), "labels")
+        print("Historical data points:", sum(1 for v in hist_values if v is not None))
+        print("Forecast data points:", sum(1 for v in forecast_values if v is not None))
+        print("Overlapping timeline created with", len(all_labels), "labels")
             
             
     now = datetime.now()
