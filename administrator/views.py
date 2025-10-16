@@ -1587,6 +1587,16 @@ def admin_commodity_list(request):
     
     commodities = CommodityType.objects.exclude(pk=1).order_by('name')  # Exclude 'Not Listed' commodity and order alphabetically
     
+    # Handle export requests
+    export_type = request.GET.get('export')
+    export_format = request.GET.get('format')
+    
+    if export_type and export_format:
+        if export_type == 'records':
+            return export_commodity_records_csv(commodities, 'commodity_records', export_format, request)
+        elif export_type == 'summary':
+            return export_commodity_summary_csv(commodities, 'commodity_summary', export_format, request)
+    
     # Pagination
     paginator = Paginator(commodities, 10)  # Show 10 commodities per page
     page_number = request.GET.get('page')
@@ -2585,9 +2595,9 @@ def admin_harvestverified(request):
     
     if export_type and export_format:
         if export_type == 'records':
-            return export_verified_harvest_records_csv(records, 'verified_harvest_records', export_format)
+            return export_verified_harvest_records_csv(records, 'verified_harvest_records', export_format, request)
         elif export_type == 'summary':
-            return export_verified_harvest_records_summary_csv(records, 'verified_harvest_summary', export_format)
+            return export_verified_harvest_records_summary_csv(records, 'verified_harvest_summary', export_format, request)
 
     context = get_admin_context(request)
     context.update({
@@ -3102,6 +3112,90 @@ def admin_account_detail(request, account_id):
 #                 request.user.save()
 
 # Export functions for CSV and PDF generation
+def export_commodity_records_csv(commodities, filename, format_type='csv', request=None):
+    """Export commodity records to CSV or PDF format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'name', 'average_weight_per_unit_kg', 'seasonal_months', 'years_to_mature', 'years_to_bearfruit'
+        ])
+        
+        for commodity in commodities:
+            seasonal_months = ";".join([month.name for month in commodity.seasonal_months.all()])
+            writer.writerow([
+                commodity.name,
+                commodity.average_weight_per_unit_kg,
+                seasonal_months,
+                commodity.years_to_mature or '',
+                commodity.years_to_bearfruit or ''
+            ])
+        
+        return response
+    elif format_type == 'pdf':
+        return generate_commodity_records_pdf(commodities, filename, request)
+
+def export_commodity_summary_csv(commodities, filename, format_type='csv', request=None):
+    """Export commodity summary to CSV or PDF format"""
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+        
+        # Summary data for commodities
+        seasonal_summary = {}
+        maturity_summary = {}
+        
+        for commodity in commodities:
+            # Group by seasonal months
+            seasons = [month.name for month in commodity.seasonal_months.all()]
+            season_key = ", ".join(seasons) if seasons else "No seasons specified"
+            
+            if season_key not in seasonal_summary:
+                seasonal_summary[season_key] = {'count': 0, 'avg_weight': 0, 'commodities': []}
+            
+            seasonal_summary[season_key]['count'] += 1
+            seasonal_summary[season_key]['avg_weight'] += float(commodity.average_weight_per_unit_kg)
+            seasonal_summary[season_key]['commodities'].append(commodity.name)
+            
+            # Group by maturity years
+            maturity = commodity.years_to_mature or 0
+            maturity_key = f"{maturity} years" if maturity > 0 else "Not specified"
+            
+            if maturity_key not in maturity_summary:
+                maturity_summary[maturity_key] = {'count': 0, 'commodities': []}
+            
+            maturity_summary[maturity_key]['count'] += 1
+            maturity_summary[maturity_key]['commodities'].append(commodity.name)
+        
+        writer = csv.writer(response)
+        
+        # Seasonal summary
+        writer.writerow(['Seasonal Summary'])
+        writer.writerow(['Seasonal Period', 'Number of Commodities', 'Average Weight (kg)', 'Commodities'])
+        for season, data in seasonal_summary.items():
+            avg_weight = data['avg_weight'] / data['count'] if data['count'] > 0 else 0
+            commodities_list = ", ".join(data['commodities'][:5])  # Show first 5
+            if len(data['commodities']) > 5:
+                commodities_list += f" and {len(data['commodities']) - 5} more"
+            writer.writerow([season, data['count'], f"{avg_weight:.2f}", commodities_list])
+        
+        writer.writerow([])  # Empty row
+        
+        # Maturity summary
+        writer.writerow(['Maturity Summary'])
+        writer.writerow(['Years to Mature', 'Number of Commodities', 'Commodities'])
+        for maturity, data in maturity_summary.items():
+            commodities_list = ", ".join(data['commodities'][:5])  # Show first 5
+            if len(data['commodities']) > 5:
+                commodities_list += f" and {len(data['commodities']) - 5} more"
+            writer.writerow([maturity, data['count'], commodities_list])
+        
+        return response
+    elif format_type == 'pdf':
+        return generate_commodity_summary_pdf(commodities, filename, request)
+
 def export_harvest_records_csv(records, filename, format_type='csv', request=None):
     """Export harvest records to CSV or PDF format"""
     if format_type == 'csv':
@@ -3294,7 +3388,7 @@ def export_plant_records_summary_csv(records, filename, format_type='csv'):
         
         return response
     elif format_type == 'pdf':
-        return generate_plant_records_summary_pdf(records, filename)
+        return generate_plant_records_summary_pdf(records, filename, request)
 
 def export_accounts_csv(accounts, filename, format_type='csv', request=None):
     """Export accounts to CSV or PDF format"""
@@ -3431,9 +3525,9 @@ def export_accounts_summary_csv(accounts, filename, format_type='csv', request=N
         
         return response
     elif format_type == 'pdf':
-        return generate_accounts_summary_pdf(accounts, filename)
+        return generate_accounts_summary_pdf(accounts, filename, request)
 
-def export_verified_harvest_records_csv(records, filename, format_type='csv'):
+def export_verified_harvest_records_csv(records, filename, format_type='csv', request=None):
     """Export verified harvest records to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -3460,9 +3554,9 @@ def export_verified_harvest_records_csv(records, filename, format_type='csv'):
         
         return response
     elif format_type == 'pdf':
-        return generate_verified_harvest_records_pdf(records, filename)
+        return generate_verified_harvest_records_pdf(records, filename, request)
 
-def export_verified_harvest_records_summary_csv(records, filename, format_type='csv'):
+def export_verified_harvest_records_summary_csv(records, filename, format_type='csv', request=None):
     """Export verified harvest records summary to CSV or PDF format grouped by commodity, municipality, and month/year"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -3507,7 +3601,7 @@ def export_verified_harvest_records_summary_csv(records, filename, format_type='
         
         return response
     elif format_type == 'pdf':
-        return generate_verified_harvest_records_summary_pdf(records, filename)
+        return generate_verified_harvest_records_summary_pdf(records, filename, request)
 
 # PDF Generation Functions
 def generate_harvest_records_pdf(records, filename, request=None):
@@ -3603,14 +3697,14 @@ def generate_harvest_records_pdf(records, filename, request=None):
     col_widths = [80, 120, 80, 80, 80, 80, 120, 80]
     table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
@@ -3649,20 +3743,63 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
     title = Paragraph("Harvest Records Summary Report", title_style)
     elements.append(title)
     
-    # Add municipality information if available
-    if request and request.user.is_authenticated:
-        try:
-            user_info = UserInformation.objects.get(auth_user=request.user)
-            admin_info = AdminInformation.objects.get(userinfo_id=user_info)
-            municipality_assigned = admin_info.municipality_incharge
-            is_superuser = request.user.is_superuser
-            is_pk14 = municipality_assigned.pk == 14
+    # Add filter information if request is available
+    if request:
+        filter_info = []
+        
+        # Municipality filter
+        municipality_filter = request.GET.get('municipality')
+        status_filter = request.GET.get('status')
+        commodity_filter = request.GET.get('commodity')
+        
+        if municipality_filter:
+            try:
+                municipality = MunicipalityName.objects.get(pk=municipality_filter)
+                filter_info.append(f"({municipality.municipality} Municipality)")
+            except MunicipalityName.DoesNotExist:
+                pass
+        else:
+            filter_info.append("(Overall in Bataan - All Municipalities)")
+        
+        # Status and Commodity filters
+        if status_filter or commodity_filter:
+            details = []
+            if status_filter:
+                try:
+                    status = AccountStatus.objects.get(pk=status_filter)
+                    details.append(f"{status.acc_status} Records")
+                except AccountStatus.DoesNotExist:
+                    pass
+            if commodity_filter:
+                try:
+                    commodity = CommodityType.objects.get(pk=commodity_filter)
+                    details.append(f"{commodity.name} Commodity")
+                except CommodityType.DoesNotExist:
+                    pass
             
-            if not is_superuser and not is_pk14:
-                subtitle = Paragraph(f"(with {municipality_assigned.municipality} records)", subtitle_style)
-                elements.append(subtitle)
-        except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
-            pass
+            if details:
+                filter_info.append(f"({' - '.join(details)})")
+        
+        # Add filter information to PDF
+        for i, info in enumerate(filter_info):
+            style = subtitle_style if i == 0 else subtitle_style
+            subtitle = Paragraph(info, style)
+            elements.append(subtitle)
+    else:
+        # Add municipality information if available
+        if request and request.user.is_authenticated:
+            try:
+                user_info = UserInformation.objects.get(auth_user=request.user)
+                admin_info = AdminInformation.objects.get(userinfo_id=user_info)
+                municipality_assigned = admin_info.municipality_incharge
+                is_superuser = request.user.is_superuser
+                is_pk14 = municipality_assigned.pk == 14
+                
+                if not is_superuser and not is_pk14:
+                    subtitle = Paragraph(f"(with {municipality_assigned.municipality} records)", subtitle_style)
+                    elements.append(subtitle)
+            except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
+                pass
     
     elements.append(Spacer(1, 12))
     
@@ -3702,15 +3839,17 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
     
     table = Table(data)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
     
     elements.append(table)
@@ -3731,22 +3870,59 @@ def generate_plant_records_pdf(records, filename, request=None):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=10, alignment=1)
-    
-    subtitle_style = ParagraphStyle(
-        'Subtitle',
-        parent=styles['Normal'],
-        fontSize=12,
-        spaceAfter=20,
-        alignment=1,
-        textColor=colors.grey
-    )
+                                fontSize=16, spaceAfter=20, alignment=1)
+    subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], 
+                                   fontSize=12, spaceAfter=12, alignment=1)
     
     title = Paragraph("Plant Records Report", title_style)
     elements.append(title)
     
+    # Add filter information subheadings
+    if request and hasattr(request, 'GET'):
+        filter_info = []
+        
+        # Municipality and Barangay filter info
+        municipality = request.GET.get('municipality', '').strip()
+        barangay = request.GET.get('barangay', '').strip()
+        
+        if municipality and municipality != 'All':
+            if barangay and barangay != 'All':
+                filter_info.append(f"({municipality} - {barangay})")
+            else:
+                filter_info.append(f"({municipality} - All Barangay)")
+        else:
+            filter_info.append("(Overall in Bataan - All Barangay)")
+        
+        # Date range filter info
+        start_date = request.GET.get('start_date', '').strip()
+        end_date = request.GET.get('end_date', '').strip()
+        
+        if start_date and end_date:
+            from datetime import datetime
+            try:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                date_info = f"(From {start_dt.strftime('%Y %B %d')} to {end_dt.strftime('%Y %B %d')})"
+                filter_info.append(date_info)
+            except ValueError:
+                pass
+        
+        # Commodity filter info
+        commodity = request.GET.get('commodity', '').strip()
+        if commodity and commodity != 'All':
+            filter_info.append(f"(Commodity: {commodity})")
+        
+        # Status filter info
+        status = request.GET.get('status', '').strip()
+        if status and status != 'All':
+            filter_info.append(f"(Status: {status})")
+        
+        # Add filter information to PDF
+        for info in filter_info:
+            elements.append(Paragraph(info, subtitle_style))
+    
     # Add municipality information if available
-    if request and request.user.is_authenticated:
+    elif request and request.user.is_authenticated:
         try:
             user_info = UserInformation.objects.get(auth_user=request.user)
             admin_info = AdminInformation.objects.get(userinfo_id=user_info)
@@ -3795,14 +3971,14 @@ def generate_plant_records_pdf(records, filename, request=None):
     col_widths = [80, 120, 80, 80, 80, 80, 80, 120]
     table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
@@ -3812,10 +3988,10 @@ def generate_plant_records_pdf(records, filename, request=None):
     doc.build(elements)
     return response
 
-def generate_plant_records_summary_pdf(records, filename):
+def generate_plant_records_summary_pdf(records, filename, request=None):
     """Generate PDF for plant records summary"""
     if not PDF_AVAILABLE:
-        return export_plant_records_summary_csv(records, filename + '_fallback', 'csv')
+        return export_plant_records_summary_csv(records, filename + '_fallback', 'csv', request)
     
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
@@ -3825,10 +4001,57 @@ def generate_plant_records_summary_pdf(records, filename):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=30, alignment=1)
+                                fontSize=16, spaceAfter=20, alignment=1)
+    subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], 
+                                   fontSize=12, spaceAfter=12, alignment=1)
     
     title = Paragraph("Plant Records Summary Report", title_style)
     elements.append(title)
+    
+    # Add filter information subheadings
+    if request and hasattr(request, 'GET'):
+        filter_info = []
+        
+        # Municipality and Barangay filter info
+        municipality = request.GET.get('municipality', '').strip()
+        barangay = request.GET.get('barangay', '').strip()
+        
+        if municipality and municipality != 'All':
+            if barangay and barangay != 'All':
+                filter_info.append(f"({municipality} - {barangay})")
+            else:
+                filter_info.append(f"({municipality} - All Barangay)")
+        else:
+            filter_info.append("(Overall in Bataan - All Barangay)")
+        
+        # Date range filter info
+        start_date = request.GET.get('start_date', '').strip()
+        end_date = request.GET.get('end_date', '').strip()
+        
+        if start_date and end_date:
+            from datetime import datetime
+            try:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                date_info = f"(From {start_dt.strftime('%Y %B %d')} to {end_dt.strftime('%Y %B %d')})"
+                filter_info.append(date_info)
+            except ValueError:
+                pass
+        
+        # Commodity filter info
+        commodity = request.GET.get('commodity', '').strip()
+        if commodity and commodity != 'All':
+            filter_info.append(f"(Commodity: {commodity})")
+        
+        # Status filter info
+        status = request.GET.get('status', '').strip()
+        if status and status != 'All':
+            filter_info.append(f"(Status: {status})")
+        
+        # Add filter information to PDF
+        for info in filter_info:
+            elements.append(Paragraph(info, subtitle_style))
+    
     elements.append(Spacer(1, 12))
     
     summary_data = {}
@@ -3865,15 +4088,16 @@ def generate_plant_records_summary_pdf(records, filename):
     
     table = Table(data)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.lightgrey, colors.white])
     ]))
     
     elements.append(table)
@@ -3907,6 +4131,49 @@ def generate_accounts_pdf(accounts, filename, request=None):
     
     title = Paragraph("Accounts Report", title_style)
     elements.append(title)
+    
+    # Add filter information if request is available
+    if request:
+        filter_info = []
+        
+        # Municipality filter
+        municipality_filter = request.GET.get('municipality')
+        status_filter = request.GET.get('status')
+        acctype_filter = request.GET.get('acctype')
+        
+        if municipality_filter:
+            try:
+                municipality = MunicipalityName.objects.get(pk=municipality_filter)
+                filter_info.append(f"({municipality.municipality} Municipality)")
+            except MunicipalityName.DoesNotExist:
+                pass
+        else:
+            filter_info.append("(Overall in Bataan - All Municipalities)")
+        
+        # Account type and status filters
+        if acctype_filter or status_filter:
+            details = []
+            if status_filter:
+                try:
+                    status = AccountStatus.objects.get(pk=status_filter)
+                    details.append(f"{status.acc_status}")
+                except AccountStatus.DoesNotExist:
+                    pass
+            if acctype_filter:
+                try:
+                    acctype = AccountType.objects.get(pk=acctype_filter)
+                    details.append(f"{acctype.account_type}")
+                except AccountType.DoesNotExist:
+                    pass
+            
+            if details:
+                filter_info.append(f"({' '.join(details)} Accounts)")
+        
+        # Add filter information to PDF
+        for i, info in enumerate(filter_info):
+            style = subtitle_style if i == 0 else subtitle_style
+            subtitle = Paragraph(info, style)
+            elements.append(subtitle)
     
     # Get assigned municipality for record count filtering
     assigned_municipality = None
@@ -3985,26 +4252,27 @@ def generate_accounts_pdf(accounts, filename, request=None):
     col_widths = [30, 100, 120, 80, 80, 60, 60, 70, 50, 60]
     table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
     
     elements.append(table)
     doc.build(elements)
     return response
 
-def generate_accounts_summary_pdf(accounts, filename):
+def generate_accounts_summary_pdf(accounts, filename, request=None):
     """Generate PDF for accounts summary"""
     if not PDF_AVAILABLE:
-        return export_accounts_summary_csv(accounts, filename + '_fallback', 'csv')
+        return export_accounts_summary_csv(accounts, filename + '_fallback', 'csv', request)
     
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
@@ -4014,10 +4282,63 @@ def generate_accounts_summary_pdf(accounts, filename):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=30, alignment=1)
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.grey
+    )
     
     title = Paragraph("Accounts Summary Report", title_style)
     elements.append(title)
+    
+    # Add filter information if request is available
+    if request:
+        filter_info = []
+        
+        # Municipality filter
+        municipality_filter = request.GET.get('municipality')
+        status_filter = request.GET.get('status')
+        acctype_filter = request.GET.get('acctype')
+        
+        if municipality_filter:
+            try:
+                municipality = MunicipalityName.objects.get(pk=municipality_filter)
+                filter_info.append(f"({municipality.municipality} Municipality)")
+            except MunicipalityName.DoesNotExist:
+                pass
+        else:
+            filter_info.append("(Overall in Bataan - All Municipalities)")
+        
+        # Account type and status filters
+        if acctype_filter or status_filter:
+            details = []
+            if status_filter:
+                try:
+                    status = AccountStatus.objects.get(pk=status_filter)
+                    details.append(f"{status.acc_status}")
+                except AccountStatus.DoesNotExist:
+                    pass
+            if acctype_filter:
+                try:
+                    acctype = AccountType.objects.get(pk=acctype_filter)
+                    details.append(f"{acctype.account_type}")
+                except AccountType.DoesNotExist:
+                    pass
+            
+            if details:
+                filter_info.append(f"({' '.join(details)} Accounts)")
+        
+        # Add filter information to PDF
+        for i, info in enumerate(filter_info):
+            style = subtitle_style
+            subtitle = Paragraph(info, style)
+            elements.append(subtitle)
+    
     elements.append(Spacer(1, 12))
     
     summary_data = {}
@@ -4051,25 +4372,27 @@ def generate_accounts_summary_pdf(accounts, filename):
     
     table = Table(data)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
     
     elements.append(table)
     doc.build(elements)
     return response
 
-def generate_verified_harvest_records_pdf(records, filename):
+def generate_verified_harvest_records_pdf(records, filename, request=None):
     """Generate PDF for verified harvest records"""
     if not PDF_AVAILABLE:
-        return export_verified_harvest_records_csv(records, filename + '_fallback', 'csv')
+        return export_verified_harvest_records_csv(records, filename + '_fallback', 'csv', request)
     
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
@@ -4080,10 +4403,85 @@ def generate_verified_harvest_records_pdf(records, filename):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=30, alignment=1)
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=8,
+        alignment=1,
+        textColor=colors.grey
+    )
+    
+    date_style = ParagraphStyle(
+        'DateInfo',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.darkgrey
+    )
     
     title = Paragraph("Verified Harvest Records Report", title_style)
     elements.append(title)
+    
+    # Add filter information if request is available
+    if request:
+        filter_info = []
+        
+        # Municipality and Barangay filter
+        municipality_filter = request.GET.get('municipality')
+        barangay_filter = request.GET.get('barangay')
+        
+        if municipality_filter:
+            try:
+                municipality = MunicipalityName.objects.get(pk=municipality_filter)
+                if barangay_filter:
+                    barangay = BarangayName.objects.get(pk=barangay_filter)
+                    filter_info.append(f"({municipality.municipality} - {barangay.barangay})")
+                else:
+                    filter_info.append(f"({municipality.municipality} - All Barangays)")
+            except (MunicipalityName.DoesNotExist, BarangayName.DoesNotExist):
+                pass
+        else:
+            filter_info.append("(Overall in Bataan - All Municipalities)")
+        
+        # Date range filter
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
+        
+        if date_from or date_to:
+            date_info = "("
+            if date_from:
+                date_info += f"From {datetime.strptime(date_from, '%Y-%m-%d').strftime('%B %d, %Y')}"
+            else:
+                date_info += "From Beginning"
+            
+            if date_to:
+                date_info += f" to {datetime.strptime(date_to, '%Y-%m-%d').strftime('%B %d, %Y')}"
+            else:
+                date_info += " to Present"
+            date_info += ")"
+            
+            filter_info.append(date_info)
+        
+        # Commodity filter
+        commodity_filter = request.GET.get('commodity')
+        if commodity_filter:
+            try:
+                commodity = CommodityType.objects.get(pk=commodity_filter)
+                municipality_text = "Selected Municipality" if municipality_filter else "All Municipalities"
+                filter_info.append(f"({commodity.name} in {municipality_text})")
+            except CommodityType.DoesNotExist:
+                pass
+        
+        # Add filter information to PDF
+        for i, info in enumerate(filter_info):
+            style = subtitle_style if i == 0 else date_style
+            subtitle = Paragraph(info, style)
+            elements.append(subtitle)
+    
     elements.append(Spacer(1, 12))
     
     data = [['Record ID', 'Commodity', 'Harvest Date', 'Total Weight (kg)', 'Municipality', 'Verified By']]
@@ -4101,25 +4499,27 @@ def generate_verified_harvest_records_pdf(records, filename):
     
     table = Table(data)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
     
     elements.append(table)
     doc.build(elements)
     return response
 
-def generate_verified_harvest_records_summary_pdf(records, filename):
+def generate_verified_harvest_records_summary_pdf(records, filename, request=None):
     """Generate PDF for verified harvest records summary grouped by commodity, municipality, and month/year"""
     if not PDF_AVAILABLE:
-        return export_verified_harvest_records_summary_csv(records, filename + '_fallback', 'csv')
+        return export_verified_harvest_records_summary_csv(records, filename + '_fallback', 'csv', request)
     
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
@@ -4129,10 +4529,85 @@ def generate_verified_harvest_records_summary_pdf(records, filename):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=30, alignment=1)
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=8,
+        alignment=1,
+        textColor=colors.grey
+    )
+    
+    date_style = ParagraphStyle(
+        'DateInfo',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.darkgrey
+    )
     
     title = Paragraph("Verified Harvest Records Summary Report", title_style)
     elements.append(title)
+    
+    # Add filter information if request is available
+    if request:
+        filter_info = []
+        
+        # Municipality and Barangay filter
+        municipality_filter = request.GET.get('municipality')
+        barangay_filter = request.GET.get('barangay')
+        
+        if municipality_filter:
+            try:
+                municipality = MunicipalityName.objects.get(pk=municipality_filter)
+                if barangay_filter:
+                    barangay = BarangayName.objects.get(pk=barangay_filter)
+                    filter_info.append(f"({municipality.municipality} - {barangay.barangay})")
+                else:
+                    filter_info.append(f"({municipality.municipality} - All Barangays)")
+            except (MunicipalityName.DoesNotExist, BarangayName.DoesNotExist):
+                pass
+        else:
+            filter_info.append("(Overall in Bataan - All Municipalities)")
+        
+        # Date range filter
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
+        
+        if date_from or date_to:
+            date_info = "("
+            if date_from:
+                date_info += f"From {datetime.strptime(date_from, '%Y-%m-%d').strftime('%B %d, %Y')}"
+            else:
+                date_info += "From Beginning"
+            
+            if date_to:
+                date_info += f" to {datetime.strptime(date_to, '%Y-%m-%d').strftime('%B %d, %Y')}"
+            else:
+                date_info += " to Present"
+            date_info += ")"
+            
+            filter_info.append(date_info)
+        
+        # Commodity filter
+        commodity_filter = request.GET.get('commodity')
+        if commodity_filter:
+            try:
+                commodity = CommodityType.objects.get(pk=commodity_filter)
+                municipality_text = "Selected Municipality" if municipality_filter else "All Municipalities"
+                filter_info.append(f"({commodity.name} in {municipality_text})")
+            except CommodityType.DoesNotExist:
+                pass
+        
+        # Add filter information to PDF
+        for i, info in enumerate(filter_info):
+            style = subtitle_style if i == 0 else date_style
+            subtitle = Paragraph(info, style)
+            elements.append(subtitle)
+    
     elements.append(Spacer(1, 12))
     
     # Group by commodity, municipality, and month/year for summary
@@ -4167,18 +4642,218 @@ def generate_verified_harvest_records_summary_pdf(records, filename):
     
     table = Table(data)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
     
     elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_commodity_records_pdf(commodities, filename, request=None):
+    """Generate PDF for commodity records"""
+    if not PDF_AVAILABLE:
+        return export_commodity_records_csv(commodities, filename + '_fallback', 'csv', request)
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.grey
+    )
+    
+    title = Paragraph("Commodity Records Report", title_style)
+    elements.append(title)
+    
+    subtitle = Paragraph("(All Registered Commodities)", subtitle_style)
+    elements.append(subtitle)
+    
+    elements.append(Spacer(1, 12))
+    
+    data = [['Name', 'Avg Weight (kg)', 'Seasonal Months', 'Years to Mature', 'Years to Bear Fruit']]
+    
+    for commodity in commodities:
+        seasonal_months = ", ".join([month.name for month in commodity.seasonal_months.all()])
+        data.append([
+            commodity.name,
+            f"{commodity.average_weight_per_unit_kg:.3f}",
+            seasonal_months if seasonal_months else 'Not specified',
+            f"{commodity.years_to_mature:.1f}" if commodity.years_to_mature else 'Not specified',
+            f"{commodity.years_to_bearfruit:.1f}" if commodity.years_to_bearfruit else 'Not specified'
+        ])
+    
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+def generate_commodity_summary_pdf(commodities, filename, request=None):
+    """Generate PDF for commodity summary"""
+    if not PDF_AVAILABLE:
+        return export_commodity_summary_csv(commodities, filename + '_fallback', 'csv', request)
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+    
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
+                                fontSize=16, spaceAfter=10, alignment=1)
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=8,
+        alignment=1,
+        textColor=colors.grey
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionTitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=10,
+        textColor=colors.darkgreen
+    )
+    
+    title = Paragraph("Commodity Summary Report", title_style)
+    elements.append(title)
+    
+    subtitle = Paragraph("(Statistical Analysis of Commodities)", subtitle_style)
+    elements.append(subtitle)
+    
+    elements.append(Spacer(1, 20))
+    
+    # Seasonal Summary
+    seasonal_summary = {}
+    maturity_summary = {}
+    
+    for commodity in commodities:
+        # Group by seasonal months
+        seasons = [month.name for month in commodity.seasonal_months.all()]
+        season_key = ", ".join(seasons) if seasons else "No seasons specified"
+        
+        if season_key not in seasonal_summary:
+            seasonal_summary[season_key] = {'count': 0, 'avg_weight': 0, 'commodities': []}
+        
+        seasonal_summary[season_key]['count'] += 1
+        seasonal_summary[season_key]['avg_weight'] += float(commodity.average_weight_per_unit_kg)
+        seasonal_summary[season_key]['commodities'].append(commodity.name)
+        
+        # Group by maturity years
+        maturity = commodity.years_to_mature or 0
+        maturity_key = f"{maturity} years" if maturity > 0 else "Not specified"
+        
+        if maturity_key not in maturity_summary:
+            maturity_summary[maturity_key] = {'count': 0, 'commodities': []}
+        
+        maturity_summary[maturity_key]['count'] += 1
+        maturity_summary[maturity_key]['commodities'].append(commodity.name)
+    
+    # Seasonal Summary Table
+    section_title = Paragraph("Seasonal Distribution", section_style)
+    elements.append(section_title)
+    
+    seasonal_data = [['Seasonal Period', 'Count', 'Avg Weight (kg)', 'Example Commodities']]
+    for season, data in seasonal_summary.items():
+        avg_weight = data['avg_weight'] / data['count'] if data['count'] > 0 else 0
+        commodities_list = ", ".join(data['commodities'][:3])  # Show first 3
+        if len(data['commodities']) > 3:
+            commodities_list += f" +{len(data['commodities']) - 3} more"
+        seasonal_data.append([
+            season[:30] + ('...' if len(season) > 30 else ''),
+            str(data['count']),
+            f"{avg_weight:.2f}",
+            commodities_list
+        ])
+    
+    seasonal_table = Table(seasonal_data)
+    seasonal_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+    ]))
+    
+    elements.append(seasonal_table)
+    elements.append(Spacer(1, 20))
+    
+    # Maturity Summary Table
+    section_title = Paragraph("Maturity Distribution", section_style)
+    elements.append(section_title)
+    
+    maturity_data = [['Years to Mature', 'Count', 'Example Commodities']]
+    for maturity, data in maturity_summary.items():
+        commodities_list = ", ".join(data['commodities'][:4])  # Show first 4
+        if len(data['commodities']) > 4:
+            commodities_list += f" +{len(data['commodities']) - 4} more"
+        maturity_data.append([
+            maturity,
+            str(data['count']),
+            commodities_list
+        ])
+    
+    maturity_table = Table(maturity_data)
+    maturity_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+    ]))
+    
+    elements.append(maturity_table)
     doc.build(elements)
     return response
                 
