@@ -1122,7 +1122,7 @@ def admin_forecast(request):
         return redirect('home')
 
     userinfo = UserInformation.objects.get(pk=userinfo_id)
-    commodity_types = CommodityType.objects.exclude(pk=1)
+    commodity_types = CommodityType.objects.exclude(pk=1).order_by('name')
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
 
     selected_commodity_id = None

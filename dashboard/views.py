@@ -178,7 +178,7 @@ def forecast(request):
         userinfo_id = request.session.get('userinfo_id')
         if userinfo_id:
             userinfo = UserInformation.objects.get(pk=userinfo_id)
-    commodity_types = CommodityType.objects.exclude(pk=1)
+    commodity_types = CommodityType.objects.exclude(pk=1).order_by('name')
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
      
     selected_commodity_id = None
@@ -499,7 +499,7 @@ def forecast_bycommodity(request):
     
     print("Bar graph filters:", filter_month, filter_year, selected_municipality_id)
     
-    commodity_types = CommodityType.objects.exclude(pk=1)
+    commodity_types = CommodityType.objects.exclude(pk=1).order_by('name')
     all_municipalities = MunicipalityName.objects.exclude(pk=14)
     
     # Always show all months regardless of selected year
@@ -669,7 +669,7 @@ def forecast_csv(request):
         writer.writerow(['Municipality:', municipality_name])
         writer.writerow([])  # blank row
         writer.writerow(['Commodity', 'Forecasted Amount (kg)'])
-        commodities = CommodityType.objects.exclude(pk=1)
+        commodities = CommodityType.objects.exclude(pk=1).order_by('name')
         for commodity in commodities:
             base_qs = ForecastResult.objects.filter(
                 commodity_id=commodity.commodity_id,
@@ -708,7 +708,7 @@ def forecast_pdf(request):
                 pass
                 
         forecast_summary = []
-        commodities = CommodityType.objects.exclude(pk=1)
+        commodities = CommodityType.objects.exclude(pk=1).order_by('name')
         for commodity in commodities:
             base_qs = ForecastResult.objects.filter(
                 commodity_id=commodity.commodity_id,
@@ -916,7 +916,7 @@ def monitor(request):
     municipality_values = [float(data['total_weight']) for data in harvest_by_municipality]
     
     # --- Li-b: Commodities List ---
-    all_commodities = CommodityType.objects.exclude(pk=1)
+    all_commodities = CommodityType.objects.exclude(pk=1).order_by('name')
     commodities_list = []
     for c in all_commodities:
         # Handle years_to_mature
