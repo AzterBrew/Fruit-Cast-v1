@@ -307,7 +307,14 @@ def retrain_selective_models_task(commodity_municipality_pairs):
             municipality__in=municipalities.exclude(pk=14)  # Exclude Overall from data fetch
         ).values('harvest_date', 'total_weight_kg', 'commodity_id', 'municipality_id').order_by('harvest_date')
         
-        all_records_df = pd.DataFrame(list(all_records_qs))
+        all_records_list = list(all_records_qs)
+        print(f"Found {len(all_records_list)} historical records for selective retraining")
+        
+        if not all_records_list:
+            print("No historical records found for selective retraining")
+            return True
+            
+        all_records_df = pd.DataFrame(all_records_list)
         
         results_created = 0
         
@@ -327,9 +334,13 @@ def retrain_selective_models_task(commodity_municipality_pairs):
                         continue
                     
                     # Filter data for specific combination
+                    if 'municipality_id' not in all_records_df.columns or 'commodity_id' not in all_records_df.columns:
+                        print(f"Missing required columns in dataframe: {all_records_df.columns.tolist()}")
+                        continue
+                        
                     df = all_records_df[
-                        (all_records_df['municipality_id'] == municipality.pk) & 
-                        (all_records_df['commodity_id'] == commodity.pk)
+                        (all_records_df['municipality_id'] == municipality.municipality_id) & 
+                        (all_records_df['commodity_id'] == commodity.commodity_id)
                     ].copy()
                     
                     if len(df) < 2:
@@ -408,7 +419,11 @@ def retrain_selective_models_task(commodity_municipality_pairs):
                     print(f"Training Overall model for {commodity.name}")
                     
                     # Get all data for this commodity across all municipalities (excluding pk=14)
-                    df = all_records_df[all_records_df['commodity_id'] == commodity.pk].copy()
+                    if 'commodity_id' not in all_records_df.columns:
+                        print(f"Missing commodity_id column in dataframe: {all_records_df.columns.tolist()}")
+                        continue
+                        
+                    df = all_records_df[all_records_df['commodity_id'] == commodity.commodity_id].copy()
                     
                     if len(df) < 2:
                         print(f"Not enough overall data for {commodity.name}")
