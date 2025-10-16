@@ -36,6 +36,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from base.models import *
 from dashboard.models import *
+from dashboard.utils import get_latest_forecasts_by_combination
 # from dashboard.forms import CommodityTypeForm
 
 # Format number with commas and 2 decimal places
@@ -272,10 +273,12 @@ def forecast(request):
         print(f"All historical data: {len(df)} records, date range: {df['ds'].min()} to {df['ds'].max()}")
 
         # Get forecast data from ForecastResult table (pre-computed)
-        forecast_results = ForecastResult.objects.filter(
+        # Use utility function to get latest forecast per combination regardless of batch
+        base_forecast_qs = ForecastResult.objects.filter(
             commodity_id=selected_commodity_id,
             municipality_id=selected_municipality_id
-        ).order_by('forecast_year', 'forecast_month__number')
+        )
+        forecast_results = get_latest_forecasts_by_combination(base_forecast_qs).order_by('forecast_year', 'forecast_month__number')
         
         if not forecast_results.exists():
             forecast_data = None
@@ -408,11 +411,13 @@ def forecast(request):
     if map_commodity_id and map_month and map_year:
         try:
             # First, try to get data for the selected parameters (no aggregation needed if unique records)
-            forecast_results = ForecastResult.objects.filter(
+            # Use utility function to get latest forecast per combination regardless of batch
+            base_forecast_results = ForecastResult.objects.filter(
                 commodity_id=map_commodity_id,
                 forecast_month__number=map_month,
                 forecast_year=map_year
             ).exclude(municipality_id=14).select_related('municipality')  # Exclude "Overall" for individual maps
+            forecast_results = get_latest_forecasts_by_combination(base_forecast_results)
             
             print(f"Map commodity: {selected_mapcommodity_obj}")
             print(f"Forecast results for {map_month}/{map_year}: {forecast_results}")
@@ -425,12 +430,13 @@ def forecast(request):
                     choropleth_data[str(muni_id)] = round(float(total_kg or 0), 2)
             else:
                 # If no specific data, try to get "Overall" forecast and distribute it
-                overall_forecast = ForecastResult.objects.filter(
+                overall_forecast_qs = ForecastResult.objects.filter(
                     commodity_id=map_commodity_id,
                     forecast_month__number=map_month,
                     forecast_year=map_year,
                     municipality_id=14  # "Overall" municipality
-                ).first()
+                )
+                overall_forecast = get_latest_forecasts_by_combination(overall_forecast_qs).first()
                 
                 if overall_forecast:
                     print(f"Using overall forecast: {overall_forecast.forecasted_amount_kg} kg")
@@ -523,10 +529,10 @@ def forecast_bycommodity(request):
         forecast_qs = ForecastResult.objects.none()  # No data for January before 2025
     if selected_municipality_id != "14":
         forecast_qs = forecast_qs.filter(municipality__municipality_id=selected_municipality_id)
-    # Get the latest batch among these results
-    latest_batch = forecast_qs.order_by('-batch__generated_at').values_list('batch', flat=True).first()
-    if latest_batch:
-        forecast_qs = forecast_qs.filter(batch=latest_batch)
+    # Get the latest forecasts for each combination instead of filtering by single latest batch
+    # This ensures selective retraining doesn't hide forecasts from older batches
+    if forecast_qs.exists():
+        forecast_qs = get_latest_forecasts_by_combination(forecast_qs)
     else:
         forecast_qs = ForecastResult.objects.none()
 
@@ -665,13 +671,15 @@ def forecast_csv(request):
         writer.writerow(['Commodity', 'Forecasted Amount (kg)'])
         commodities = CommodityType.objects.exclude(pk=1)
         for commodity in commodities:
-            qs = ForecastResult.objects.filter(
+            base_qs = ForecastResult.objects.filter(
                 commodity_id=commodity.commodity_id,
                 forecast_month__number=filter_month,
                 forecast_year=filter_year
             )
             if municipality_id and municipality_id != "14":
-                qs = qs.filter(municipality_id=municipality_id)
+                base_qs = base_qs.filter(municipality_id=municipality_id)
+            # Use utility function to get latest forecast per combination
+            qs = get_latest_forecasts_by_combination(base_qs)
             agg = qs.aggregate(total=Sum('forecasted_amount_kg'))
             total_kg = agg['total'] if agg['total'] is not None else 0
             writer.writerow([commodity.name, round(total_kg, 2)])
@@ -702,13 +710,15 @@ def forecast_pdf(request):
         forecast_summary = []
         commodities = CommodityType.objects.exclude(pk=1)
         for commodity in commodities:
-            qs = ForecastResult.objects.filter(
+            base_qs = ForecastResult.objects.filter(
                 commodity_id=commodity.commodity_id,
                 forecast_month__number=filter_month,
                 forecast_year=filter_year
             )
             if municipality_id and municipality_id != "14":
-                qs = qs.filter(municipality_id=municipality_id)
+                base_qs = base_qs.filter(municipality_id=municipality_id)
+            # Use utility function to get latest forecast per combination
+            qs = get_latest_forecasts_by_combination(base_qs)
             agg = qs.aggregate(total=Sum('forecasted_amount_kg'))
             total_kg = agg['total'] if agg['total'] is not None else 0
             forecast_summary.append({'commodity': commodity.name, 'forecasted_kg': round(total_kg, 2)})

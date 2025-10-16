@@ -1,6 +1,35 @@
 from datetime import datetime
 from django.utils import timezone
+from django.db.models import OuterRef, Subquery, Max
 from base.models import CommodityType, UnitMeasurement, Month
+
+
+def get_latest_forecasts_by_combination(base_queryset):
+    """
+    Get the latest forecast for each commodity-municipality-month-year combination
+    regardless of batch. This ensures that selective retraining doesn't hide
+    forecasts from older batches.
+    
+    Args:
+        base_queryset: Base ForecastResult queryset with initial filters
+        
+    Returns:
+        Queryset with only the latest forecast for each combination
+    """
+    from dashboard.models import ForecastResult
+    
+    # Get the latest batch generation date for each unique combination
+    latest_batch_for_combination = ForecastResult.objects.filter(
+        commodity=OuterRef('commodity'),
+        municipality=OuterRef('municipality'),
+        forecast_month=OuterRef('forecast_month'),
+        forecast_year=OuterRef('forecast_year')
+    ).order_by('-batch__generated_at').values('batch__generated_at')[:1]
+    
+    # Filter base queryset to only include records with the latest batch date for each combination
+    return base_queryset.filter(
+        batch__generated_at=Subquery(latest_batch_for_combination)
+    )
 
 
 # GENERATING THESIS2 COMMODITY TYPE MODEL
