@@ -24,7 +24,11 @@ Fruit Cast | Farmer Profile & Transaction History
                     {% if is_agriculturist %}
                         <span class="badge bg-info ms-auto">Viewing: {{ assigned_municipality }} transactions only</span>
                     {% endif %}
-                    <span class="badge bg-success ms-auto">{{ transactions|length }} transaction{{ transactions|length|pluralize }}</span>
+                    {% if transactions_paginator %}
+                        <span class="badge bg-success ms-auto">{{ transactions_paginator.count }} transaction{{ transactions_paginator.count|pluralize }}</span>
+                    {% else %}
+                        <span class="badge bg-success ms-auto">{{ transactions|length }} transaction{{ transactions|length|pluralize }}</span>
+                    {% endif %}
                     <a href="{% url 'administrator:verify_accounts' %}" class="btn btn-outline-success btn-sm w-sm-auto ms-auto">
                         <i class="bi bi-arrow-left me-2"></i>Back to Verification
                     </a>
@@ -468,6 +472,56 @@ Fruit Cast | Farmer Profile & Transaction History
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Transactions Pagination for Desktop -->
+                    {% if transactions_paginator.num_pages > 1 %}
+                    <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+                        <div class="text-muted small">
+                            Showing {{ transactions_page_obj.start_index }} to {{ transactions_page_obj.end_index }} of {{ transactions_paginator.count }} transactions
+                        </div>
+                        <nav aria-label="Transactions Pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if transactions_page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page=1">
+                                            <i class="bi bi-chevron-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ transactions_page_obj.previous_page_number }}">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in transactions_page_obj.paginator.page_range %}
+                                    {% if transactions_page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > transactions_page_obj.number|add:'-3' and num < transactions_page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if transactions_page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ transactions_page_obj.next_page_number }}">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ transactions_paginator.num_pages }}">
+                                            <i class="bi bi-chevron-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Mobile Card View -->
@@ -619,6 +673,56 @@ Fruit Cast | Farmer Profile & Transaction History
                         </div>
                     {% endfor %}
                 </div>
+
+                <!-- Transactions Pagination -->
+                {% if transactions_paginator.num_pages > 1 %}
+                <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+                    <div class="text-muted small">
+                        Showing {{ transactions_page_obj.start_index }} to {{ transactions_page_obj.end_index }} of {{ transactions_paginator.count }} transactions
+                    </div>
+                    <nav aria-label="Transactions Pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if transactions_page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page=1">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ transactions_page_obj.previous_page_number }}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in transactions_page_obj.paginator.page_range %}
+                                {% if transactions_page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > transactions_page_obj.number|add:'-3' and num < transactions_page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if transactions_page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ transactions_page_obj.next_page_number }}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'trans_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}trans_page={{ transactions_paginator.num_pages }}">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             {% else %}
                 <div class="text-center py-5">
                     <div class="mb-3">

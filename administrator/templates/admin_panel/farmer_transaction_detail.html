@@ -323,6 +323,138 @@ Fruit Cast | Transaction Details
                 </div>
             {% endif %} {% endcomment %}
 
+            <!-- Login History Section -->
+            {% if login_history %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-check me-2"></i>User Login History
+                        {% if current_user_role == 2 %}
+                            {% if login_history_paginator %}
+                                <span class="badge bg-light text-dark ms-2">{{ login_history_paginator.count }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark ms-2">{{ login_history|length }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-light text-dark ms-2">Latest Login</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if current_user_role == 2 %}
+                        <p class="text-muted mb-4">Recent login sessions for {{ farmer_name }}.</p>
+                    {% else %}
+                        <p class="text-muted mb-4">Latest login session for {{ farmer_name }}.</p>
+                    {% endif %}
+                    
+                    <!-- Desktop Table View -->
+                    <div class="d-none d-lg-block">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Login Date & Time</th>
+                                        <th scope="col">Session Duration</th>
+                                        <th scope="col">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for login in login_history %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ login.login_date|date:"M d, Y" }}</strong><br>
+                                                <small class="text-muted">{{ login.login_date|time:"g:i:s A" }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">Session started</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">Successful Login</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-lg-none">
+                        {% for login in login_history %}
+                        <div class="card border-start border-info border-3 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start mb-2">
+                                    <div class="mb-2 mb-sm-0">
+                                        <span class="badge bg-success">Successful Login</span>
+                                    </div>
+                                    <div class="text-sm-end">
+                                        <small class="text-muted">
+                                            {{ login.login_date|date:"M d, Y" }}<br>
+                                            {{ login.login_date|time:"g:i:s A" }}
+                                        </small>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Session started</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Login History Pagination (only for administrators) -->
+                    {% if current_user_role == 2 and login_history_paginator.num_pages > 1 %}
+                    <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+                        <div class="text-muted small">
+                            Showing {{ login_history_page_obj.start_index }} to {{ login_history_page_obj.end_index }} of {{ login_history_paginator.count }} logins
+                        </div>
+                        <nav aria-label="Login History Pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if login_history_page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page=1">
+                                            <i class="bi bi-chevron-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ login_history_page_obj.previous_page_number }}">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in login_history_page_obj.paginator.page_range %}
+                                    {% if login_history_page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > login_history_page_obj.number|add:'-3' and num < login_history_page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if login_history_page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ login_history_page_obj.next_page_number }}">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ login_history_paginator.num_pages }}">
+                                            <i class="bi bi-chevron-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Admin Action Buttons -->
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">

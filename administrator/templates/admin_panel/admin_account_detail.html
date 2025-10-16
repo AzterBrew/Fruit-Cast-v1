@@ -324,7 +324,11 @@ Fruit Cast | Account Details
                 <div class="card-header bg-light">
                     <h5 class="mb-0 text-success">
                         <i class="bi bi-clock-history me-2"></i>Administrative Action History
-                        <span class="badge bg-info ms-2">{{ admin_actions|length }}</span>
+                        {% if admin_actions_paginator %}
+                            <span class="badge bg-info ms-2">{{ admin_actions_paginator.count }}</span>
+                        {% else %}
+                            <span class="badge bg-info ms-2">{{ admin_actions|length }}</span>
+                        {% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -393,6 +397,56 @@ Fruit Cast | Account Details
                         </div>
                         {% endfor %}
                     </div>
+
+                    <!-- Admin Actions Pagination -->
+                    {% if admin_actions_paginator.num_pages > 1 %}
+                    <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+                        <div class="text-muted small">
+                            Showing {{ admin_actions_page_obj.start_index }} to {{ admin_actions_page_obj.end_index }} of {{ admin_actions_paginator.count }} actions
+                        </div>
+                        <nav aria-label="Admin Actions Pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if admin_actions_page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'admin_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}admin_page=1">
+                                            <i class="bi bi-chevron-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'admin_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}admin_page={{ admin_actions_page_obj.previous_page_number }}">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in admin_actions_page_obj.paginator.page_range %}
+                                    {% if admin_actions_page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > admin_actions_page_obj.number|add:'-3' and num < admin_actions_page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'admin_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}admin_page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if admin_actions_page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'admin_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}admin_page={{ admin_actions_page_obj.next_page_number }}">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'admin_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}admin_page={{ admin_actions_paginator.num_pages }}">
+                                            <i class="bi bi-chevron-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -403,7 +457,11 @@ Fruit Cast | Account Details
                 <div class="card-header bg-light">
                     <h5 class="mb-0 text-primary">
                         <i class="bi bi-person-check me-2"></i>Administrative Login History
-                        <span class="badge bg-secondary ms-2">{{ login_history|length }}</span>
+                        {% if login_history_paginator %}
+                            <span class="badge bg-secondary ms-2">{{ login_history_paginator.count }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary ms-2">{{ login_history|length }}</span>
+                        {% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -463,6 +521,56 @@ Fruit Cast | Account Details
                         </div>
                         {% endfor %}
                     </div>
+
+                    <!-- Login History Pagination -->
+                    {% if login_history_paginator.num_pages > 1 %}
+                    <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+                        <div class="text-muted small">
+                            Showing {{ login_history_page_obj.start_index }} to {{ login_history_page_obj.end_index }} of {{ login_history_paginator.count }} logins
+                        </div>
+                        <nav aria-label="Login History Pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if login_history_page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page=1">
+                                            <i class="bi bi-chevron-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ login_history_page_obj.previous_page_number }}">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in login_history_page_obj.paginator.page_range %}
+                                    {% if login_history_page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > login_history_page_obj.number|add:'-3' and num < login_history_page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if login_history_page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ login_history_page_obj.next_page_number }}">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'login_page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}login_page={{ login_history_paginator.num_pages }}">
+                                            <i class="bi bi-chevron-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

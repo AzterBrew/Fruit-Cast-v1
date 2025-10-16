@@ -654,7 +654,13 @@ def farmer_transaction_history(request, account_id):
                 Q(manual_municipality=municipality_assigned)  # Manual location in assigned municipality
             )
         
-        transactions = transactions_query.order_by('-transaction_date')
+        transactions_queryset = transactions_query.order_by('-transaction_date')
+        
+        # Pagination for transactions
+        transactions_paginator = Paginator(transactions_queryset, 10)  # Show 10 transactions per page
+        transactions_page_number = request.GET.get('trans_page')
+        transactions_page_obj = transactions_paginator.get_page(transactions_page_number)
+        transactions = transactions_page_obj
         
         # Get farmer's farm lands
         farm_lands = FarmLand.objects.filter(
@@ -673,6 +679,8 @@ def farmer_transaction_history(request, account_id):
         context.update({
             'farmer_account': farmer_account,
             'transactions': transactions,
+            'transactions_paginator': transactions_paginator,
+            'transactions_page_obj': transactions_page_obj,
             'farmer_name': f"{farmer_account.userinfo_id.firstname} {farmer_account.userinfo_id.lastname}",
             'farmer_info': farmer_account.userinfo_id,
             'farm_lands': farm_lands,
@@ -756,6 +764,35 @@ def farmer_transaction_detail(request, transaction_id):
             except:
                 pass
         
+        # Get login history with role-based access
+        login_history = []
+        login_history_paginator = None
+        login_history_page_obj = None
+        current_account = AccountsInformation.objects.get(userinfo_id=userinfo)
+        current_user_role = current_account.account_type_id.pk
+        
+        try:
+            if current_user_role == 2:  # Administrator - can see all login history
+                login_history_queryset = UserLoginLog.objects.filter(
+                    account_id=transaction.account_id
+                ).order_by('-login_date')
+                
+                # Pagination for login history
+                login_history_paginator = Paginator(login_history_queryset, 10)  # Show 10 logins per page
+                login_history_page_number = request.GET.get('login_page')
+                login_history_page_obj = login_history_paginator.get_page(login_history_page_number)
+                login_history = login_history_page_obj
+                
+            elif current_user_role == 3:  # Agriculturist - can see only latest login
+                latest_login = UserLoginLog.objects.filter(
+                    account_id=transaction.account_id
+                ).order_by('-login_date').first()
+                if latest_login:
+                    login_history = [latest_login]
+        except Exception as e:
+            print(f"Warning: Could not fetch login history: {e}")
+            login_history = []
+        
         farmer_name = f"{transaction.account_id.userinfo_id.firstname} {transaction.account_id.userinfo_id.lastname}"
         
         context.update({
@@ -765,6 +802,10 @@ def farmer_transaction_detail(request, transaction_id):
             'plant_notification': plant_notification,
             'farmer_name': farmer_name,
             'farmer_account': transaction.account_id,
+            'login_history': login_history,
+            'login_history_paginator': login_history_paginator,
+            'login_history_page_obj': login_history_page_obj,
+            'current_user_role': current_user_role,
             'is_agriculturist': not is_superuser and not is_pk14,
             'assigned_municipality': municipality_assigned.municipality if not is_superuser and not is_pk14 else None
         })
@@ -3034,22 +3075,38 @@ def admin_account_detail(request, account_id):
         
         # Get admin action history (only if allowed to view histories)
         admin_actions = []
+        admin_actions_paginator = None
+        admin_actions_page_obj = None
         if target_admin_info and can_view_histories:
             try:
-                admin_actions = AdminUserManagement.objects.filter(
+                admin_actions_queryset = AdminUserManagement.objects.filter(
                     admin_id=target_admin_info
-                ).order_by('-action_timestamp')[:20]  # Latest 20 actions
+                ).order_by('-action_timestamp')
+                
+                # Pagination for admin actions
+                admin_actions_paginator = Paginator(admin_actions_queryset, 10)  # Show 10 actions per page
+                admin_actions_page_number = request.GET.get('admin_page')
+                admin_actions_page_obj = admin_actions_paginator.get_page(admin_actions_page_number)
+                admin_actions = admin_actions_page_obj
             except Exception as e:
                 print(f"Warning: Could not fetch admin actions - database schema issue: {e}")
                 admin_actions = []
         
         # Get login history (only if allowed to view histories)
         login_history = []
+        login_history_paginator = None
+        login_history_page_obj = None
         if can_view_histories:
             try:
-                login_history = UserLoginLog.objects.filter(
+                login_history_queryset = UserLoginLog.objects.filter(
                     account_id=target_account
-                ).order_by('-login_date')[:20]  # Latest 20 logins
+                ).order_by('-login_date')
+                
+                # Pagination for login history
+                login_history_paginator = Paginator(login_history_queryset, 10)  # Show 10 logins per page
+                login_history_page_number = request.GET.get('login_page')
+                login_history_page_obj = login_history_paginator.get_page(login_history_page_number)
+                login_history = login_history_page_obj
             except Exception as e:
                 print(f"Warning: Could not fetch login history: {e}")
                 login_history = []
@@ -3077,7 +3134,11 @@ def admin_account_detail(request, account_id):
             'can_edit_account_type': can_edit_account_type,
             'can_edit_municipality': can_edit_municipality,
             'admin_actions': admin_actions,
+            'admin_actions_paginator': admin_actions_paginator,
+            'admin_actions_page_obj': admin_actions_page_obj,
             'login_history': login_history,
+            'login_history_paginator': login_history_paginator,
+            'login_history_page_obj': login_history_page_obj,
             'account_types': account_types,
             'municipalities': municipalities,
         }
