@@ -454,7 +454,7 @@ class HarvestRecordCreate(forms.ModelForm):
         fields = ["harvest_date", "commodity_id", "commodity_custom",  "unit", "total_weight", "remarks"]
         labels = {"harvest_date": "Harvest Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
-            'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'readonly': True}),
+            'harvest_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
             'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom', 'placeholder': 'If not listed, enter commodity here'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
@@ -477,11 +477,10 @@ class HarvestRecordCreate(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Set harvest_date to current date and make it read-only
+        # Set harvest_date to current date as default
         from datetime import date
         if 'harvest_date' in self.fields:
             self.fields['harvest_date'].initial = date.today()
-            self.fields['harvest_date'].widget.attrs['readonly'] = True
         
         # Custom ordering for commodity dropdown: blank, "Not Listed" (pk=1), then alphabetical
         if 'commodity_id' in self.fields:
@@ -546,7 +545,7 @@ class PlantRecordCreate(forms.ModelForm):
         fields = ["plant_date", "commodity_id", "commodity_custom", "min_expected_harvest", "max_expected_harvest", "remarks"]
         labels = {"plant_date": "Plant Date *","commodity_id": "Commodity Type *","commodity_custom": "Commodity Specification (if not listed)","remarks": "Remarks / Additional Notes"}
         widgets = {
-            'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'readonly': True}),
+            'plant_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'commodity_id': forms.Select(attrs={'class': 'form-control', 'id': 'id_commodity_id'}),
             'commodity_custom': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_commodity_custom','placeholder': 'If not listed, enter commodity here'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter remarks here...(optional)'}),
@@ -592,11 +591,10 @@ class PlantRecordCreate(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Set plant_date to current date and make it read-only
+        # Set plant_date to current date as default
         from datetime import date
         if 'plant_date' in self.fields:
             self.fields['plant_date'].initial = date.today()
-            self.fields['plant_date'].widget.attrs['readonly'] = True
         
         # Custom ordering for commodity dropdown: blank, "Not Listed" (pk=1), then alphabetical
         if 'commodity_id' in self.fields:

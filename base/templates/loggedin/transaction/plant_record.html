@@ -122,6 +122,57 @@
         }
     });
 
+    // Min/Max expected harvest validation
+    function validateMinMaxHarvest() {
+        const minField = document.getElementById('id_min_expected_harvest');
+        const maxField = document.getElementById('id_max_expected_harvest');
+        
+        if (minField && maxField && minField.value && maxField.value) {
+            const minValue = parseFloat(minField.value);
+            const maxValue = parseFloat(maxField.value);
+            
+            if (minValue > maxValue) {
+                // Show error styling
+                minField.style.borderColor = '#dc3545';
+                maxField.style.borderColor = '#dc3545';
+                
+                // Show error message if it doesn't exist
+                let errorMsg = document.getElementById('min-max-error');
+                if (!errorMsg) {
+                    errorMsg = document.createElement('div');
+                    errorMsg.id = 'min-max-error';
+                    errorMsg.className = 'text-danger small mt-1';
+                    errorMsg.textContent = 'Minimum expected harvest cannot be greater than maximum expected harvest.';
+                    maxField.parentNode.appendChild(errorMsg);
+                }
+                return false;
+            } else {
+                // Remove error styling and message
+                minField.style.borderColor = '';
+                maxField.style.borderColor = '';
+                const errorMsg = document.getElementById('min-max-error');
+                if (errorMsg) {
+                    errorMsg.remove();
+                }
+                return true;
+            }
+        }
+        return true;
+    }
+
+    // Apply min/max validation to harvest fields
+    const minHarvestField = document.getElementById('id_min_expected_harvest');
+    const maxHarvestField = document.getElementById('id_max_expected_harvest');
+    
+    if (minHarvestField) {
+        minHarvestField.addEventListener('blur', validateMinMaxHarvest);
+        minHarvestField.addEventListener('input', validateMinMaxHarvest);
+    }
+    if (maxHarvestField) {
+        maxHarvestField.addEventListener('blur', validateMinMaxHarvest);
+        maxHarvestField.addEventListener('input', validateMinMaxHarvest);
+    }
+
     // Character limit validation for remarks field (100 characters)
     function validateRemarksCharacterLimit(input) {
         const maxLength = 100;
@@ -158,20 +209,13 @@
     const form = document.getElementById("plant-record-form");
     if (form) {
         form.addEventListener("submit", function (e) {
-            // Validate harvest amounts before submission
-            const minHarvest = document.getElementById('id_min_expected_harvest');
-            const maxHarvest = document.getElementById('id_max_expected_harvest');
-            
-            if (minHarvest && maxHarvest) {
-                const minValue = parseFloat(minHarvest.value);
-                const maxValue = parseFloat(maxHarvest.value);
-                
-                if (minValue > maxValue) {
-                    alert('Minimum expected harvest cannot be greater than maximum expected harvest.');
-                    e.preventDefault();
-                    minHarvest.focus();
-                    return false;
-                }
+            // Validate min/max harvest amounts before submission
+            if (!validateMinMaxHarvest()) {
+                alert('Minimum expected harvest cannot be greater than maximum expected harvest.');
+                e.preventDefault();
+                const minHarvest = document.getElementById('id_min_expected_harvest');
+                if (minHarvest) minHarvest.focus();
+                return false;
             }
             
             const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
