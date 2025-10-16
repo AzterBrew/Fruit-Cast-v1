@@ -2191,14 +2191,27 @@ def admin_verifyplantrec(request):
             
             # Create user-friendly message about affected areas
             affected_commodities = list(set([CommodityType.objects.get(commodity_id=pair['commodity_id']).name for pair in commodity_municipality_pairs]))
-            affected_municipalities = list(set([MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality for pair in commodity_municipality_pairs]))
+            # Exclude "Overall" (pk=14) from municipality list in the message
+            affected_municipalities = list(set([
+                MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality 
+                for pair in commodity_municipality_pairs 
+                if pair['municipality_id'] != 14
+            ]))
             
             if len(affected_commodities) <= 3 and len(affected_municipalities) <= 3:
                 commodities_str = ", ".join(affected_commodities)
-                municipalities_str = ", ".join(affected_municipalities)
-                messages.success(request, f"Plant records updated. Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.")
+                municipalities_str = ", ".join(affected_municipalities) if affected_municipalities else ""
+                
+                if municipalities_str:
+                    messages.success(request, f"Plant records updated. Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.")
+                else:
+                    messages.success(request, f"Plant records updated. Forecast models for {commodities_str} and Overall are being updated in the background.")
             else:
-                messages.success(request, f"Plant records updated. Forecast models for {len(affected_commodities)} commodities in {len(affected_municipalities)} municipalities and Overall are being updated in the background.")
+                municipality_count = len(affected_municipalities)
+                if municipality_count > 0:
+                    messages.success(request, f"Plant records updated. Forecast models for {len(affected_commodities)} commodities in {municipality_count} municipalities and Overall are being updated in the background.")
+                else:
+                    messages.success(request, f"Plant records updated. Forecast models for {len(affected_commodities)} commodities and Overall are being updated in the background.")
         else:
             messages.success(request, "Selected plant records updated successfully.")
         return redirect('administrator:admin_verifyplantrec')
@@ -2291,10 +2304,13 @@ def admin_verifyharvestrec(request):
 
     # Batch update
     if request.method == 'POST':
+        print(f"DEBUG: Starting batch update for harvest records")
         selected_ids = request.POST.getlist('selected_records')
+        print(f"DEBUG: Selected IDs: {selected_ids}")
         new_status_pk = int(request.POST.get('new_status'))
         verified_status_pk = 2  # pk for "Verified"
         new_status = AccountStatus.objects.get(pk=new_status_pk)
+        print(f"DEBUG: New status: {new_status.acc_status}")
         
         # Get all matching records (not just the current page) for batch operations
         all_records = initHarvestRecord.objects.select_related(
@@ -2318,6 +2334,9 @@ def admin_verifyharvestrec(request):
         
         # Extract commodity-municipality pairs for selective retraining
         commodity_municipality_pairs = extract_commodity_municipality_pairs(selected_ids, 'harvest')
+        print(f"DEBUG: Extracted pairs: {commodity_municipality_pairs}")
+        
+        verified_records_created = 0
         
         for rec in all_records.filter(pk__in=selected_ids):
             # Store old status for logging
@@ -2361,6 +2380,8 @@ def admin_verifyharvestrec(request):
                             verified_by=admin_info,  # set this to the current admin
                             prev_record=rec,
                         )
+                        verified_records_created += 1
+                        print(f"DEBUG: Created verified record {verified_records_created} for harvest ID {rec.harvest_id}")
                         
                         # Log the creation of verified harvest record
                         AdminUserManagement.objects.create(
@@ -2370,32 +2391,50 @@ def admin_verifyharvestrec(request):
                             object_id=verified_harvest_record.id
                         )
                         
-                        # ...
-                        logger.info("Attempting to delay Celery task...")
-                        logger.info(f"Using broker URL: {settings.CELERY_BROKER_URL}") # This will show the URL Celery sees
-                        retrain_and_generate_forecasts_task.delay()
-                        messages.success(request, "Records verified. Forecast models are being updated in the background.")
-                        
                     except Exception as e:
                         logger.error(f"Error during verification: {e}")
                         messages.error(request, f"An error occurred during verification: {e}")
                         
         # After processing all records, trigger selective retraining only once
         if selected_ids and commodity_municipality_pairs:
-            logger.info("Attempting to delay selective retraining Celery task...")
-            logger.info(f"Retraining for pairs: {commodity_municipality_pairs}")
-            retrain_selective_models_task.delay(commodity_municipality_pairs)
+            print(f"DEBUG: Triggering selective retraining for {len(commodity_municipality_pairs)} pairs")
+            print(f"DEBUG: Created {verified_records_created} verified records")
+            
+            # Add a safeguard to prevent multiple calls in the same request
+            if not hasattr(request, '_retraining_triggered'):
+                request._retraining_triggered = True
+                logger.info("Attempting to delay selective retraining Celery task...")
+                logger.info(f"Retraining for pairs: {commodity_municipality_pairs}")
+                retrain_selective_models_task.delay(commodity_municipality_pairs)
+            else:
+                print("DEBUG: Retraining already triggered for this request, skipping")
             
             # Create user-friendly message about affected areas
             affected_commodities = list(set([CommodityType.objects.get(commodity_id=pair['commodity_id']).name for pair in commodity_municipality_pairs]))
-            affected_municipalities = list(set([MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality for pair in commodity_municipality_pairs]))
+            # Exclude "Overall" (pk=14) from municipality list in the message
+            affected_municipalities = list(set([
+                MunicipalityName.objects.get(municipality_id=pair['municipality_id']).municipality 
+                for pair in commodity_municipality_pairs 
+                if pair['municipality_id'] != 14
+            ]))
+            
+            print(f"DEBUG: Affected commodities: {affected_commodities}")
+            print(f"DEBUG: Affected municipalities (excluding Overall): {affected_municipalities}")
             
             if len(affected_commodities) <= 3 and len(affected_municipalities) <= 3:
                 commodities_str = ", ".join(affected_commodities)
-                municipalities_str = ", ".join(affected_municipalities)
-                messages.success(request, f"Records updated. Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.")
+                municipalities_str = ", ".join(affected_municipalities) if affected_municipalities else ""
+                
+                if municipalities_str:
+                    messages.success(request, f"Records updated. Forecast models for {commodities_str} in {municipalities_str} and Overall are being updated in the background.")
+                else:
+                    messages.success(request, f"Records updated. Forecast models for {commodities_str} and Overall are being updated in the background.")
             else:
-                messages.success(request, f"Records updated. Forecast models for {len(affected_commodities)} commodities in {len(affected_municipalities)} municipalities and Overall are being updated in the background.")
+                municipality_count = len(affected_municipalities)
+                if municipality_count > 0:
+                    messages.success(request, f"Records updated. Forecast models for {len(affected_commodities)} commodities in {municipality_count} municipalities and Overall are being updated in the background.")
+                else:
+                    messages.success(request, f"Records updated. Forecast models for {len(affected_commodities)} commodities and Overall are being updated in the background.")
                 
         # Handle rejected records
         rejected_records = all_records.filter(pk__in=selected_ids, record_status__pk=4)
