@@ -47,14 +47,19 @@ Fruit Cast | Verified Harvest Records
                                 <label for="municipality" class="form-label">
                                     <i class="bi bi-geo-alt me-1"></i>Municipality
                                 </label>
-                                <select id="municipality" name="municipality" class="form-select">
-                                    <option value="">All Municipalities</option>
-                                    {% for m in municipalities %}
-                                        {% if m.pk != 14 %}
-                                            <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
+                                {% if is_superuser or is_pk14 %}
+                                    <select id="municipality" name="municipality" class="form-select">
+                                        <option value="">All Municipalities</option>
+                                        {% for m in municipalities %}
+                                            {% if m.pk != 14 %}
+                                                <option value="{{ m.pk }}" {% if m.pk|stringformat:"s" == selected_municipality %}selected{% endif %}>{{ m.municipality }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                {% else %}
+                                    <input type="text" id="municipality" class="form-control" value="{{ assigned_municipality.municipality|default:'Not Assigned' }}" readonly>
+                                    <input type="hidden" name="municipality" value="{{ assigned_municipality.pk|default:'' }}">
+                                {% endif %}
                             </div>
                             <div class="col-md-3">
                                 <label for="barangay" class="form-label">

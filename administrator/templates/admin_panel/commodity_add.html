@@ -103,7 +103,31 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                         <code>Mango,4.00,"January;February;March",2.0,0.5</code>
                     </div>
 
-                    <form method="post" enctype="multipart/form-data">
+                    {% if needs_confirmation %}
+                    <!-- Confirmation Dialog -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Confirmation Required
+                        </h6>
+                        <p class="mb-3">Some commodities in your CSV already exist and will be updated. Do you want to proceed?</p>
+                        
+                        <form method="post" enctype="multipart/form-data" id="confirmForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="confirmed_updates" value="true">
+                            <input type="file" name="csv_file" style="display: none;" id="hiddenCsvFile">
+                            
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle me-2"></i>Yes, Update Existing Commodities
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="location.reload()">
+                                    <i class="bi bi-x-circle me-2"></i>Cancel and Upload Different File
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    {% else %}
+                    <form method="post" enctype="multipart/form-data" id="csvForm">
                         {% csrf_token %}
                         <div class="row g-3 align-items-end">
                             <div class="col-md-6">
@@ -112,7 +136,7 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                                 </label>
                                 <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
                                 <div class="form-text">
-                                    <i class="bi bi-info-circle me-1"></i>Maximum file size: 10MB
+                                    <i class="bi bi-info-circle me-1"></i>Max file size: 10MB. If you encounter encoding errors, ensure your CSV is saved as UTF-8.
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -127,6 +151,7 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                             </div>
                         </div>
                     </form>
+                    {% endif %}
                 </div>
             </div>
 
@@ -142,14 +167,74 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
-        // File input validation
+        // Enhanced file input validation
         const fileInput = document.getElementById('csv_file');
         if (fileInput) {
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
-                if (file && !file.name.toLowerCase().endsWith('.csv')) {
-                    alert('Please select a valid CSV file.');
-                    e.target.value = '';
+                if (file) {
+                    // Check file type
+                    if (!file.name.toLowerCase().endsWith('.csv')) {
+                        alert('Please select a valid CSV file.');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Check file size (10MB max)
+                    const maxSize = 10 * 1024 * 1024; // 10MB
+                    if (file.size > maxSize) {
+                        alert('File size exceeds 10MB limit. Please upload a smaller file.');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Basic CSV structure validation
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const csvText = event.target.result;
+                        const lines = csvText.split('\n').filter(line => line.trim());
+                        
+                        if (lines.length < 2) {
+                            alert('CSV file appears to be empty or has no data rows. Please add commodity data.');
+                            fileInput.value = '';
+                            return;
+                        }
+                        
+                        const header = lines[0].toLowerCase();
+                        const requiredHeaders = ['name', 'average_weight_per_unit_kg', 'seasonal_months', 'years_to_mature', 'years_to_bearfruit'];
+                        const missingHeaders = requiredHeaders.filter(h => !header.includes(h));
+                        
+                        if (missingHeaders.length > 0) {
+                            alert(`CSV file is missing required headers: ${missingHeaders.join(', ')}. Please check the template format.`);
+                            fileInput.value = '';
+                            return;
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        }
+        
+        // Handle confirmation dialog
+        {% if needs_confirmation %}
+        const hiddenFileInput = document.getElementById('hiddenCsvFile');
+        const originalFile = sessionStorage.getItem('uploadedFile');
+        if (originalFile) {
+            // Re-create file for confirmation form
+            const csvForm = document.getElementById('confirmForm');
+            csvForm.addEventListener('submit', function(e) {
+                // The file will be processed with confirmed_updates=true
+            });
+        }
+        {% endif %}
+        
+        // Store file in session for confirmation
+        const csvForm = document.getElementById('csvForm');
+        if (csvForm) {
+            csvForm.addEventListener('submit', function(e) {
+                const fileInput = document.getElementById('csv_file');
+                if (fileInput.files[0]) {
+                    sessionStorage.setItem('uploadedFile', fileInput.files[0].name);
                 }
             });
         }

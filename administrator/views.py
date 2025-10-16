@@ -406,6 +406,9 @@ def verify_accounts(request):
         'current_sort': sort_by,
         'current_order': order,
         'is_agriculturist': not is_superuser and not is_pk14,
+        'assigned_municipality': municipality_assigned,
+        'is_superuser': is_superuser,
+        'is_pk14': is_pk14,
     })
 
     return render(request, 'admin_panel/verify_accounts.html', context)
@@ -1662,8 +1665,24 @@ def admin_commodity_add_edit(request, pk=None):
         updated_count = 0
         error_count = 0
         error_details = []
+        update_confirmations = []
+        
+        # Check if user confirmed updates
+        confirmed_updates = request.POST.get('confirmed_updates', 'false').lower() == 'true'
         
         try:
+            # Validate file size (10MB max)
+            if csv_file.size > 10 * 1024 * 1024:
+                messages.error(request, "File size exceeds 10MB limit. Please upload a smaller file.")
+                if pk:
+                    commodity = get_object_or_404(CommodityType, pk=pk)
+                else:
+                    commodity = None
+                form = CommodityTypeForm(instance=commodity)
+                context = get_admin_context(request)
+                context.update({'form': form, 'commodity': commodity})
+                return render(request, 'admin_panel/commodity_add.html', context)
+            
             # Try multiple encodings to handle different file formats
             file_content = csv_file.read()
             decoded_file = None
@@ -1683,118 +1702,261 @@ def admin_commodity_add_edit(request, pk=None):
                 
             reader = csv.DictReader(io.StringIO(decoded_file))
             
+            # Validate CSV structure
+            if not reader.fieldnames:
+                messages.error(request, "CSV file appears to be empty or has no headers. Please check your file format.")
+                if pk:
+                    commodity = get_object_or_404(CommodityType, pk=pk)
+                else:
+                    commodity = None
+                form = CommodityTypeForm(instance=commodity)
+                context = get_admin_context(request)
+                context.update({'form': form, 'commodity': commodity})
+                return render(request, 'admin_panel/commodity_add.html', context)
+            
             # Check if required headers exist
             required_headers = ['name', 'average_weight_per_unit_kg', 'seasonal_months', 'years_to_mature', 'years_to_bearfruit']
             if not all(header in reader.fieldnames for header in required_headers):
                 missing_headers = [h for h in required_headers if h not in reader.fieldnames]
                 messages.error(request, f"CSV file is missing required headers: {', '.join(missing_headers)}. Please check the template format.")
-            else:
-                for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
+                if pk:
+                    commodity = get_object_or_404(CommodityType, pk=pk)
+                else:
+                    commodity = None
+                form = CommodityTypeForm(instance=commodity)
+                context = get_admin_context(request)
+                context.update({'form': form, 'commodity': commodity})
+                return render(request, 'admin_panel/commodity_add.html', context)
+            
+            # Pre-scan for existing commodities to show confirmation
+            if not confirmed_updates:
+                existing_commodities = []
+                temp_reader = csv.DictReader(io.StringIO(decoded_file))
+                for row_num, row in enumerate(temp_reader, start=2):
+                    row = {k.strip(): v.strip() for k, v in row.items() if k}
+                    
+                    # Skip empty rows
+                    if not any(row.values()):
+                        continue
+                        
+                    if row.get("name"):
+                        name = row["name"].strip()
+                        if CommodityType.objects.filter(name__iexact=name).exists():
+                            existing_commodities.append(f"Row {row_num}: '{name}'")
+                
+                if existing_commodities:
+                    messages.warning(request, f"The following {len(existing_commodities)} commodit{'ies' if len(existing_commodities) > 1 else 'y'} already exist and will be updated:")
+                    for existing in existing_commodities[:10]:  # Show first 10
+                        messages.warning(request, existing)
+                    if len(existing_commodities) > 10:
+                        messages.warning(request, f"... and {len(existing_commodities) - 10} more commodities.")
+                    
+                    # Return with confirmation needed
+                    if pk:
+                        commodity = get_object_or_404(CommodityType, pk=pk)
+                    else:
+                        commodity = None
+                    form = CommodityTypeForm(instance=commodity)
+                    context = get_admin_context(request)
+                    context.update({
+                        'form': form, 
+                        'commodity': commodity, 
+                        'needs_confirmation': True,
+                        'csv_file_name': csv_file.name
+                    })
+                    return render(request, 'admin_panel/commodity_add.html', context)
+            
+            # Process CSV rows
+            row_count = 0
+            for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
+                try:
+                    # Clean up keys and values, removing empty keys
+                    row = {k.strip(): v.strip() for k, v in row.items() if k and k.strip()}
+                    
+                    # Skip completely empty rows
+                    if not any(row.values()):
+                        continue
+                        
+                    row_count += 1
+                    
+                    # Validate required fields
+                    if not row.get("name"):
+                        error_details.append(f"Row {row_num}: Commodity name is required and cannot be empty")
+                        error_count += 1
+                        continue
+                        
+                    name = row["name"].strip()
+                    if len(name) > 100:  # Assuming max length constraint
+                        error_details.append(f"Row {row_num}: Commodity name too long (max 100 characters)")
+                        error_count += 1
+                        continue
+                    
+                    # Enhanced numeric field validation with comma handling
+                    def clean_numeric_value(value, field_name):
+                        if not value:
+                            return None
+                        # Remove commas and handle different decimal separators
+                        cleaned_value = str(value).replace(',', '').replace(' ', '')
+                        try:
+                            return float(cleaned_value)
+                        except ValueError:
+                            raise ValueError(f"Invalid {field_name} format")
+                    
+                    # Validate average weight
+                    if not row.get("average_weight_per_unit_kg"):
+                        error_details.append(f"Row {row_num}: Average weight per unit is required")
+                        error_count += 1
+                        continue
+                    
                     try:
-                        # Clean up keys and values
-                        row = {k.strip(): v.strip() for k, v in row.items()}
+                        avg_weight = clean_numeric_value(row["average_weight_per_unit_kg"], "average weight")
+                        if avg_weight is None or avg_weight <= 0:
+                            raise ValueError("Average weight must be a positive number")
+                        if avg_weight > 1000:  # Reasonable upper limit
+                            raise ValueError("Average weight seems too high (max 1000kg)")
+                    except ValueError as e:
+                        error_details.append(f"Row {row_num}: Invalid average weight - {str(e)}")
+                        error_count += 1
+                        continue
                         
-                        # Validate required fields
-                        if not row.get("name"):
-                            error_details.append(f"Row {row_num}: Commodity name is required")
-                            error_count += 1
-                            continue
-                            
-                        name = row["name"]
+                    # Validate years to mature
+                    if not row.get("years_to_mature"):
+                        error_details.append(f"Row {row_num}: Years to mature is required")
+                        error_count += 1
+                        continue
                         
-                        # Validate numeric fields
-                        try:
-                            avg_weight = float(row["average_weight_per_unit_kg"])
-                            if avg_weight <= 0:
-                                raise ValueError("Average weight must be positive")
-                        except (ValueError, TypeError):
-                            error_details.append(f"Row {row_num}: Invalid average weight per unit - must be a positive number")
-                            error_count += 1
-                            continue
-                            
-                        try:
-                            years_to_mature = float(row["years_to_mature"])
-                            if years_to_mature < 0:
-                                raise ValueError("Years to mature cannot be negative")
-                        except (ValueError, TypeError):
-                            error_details.append(f"Row {row_num}: Invalid years to mature - must be a non-negative number")
-                            error_count += 1
-                            continue
-                            
-                        try:
-                            years_to_bearfruit = float(row.get("years_to_bearfruit", 0))
-                            if years_to_bearfruit < 0:
-                                raise ValueError("Years to bear fruit cannot be negative")
-                        except (ValueError, TypeError):
-                            error_details.append(f"Row {row_num}: Invalid years to bear fruit - must be a non-negative number")
-                            error_count += 1
-                            continue
+                    try:
+                        years_to_mature = clean_numeric_value(row["years_to_mature"], "years to mature")
+                        if years_to_mature is None or years_to_mature < 0:
+                            raise ValueError("Years to mature must be a non-negative number")
+                        if years_to_mature > 50:  # Reasonable upper limit
+                            raise ValueError("Years to mature seems too high (max 50 years)")
+                    except ValueError as e:
+                        error_details.append(f"Row {row_num}: Invalid years to mature - {str(e)}")
+                        error_count += 1
+                        continue
                         
-                        # Check if commodity already exists
-                        commodity, created = CommodityType.objects.get_or_create(
-                            name=name,
-                            defaults={
-                                "average_weight_per_unit_kg": avg_weight,
-                                "years_to_mature": years_to_mature,
-                                "years_to_bearfruit": years_to_bearfruit,
-                            }
-                        )
-                        
-                        if not created:
-                            # Update existing commodity
-                            commodity.average_weight_per_unit_kg = avg_weight
-                            commodity.years_to_mature = years_to_mature
-                            commodity.years_to_bearfruit = years_to_bearfruit
-                            commodity.save()
-                            updated_count += 1
+                    # Validate years to bear fruit
+                    try:
+                        years_to_bearfruit_str = row.get("years_to_bearfruit", "0")
+                        if not years_to_bearfruit_str:
+                            years_to_bearfruit = 0
                         else:
-                            created_count += 1
+                            years_to_bearfruit = clean_numeric_value(years_to_bearfruit_str, "years to bear fruit")
+                            if years_to_bearfruit is None:
+                                years_to_bearfruit = 0
+                            elif years_to_bearfruit < 0:
+                                raise ValueError("Years to bear fruit must be a non-negative number")
+                            elif years_to_bearfruit > 50:  # Reasonable upper limit
+                                raise ValueError("Years to bear fruit seems too high (max 50 years)")
+                    except ValueError as e:
+                        error_details.append(f"Row {row_num}: Invalid years to bear fruit - {str(e)}")
+                        error_count += 1
+                        continue
+                    
+                    # Check if commodity already exists (case-insensitive)
+                    commodity, created = CommodityType.objects.get_or_create(
+                        name__iexact=name,
+                        defaults={
+                            "name": name,  # Use original case for new entries
+                            "average_weight_per_unit_kg": avg_weight,
+                            "years_to_mature": years_to_mature,
+                            "years_to_bearfruit": years_to_bearfruit,
+                        }
+                    )
+                    
+                    if not created:
+                        # Update existing commodity
+                        old_values = {
+                            'avg_weight': commodity.average_weight_per_unit_kg,
+                            'years_to_mature': commodity.years_to_mature,
+                            'years_to_bearfruit': commodity.years_to_bearfruit,
+                        }
                         
-                        # Handle seasonal months
-                        seasonal_months_str = row.get("seasonal_months", "")
-                        if seasonal_months_str:
-                            months = [m.strip() for m in seasonal_months_str.split(";") if m.strip()]
-                            month_objs = Month.objects.filter(name__in=months)
+                        commodity.average_weight_per_unit_kg = avg_weight
+                        commodity.years_to_mature = years_to_mature
+                        commodity.years_to_bearfruit = years_to_bearfruit
+                        commodity.save()
+                        updated_count += 1
+                        
+                        # Log the changes
+                        changes = []
+                        if old_values['avg_weight'] != avg_weight:
+                            changes.append(f"Weight: {old_values['avg_weight']}kg → {avg_weight}kg")
+                        if old_values['years_to_mature'] != years_to_mature:
+                            changes.append(f"Years to mature: {old_values['years_to_mature']} → {years_to_mature}")
+                        if old_values['years_to_bearfruit'] != years_to_bearfruit:
+                            changes.append(f"Years to bear fruit: {old_values['years_to_bearfruit']} → {years_to_bearfruit}")
+                        
+                        if changes:
+                            update_confirmations.append(f"Updated '{name}': {', '.join(changes)}")
+                    else:
+                        created_count += 1
+                    
+                    # Handle seasonal months with enhanced validation
+                    seasonal_months_str = row.get("seasonal_months", "").strip()
+                    if seasonal_months_str:
+                        # Split by semicolon and clean up
+                        months = [m.strip() for m in seasonal_months_str.split(";") if m.strip()]
+                        if months:
+                            # Validate month names (case-insensitive)
+                            month_objs = []
+                            invalid_months = []
                             
-                            # Check if all months were found
-                            found_month_names = [month.name for month in month_objs]
-                            invalid_months = [m for m in months if m not in found_month_names]
+                            for month_name in months:
+                                try:
+                                    month_obj = Month.objects.get(name__iexact=month_name)
+                                    month_objs.append(month_obj)
+                                except Month.DoesNotExist:
+                                    invalid_months.append(month_name)
+                            
                             if invalid_months:
-                                error_details.append(f"Row {row_num}: Invalid month names: {', '.join(invalid_months)}")
+                                error_details.append(f"Row {row_num}: Invalid month names: {', '.join(invalid_months)}. Valid months: Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec")
                                 error_count += 1
                                 continue
                                 
                             commodity.seasonal_months.set(month_objs)
                         else:
                             commodity.seasonal_months.clear()
-                            
-                    except Exception as e:
-                        error_details.append(f"Row {row_num}: Unexpected error - {str(e)}")
-                        error_count += 1
-                        continue
-                
+                    else:
+                        commodity.seasonal_months.clear()
+                        
+                except Exception as e:
+                    error_details.append(f"Row {row_num}: Unexpected error - {str(e)}")
+                    error_count += 1
+                    continue
+            
+            # Check if CSV had any data rows
+            if row_count == 0:
+                messages.warning(request, "CSV file contains no data rows. Please add commodity data to your CSV file.")
+            else:
                 # Show appropriate messages
                 if created_count > 0:
                     messages.success(request, f"Successfully created {created_count} new commodit{'ies' if created_count > 1 else 'y'} from CSV upload.")
                     
                 if updated_count > 0:
                     messages.info(request, f"Successfully updated {updated_count} existing commodit{'ies' if updated_count > 1 else 'y'} from CSV upload.")
-                    
+                    # Show detailed update information
+                    for update_info in update_confirmations[:5]:  # Show first 5 detailed updates
+                        messages.info(request, update_info)
+                    if len(update_confirmations) > 5:
+                        messages.info(request, f"... and {len(update_confirmations) - 5} more commodities updated.")
+                
                 if error_count > 0:
-                    messages.error(request, f"Failed to process {error_count} row{'s' if error_count > 1 else ''} due to errors:")
+                    messages.error(request, f"Failed to process {error_count} row{'s' if error_count > 1 else ''} due to validation errors:")
                     for error_detail in error_details[:10]:  # Show first 10 errors to avoid overwhelming UI
                         messages.error(request, error_detail)
                     if len(error_details) > 10:
-                        messages.error(request, f"... and {len(error_details) - 10} more errors.")
+                        messages.error(request, f"... and {len(error_details) - 10} more errors. Please fix these issues and try again.")
                         
                 if created_count == 0 and updated_count == 0 and error_count == 0:
-                    messages.warning(request, "No data was processed from the CSV file.")
+                    messages.warning(request, "No valid data was processed from the CSV file.")
                     
         except Exception as e:
             if "decode" in str(e).lower() or "encoding" in str(e).lower():
-                messages.error(request, f"Error reading CSV file: The file contains characters that cannot be read properly. Please save your CSV file using UTF-8 encoding or try a different file format. Error details: {str(e)}")
+                messages.error(request, f"Error reading CSV file: The file contains characters that cannot be read properly. Please save your CSV file using UTF-8 encoding and try again. Error details: {str(e)}")
             else:
-                messages.error(request, f"Error reading CSV file: {str(e)}. Please ensure the file is properly formatted.")
+                messages.error(request, f"Error processing CSV file: {str(e)}. Please ensure the file is properly formatted and contains valid data.")
             
         # Stay on the same page to show messages
         if pk:
@@ -2654,6 +2816,10 @@ def admin_harvestverified(request):
         'date_from': date_from,
         'date_to': date_to,
         'is_paginated': paginator.num_pages > 1,
+        'assigned_municipality': admin_info.municipality_incharge,
+        'is_superuser': is_superuser,
+        'is_pk14': is_pk14,
+        'is_agriculturist': not is_superuser and not is_pk14,
     })
     return render(request, 'admin_panel/admin_harvestverified.html', context)
 

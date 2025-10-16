@@ -39,20 +39,25 @@ Fruit Cast | Farmer Account Verification
                             </div>
                             <div class="col-md-6">
                                 <label for="municipality" class="form-label">Filter by Municipality:</label>
-                                <select name="municipality" id="municipality" class="form-select" onchange="this.form.submit()" {% if is_agriculturist %}disabled{% endif %}>
-                                    <option value="">All Municipalities</option>
-                                    {% for municipality in municipalities %}
-                                        {% if municipality.pk != 14 %}
-                                            <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
-                                                {{ municipality.municipality }}
-                                            </option>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
-                                {% if is_agriculturist %}
+                                {% if not is_superuser and not is_pk14 %}
+                                    <!-- Non-pk14 administrators and agriculturists see their assigned municipality only -->
+                                    <input type="text" class="form-control" value="{{ assigned_municipality.municipality }}" readonly>
+                                    <input type="hidden" name="municipality" value="{{ assigned_municipality.municipality }}">
                                     <div class="form-text text-muted">
                                         <i class="bi bi-info-circle me-1"></i>Municipality filter is restricted to your assigned area.
                                     </div>
+                                {% else %}
+                                    <!-- Superusers and pk14 administrators can select from all municipalities -->
+                                    <select name="municipality" id="municipality" class="form-select" onchange="this.form.submit()">
+                                        <option value="">All Municipalities</option>
+                                        {% for municipality in municipalities %}
+                                            {% if municipality.pk != 14 %}
+                                                <option value="{{ municipality.municipality }}" {% if current_municipality == municipality.municipality %}selected{% endif %}>
+                                                    {{ municipality.municipality }}
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
                                 {% endif %}
                             </div>
                         </div>
