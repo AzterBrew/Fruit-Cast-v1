@@ -2972,6 +2972,10 @@ def admin_harvestverified(request):
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     
+    # Sorting parameters
+    sort_by = request.GET.get('sort', 'date_verified')  # Default sort by date verified
+    order = request.GET.get('order', 'desc')  # Default to desc (most recent first)
+    
     if request.method == 'POST':
         action = request.POST.get('action')
         selected_records = request.POST.getlist('selected_records')
@@ -3063,7 +3067,7 @@ def admin_harvestverified(request):
     
     commodities = CommodityType.objects.exclude(pk=1).order_by('name')
     
-    records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id').order_by('-date_verified')
+    records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
     
     if municipality_filter:
         records = records.filter(municipality_id=municipality_filter)
@@ -3078,6 +3082,18 @@ def admin_harvestverified(request):
         records = records.filter(harvest_date__gte=date_from)
     if date_to:
         records = records.filter(harvest_date__lte=date_to)
+    
+    # Apply sorting
+    sort_fields = {
+        'harvest_date': 'harvest_date',
+        'date_verified': 'date_verified',
+    }
+    
+    if sort_by in sort_fields:
+        order_prefix = '-' if order == 'desc' else ''
+        records = records.order_by(f"{order_prefix}{sort_fields[sort_by]}")
+    else:
+        records = records.order_by('-date_verified')  # default sorting
     
     # Pagination
     paginator = Paginator(records, 10)  # Show 10 records per page
@@ -3112,6 +3128,8 @@ def admin_harvestverified(request):
         'is_superuser': is_superuser,
         'is_pk14': is_pk14,
         'is_agriculturist': not is_superuser and not is_pk14,
+        'current_sort': sort_by,
+        'current_order': order,
     })
     return render(request, 'admin_panel/admin_harvestverified.html', context)
 

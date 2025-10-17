@@ -1,5 +1,6 @@
 {% extends "admin_login/layout.html" %}
 {% load number_filters %}
+{% load sort_tags %}
 
 {% block title %}
 Fruit Cast | Verified Harvest Records
@@ -142,12 +143,8 @@ Fruit Cast | Verified Harvest Records
                                             <label class="form-check-label" for="selectAll"></label>
                                         </div>
                                     </th>
-                                    <th scope="col">
-                                        <i class="bi bi-calendar me-1"></i>Date Created
-                                    </th>
-                                    <th scope="col">
-                                        <i class="bi bi-calendar-date me-1"></i>Harvest Date
-                                    </th>
+                                    <th scope="col">{% sort_header "date_verified" "Date Created" current_sort current_order %}</th>
+                                    <th scope="col">{% sort_header "harvest_date" "Harvest Date" current_sort current_order %}</th>
                                     <th scope="col">
                                         <i class="bi bi-basket me-1"></i>Commodity
                                     </th>
