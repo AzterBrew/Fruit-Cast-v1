@@ -133,6 +133,9 @@ Fruit Cast | Add Verified Harvest Record
                                 <li>Barangay names must be exact matches (optional)</li>
                                 <li>Weight values should be numeric (use decimal point, not comma)</li>
                                 <li>All fields except remarks and barangay are required</li>
+                                <li><strong>File size limit:</strong> Maximum 50MB per upload</li>
+                                <li><strong>Row limit:</strong> Maximum 10,000 records per upload</li>
+                                <li><strong>Large files:</strong> For files with 1,000+ records, upload may take several minutes</li>
                                 <li><strong>File encoding:</strong> Save your CSV file as UTF-8 encoding to avoid character issues</li>
                                 <li><strong>Special characters:</strong> Characters like ñ, á, é, etc. are supported</li>
                             </ul>
@@ -152,8 +155,9 @@ Fruit Cast | Add Verified Harvest Record
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <button type="submit" class="btn btn-info w-100">
+                                <button type="submit" class="btn btn-info w-100" id="uploadBtn">
                                     <i class="bi bi-upload me-2"></i>Upload CSV
+                                    <span class="spinner-border spinner-border-sm ms-2 d-none" id="uploadSpinner"></span>
                                 </button>
                             </div>
                             <div class="col-md-3">
@@ -269,6 +273,47 @@ Fruit Cast | Add Verified Harvest Record
                 }
                 
                 // No need to validate barangay since it's optional
+            });
+        }
+
+        // CSV upload form handling
+        const csvForm = document.querySelector('form[enctype="multipart/form-data"]');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadSpinner = document.getElementById('uploadSpinner');
+        const fileInput = document.getElementById('csv_file');
+
+        if (csvForm) {
+            csvForm.addEventListener('submit', function(e) {
+                const file = fileInput.files[0];
+                if (!file) {
+                    e.preventDefault();
+                    alert('Please select a CSV file to upload.');
+                    return false;
+                }
+                
+                // Show loading state
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Uploading... <span class="spinner-border spinner-border-sm ms-2"></span>';
+                
+                // Show warning for large files
+                if (file.size > 1024 * 1024) { // > 1MB
+                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                    if (!confirm(`You are uploading a ${fileSizeMB}MB file. This may take several minutes to process. Do you want to continue?`)) {
+                        e.preventDefault();
+                        // Reset button state
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Upload CSV';
+                        return false;
+                    }
+                }
+                
+                // Estimate processing time based on file size
+                const estimatedSeconds = Math.max(30, Math.min(300, file.size / (1024 * 100))); // 30s to 5min
+                setTimeout(() => {
+                    if (uploadBtn.disabled) {
+                        uploadBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Still processing... <span class="spinner-border spinner-border-sm ms-2"></span>';
+                    }
+                }, estimatedSeconds * 1000);
             });
         }
     });

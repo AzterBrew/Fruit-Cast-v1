@@ -2511,6 +2511,19 @@ def admin_add_verifyharvestrec(request):
         error_count = 0
         error_details = []
         
+        # Check file size (limit to 50MB)
+        max_file_size = 50 * 1024 * 1024  # 50MB
+        if csv_file.size > max_file_size:
+            messages.error(request, f"File size ({csv_file.size / (1024*1024):.1f}MB) exceeds the maximum allowed size of 50MB. Please split your CSV into smaller files.")
+            context = get_admin_context(request)
+            context.update({
+                'municipalities': municipalities, 
+                'form': VerifiedHarvestRecordForm(user=request.user),
+                'admin_municipality_id': admin_municipality_id,
+                'is_overall_admin': admin_municipality_id == 14
+            })
+            return render(request, 'admin_panel/verifyharvest_add.html', context)
+        
         try:
             # Try multiple encodings to handle different file formats
             file_content = csv_file.read()
@@ -2560,6 +2573,23 @@ def admin_add_verifyharvestrec(request):
                 missing_headers = [h for h in required_headers if h not in reader.fieldnames]
                 messages.error(request, f"CSV file is missing required headers: {', '.join(missing_headers)}. Please check the template format.")
             else:
+                # Count rows first to check for reasonable limits
+                row_count = sum(1 for _ in csv.DictReader(io.StringIO(decoded_file)))
+                max_rows = 10000  # Set reasonable limit
+                
+                if row_count > max_rows:
+                    messages.error(request, f"CSV file contains {row_count:,} rows, which exceeds the maximum allowed limit of {max_rows:,} rows. Please split your file into smaller chunks and upload them separately.")
+                    context = get_admin_context(request)
+                    context.update({
+                        'municipalities': municipalities, 
+                        'form': VerifiedHarvestRecordForm(user=request.user),
+                        'admin_municipality_id': admin_municipality_id,
+                        'is_overall_admin': admin_municipality_id == 14
+                    })
+                    return render(request, 'admin_panel/verifyharvest_add.html', context)
+                
+                print(f"Processing CSV with {row_count:,} rows...")
+                
                 # Pre-validate municipality restrictions for non-overall admins
                 if not is_overall_admin and has_municipality_column:
                     admin_municipality_name = admin_info.municipality_incharge.municipality
@@ -2601,6 +2631,36 @@ def admin_add_verifyharvestrec(request):
                 
                 # Track commodity-municipality pairs for selective retraining
                 csv_commodity_municipality_pairs = []
+                
+                # Pre-cache all lookup data to avoid repeated database queries
+                print(f"Pre-caching lookup data for {sum(1 for _ in csv.DictReader(io.StringIO(decoded_file)))} rows...")
+                
+                # Cache commodities (case-insensitive lookup)
+                commodity_cache = {}
+                for commodity in CommodityType.objects.all():
+                    commodity_cache[commodity.name.lower()] = commodity
+                
+                # Cache municipalities (case-insensitive lookup)
+                municipality_cache = {}
+                for municipality in MunicipalityName.objects.all():
+                    municipality_cache[municipality.municipality.lower()] = municipality
+                
+                # Cache barangays by municipality (case-insensitive lookup)
+                barangay_cache = {}
+                for barangay in BarangayName.objects.select_related('municipality_id').all():
+                    muni_key = barangay.municipality_id.municipality.lower()
+                    if muni_key not in barangay_cache:
+                        barangay_cache[muni_key] = {}
+                    barangay_cache[muni_key][barangay.barangay.lower()] = barangay
+                
+                print("Lookup data cached. Processing CSV rows...")
+                
+                # Prepare batch data for bulk creation
+                records_to_create = []
+                admin_logs_to_create = []
+                
+                # Reset reader again for actual processing
+                reader = csv.DictReader(io.StringIO(decoded_file))
                 
                 for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
                     try:
@@ -2664,11 +2724,10 @@ def admin_add_verifyharvestrec(request):
                             error_count += 1
                             continue
                         
-                        # Process commodity name as string
+                        # Process commodity name using cache
                         commodity_name = row['commodity'].strip()
-                        try:
-                            commodity_obj = CommodityType.objects.get(name__iexact=commodity_name)
-                        except CommodityType.DoesNotExist:
+                        commodity_obj = commodity_cache.get(commodity_name.lower())
+                        if not commodity_obj:
                             error_details.append(f"Row {row_num}: Commodity '{commodity_name}' does not exist in database")
                             error_count += 1
                             continue
@@ -2681,9 +2740,8 @@ def admin_add_verifyharvestrec(request):
                             if municipality_name.lower() == 'balanga':
                                 municipality_name = 'Balanga City'
                             
-                            try:
-                                municipality = MunicipalityName.objects.get(municipality__iexact=municipality_name)
-                            except MunicipalityName.DoesNotExist:
+                            municipality = municipality_cache.get(municipality_name.lower())
+                            if not municipality:
                                 error_details.append(f"Row {row_num}: Municipality '{municipality_name}' does not exist in database")
                                 error_count += 1
                                 continue
@@ -2691,17 +2749,18 @@ def admin_add_verifyharvestrec(request):
                             # Use admin's assigned municipality
                             municipality = admin_info.municipality_incharge
                         
-                        # Process barangay name as string (optional)
+                        # Process barangay name using cache (optional)
                         barangay_name = row.get("barangay", "").strip()
                         barangay = None
                         if barangay_name:
-                            try:
-                                barangay = BarangayName.objects.get(barangay__iexact=barangay_name, municipality_id=municipality)
-                            except BarangayName.DoesNotExist:
+                            muni_barangays = barangay_cache.get(municipality.municipality.lower(), {})
+                            barangay = muni_barangays.get(barangay_name.lower())
+                            if not barangay:
                                 error_details.append(f"Row {row_num}: Barangay '{barangay_name}' not found in '{municipality.municipality}'. Record will be created without barangay")
                                 # Don't skip the row, just proceed without barangay
                         
-                        verified_harvest_record = VerifiedHarvestRecord.objects.create(
+                        # Prepare record for bulk creation
+                        verified_harvest_record = VerifiedHarvestRecord(
                             harvest_date=harvest_date,
                             commodity_id=commodity_obj,
                             total_weight_kg=total_weight_kg,
@@ -2712,26 +2771,61 @@ def admin_add_verifyharvestrec(request):
                             verified_by=admin_info,
                             prev_record=None,
                         )
-                        
-                        # Log the creation from CSV upload
-                        AdminUserManagement.objects.create(
-                            admin_id=admin_info,
-                            action=f"Created Verified Harvest Record ID {verified_harvest_record.id} via CSV upload - {commodity_obj.name} ({total_weight_kg}kg) from {municipality.municipality}",
-                            content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
-                            object_id=verified_harvest_record.id
-                        )
+                        records_to_create.append(verified_harvest_record)
                         
                         # Track commodity-municipality pair for selective retraining
                         pair = {'commodity_id': commodity_obj.commodity_id, 'municipality_id': municipality.municipality_id}
                         if pair not in csv_commodity_municipality_pairs:
                             csv_commodity_municipality_pairs.append(pair)
                         
-                        created_count += 1
+                        # Process in batches to avoid memory issues
+                        if len(records_to_create) >= 500:  # Process in batches of 500
+                            with transaction.atomic():
+                                created_records = VerifiedHarvestRecord.objects.bulk_create(records_to_create)
+                                created_count += len(created_records)
+                                
+                                # Create admin logs for this batch
+                                for record in created_records:
+                                    admin_logs_to_create.append(AdminUserManagement(
+                                        admin_id=admin_info,
+                                        action=f"Created Verified Harvest Record ID {record.id} via CSV upload - {record.commodity_id.name} ({record.total_weight_kg}kg) from {record.municipality.municipality}",
+                                        content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                                        object_id=record.id
+                                    ))
+                                
+                                # Bulk create admin logs and clear buffers
+                                if admin_logs_to_create:
+                                    AdminUserManagement.objects.bulk_create(admin_logs_to_create)
+                                    admin_logs_to_create.clear()
+                                
+                                records_to_create.clear()
+                                print(f"Processed batch: {created_count} records created so far...")
                         
                     except Exception as e:
                         error_details.append(f"Row {row_num}: Unexpected error - {str(e)}")
                         error_count += 1
                         continue
+                
+                # Process remaining records in final batch
+                if records_to_create:
+                    with transaction.atomic():
+                        created_records = VerifiedHarvestRecord.objects.bulk_create(records_to_create)
+                        created_count += len(created_records)
+                        
+                        # Create admin logs for final batch
+                        for record in created_records:
+                            admin_logs_to_create.append(AdminUserManagement(
+                                admin_id=admin_info,
+                                action=f"Created Verified Harvest Record ID {record.id} via CSV upload - {record.commodity_id.name} ({record.total_weight_kg}kg) from {record.municipality.municipality}",
+                                content_type=ContentType.objects.get_for_model(VerifiedHarvestRecord),
+                                object_id=record.id
+                            ))
+                        
+                        # Bulk create final admin logs
+                        if admin_logs_to_create:
+                            AdminUserManagement.objects.bulk_create(admin_logs_to_create)
+                
+                print(f"CSV processing completed: {created_count} records created, {error_count} errors")
                 
                 # Show appropriate messages
                 if created_count > 0:
