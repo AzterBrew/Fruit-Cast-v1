@@ -226,6 +226,22 @@ Fruit Cast | Add Verified Harvest Record
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
+        // Limit year input to 4 digits for harvest date
+        const harvestDateInput = document.getElementById('id_harvest_date');
+        if (harvestDateInput) {
+            harvestDateInput.addEventListener('input', function() {
+                const value = this.value;
+                if (value) {
+                    const dateParts = value.split('-');
+                    // Limit year to 4 digits
+                    if (dateParts[0] && dateParts[0].length > 4) {
+                        dateParts[0] = dateParts[0].substring(0, 4);
+                        this.value = dateParts.join('-');
+                    }
+                }
+            });
+        }
+
         // File input validation
         const fileInput = document.getElementById('csv_file');
         if (fileInput) {
@@ -250,29 +266,44 @@ Fruit Cast | Add Verified Harvest Record
             });
         }
 
+        // Form validation function
+        function validateHarvestDate(harvestDateInput) {
+            if (harvestDateInput && harvestDateInput.value) {
+                const selectedDate = new Date(harvestDateInput.value);
+                const today = new Date();
+                const tenYearsAgo = new Date();
+                tenYearsAgo.setFullYear(today.getFullYear() - 10);
+                
+                // Clear any previous custom validity
+                harvestDateInput.setCustomValidity('');
+                
+                if (selectedDate > today) {
+                    harvestDateInput.setCustomValidity('Harvest date cannot be in the future.');
+                    return false;
+                } else if (selectedDate < tenYearsAgo) {
+                    harvestDateInput.setCustomValidity('Harvest date cannot be more than 10 years ago.');
+                    return false;
+                } else {
+                    harvestDateInput.setCustomValidity('');
+                    return true;
+                }
+            }
+            return true;
+        }
+
         // Form validation
         const mainForm = document.querySelector('form[method="post"]:not([enctype])');
         if (mainForm) {
             mainForm.addEventListener('submit', function(e) {
                 const harvestDate = document.getElementById('id_harvest_date');
-                const municipality = document.getElementById('id_municipality');
-                const barangay = document.getElementById('id_barangay');
                 
-                // Check if harvest date is not in the future
-                if (harvestDate && harvestDate.value) {
-                    const selectedDate = new Date(harvestDate.value);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    if (selectedDate > today) {
-                        e.preventDefault();
-                        alert('Harvest date cannot be in the future.');
-                        harvestDate.focus();
-                        return false;
-                    }
+                // Validate harvest date
+                if (!validateHarvestDate(harvestDate)) {
+                    e.preventDefault();
+                    harvestDate.reportValidity();
+                    harvestDate.focus();
+                    return false;
                 }
-                
-                // No need to validate barangay since it's optional
             });
         }
 
@@ -319,9 +350,11 @@ Fruit Cast | Add Verified Harvest Record
     });
 
     // Dynamic Barangay Dropdown
-    document.getElementById('id_municipality').addEventListener('change', function() {
-        var municipalityId = this.value;
-        var barangaySelect = document.getElementById('id_barangay');
+    const municipalitySelect = document.getElementById('id_municipality');
+    const barangaySelect = document.getElementById('id_barangay');
+    
+    function updateBarangayOptions() {
+        const municipalityId = municipalitySelect.value;
         
         // Reset and disable barangay dropdown
         barangaySelect.innerHTML = '<option value="">Loading...</option>';
@@ -338,7 +371,10 @@ Fruit Cast | Add Verified Harvest Record
                 .then(data => {
                     barangaySelect.innerHTML = '<option value="">No Barangay Selected</option>';
                     data.forEach(function(barangay) {
-                        barangaySelect.innerHTML += '<option value="' + barangay.id + '">' + barangay.barangay + '</option>';
+                        const option = document.createElement('option');
+                        option.value = barangay.id;
+                        option.textContent = barangay.barangay;
+                        barangaySelect.appendChild(option);
                     });
                     barangaySelect.disabled = false;
                 })
@@ -351,7 +387,11 @@ Fruit Cast | Add Verified Harvest Record
             barangaySelect.innerHTML = '<option value="">No Barangay Selected</option>';
             barangaySelect.disabled = false;
         }
-    });
+    }
+    
+    if (municipalitySelect) {
+        municipalitySelect.addEventListener('change', updateBarangayOptions);
+    }
 
     function downloadTemplate() {
         // Create a sample CSV content based on admin type
