@@ -841,12 +841,17 @@ def monitor(request):
     current_year = timezone.now().year
     selected_year = request.GET.get('year')
     
-    # Handle year parameter more robustly - default to current year
+    # Handle year parameter more robustly - default to year with most recent data
     if selected_year and selected_year.isdigit() and int(selected_year) > 0:
         selected_year = int(selected_year)
     else:
-        # Default to current year if no valid year provided
-        selected_year = current_year
+        # Default to the year with the most recent harvest data if no year provided
+        if available_years_list:
+            # Use the most recent year with data
+            selected_year = max(available_years_list)
+        else:
+            # Fallback to current year if no data exists
+            selected_year = current_year
     
     selected_municipality = request.GET.get('municipality', 'all')
     selected_commodity = request.GET.get('commodity', 'all')

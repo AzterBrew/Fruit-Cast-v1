@@ -3269,6 +3269,12 @@ def admin_harvestverified_edit(request, record_id):
             
             messages.success(request, 'Harvest record updated successfully.')
             
+            # Add a success message with year info to help users navigate dashboard
+            harvest_year = updated_record.harvest_date.year
+            current_year = date.today().year
+            if harvest_year != current_year:
+                messages.info(request, f'Note: This record is from {harvest_year}. To see changes in dashboard graphs, make sure to select year {harvest_year} in the dashboard filters.')
+            
             # Create commodity-municipality pair for selective retraining
             edit_commodity_municipality_pairs = [{
                 'commodity_id': updated_record.commodity_id.commodity_id,
