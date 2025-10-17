@@ -77,7 +77,7 @@ Fruit Cast | Account Management
                         <h5 class="card-title text-success mb-0">
                             <i class="bi bi-table me-2"></i>Account Records
                         </h5>
-                        <span class="badge bg-warning">{{ allAccounts|length }} account{{ allAccounts|length|pluralize }}</span>
+                        <span class="badge bg-warning">{{ paginator.count }} account{{ paginator.count|pluralize }}</span>
                     </div>
 
                     <form method="post" action="">

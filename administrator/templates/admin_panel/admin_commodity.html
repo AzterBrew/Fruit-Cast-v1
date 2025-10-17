@@ -34,7 +34,7 @@ Fruit Cast | Commodity Management
                         <h5 class="card-title text-success mb-0">
                             <i class="bi bi-table me-2"></i>Commodity Records
                         </h5>
-                        <span class="badge bg-warning">{{ commodities|length }} commodit{{ commodities|length|pluralize:"y,ies" }}</span>
+                        <span class="badge bg-warning">{{ paginator.count }} commodit{{ paginator.count|pluralize:"y,ies" }}</span>
                     </div>
 
                     <!-- Responsive Table -->

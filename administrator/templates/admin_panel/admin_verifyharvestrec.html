@@ -89,7 +89,7 @@ Fruit Cast | Plant and Harvest Records
                         <h5 class="card-title text-success mb-0">
                             <i class="bi bi-table me-2"></i>Harvest Records
                         </h5>
-                        <span class="badge bg-warning">{{ records|length }} record{{ records|length|pluralize }}</span>
+                        <span class="badge bg-warning">{{ paginator.count }} record{{ paginator.count|pluralize }}</span>
                     </div>
 
                     <form method="post">
