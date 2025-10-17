@@ -229,7 +229,7 @@
         });
     }
  
-    // Date validation for harvest_date
+    // Date validation for harvest_date (only on form submission)
     function validateHarvestDate() {
         const harvestDateInput = document.getElementById('id_harvest_date');
         if (harvestDateInput && harvestDateInput.value) {
@@ -243,11 +243,9 @@
             
             if (selectedDate > today) {
                 harvestDateInput.setCustomValidity('Harvest date cannot be in the future.');
-                harvestDateInput.reportValidity();
                 return false;
             } else if (selectedDate < tenYearsAgo) {
                 harvestDateInput.setCustomValidity('Harvest date cannot be more than 10 years ago.');
-                harvestDateInput.reportValidity();
                 return false;
             } else {
                 harvestDateInput.setCustomValidity('');
@@ -257,6 +255,7 @@
         return true;
     }
 
+    // Only limit year input to 4 digits during typing, no validation
     const harvestDateInput = document.getElementById('id_harvest_date');
     if (harvestDateInput) {
         harvestDateInput.addEventListener('input', function() {
@@ -270,9 +269,6 @@
                 }
             }
         });
-        
-        harvestDateInput.addEventListener('change', validateHarvestDate);
-        harvestDateInput.addEventListener('blur', validateHarvestDate);
     }
 
     

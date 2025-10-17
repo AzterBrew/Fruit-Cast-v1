@@ -183,7 +183,7 @@
         });
     }
 
-    // Date validation for plant_date
+    // Date validation for plant_date (only on form submission)
     function validatePlantDate() {
         const plantDateInput = document.getElementById('id_plant_date');
         if (plantDateInput && plantDateInput.value) {
@@ -197,11 +197,9 @@
             
             if (selectedDate > today) {
                 plantDateInput.setCustomValidity('Plant date cannot be in the future.');
-                plantDateInput.reportValidity();
                 return false;
             } else if (selectedDate < tenYearsAgo) {
                 plantDateInput.setCustomValidity('Plant date cannot be more than 10 years ago.');
-                plantDateInput.reportValidity();
                 return false;
             } else {
                 plantDateInput.setCustomValidity('');
@@ -211,6 +209,7 @@
         return true;
     }
 
+    // Only limit year input to 4 digits during typing, no validation
     const plantDateInput = document.getElementById('id_plant_date');
     if (plantDateInput) {
         plantDateInput.addEventListener('input', function() {
@@ -224,9 +223,6 @@
                 }
             }
         });
-        
-        plantDateInput.addEventListener('change', validatePlantDate);
-        plantDateInput.addEventListener('blur', validatePlantDate);
     }
     
     // Confirmation on submit
