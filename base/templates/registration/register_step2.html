@@ -54,6 +54,7 @@
           {% csrf_token %}
     
           {% for field in form %}
+            {% comment %}
             {% if field.name == "religion" %}
               <!-- Start of 2-column row -->
               <div class="row">
@@ -74,6 +75,16 @@
                 </div>
               </div>
             {% elif field.name != "civil_status" %}
+            {% endcomment %}
+            {% if field.name == "civil_status" %}
+              <div class="mb-3">
+                <label class="form-label">{{ field.label_tag }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <div class="text-danger small">{{ field.errors }}</div>
+                {% endif %}
+              </div>
+            {% elif field.name != "religion" %}
               <div class="mb-3">
                 <label class="form-label">{{ field.label_tag }}</label>
                 {{ field }}

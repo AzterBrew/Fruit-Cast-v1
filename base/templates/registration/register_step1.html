@@ -101,6 +101,18 @@
                   {% endif %}
                 </div>
               </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="id_civil_status">
+                    <i class="bi bi-people me-1"></i>Civil Status *
+                  </label>
+                  {{ form.civil_status }}
+                  {% if form.civil_status.errors %}
+                    <div class="text-danger small mt-1">{{ form.civil_status.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
             </div>
 
             <!-- Contact Information Section -->
@@ -176,34 +188,6 @@
                   {{ form.barangay_id }}
                   {% if form.barangay_id.errors %}
                     <div class="text-danger small mt-1">{{ form.barangay_id.errors }}</div>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-
-            <!-- Additional Information Section -->
-            <div class="mb-4 registration-section">
-              <h5 class="text-success mb-3">
-                <i class="bi bi-info-circle me-2"></i>Additional Information
-              </h5>
-              
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label" for="id_religion">
-                    <i class="bi bi-heart me-1"></i>Religion *
-                  </label>
-                  {{ form.religion }}
-                  {% if form.religion.errors %}
-                    <div class="text-danger small mt-1">{{ form.religion.errors }}</div>
-                  {% endif %}
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label" for="id_civil_status">
-                    <i class="bi bi-people me-1"></i>Civil Status *
-                  </label>
-                  {{ form.civil_status }}
-                  {% if form.civil_status.errors %}
-                    <div class="text-danger small mt-1">{{ form.civil_status.errors }}</div>
                   {% endif %}
                 </div>
               </div>
@@ -329,7 +313,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Religion field validation (character restrictions + 50 character limit)
+  // Religion field validation (character restrictions + 50 character limit) - COMMENTED OUT
+  /*
   function validateReligionInput(input) {
     const religionRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
     let value = input.value;
@@ -346,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     input.value = value;
   }
+  */
 
   // Address details validation (150 character limit)
   function validateAddressInput(input) {
@@ -366,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  {% comment %}
   // Apply religion validation
   const religionField = document.getElementById('id_religion');
   if (religionField) {
@@ -373,6 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
       validateReligionInput(e.target);
     });
   }
+  {% endcomment %}
 
   // Apply address validation
   const addressField = document.getElementById('id_address_details');
@@ -510,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       
       // Validate required fields
-      const requiredFields = ['firstname', 'lastname', 'sex', 'birthdate', 'contact_number', 'emergency_contact_person', 'emergency_contact_number', 'address_details', 'municipality_id', 'barangay_id', 'religion', 'civil_status'];
+      const requiredFields = ['firstname', 'lastname', 'sex', 'birthdate', 'contact_number', 'emergency_contact_person', 'emergency_contact_number', 'address_details', 'municipality_id', 'barangay_id', 'civil_status'];
       const missingFields = [];
       
       requiredFields.forEach(field => {

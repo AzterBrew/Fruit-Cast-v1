@@ -32,7 +32,7 @@
             </h5>
             <div class="row g-3">
                 {% for field in form %}
-                    {% if field.name in "firstname,lastname,middlename,nameextension,sex,birthdate,religion,civil_status" %}
+                    {% if field.name in "firstname,lastname,middlename,nameextension,sex,birthdate,civil_status" %}
                         <div class="{% if field.name == 'sex' %}col-12{% else %}col-md-6{% endif %}">
                             <label class="form-label" for="{{ field.id_for_label }}">
                                 {% if field.name == "firstname" %}<i class="bi bi-person me-1"></i>{% endif %}
@@ -40,7 +40,6 @@
                                 {% if field.name == "middlename" %}<i class="bi bi-person me-1"></i>{% endif %}
                                 {% if field.name == "nameextension" %}<i class="bi bi-person-badge me-1"></i>{% endif %}
                                 {% if field.name == "birthdate" %}<i class="bi bi-calendar me-1"></i>{% endif %}
-                                {% if field.name == "religion" %}<i class="bi bi-church me-1"></i>{% endif %}
                                 {% if field.name == "civil_status" %}<i class="bi bi-heart me-1"></i>{% endif %}
                                 {{ field.label }}
                             </label>
@@ -233,7 +232,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Religion field validation (character restrictions + 50 character limit)
+    // Religion field validation (character restrictions + 50 character limit) - COMMENTED OUT
+    /*
     function validateReligionInput(input) {
         const religionRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
         let value = input.value;
@@ -250,6 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         input.value = value;
     }
+    */
 
     // Address details validation (150 character limit)
     function validateAddressInput(input) {
@@ -270,13 +271,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Apply religion validation
+    // Apply religion validation - COMMENTED OUT (field hidden from UI)
+    /*
     const religionField = document.getElementById('id_religion');
     if (religionField) {
         religionField.addEventListener('input', function(e) {
             validateReligionInput(e.target);
         });
     }
+    */
 
     // Apply address validation
     const addressField = document.getElementById('id_address_details');

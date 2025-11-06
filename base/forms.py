@@ -162,7 +162,7 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = UserInformation
-        fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay_id", "municipality_id", "address_details", "religion", "civil_status", "emergency_contact_person", "emergency_contact_number", "contact_number"]
+        fields = ["firstname", "lastname", "middlename", "nameextension", "sex", "birthdate", "barangay_id", "municipality_id", "address_details", "civil_status", "emergency_contact_person", "emergency_contact_number", "contact_number"]
         labels = {
             "lastname": "Last Name *",
             "firstname": "First Name *", 
@@ -173,7 +173,6 @@ class RegistrationForm(forms.ModelForm):
             "barangay_id": "Barangay *",
             "municipality_id": "Municipality *",
             "address_details": "Address Details *", 
-            "religion":"Religion",  
             "emergency_contact_person" : "Emergency Contact Person *", 
             "emergency_contact_number" : "Emergency Contact Person's Contact No. *", 
             "contact_number" : "Contact Number *"
@@ -190,7 +189,6 @@ class RegistrationForm(forms.ModelForm):
             'barangay_id': forms.Select(attrs={'class': 'form-select','required': 'required'}),
             'municipality_id': forms.Select(attrs={'class': 'form-select','required': 'required'}),
             'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 2,'required': 'required', 'placeholder': 'House No., Purok, Street Name, Building'}),
-            'religion': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Religion'}),
             'civil_status': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'Civil Status'}),
         }
     
@@ -214,6 +212,8 @@ class RegistrationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Initialize barangay queryset as empty
         self.fields['barangay_id'].queryset = BarangayName.objects.none()
+        # Exclude pk=14 (Overall) from municipality options
+        self.fields['municipality_id'].queryset = MunicipalityName.objects.exclude(pk=14).order_by('municipality')
         
         # If we have initial data with municipality, populate barangays
         if 'municipality_id' in self.data:
@@ -304,7 +304,7 @@ class EditUserInformation(forms.ModelForm):
     
     # Enhanced name fields with length and character restrictions
     firstname = forms.CharField(
-        label="First Name",
+        label="First Name *",
         max_length=16,
         validators=[name_regex],
         widget=forms.TextInput(attrs={
@@ -315,7 +315,7 @@ class EditUserInformation(forms.ModelForm):
     )
     
     lastname = forms.CharField(
-        label="Last Name",
+        label="Last Name *",
         max_length=21,
         validators=[name_regex],
         widget=forms.TextInput(attrs={
@@ -350,7 +350,7 @@ class EditUserInformation(forms.ModelForm):
     )
     
     emergency_contact_person = forms.CharField(
-        label="Emergency Contact Person",
+        label="Emergency Contact Person *",
         max_length=50,
         validators=[name_regex],
         widget=forms.TextInput(attrs={
@@ -361,7 +361,7 @@ class EditUserInformation(forms.ModelForm):
     )
     
     contact_number = forms.CharField(
-        label="Contact No.", 
+        label="Contact No. *", 
         validators=[phone_regex], 
         max_length=20, 
         widget=forms.TextInput(attrs={
@@ -373,7 +373,7 @@ class EditUserInformation(forms.ModelForm):
     )
     
     emergency_contact_number = forms.CharField(
-        label="Emergency Contact No.", 
+        label="Emergency Contact No. *", 
         validators=[phone_regex], 
         max_length=20, 
         widget=forms.TextInput(attrs={
@@ -386,23 +386,22 @@ class EditUserInformation(forms.ModelForm):
 
     class Meta:
         model = UserInformation
-        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate","municipality_id","barangay_id",  "address_details", "religion", "civil_status", "emergency_contact_person", "emergency_contact_number", "user_email", "contact_number"]
+        fields = ["lastname", "firstname", "middlename", "nameextension", "sex", "birthdate","municipality_id","barangay_id",  "address_details", "civil_status", "emergency_contact_person", "emergency_contact_number", "user_email", "contact_number"]
         labels = {
-            "lastname": "Last Name", 
+            "lastname": "Last Name *", 
             "firstname": "First Name", 
             "middlename": "Middle Name",
             "nameextension": "Name Extension", 
-            "sex": "Sex", 
-            "birthdate": "Date of Birth",
-            "municipality_id": "Municipality",
-            "barangay_id": "Barangay", 
-            "address_details": "House No., Purok, Street Name, Building", 
-            "religion": "Religion",
-            "civil_status": "Civil Status", 
-            "emergency_contact_person": "Emergency Contact Person", 
-            "emergency_contact_number": "Emergency Contact No.",
-            "user_email": "Email", 
-            "contact_number": "Contact No."
+            "sex": "Sex *", 
+            "birthdate": "Date of Birth *",
+            "municipality_id": "Municipality *",
+            "barangay_id": "Barangay *", 
+            "address_details": "House No., Purok, Street Name, Building *", 
+            "civil_status": "Civil Status *", 
+            "emergency_contact_person": "Emergency Contact Person *", 
+            "emergency_contact_number": "Emergency Contact No. *",
+            "user_email": "Email *", 
+            "contact_number": "Contact No. *"
         }
         widgets = {
             'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
@@ -410,7 +409,6 @@ class EditUserInformation(forms.ModelForm):
             'barangay_id': forms.Select(attrs={'class': 'form-control form-select'}),
             'municipality_id': forms.Select(attrs={'class': 'form-control form-select'}),
             'address_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'religion': forms.TextInput(attrs={'class': 'form-control'}),
             'civil_status': forms.Select(attrs={'class': 'form-control'}),
             'user_email': forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
         }
@@ -430,6 +428,24 @@ class EditUserInformation(forms.ModelForm):
                 raise forms.ValidationError("Age cannot exceed 90 years. Please contact support if you need assistance.")
                 
         return birthdate
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Exclude pk=14 (Overall) from municipality options
+        self.fields['municipality_id'].queryset = MunicipalityName.objects.exclude(pk=14).order_by('municipality')
+        # Initialize barangay queryset properly
+        self.fields['barangay_id'].queryset = BarangayName.objects.none()
+        
+        # If we have initial data with municipality, populate barangays
+        if 'municipality_id' in self.data:
+            try:
+                municipality_id = int(self.data.get('municipality_id'))
+                self.fields['barangay_id'].queryset = BarangayName.objects.filter(municipality_id=municipality_id).order_by('barangay')
+            except (ValueError, TypeError):
+                pass  # Invalid municipality_id, keep empty queryset
+        elif self.instance.pk and self.instance.municipality_id:
+            # If editing an existing instance, populate barangays for the selected municipality
+            self.fields['barangay_id'].queryset = BarangayName.objects.filter(municipality_id=self.instance.municipality_id).order_by('barangay')
 
 
 class HarvestRecordCreate(forms.ModelForm):
