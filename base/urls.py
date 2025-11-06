@@ -37,6 +37,7 @@ urlpatterns = [
     path('forecast/', forecast, name="forecast"),
     path('monitor/', monitor, name="monitor"),
     path('aboutus/', about, name="about"),
+    path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
     path('farmerrecords/', newrecord, name="newrecord"),
 
     path('farmerrecords/harvest/finalize', finalize_transaction, name="finalize_transaction"),

@@ -1277,6 +1277,13 @@ def about(request):
         return render(request, 'about.html', {})  
 
 
+def terms_of_service(request):
+    """
+    Display the Terms of Service page
+    """
+    return render(request, 'legal/terms_of_service.html')
+
+
 # @login_required
 # def editacc(request):
     # userinfo_id = request.session.get('userinfo_id')

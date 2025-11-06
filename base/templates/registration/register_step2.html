@@ -98,6 +98,15 @@
             <p><b>Do NOT forget your email and password </b></p>
             <p>This is what you will be using to log into your account</p>
           </div>
+          
+          <!-- Terms of Service Agreement -->
+          <div class="text-center mb-3">
+            <div class="small text-muted">
+              By completing your registration, you agree to our 
+              <a href="{% url 'base:terms_of_service' %}" target="_blank" class="text-success">Terms of Service</a>
+            </div>
+          </div>
+          
           <div class="text-center mt-4">
             <hr />
             <button type="submit" class="btn btn-success">Complete Registration</button>
