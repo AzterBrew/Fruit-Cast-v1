@@ -2236,7 +2236,7 @@ def admin_verifyplantrec(request):
         if export_type == 'records':
             return export_plant_records_csv(records, 'plant_verification_records', export_format, request)
         elif export_type == 'summary':
-            return export_plant_records_summary_csv(records, 'plant_verification_summary', export_format)
+            return export_plant_records_summary_csv(records, 'plant_verification_summary', export_format, request)
 
     context = get_admin_context(request)
     context.update({
@@ -3883,7 +3883,7 @@ def export_plant_records_csv(records, filename, format_type='csv', request=None)
     elif format_type == 'pdf':
         return generate_plant_records_pdf(records, filename, request)
 
-def export_plant_records_summary_csv(records, filename, format_type='csv'):
+def export_plant_records_summary_csv(records, filename, format_type='csv', request=None):
     """Export plant records summary to CSV or PDF format"""
     if format_type == 'csv':
         response = HttpResponse(content_type='text/csv')
