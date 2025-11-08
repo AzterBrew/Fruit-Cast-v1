@@ -33,7 +33,11 @@
 
     </nav> {% endcomment %}
 
-    {% include "admin_panel/navbar.html" %}
+    {% if user.is_authenticated%}
+        {% include "admin_panel/navbar.html" %}
+    {% else %}
+        {% include "registration/navbar.html" %}
+    {% endif %}
 
     <main class="pt-5">
         {% block content %}{% endblock %}
