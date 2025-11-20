@@ -6,6 +6,7 @@ Fruit Cast | Transaction Details
 {% endblock title %}
 
 {% block content %}
+{% csrf_token %}
 <div class="main-user">
     <div class="monitor-user-content justify-content-center">
         <div class="card shadow-sm rounded-4 p-4 mb-3">
@@ -473,6 +474,16 @@ Fruit Cast | Transaction Details
                             </a>
                         </div>
                         
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if current_user_role == 2 %}
+                                <button type="button" class="btn btn-outline-warning" onclick="flagTransaction({{ transaction.transaction_id }})" data-bs-toggle="tooltip" title="Flag this transaction for review">
+                                    <i class="bi bi-flag me-2"></i>Flag Transaction
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="confirmDelete({{ transaction.transaction_id }})" data-bs-toggle="tooltip" title="Delete this transaction permanently">
+                                    <i class="bi bi-trash me-2"></i>Delete Transaction
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -482,17 +493,91 @@ Fruit Cast | Transaction Details
 </div>
 
 <script>
-function confirmDelete() {
-    if (confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
-        // Add delete functionality here
-        alert('Delete functionality needs to be implemented');
+function confirmDelete(transactionId) {
+    if (confirm('Are you sure you want to delete this transaction? This action cannot be undone.\n\nThis will permanently remove all associated records including plant and harvest data.')) {
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...';
+        
+        // Make AJAX request
+        fetch(`/administrator/transaction/${transactionId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                'transaction_id': transactionId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Transaction deleted successfully.');
+                // Redirect to farmer transaction history
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Error: ' + (data.error || 'Failed to delete transaction'));
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the transaction.');
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
     }
 }
 
-function flagTransaction() {
-    if (confirm('Flag this transaction for review?')) {
-        // Add flag functionality here
-        alert('Flag functionality needs to be implemented');
+function flagTransaction(transactionId) {
+    const reason = prompt('Please provide a reason for flagging this transaction:');
+    if (reason !== null && reason.trim() !== '') {
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Flagging...';
+        
+        // Make AJAX request
+        fetch(`/administrator/transaction/${transactionId}/flag/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                'transaction_id': transactionId,
+                'reason': reason.trim()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Transaction flagged successfully for review.');
+                // Change button to indicate flagged status
+                button.className = 'btn btn-warning';
+                button.innerHTML = '<i class="bi bi-flag-fill me-2"></i>Flagged';
+                button.disabled = true;
+            } else {
+                alert('Error: ' + (data.error || 'Failed to flag transaction'));
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while flagging the transaction.');
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
     }
 }
 

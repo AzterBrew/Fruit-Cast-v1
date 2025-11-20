@@ -883,6 +883,100 @@ def farmer_transaction_detail(request, transaction_id):
     
     return render(request, 'admin_panel/farmer_transaction_detail.html', context)
 
+
+@admin_or_agriculturist_required
+@require_POST
+def delete_transaction(request, transaction_id):
+    """Delete a transaction and all its associated records"""
+    import json
+    
+    try:
+        # Get current admin info for access control
+        user = request.user
+        userinfo = UserInformation.objects.get(auth_user=user)
+        admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+        current_account = AccountsInformation.objects.get(userinfo_id=userinfo)
+        current_user_role = current_account.account_type_id.pk
+        
+        # Only administrators (role 2) can delete transactions
+        if current_user_role != 2:
+            return JsonResponse({'success': False, 'error': 'Only administrators can delete transactions'})
+        
+        # Get the transaction
+        transaction_record = RecordTransaction.objects.get(pk=transaction_id)
+        farmer_account_id = transaction_record.account_id.pk
+        
+        # Delete the transaction (this will cascade to related records)
+        with transaction.atomic():
+            # Log the admin action
+            AdminUserManagement.objects.create(
+                admin_id=admin_info,
+                action=f"Deleted transaction {transaction_id} for account {farmer_account_id}",
+                content_type=ContentType.objects.get_for_model(RecordTransaction),
+                object_id=transaction_id
+            )
+            
+            # Delete the transaction
+            transaction_record.delete()
+        
+        return JsonResponse({
+            'success': True, 
+            'redirect_url': f'/administrator/farmer_transactions/{farmer_account_id}/'
+        })
+        
+    except RecordTransaction.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Transaction not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@admin_or_agriculturist_required
+@require_POST
+def flag_transaction(request, transaction_id):
+    """Flag a transaction for review"""
+    import json
+    
+    try:
+        # Parse request data
+        data = json.loads(request.body)
+        reason = data.get('reason', '').strip()
+        
+        if not reason:
+            return JsonResponse({'success': False, 'error': 'Reason is required'})
+        
+        # Get current admin info
+        user = request.user
+        userinfo = UserInformation.objects.get(auth_user=user)
+        admin_info = AdminInformation.objects.get(userinfo_id=userinfo)
+        current_account = AccountsInformation.objects.get(userinfo_id=userinfo)
+        current_user_role = current_account.account_type_id.pk
+        
+        # Only administrators (role 2) can flag transactions
+        if current_user_role != 2:
+            return JsonResponse({'success': False, 'error': 'Only administrators can flag transactions'})
+        
+        # Get the transaction
+        transaction_obj = RecordTransaction.objects.get(pk=transaction_id)
+        
+        # Log the flagging action
+        AdminUserManagement.objects.create(
+            admin_id=admin_info,
+            action=f"Flagged transaction {transaction_id} for review. Reason: {reason}",
+            content_type=ContentType.objects.get_for_model(RecordTransaction),
+            object_id=transaction_id
+        )
+        
+        # You could also add a flag field to the transaction model if needed
+        # For now, we'll just log the action
+        
+        return JsonResponse({'success': True})
+        
+    except RecordTransaction.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Transaction not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
 @admin_or_agriculturist_required
 def assign_account(request):
     user = request.user
