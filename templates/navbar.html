@@ -66,19 +66,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Prevent dropdown menu from closing when clicking inside (optional)
     document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
         dropdown.addEventListener('click', function(e) {
             e.stopPropagation();
         });
     });
 
-    // Custom dropdown positioning for mobile
     document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
         toggle.addEventListener('shown.bs.dropdown', function() {
             var dropdown = this.nextElementSibling;
             if (dropdown && window.innerWidth <= 768) {
-                // Additional mobile-specific positioning if needed
                 dropdown.style.transform = 'none';
             }
         });

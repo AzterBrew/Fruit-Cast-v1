@@ -146,11 +146,7 @@ Forecast by Commodity
                                 <button type="button" class="btn btn-outline-warning btn-sm" onclick="downloadCombinedCommodityPDF()">
                                     <i class="bi bi-file-pdf me-1"></i>PDF
                                 </button>
-                                {% comment %} {% if user_role_id == 2 or user_role_id == 3 %}
-                                    <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-secondary btn-sm">
-                                        <i class="bi bi-eye me-1"></i>All Batches
-                                    </a>
-                                {% endif %} {% endcomment %}
+
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -229,7 +225,6 @@ Forecast by Commodity
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Data is automatically sorted by descending values in the backend
         var barLabels = {{ forecast_summary_chart.labels|safe }};
         var barValues = {{ forecast_summary_chart.values|safe }};
         
@@ -317,7 +312,6 @@ Forecast by Commodity
 </script>
 {% endif %}
 
-<!-- Smooth Scrolling for Navigation Links -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Smooth scrolling for sidebar navigation links
@@ -341,23 +335,18 @@ function downloadCombinedCommodityPDF() {
     const canvas = document.getElementById('forecastSummaryBarChart');
     const ctx = canvas.getContext('2d');
     
-    // Create a temporary canvas with white background
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
     tempCanvas.height = canvas.height;
     const tempCtx = tempCanvas.getContext('2d');
     
-    // Fill with white background
     tempCtx.fillStyle = '#ffffff';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
     
-    // Draw the original chart on top
     tempCtx.drawImage(canvas, 0, 0);
     
-    // Convert to image
     const imgData = tempCanvas.toDataURL('image/png');
     
-    // Create PDF
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({
         orientation: 'landscape',
@@ -365,28 +354,23 @@ function downloadCombinedCommodityPDF() {
         format: 'a4'
     });
     
-    // Page 1: Chart
     pdf.setFontSize(16);
     const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const monthName = monthNames[parseInt('{{ filter_month }}')];
     pdf.text('Commodity Forecast Analysis (Top 10) - ' + monthName + ' {{ filter_year }}', 15, 15);
     
-    // Add chart image
     const imgWidth = 270;
     const imgHeight = (tempCanvas.height * imgWidth) / tempCanvas.width;
     pdf.addImage(imgData, 'PNG', 15, 25, imgWidth, imgHeight);
     
-    // Add page info
     pdf.setFontSize(10);
     pdf.text('Generated on: ' + new Date().toLocaleDateString(), 15, 190);
     pdf.text('Page 1 of 2', 250, 190);
     
-    // Page 2: Table Data
     pdf.addPage();
     pdf.setFontSize(16);
     pdf.text('Commodity Summary Data - ' + monthName + ' {{ filter_year }}', 15, 15);
     
-    // Add municipality info
     pdf.setFontSize(12);
     {% if selected_municipality == "14" %}
     pdf.text('Municipality: All of Bataan', 15, 30);
@@ -396,7 +380,6 @@ function downloadCombinedCommodityPDF() {
     pdf.text('Month: ' + monthName, 15, 40);
     pdf.text('Year: {{ filter_year }}', 15, 50);
     
-    // Create table data
     const tableData = [
         ['Commodity', 'Forecasted Amount (kg)']
     ];

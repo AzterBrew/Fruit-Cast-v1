@@ -5,133 +5,7 @@
 Fruit Cast | Monitor
 {% endblock title %}
 
-{% comment %} {% block navbar %}
-    {% include "loggedin/navbar.html" %}
-{% endblock navbar %} {% endcomment %}
-
 {% block content %}
-<!-- Custom CSS for enhanced styling -->
-<style>
-    .dashboard-header {
-        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
-        color: white;
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .dashboard-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        transform: rotate(45deg);
-    }
-    
-    .kpi-card {
-        border: none;
-        border-radius: 15px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .kpi-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    }
-    
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.3) 100%);
-    }
-    
-    .filter-section {
-        background: rgba(25, 135, 84, 0.05);
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        border: 1px solid rgba(25, 135, 84, 0.1);
-    }
-    
-    .chart-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
-    }
-    
-    .chart-card:hover {
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .chart-header {
-        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
-        color: white;
-        border-radius: 15px 15px 0 0;
-        padding: 1rem 1.5rem;
-        border-bottom: none;
-    }
-    
-    .section-divider {
-        height: 2px;
-        background: linear-gradient(90deg, transparent 0%, #198754 50%, transparent 100%);
-        margin: 3rem 0;
-        border: none;
-    }
-    
-    .top-municipalities-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 15px;
-        border: none;
-    }
-    
-    .municipality-item {
-        background: white;
-        border-radius: 10px;
-        border: none;
-        transition: all 0.3s ease;
-        border-left: 4px solid #198754;
-    }
-    
-    .municipality-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .commodity-item {
-        border-radius: 10px;
-        border: 1px solid rgba(25, 135, 84, 0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .commodity-item:hover {
-        background: rgba(25, 135, 84, 0.05);
-        border-color: rgba(25, 135, 84, 0.3);
-    }
-
-    .form-select, .form-control {
-        border-radius: 10px;
-        border: 2px solid #e9ecef;
-        transition: all 0.3s ease;
-    }
-    
-    .form-select:focus, .form-control:focus {
-        border-color: #198754;
-        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
-    }
-</style>
 
 <div class="main-user">
     <div class="monitor-user-content justify-content-center">
@@ -411,12 +285,10 @@ Fruit Cast | Monitor
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
-        // Get filter elements
         const yearFilter = document.getElementById('yearFilter');
         const municipalityFilter = document.getElementById('municipalityFilter');
         const commodityFilter = document.getElementById('commodityFilter');
 
-        // Reset filters function
         window.resetFilters = function() {
             if (yearFilter) yearFilter.selectedIndex = 0;
             if (municipalityFilter) municipalityFilter.selectedIndex = 0;
@@ -424,7 +296,6 @@ Fruit Cast | Monitor
             updateDashboard();
         }
 
-        // Add event listeners for filter changes
         if (yearFilter) {
             yearFilter.addEventListener('change', updateDashboard);
         }
@@ -633,7 +504,7 @@ Fruit Cast | Monitor
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    indexAxis: 'y', // Make it a horizontal bar chart for better readability
+                    indexAxis: 'y', 
                     layout: {
                         padding: {
                             top: 20,
@@ -695,5 +566,125 @@ Fruit Cast | Monitor
         }
     });
 </script>
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: rotate(45deg);
+    }
+    
+    .kpi-card {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.3) 100%);
+    }
+    
+    .filter-section {
+        background: rgba(25, 135, 84, 0.05);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(25, 135, 84, 0.1);
+    }
+    
+    .chart-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .chart-card:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .chart-header {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 1rem 1.5rem;
+        border-bottom: none;
+    }
+    
+    .section-divider {
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #198754 50%, transparent 100%);
+        margin: 3rem 0;
+        border: none;
+    }
+    
+    .top-municipalities-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        border: none;
+    }
+    
+    .municipality-item {
+        background: white;
+        border-radius: 10px;
+        border: none;
+        transition: all 0.3s ease;
+        border-left: 4px solid #198754;
+    }
+    
+    .municipality-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .commodity-item {
+        border-radius: 10px;
+        border: 1px solid rgba(25, 135, 84, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .commodity-item:hover {
+        background: rgba(25, 135, 84, 0.05);
+        border-color: rgba(25, 135, 84, 0.3);
+    }
 
+    .form-select, .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .form-select:focus, .form-control:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+</style>
 {% endblock %}

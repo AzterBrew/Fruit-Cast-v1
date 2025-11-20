@@ -123,11 +123,6 @@ Fruit Cast | Forecast
                         <button type="button" class="btn btn-outline-warning btn-sm" onclick="downloadCombinedPDF()">
                             <i class="bi bi-file-pdf me-1"></i>PDF
                         </button>
-                        {% comment %} {% if user_role_id == 2 or user_role_id == 3 %}
-                            <a href="{% url 'administrator:admin_forecastviewall' %}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-eye me-1"></i>All Batches
-                            </a>
-                        {% endif %} {% endcomment %}
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -244,22 +239,18 @@ Fruit Cast | Forecast
                         var forecastChoropleth = {{ choropleth_data|safe }};
                         
                         document.addEventListener('DOMContentLoaded', function() {
-                            // Only run if map div exists
                             if (document.getElementById('map')) {
                                 var map = L.map('map').setView([14.68, 120.53], 10); // Center on Bataan
                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                     attribution: '© OpenStreetMap contributors'
                                 }).addTo(map);
 
-                                // Example: forecasted amounts per municipality (replace with real data from backend)
-                                // Should be a dict: {municipality_id: value}
                                 {% if forecast_data.municipality_values %}
                                     forecastChoropleth = {{ forecast_data.municipality_values|safe }};
                                 {% endif %}
 
                                 // Color scale function
                                 function getColor(d) {
-                                    // Adjust thresholds as needed
                                     return d > 10000 ? '#006837' :
                                         d > 5000  ? '#31a354' :
                                         d > 1000  ? '#78c679' :
@@ -304,7 +295,7 @@ Fruit Cast | Forecast
                                 
 
                                 function style(feature) {
-                                    var muniId = feature.properties.OBJECTID; // or use a custom property if you have one
+                                    var muniId = feature.properties.OBJECTID; 
                                     var value = forecastChoropleth[muniId] || 0;
                                     return {
                                         fillColor: getColor(value),
@@ -335,10 +326,8 @@ Fruit Cast | Forecast
                                             })
                                         }).addTo(layer._map || map);
                                     } catch (e) {
-                                        // fallback: do nothing
                                     }
                                 }
-
 
                                 // Add GeoJSON layer
                                 fetch("{% static 'geojson/BATAAN_MUNICIPALITY.geojson' %}")
@@ -433,7 +422,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var hasYearValue = mapYearSelect.value !== '';
         var hasCommodityValue = mapCommoditySelect.value !== '';
         
-        // If all filters have values (set by backend defaults), trigger map update
         if (hasMonthValue && hasYearValue && hasCommodityValue) {
             // Map will load with the data that's already passed from the backend
             console.log('Map filters auto-set with current month/year and first commodity');
@@ -462,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tension: 0.1,
                         pointRadius: 4,
                         pointHoverRadius: 6,
-                        spanGaps: false  // Don't connect null values
+                        spanGaps: false  
                     },
                     {
                         label: 'Forecasted Data (kg)',
@@ -474,7 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         pointRadius: 3,
                         pointHoverRadius: 5,
                         borderDash: [5, 5],  // Dashed line for forecast
-                        spanGaps: false  // Don't connect null values
+                        spanGaps: false  
                     }
                 ]
             },
@@ -512,7 +500,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Chart created successfully!");
     {% else %}
         console.log("No forecast data available for chart.");
-        // You can also show a message in the chart area
         document.getElementById('forecastChart').style.display = 'none';
     {% endif %}
 
@@ -522,23 +509,18 @@ function downloadCombinedPDF() {
     const canvas = document.getElementById('forecastChart');
     const ctx = canvas.getContext('2d');
     
-    // Create a temporary canvas with white background
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
     tempCanvas.height = canvas.height;
     const tempCtx = tempCanvas.getContext('2d');
     
-    // Fill with white background
     tempCtx.fillStyle = '#ffffff';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
     
-    // Draw the original chart on top
     tempCtx.drawImage(canvas, 0, 0);
     
-    // Convert to image
     const imgData = tempCanvas.toDataURL('image/png');
     
-    // Create PDF
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({
         orientation: 'landscape',
@@ -555,17 +537,14 @@ function downloadCombinedPDF() {
     const imgHeight = (tempCanvas.height * imgWidth) / tempCanvas.width;
     pdf.addImage(imgData, 'PNG', 15, 25, imgWidth, imgHeight);
     
-    // Add page info
     pdf.setFontSize(10);
     pdf.text('Generated on: ' + new Date().toLocaleDateString(), 15, 190);
     pdf.text('Page 1 of 2', 250, 190);
     
-    // Page 2: Table Data
     pdf.addPage();
     pdf.setFontSize(16);
     pdf.text('Monthly Forecast Data{% if selected_commodity_obj %} - {{ selected_commodity_obj.name }}{% endif %}', 15, 15);
     
-    // Add commodity and municipality info
     pdf.setFontSize(12);
     {% if selected_commodity_obj %}
     pdf.text('Commodity: {{ selected_commodity_obj.name }}', 15, 30);
@@ -576,7 +555,6 @@ function downloadCombinedPDF() {
     pdf.text('Municipality: All of Bataan', 15, 40);
     {% endif %}
     
-    // Create table data
     const tableData = [
         ['Month & Year', 'Forecasted Amount (kg)']
     ];
