@@ -195,14 +195,12 @@
 
     document.addEventListener('DOMContentLoaded', function() {
     
-    // Simple character limit validation for weight fields
     function enforceCharacterLimit(input, maxLength) {
         if (input.value.length > maxLength) {
             input.value = input.value.substring(0, maxLength);
         }
     }
 
-    // Apply character limit to weight fields
     const numericFields = ['id_total_weight'];
     numericFields.forEach(function(fieldId) {
         const field = document.getElementById(fieldId);
@@ -221,7 +219,6 @@
         }
     }
 
-    // Apply character limit to remarks field
     const remarksField = document.getElementById('id_remarks');
     if (remarksField) {
         remarksField.addEventListener('input', function(e) {
@@ -229,7 +226,6 @@
         });
     }
  
-    // Date validation for harvest_date (only on form submission)
     function validateHarvestDate() {
         const harvestDateInput = document.getElementById('id_harvest_date');
         if (harvestDateInput && harvestDateInput.value) {
@@ -238,7 +234,6 @@
             const tenYearsAgo = new Date();
             tenYearsAgo.setFullYear(today.getFullYear() - 10);
             
-            // Clear any previous custom validity
             harvestDateInput.setCustomValidity('');
             
             if (selectedDate > today) {
@@ -255,7 +250,6 @@
         return true;
     }
 
-    // Only limit year input to 4 digits during typing, no validation
     const harvestDateInput = document.getElementById('id_harvest_date');
     if (harvestDateInput) {
         harvestDateInput.addEventListener('input', function() {
@@ -289,7 +283,6 @@
         });
     }
 
-    // Commodity type dropdown logic
     const commoditySelect = document.getElementById('id_commodity_id');
     const customInput = document.getElementById('id_commodity_custom');
     function toggleCustomInput() {
@@ -309,7 +302,6 @@
         commoditySelect.addEventListener('change', toggleCustomInput);
     }
 
-    // Location type dropdown logic
     const locationTypeRadios = document.getElementsByName('location_type');
     const farmLandSelect = document.getElementById('id_farm_land');
     const municipalitySelect = document.getElementById('id_manual_municipality');
@@ -375,7 +367,6 @@
         }
     }
     
-    // Initialize all fields to disabled state first
     if (farmLandSelect) {
         farmLandSelect.disabled = true;
         farmLandSelect.required = false;
@@ -389,7 +380,6 @@
         barangaySelect.required = false;
     }
     
-    // Then apply the correct state based on current selection
     toggleLocationFields();
     locationTypeRadios.forEach(radio => {
         radio.addEventListener('change', toggleLocationFields);

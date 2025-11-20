@@ -1,15 +1,13 @@
 
 from django.urls import path, include
-from . import views #importing from files, in this case, my views python file
+from . import views 
 from django.contrib.auth import views as auth_views
 from .views import *
-#authview and home r functions i imported from views.py 
 
 app_name = 'base'
 
 urlpatterns = [
-    # path('', homeuser, name='homeuser'),
-    # path('', homeguest, name='homeguest'),
+
     path('', home, name='home'),
     path('get-barangays/<int:municipality_id>/', views.get_barangays, name='get_barangays'),
     path('register/email/', views.register_email, name='register_email'),
@@ -25,15 +23,10 @@ urlpatterns = [
     path('change-password/', views.change_password, name='change_password'),
     path('change-password/verify/', views.change_password_verify, name='change_password_verify'),
     path('change-password/new/', views.change_password_new, name='change_password_new'),
-    # path('signup/', register_step1, name='registerauth'),
     path('login/', custom_login, name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/logout/', views.custom_logout, name='logout'),
-    # path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
     path('accounts/login/success/', views.login_success, name='login_success'),
-    # path('login/', include('loginpage.urls'))
-    # path('accountinfo/', accinfo, name="accinfo"),
-    # path('accountinfo/edit/', editacc, name="editacc"),
     path('forecast/', forecast, name="forecast"),
     path('monitor/', monitor, name="monitor"),
     path('aboutus/', about, name="about"),

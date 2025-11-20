@@ -17,7 +17,6 @@ from django.utils.crypto import get_random_string
 from django.conf import settings
 import json, time
 from dateutil.relativedelta import relativedelta
-#from .forms import CustomUserCreationForm  # make sure this is imported
 from django.http import JsonResponse
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
@@ -28,13 +27,11 @@ from .forms import RegistrationForm, EditUserInformation, HarvestRecordCreate, P
 from .utils import get_alternative_recommendations
 from django.core.files.storage import default_storage
 
-# Format number with commas and 2 decimal places
 def format_number(value):
     """Format a number with commas and 2 decimal places"""
     if value is None:
         return "0.00"
     try:
-        # Convert to float first to handle Decimal objects
         num_value = float(value)
         return f"{num_value:,.2f}"
     except (ValueError, TypeError):
@@ -55,10 +52,6 @@ def schedule_monthly_fruit_recommendations(account, municipality_id, farmland_na
     """
     try:
         current_time = timezone.now()
-        
-        # Determine target month and year for recommendations
-        # If it's past the 1st of the current month, target next month
-        # If it's before or on the 1st, target current month
         if current_time.day > 1:
             target_month = current_time + relativedelta(seconds=2)
         else:
@@ -70,14 +63,11 @@ def schedule_monthly_fruit_recommendations(account, municipality_id, farmland_na
             selected_municipality_id=municipality_id
         )
         
-        # Get municipality name for the message
         municipality = MunicipalityName.objects.get(pk=municipality_id)
         
-        # Create unique identifier for duplicate checking
         location_type = "residential" if is_residential else "farmland"
         location_identifier = farmland_name if farmland_name else location_type
         
-        # Check if notification already exists for this target month, municipality, and location type
         existing_notification = Notification.objects.filter(
             account=account,
             notification_type="fruit_recommendation",
@@ -92,15 +82,12 @@ def schedule_monthly_fruit_recommendations(account, municipality_id, farmland_na
             print(f"Notification already exists for {municipality.municipality} ({location_type}) in {target_month.strftime('%B %Y')} - skipping duplicate")
             return False
         
-        # Create notifications for both short-term and long-term recommendations
         all_recommendations = recommendations.get('short_term', []) + recommendations.get('long_term', [])
         
         if all_recommendations:
-            # Limit to top 3 recommendations based on lowest forecasted supply
             top_3_recommendations = sorted(all_recommendations, 
                                          key=lambda x: x.get('forecasted_amount', 0))[:3]
             
-            # Create location-specific message
             fruit_names = [rec['commodity_name'] for rec in top_3_recommendations]
             
             if is_residential:
@@ -152,7 +139,6 @@ def schedule_immediate_fruit_recommendations(account, municipality_id, farmland_
         is_residential: True if this is for the user's residential municipality
     """
     try:
-        # Get recommendations for current month
         current_time = timezone.now()
         recommendations = get_alternative_recommendations(
             selected_month=current_time.month,
@@ -160,18 +146,15 @@ def schedule_immediate_fruit_recommendations(account, municipality_id, farmland_
             selected_municipality_id=municipality_id
         )
         
-        # Get municipality name for the message
         municipality = MunicipalityName.objects.get(pk=municipality_id)
         
-        # Create notifications for both short-term and long-term recommendations
         all_recommendations = recommendations.get('short_term', []) + recommendations.get('long_term', [])
         
         if all_recommendations:
-            # Limit to top 3 recommendations based on lowest forecasted supply
+            # Limit t top 3 recommendations based on lowest forecasted supply
             top_3_recommendations = sorted(all_recommendations, 
-                                         key=lambda x: x.get('forecasted_amount', 0))[:3]
+                key=lambda x: x.get('forecasted_amount', 0))[:3]
             
-            # Create location-specific message
             fruit_names = [rec['commodity_name'] for rec in top_3_recommendations]
             
             if is_residential:
@@ -209,8 +192,7 @@ def schedule_immediate_fruit_recommendations(account, municipality_id, farmland_
 
 
 def home(request):
-    print("🔥 DEBUG: Home view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    print("🔥 DEBUG: Home view called!")  
 
     if request.user.is_authenticated:
         account_id = request.session.get('account_id')
@@ -220,7 +202,6 @@ def home(request):
             
             userinfo = UserInformation.objects.get(pk=userinfo_id)
             accinfo = AccountsInformation.objects.get(account_id=account_id)
-            print(accinfo.account_type_id.account_type_id)
             
             now = timezone.now()
             current_year = now.year
@@ -244,7 +225,6 @@ def home(request):
                 
                 print(f"✅ Successfully scheduled {scheduled_count}/{len(distinct_municipality_ids)} notifications")
                 
-                # Show current notification status
                 current_notifications = Notification.objects.filter(
                     account=accinfo,
                     notification_type="fruit_recommendation"
@@ -254,12 +234,8 @@ def home(request):
             else : 
                 print("No farmland records found for user; skipping fruit recommendation scheduling.")
             
-            # Define the year range for the dropdown
-            year_range = range(current_year - 1, current_year + 3) # Example: past year to next two years
+            year_range = range(current_year - 1, current_year + 3) 
             municipalities = MunicipalityName.objects.exclude(pk=14)
-            # --- NEW CODE FOR RECOMMENDATIONS ---
-                # Call the utility function to get recommendations
-                
                 
             context = {
                 'user_firstname': userinfo.firstname,
@@ -342,8 +318,7 @@ def get_recommendations_api(request):
 
 
 def forecast(request):
-    print("🔥 DEBUG: forecast view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    print("🔥 DEBUG: forecast view called!")  
     if request.user.is_authenticated: 
         account_id = request.session.get('account_id')
         userinfo_id = request.session.get('userinfo_id')
@@ -366,23 +341,18 @@ def forecast(request):
     
     
 def monitor(request):
-    print("🔥 DEBUG: monitor view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    print("🔥 DEBUG: monitor view called!")  
     if request.user.is_authenticated: 
         account_id = request.session.get('account_id')
         userinfo_id = request.session.get('userinfo_id')
         
         if userinfo_id and account_id:
             
-
-            # Example data: commodity_type counts
-            # Dataset 1: by commodity type
             commodity_data = {}
             for record in initHarvestRecord.objects.all():
                 key = record.commodity_id.name if record.commodity_id else "Unknown"
                 commodity_data[key] = commodity_data.get(key, 0) + 1
 
-            # Dataset 2: by location
             location_data = {}
             for record in initHarvestRecord.objects.all():
                 if record.transaction:
@@ -416,7 +386,6 @@ def dashboard_view(request):
     last_7_days = now().date() - timedelta(days=7)
     recent_records = initHarvestRecord.objects.filter(harvest_date__gte=last_7_days)
 
-    # Example data: commodity_type counts
     data = {}
     for record in recent_records:
         key = record.commodity_id.name if record.commodity_id else "Unknown"
@@ -429,9 +398,8 @@ def dashboard_view(request):
     return render(request, 'loggedin/dashboard.html', context)
 
 
-def newrecord(request):         #opreations ng saving ng records (pero di pa magrecord sa database mismo till masubmit as a whole transaction mismo)
+def newrecord(request):        
     print("🔥 DEBUG: newrecord view called!")  
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
     
     if request.user.is_authenticated: 
         account_id = request.session.get('account_id')
@@ -440,11 +408,9 @@ def newrecord(request):         #opreations ng saving ng records (pero di pa mag
         if userinfo_id and account_id:
             userinfo = UserInformation.objects.get(pk=userinfo_id)
             accountinfo = AccountsInformation.objects.get(pk=account_id)
-            view_to_show = request.GET.get("view", "") #for showing another page within another page ()yung transaction and harves/plant
-
+            view_to_show = request.GET.get("view", "") 
             form = None
             transaction_form = None
-            # transactions = None
             records = []
             selected_transaction = None
             from_transaction = request.GET.get("from") == "transaction"
@@ -531,7 +497,6 @@ def plant_record_view(request):
             transaction_form.fields['manual_barangay'].queryset = BarangayName.objects.none()
         
         if plant_form.is_valid() and transaction_form.is_valid():
-            # Create the transaction first
             transaction = transaction_form.save(commit=False)
             transaction.account_id = accountinfo
             transaction.plant_status = pending_status
@@ -554,7 +519,6 @@ def plant_record_view(request):
             plant_record.transaction = transaction
             plant_record.record_status = pending_status  # Set to pending (pk=3)
             plant_record.save()
-            print("may nasave pala")
             
             from dashboard.views import schedule_harvest_notification
             schedule_harvest_notification(plant_record)
@@ -562,7 +526,6 @@ def plant_record_view(request):
             return redirect('base:transaction_recordlist', transaction_id=transaction.transaction_id)
         else:
             print("Transaction form errors:", transaction_form.errors)
-            print("walang plant record na nasave")
             print("Plant form errors:", plant_form.errors)
     else:       
         plant_form = PlantRecordCreate(user=request.user)
@@ -622,11 +585,11 @@ def harvest_record_for_plant_view(request, transaction_id):
         'user_firstname': userinfo.firstname,
         'view_to_show': 'harvest',
         'form': harvest_form,
-        'transaction_form': None,  # Not needed here
+        'transaction_form': None, 
         'transaction': transaction,
         'plant_record': plant_record,
         'harvest_record': harvest_record,
-        'from_transaction': True,  # So you can customize the template if needed
+        'from_transaction': True,  
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 
@@ -639,7 +602,7 @@ def solo_harvest_record_view(request):
         return redirect('base:home')
     userinfo = UserInformation.objects.get(pk=userinfo_id)
     accountinfo = AccountsInformation.objects.get(pk=account_id)
-    pending_status = AccountStatus.objects.get(pk=3)  # Pending status
+    pending_status = AccountStatus.objects.get(pk=3)  
 
     if request.method == "POST":
         harvest_form = HarvestRecordCreate(request.POST, user=request.user)
@@ -719,7 +682,6 @@ def transaction_recordlist(request, transaction_id):
     except initPlantRecord.DoesNotExist:
         pass
 
-    # Get all harvest records for this transaction
     harvest_records = initHarvestRecord.objects.filter(transaction=transaction).order_by('-harvest_date')
     
     plant_notification = None
@@ -732,11 +694,11 @@ def transaction_recordlist(request, transaction_id):
     context = {
         'transaction': transaction,
         'plant_record': plant_record,
-        'harvest_record': harvest_records,  # Changed to support multiple records
-        'view_to_show': 'recordlist',  # So transaction.html knows what to include
+        'harvest_record': harvest_records,  
+        'view_to_show': 'recordlist',  
         'user_firstname': transaction.account_id.userinfo_id.firstname,
         'plant_notification': plant_notification,
-        'format_number': format_number  # Add the formatting function to context
+        'format_number': format_number 
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
 
@@ -761,17 +723,15 @@ def farmland_record_view(request):
             farmland.userinfo_id = userinfo
             farmland.save()
             
-            # Update hasfarmland field if it's currently False
             if not userinfo.hasfarmland:
                 userinfo.hasfarmland = True
                 userinfo.save()
             
-            return redirect('base:farmland_owned')  # or wherever you want to redirect after save
+            return redirect('base:farmland_owned')  
     else:
         form = FarmlandRecordCreate()
         form.fields['barangay'].queryset = BarangayName.objects.none()
 
-    # Calculate total farmlands for the current user
     total_farmlands = FarmLand.objects.filter(userinfo_id=userinfo).count()
 
     context = {
@@ -805,7 +765,6 @@ def farmland_record_edit_view(request, farminfo_id):
             return redirect('base:farmland_owned')
     else:
         form = FarmlandRecordCreate(instance=farmland)
-        # Set barangay queryset based on current municipality
         if farmland.municipality:
             form.fields['barangay'].queryset = BarangayName.objects.filter(municipality_id=farmland.municipality.pk)
         else:
@@ -829,7 +788,6 @@ def transaction_history(request):
 
     accountinfo = AccountsInformation.objects.get(pk=account_id)
     
-    # Exclude transactions with removed status (pk=1)
     transactions_list = RecordTransaction.objects.filter(
         account_id=accountinfo
     ).exclude(
@@ -839,14 +797,14 @@ def transaction_history(request):
     # Pagination - only show pagination if more than 10 records
     from django.core.paginator import Paginator
     paginate = transactions_list.count() > 10
-    paginator = Paginator(transactions_list, 10)  # Show 10 transactions per page
+    paginator = Paginator(transactions_list, 10)  
     page_number = request.GET.get('page')
     transactions = paginator.get_page(page_number)
 
     context = {
         'transactions': transactions,
         'user_firstname': accountinfo.userinfo_id.firstname,
-        'view_to_show': 'transaction_history',  # So transaction.html knows what to include
+        'view_to_show': 'transaction_history',  
         'paginate': paginate,
     }
     return render(request, 'loggedin/transaction/transaction.html', context)
@@ -904,7 +862,6 @@ def account_edit_view(request):
             form = EditUserInformation(request.POST, instance=userinfo)
             if form.is_valid():
                 updated_info = form.save(commit=False)
-                # Update the associated auth user email if it changed
                 if updated_info.user_email != request.user.email:
                     request.user.email = updated_info.user_email
                     request.user.save()
@@ -940,15 +897,11 @@ def farmland_owned_view(request):
         userinfo = UserInformation.objects.get(pk=userinfo_id)
         farmlands = FarmLand.objects.filter(userinfo_id=userinfo).select_related('municipality', 'barangay')
 
-        # Calculate total area and unique municipalities
         total_area = sum(farm.estimated_area or 0 for farm in farmlands)
         unique_municipalities = set(farm.municipality.municipality for farm in farmlands)
 
-        # Add transaction count for each farmland
         farmlands_with_stats = []
         for farmland in farmlands:
-            # Count total transactions (harvest + plant records) for this farmland
-            # Use the correct relationship: transaction__farm_land
             harvest_count = initHarvestRecord.objects.filter(transaction__farm_land=farmland).count()
             plant_count = initPlantRecord.objects.filter(transaction__farm_land=farmland).count()
             total_transactions = harvest_count + plant_count
@@ -990,7 +943,7 @@ def convert_to_kg(weight, unit):
 def finalize_transaction(request):
     print(f"Pending records: {request.session.get('pending_harvest_records', [])}")
     
-    record_type = request.POST.get('record_type', 'harvest')  # Default to harvest if not provided
+    record_type = request.POST.get('record_type', 'harvest') 
     
     if record_type not in ['harvest', 'plant']:
         return redirect('base:transaction_recordlist')  # Fallback
@@ -1029,20 +982,6 @@ def finalize_transaction(request):
                 unit=data['unit'],
                 remarks=data.get('remarks', '')
             )
-            #  this is for verified harvests
-        # if record_type == 'harvest':
-        #     total_weight_kg = convert_to_kg(data['total_weight'], data['unit'])
-            
-        #     HarvestRecord.objects.create(
-        #         transaction_id=transaction,
-        #         harvest_date=data['harvest_date'],
-        #         commodity_type=data['commodity_type'],
-        #         commodity_spec=data['commodity_spec'],
-        #         total_weight=total_weight_kg,
-        #         unit='kg',
-        #         harvest_location=data['harvest_location'],
-        #         remarks=data.get('remarks', '')
-        #     )
         
         elif record_type == 'plant':
             initPlantRecord.objects.create(
@@ -1087,7 +1026,6 @@ def edit_pending_record(request, index):
     if not request.user.is_authenticated:
         return redirect('base:home')
 
-    # 👉 Determine whether it's a plant or harvest record
     record_type = request.GET.get("record_type", "harvest")  # default to harvest
     print("edit_pending1")
 
@@ -1137,31 +1075,6 @@ def edit_pending_record(request, index):
     return render(request, 'loggedin/transaction/transaction.html', context)
 
 
-
-# def transaction_history(request):
-#     if not request.user.is_authenticated:
-#         return redirect('base:home')
-
-#     try:
-#         # print("account is testing rn:", userinfo_id)        
-#         userinfo_id = request.session.get('userinfo_id')
-#         accountinfo = AccountsInformation.objects.get(userinfo_id=userinfo_id)
-#     except AccountsInformation.DoesNotExist:
-#         print("❌ AccountInfo not found for userinfo_id:", userinfo_id)
-#         return render(request, 'loggedin/transaction/transaction_history.html', {
-#             'transactions': [],
-#             'user_firstname': 'Unknown',
-#         })
-
-#     transactions = RecordTransaction.objects.filter(account_id=accountinfo).order_by('-transaction_date')
-
-    print(f"✅ Found {transactions.count()} transactions for account {accountinfo.account_id}")
-
-    return render(request, 'loggedin/transaction/transaction_history.html', {
-        'transactions': transactions,
-        'user_firstname': accountinfo.userinfo_id.firstname,
-    })
-
 @login_required
 def delete_transaction(request, transaction_id):
     """
@@ -1181,13 +1094,11 @@ def delete_transaction(request, transaction_id):
             account_id=account_id
         )
         
-        # Get the "removed" status (pk=1)
         try:
             removed_status = AccountStatus.objects.get(pk=1)
         except AccountStatus.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Removed status not found in system'})
         
-        # Update the account status to "removed"
         account = transaction.account_id
         account.acc_status_id = removed_status
         account.save()
@@ -1216,12 +1127,10 @@ def transaction_recordhistory(request, transaction_id):
     except RecordTransaction.DoesNotExist:
         return HttpResponse("Transaction not found", status=404)
 
-    # Make sure this is the user’s transaction
     session_account_id = request.session.get('account_id')
     if session_account_id != transaction.account_id.pk:
         return HttpResponseForbidden("Unauthorized access to this transaction.")
 
-    # Get the related records based on transaction type
     if transaction.transaction_type.lower() == "harvest":
         records = initHarvestRecord.objects.filter(transaction_id=transaction)
     elif transaction.transaction_type.lower() == "plant":
@@ -1235,42 +1144,8 @@ def transaction_recordhistory(request, transaction_id):
     })
 
 
-
-
-
-
-# def plantrecord(request):
-#     print("🔥 DEBUG: newrecord view called!")  # This should print when you visit "/"
-#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-#     if request.user.is_authenticated: 
-#         account_id = request.session.get('account_id')
-#         userinfo_id = request.session.get('userinfo_id')
-        
-#         if userinfo_id and account_id:
-            
-#             userinfo = UserInformation.objects.get(pk=userinfo_id)
-        
-#             context = {
-#                 'user_firstname' : userinfo.firstname,
-#             }            
-#             return render(request, 'loggedin/transaction/plant_record.html', context)
-        
-#         else:
-#             print("⚠️ account_id missing in session!")
-#             return redirect('home')   
-#     else :
-#         return render(request, 'home.html', {}) 
-
-
-# def get_barangays(request):
-#     municipality_id = request.GET.get('municipality_id')
-#     barangays = BarangayName.objects.filter(municipality_id=municipality_id).values('id', 'barangay_name')
-#     return JsonResponse(list(barangays), safe=False)
-
-
 def about(request):
-    print("🔥 DEBUG: about view called!")  # This should print when you visit "/"
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    print("🔥 DEBUG: about view called!")  
     if request.user.is_authenticated: 
         return render(request, 'loggedin/about.html', {})
     else :
@@ -1284,97 +1159,14 @@ def terms_of_service(request):
     return render(request, 'legal/terms_of_service.html')
 
 
-# @login_required
-# def editacc(request):
-    # userinfo_id = request.session.get('userinfo_id')
-    
-    # if not userinfo_id:
-    #     return redirect('base:home')
-        
-    # try:
-    #     # Use select_related to optimize database queries
-    #     userinfo = UserInformation.objects.select_related(
-    #         'barangay_id', 'municipality_id'
-    #     ).get(pk=userinfo_id)
-        
-    #     if request.method == "POST":
-    #         form = EditUserInformation(request.POST, instance=userinfo)
-    #         if form.is_valid():
-    #             updated_info = form.save(commit=False)
-    #             # Update the associated auth user email if it changed
-    #             if updated_info.user_email != request.user.email:
-    #                 request.user.email = updated_info.user_email
-    #                 request.user.save()
-                
-    #             updated_info.save()
-    #             messages.success(request, 'Your account information has been updated successfully!')
-    #             return redirect('base:accinfo')
-    #         else:
-    #             messages.error(request, 'Please correct the errors below.')
-    #     else:
-    #         form = EditUserInformation(instance=userinfo)
-
-    #     context = {
-    #         'form': form,
-    #         'user_firstname': userinfo.firstname,
-    #         'userinfo': userinfo,  # Add full userinfo for reference
-    #     }
-    #     return render(request, 'loggedin/account_edit.html', context)
-        
-    # except UserInformation.DoesNotExist:
-    #     messages.error(request, 'User information not found.')
-    #     return redirect('base:home')  
-
-
-# def accinfo(request):
-#     if request.user.is_authenticated: 
-#         userinfo_id = request.session.get('userinfo_id')
-        
-#         if not userinfo_id:
-#             return redirect('base:home')
-            
-#         try:
-#             # Use select_related to optimize database queries
-#             userinfo = UserInformation.objects.select_related(
-#                 'barangay_id', 'municipality_id'
-#             ).get(pk=userinfo_id)
-            
-#             context = {
-#                 'user_firstname': userinfo.firstname,
-#                 'user_middlename': userinfo.middlename,
-#                 'user_lastname': userinfo.lastname,
-#                 'user_nameext': userinfo.nameextension,
-#                 'user_sex': userinfo.sex,
-#                 'user_dob': userinfo.birthdate,
-#                 'user_emperson': userinfo.emergency_contact_person or 'Not Specified',
-#                 'user_emcontact': userinfo.emergency_contact_number or 'Not Specified',
-#                 'user_address_details': userinfo.address_details,
-#                 'user_barangay': userinfo.barangay_id.barangay,
-#                 'user_municipality': userinfo.municipality_id.municipality,
-#                 'user_contactno': userinfo.contact_number,
-#                 'user_email': userinfo.user_email,
-#                 'user_religion': userinfo.religion,
-#                 'user_civil_status': userinfo.civil_status,
-#                 'user_rsbsa_ref_number': userinfo.rsbsa_ref_number or 'Not Provided',
-#             }            
-#             return render(request, 'loggedin/account_info.html', context)
-            
-#         except UserInformation.DoesNotExist:
-#             return redirect('base:home')
-        
-#     else:
-#         return render(request, 'home.html', {})   
-    
-
 def login_success(request):
-    print("🔥 Login successful! Redirecting...")  # Debugging log
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    print("🔥 Login successful! Redirecting...")
 
     if request.user.is_authenticated:
         try:
             userinfo = request.user.userinformation
             account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
-            print(f"Account Type ID: {account_info.account_type_id.pk}")  # Debugging log
+            print(f"Account Type ID: {account_info.account_type_id.pk}") 
             if account_info.account_type_id.pk == 2 or account_info.account_type_id.pk == 3:
                 return redirect('administrator:admin_dashboard')
             else:
@@ -1386,7 +1178,6 @@ def login_success(request):
         return redirect('base:home')
 
 def get_barangays(request, municipality_id):
-    # Debug: Special logging for Orani (municipality_id=9)
     if municipality_id == 9:
         print("\n" + "🏘️"*30)
         print("🔍 BARANGAY FETCH DEBUG - ORANI (pk=9)")
@@ -1421,7 +1212,6 @@ def register_email(request):
     email_error = None
     password_error = None
     if request.method == "GET":
-        # User is starting over, clear any previous registration session data
         for key in ['verification_code', 'verification_email', 'verification_password', 'verification_code_time', 'email_verified']:
             if key in request.session:
                 del request.session[key]
@@ -1430,7 +1220,6 @@ def register_email(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
         
-        # Check if email already exists (excluding removed accounts pk=1)
         if AuthUser.objects.filter(email=email).exists():
             # Check if this email belongs to a removed account (pk=1)
             try:
@@ -1455,8 +1244,7 @@ def register_email(request):
             request.session["reg_password"] = password
             verification_code = str(random.randint(100000, 999999))
             request.session["reg_code"] = verification_code
-            request.session['verification_code_time'] = int(time.time())  # Store timestamp
-            # Send email
+            request.session['verification_code_time'] = int(time.time()) 
             subject = "Confirm Your Fruit Cast Account Registration"
             
             # HTML message
@@ -1503,15 +1291,14 @@ def register_email(request):
             </div>
             """.format(verification_code=verification_code)
             
-            # Use EmailMessage for HTML email
             try:
                 email_msg = EmailMessage(
                     subject=subject,
                     body=html_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,  # Use settings instead of hardcoded email
+                    from_email=settings.DEFAULT_FROM_EMAIL, 
                     to=[email],
                 )
-                email_msg.content_subtype = "html"  # Set the content type to HTML
+                email_msg.content_subtype = "html"
                 email_msg.send()
                 
                 return redirect("base:register_verify_code")
@@ -1523,13 +1310,11 @@ def register_email(request):
                     "password_error": password_error,
                 })
         
-        # MODIFY THIS EMAIL PAGKA OKS NA
     return render(request, "registration/register_email.html", {"email_error": email_error,"password_error": password_error,})
 
 
 def register_verify_code(request):
     if not request.session.get("reg_email") or not request.session.get("reg_code"):
-        # User hasn't started registration properly
         return redirect("base:register_email")
     code_error = None
     if request.method == "POST":
@@ -1542,9 +1327,8 @@ def register_verify_code(request):
             code_error = "Invalid verification code. Please check your email and try again."
         
         code_time = request.session.get('verification_code_time')
-        if not code_time or (int(time.time()) - code_time > 600):  # 600 seconds = 10 minutes
+        if not code_time or (int(time.time()) - code_time > 600):  
             code_error = "Verification code has expired. Please request a new one."
-            # Optionally clear session here
             return render(request, 'registration/register_verify.html', {'code_error': code_error})
     return render(request, "registration/register_verify.html", {"code_error": code_error})
 
@@ -1561,7 +1345,6 @@ def register_step1(request):
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         
-        # Debug: Print form data
         print("\n" + "="*50)
         print("🔍 REGISTRATION DEBUG - FORM SUBMISSION")
         print("="*50)
@@ -1588,13 +1371,11 @@ def register_step1(request):
                     auth_user = AuthUser.objects.create_user(email=reg_email, password=reg_password)
                     print(f"✅ AuthUser created successfully with ID: {auth_user.id}")
                     
-                    # Prepare UserInformation
                     print("📋 Preparing UserInformation...")
                     user_info = form.save(commit=False)
                     user_info.auth_user = auth_user
-                    user_info.user_email = reg_email  # Set email from session
+                    user_info.user_email = reg_email 
                     
-                    # Debug municipality and barangay info
                     print(f"🏘️ Municipality ID: {user_info.municipality_id} (Type: {type(user_info.municipality_id)})")
                     print(f"🏠 Barangay ID: {user_info.barangay_id} (Type: {type(user_info.barangay_id)})")
                     
@@ -1641,7 +1422,6 @@ def register_step1(request):
                     )
                     print(f"✅ AccountsInformation created successfully with ID: {account_info.account_id}")
                     
-                    # Success message
                     print("\n🎉 REGISTRATION SUCCESSFUL!")
                     print(f"👤 User: {user_info.firstname} {user_info.lastname}")
                     print(f"📧 Email: {reg_email}")
@@ -1649,7 +1429,6 @@ def register_step1(request):
                     print(f"🏠 Barangay: {user_info.barangay_id.barangay}")
                     print("="*50)
                     
-                    # Optionally: clear session registration vars
                     for key in ['reg_email', 'reg_code', 'reg_password', 'reg_verified']:
                         if key in request.session:
                             del request.session[key]
@@ -1704,7 +1483,6 @@ def register_step1(request):
                 print(f"🏘️ Municipality Selected: {request.POST.get('municipality_id')}")
                 print(f"🏠 Barangay Selected: {request.POST.get('barangay_id')}")
                 
-                # More detailed error info
                 import traceback
                 print(f"🔍 Full Traceback:")
                 traceback.print_exc()
@@ -1728,7 +1506,6 @@ def register_step2(request):
     print("STEP 2 FORM HIT:", request.method)  # Debug
     if 'step1_data' not in request.session:
         return redirect('base:register_step1')
-        return redirect('base:register_step1')  # magredirect sa unang page so users wouldnt skip p1
     
     if request.method == "POST":
         form = RegistrationForm(request.POST)
@@ -1802,7 +1579,6 @@ def cancel_registration(request):
         if key in request.session:
             del request.session[key]
     
-    # Add a success message
     messages.success(request, 'Registration cancelled successfully. You can now start over with a new email.')
     
     # Redirect to the email registration page
@@ -1822,15 +1598,13 @@ def custom_login(request):
                 userinfo = UserInformation.objects.get(auth_user=user)
                 account_info = AccountsInformation.objects.get(userinfo_id=userinfo)
                 
-                # Check if account status allows login (only pk=2, pk=3, and pk=5)
-                allowed_statuses = [2, 3, 5]  # Approved account statuses
+                allowed_statuses = [2, 3, 5] 
                 if account_info.acc_status_id.acc_stat_id not in allowed_statuses:
                     messages.error(request, 'Your account is not yet approved or has been suspended.')
                     return redirect('base:login')
                 
                 login(request, user)
                 
-                # Log user login
                 UserLoginLog.objects.create(account_id=account_info)
                 
                 # Store session data
@@ -1915,12 +1689,11 @@ def forgot_password(request):
         </div>
         """.format(verification_code=verification_code)
         
-        # Send email with proper error handling
         try:
             email_msg = EmailMessage(
                 subject=subject,
                 body=html_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,  # Use settings instead of hardcoded email
+                from_email=settings.DEFAULT_FROM_EMAIL,  
                 to=[email],
             )
             email_msg.content_subtype = "html"
@@ -1980,13 +1753,11 @@ def reset_password(request):
             messages.error(request, "Password must be at least 8 characters long.")
             return render(request, 'registration/reset_password.html')
         
-        # Get the user and update password
         email = request.session.get("forgot_pwd_email")
         user = AuthUser.objects.get(email=email)
         user.set_password(new_password)
         user.save()
         
-        # Clear session
         for key in ['forgot_pwd_email', 'forgot_pwd_code', 'forgot_pwd_code_time', 'forgot_pwd_verified']:
             if key in request.session:
                 del request.session[key]
@@ -2003,9 +1774,7 @@ def user_login(request):
         password = request.POST['password']
 
         print("🔥 Login processing...")  
-        print("🔥 DEBUG: POST Data ->", request.POST)
 
-        # Check if the input is a numeric phone number or an email
         try:
             if contact.isdigit():  # If it's a number, use PhoneAuthBackend
                 user = authenticate(request, username=contact, password=password)  
@@ -2137,7 +1906,6 @@ def change_password(request):
         # Send email with similar format to register_email
         subject = "Fruit Cast Password Change Verification"
         
-        # HTML message
         html_message = """
         <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="color: #416e3f; padding: 20px; text-align: center; border-radius: 6px;">
@@ -2181,7 +1949,6 @@ def change_password(request):
         </div>
         """.format(verification_code=verification_code)
         
-        # Use EmailMessage for HTML email
         email_msg = EmailMessage(
             subject=subject,
             body=html_message,
@@ -2195,7 +1962,6 @@ def change_password(request):
             messages.success(request, f"Verification code sent to {request.user.email}. Please check your email.")
             return redirect("base:change_password_verify")
         except Exception as e:
-            # Log the error for debugging
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Email sending failed: {str(e)}")
@@ -2207,7 +1973,6 @@ def change_password(request):
                 print(f"🔐 PASSWORD CHANGE VERIFICATION CODE: {verification_code}")  # Console log for debugging
                 return redirect("base:change_password_verify")
             else:
-                # In production, show error and don't proceed
                 messages.error(request, "Email service is currently unavailable. Please try again later or contact support.")
                 # Clear session data
                 for key in ['change_pwd_email', 'change_pwd_code', 'change_pwd_code_time']:
@@ -2222,7 +1987,6 @@ def change_password(request):
 def change_password_verify(request):
     """Second step: Verify OTP code"""
     if not request.session.get("change_pwd_email") or not request.session.get("change_pwd_code"):
-        # User hasn't started password change properly
         return redirect("base:change_password")
     
     if request.method == "POST":
@@ -2231,7 +1995,7 @@ def change_password_verify(request):
         
         # Check if code has expired (10 minutes)
         code_time = request.session.get('change_pwd_code_time')
-        if not code_time or (int(time.time()) - code_time > 600):  # 600 seconds = 10 minutes
+        if not code_time or (int(time.time()) - code_time > 600): 
             messages.error(request, "Verification code has expired. Please request a new one.")
             # Clear session
             for key in ['change_pwd_email', 'change_pwd_code', 'change_pwd_code_time']:
@@ -2253,7 +2017,6 @@ def change_password_verify(request):
 def change_password_new(request):
     """Third step: Enter new password"""
     if not request.session.get("change_pwd_verified"):
-        # User hasn't completed verification
         return redirect("base:change_password")
     
     if request.method == "POST":
@@ -2268,11 +2031,9 @@ def change_password_new(request):
             messages.error(request, "Password must be at least 8 characters long.")
             return render(request, 'loggedin/change_password_new.html')
         
-        # Update password
         request.user.set_password(new_password)
         request.user.save()
         
-        # Clear session
         for key in ['change_pwd_email', 'change_pwd_code', 'change_pwd_code_time', 'change_pwd_verified']:
             if key in request.session:
                 del request.session[key]
@@ -2290,7 +2051,4 @@ def custom_logout(request):
     logout(request)
     messages.success(request, "You have been successfully logged out.")
     return redirect('base:home')  # Redirect to the guest home page
-
-
-
 

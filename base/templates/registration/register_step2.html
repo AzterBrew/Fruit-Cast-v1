@@ -7,31 +7,7 @@
 {% endblock navbar %}
 
 {%block content %}
-{% comment %} <div class="container1 center-div-text">
-  <h1>REGISTER</h1>
-    <br>
-    <form action="" method="POST">
-    {% csrf_token %} 
-    {% for field in form %}
-    <div class="form-group">
-      {{ field.label_tag }}
-      {{ field }}
 
-      {% if field.errors %}
-        <p class="form-error">{{ field.errors|striptags }}</p>
-      {% endif %}
-    </div>
-    <br>
-  {% endfor %}
-    
-    <button type="Submit">Submit</button>
-  </form>
-  <br>
-  <p>or</p>
-  <a href="/accounts/login">Log In</a>
-
-
-</div> {% endcomment %}
 
 <div class="login-container">
   <div class="login-left-container">

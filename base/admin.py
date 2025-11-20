@@ -3,8 +3,8 @@ from .models import *
 
 # Register your models here.
 
-# super user : moa-emms
-# pass : opaemmsumbad
+# super user : emmsumbad@bpsu.edu.ph
+# pass : M0a_sumbad
 admin.site.register(AuthUser)
 admin.site.register(AccountType)
 admin.site.register(AccountStatus)

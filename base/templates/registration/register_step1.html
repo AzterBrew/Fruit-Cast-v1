@@ -228,15 +228,13 @@
 document.addEventListener('DOMContentLoaded', function () {
   // Enhanced Phone Number Formatting
   function formatPhoneNumber(input) {
-    let value = input.value.replace(/\D/g, ''); // Remove all non-digits
+    let value = input.value.replace(/\D/g, ''); 
     
-    // Ensure it starts with +63
     if (!input.value.startsWith('+63')) {
       input.value = '+63';
       value = '';
     }
     
-    // Remove the country code from value for formatting
     if (value.startsWith('63')) {
       value = value.substring(2);
     }
@@ -276,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
   // Apply phone formatting to all phone inputs
   const phoneInputs = document.querySelectorAll('.phone-input');
   phoneInputs.forEach(function(input) {
-    // Set initial value
     if (!input.value || input.value === '') {
       input.value = '+63';
     }
@@ -285,14 +282,12 @@ document.addEventListener('DOMContentLoaded', function () {
       const cursorPosition = e.target.selectionStart;
       formatPhoneNumber(e.target);
       
-      // Prevent cursor from moving when typing
       if (cursorPosition <= 3) {
         e.target.setSelectionRange(4, 4); // Position after +63
       }
     });
     
     input.addEventListener('keydown', function(e) {
-      // Prevent deletion of +63
       if (e.target.selectionStart < 4 && (e.key === 'Backspace' || e.key === 'Delete')) {
         e.preventDefault();
         e.target.setSelectionRange(4, 4);
@@ -310,36 +305,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Name validation for character restrictions
   function validateNameInput(input) {
     const nameRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
     const value = input.value;
     
     if (!nameRegex.test(value)) {
-      // Remove invalid characters
       input.value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]/g, '');
     }
   }
-
-  // Religion field validation (character restrictions + 50 character limit) - COMMENTED OUT
-  /*
-  function validateReligionInput(input) {
-    const religionRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
-    let value = input.value;
-    
-    // Remove invalid characters
-    if (!religionRegex.test(value)) {
-      value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]/g, '');
-    }
-    
-    // Limit to 50 characters
-    if (value.length > 50) {
-      value = value.substring(0, 50);
-    }
-    
-    input.value = value;
-  }
-  */
 
   // Address details validation (150 character limit)
   function validateAddressInput(input) {
@@ -349,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Apply name validation to name fields
   const nameFields = ['id_firstname', 'id_lastname', 'id_middlename', 'id_nameextension', 'id_emergency_contact_person'];
   nameFields.forEach(function(fieldId) {
     const field = document.getElementById(fieldId);
@@ -360,15 +332,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  {% comment %}
-  // Apply religion validation
-  const religionField = document.getElementById('id_religion');
-  if (religionField) {
-    religionField.addEventListener('input', function(e) {
-      validateReligionInput(e.target);
-    });
-  }
-  {% endcomment %}
 
   // Apply address validation
   const addressField = document.getElementById('id_address_details');
@@ -378,11 +341,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Municipality and Barangay handling
   const municipalitySelect = document.getElementById('id_municipality_id');
   const barangaySelect = document.getElementById('id_barangay_id');
 
-  // Initialize barangay dropdown
   if (barangaySelect) {
     barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
     barangaySelect.disabled = true;
@@ -436,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function () {
       console.log('🔄 Municipality cleared, reset barangay dropdown');
     }
   });
-  } // Close municipalitySelect && barangaySelect check
+  } 
 
   // Enhanced birthdate validation with age limits
   const birthdateInput = document.getElementById('id_birthdate');
@@ -475,7 +436,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Add form submission debugging
   const registerForm = document.getElementById('register-form');
   if (registerForm) {
     registerForm.addEventListener('submit', function(e) {
@@ -492,18 +452,6 @@ document.addEventListener('DOMContentLoaded', function () {
       console.log('📝 Form Data:', formObj);
       console.log('🏘️ Municipality Selected:', formObj.municipality_id);
       console.log('🏠 Barangay Selected:', formObj.barangay_id);
-      
-      // Check if municipality is Orani (pk=9)
-      if (formObj.municipality_id === '9') {
-        console.log('🎯 DETECTED ORANI SELECTION (pk=9)!');
-        console.log('🏘️ Municipality Name: Orani');
-        
-        // Get the selected barangay name
-        const barangaySelect = document.getElementById('id_barangay_id');
-        if (barangaySelect && barangaySelect.selectedOptions.length > 0) {
-          console.log('🏠 Barangay Name:', barangaySelect.selectedOptions[0].textContent);
-        }
-      }
       
       // Validate required fields
       const requiredFields = ['firstname', 'lastname', 'sex', 'birthdate', 'contact_number', 'emergency_contact_person', 'emergency_contact_number', 'address_details', 'municipality_id', 'barangay_id', 'civil_status'];
@@ -536,7 +484,6 @@ document.addEventListener('DOMContentLoaded', function () {
       console.log('📤 Form submission proceeding...');
       console.log('='.repeat(50));
       
-      // Let the form submit normally
     });
   }
 });

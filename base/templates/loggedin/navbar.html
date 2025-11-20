@@ -85,7 +85,6 @@
         </nav>
     </div>
         
-    <!-- Main Navigation - Always visible, no collapse -->
     <nav class="ps-3 d-block bg-green-fc border-top border-light border-opacity-25" aria-label="Site">
         <ul class="navbar-nav d-flex flex-row flex-wrap">
             <li class="nav-item mx-md-1 dropdown">
@@ -178,12 +177,10 @@ document.addEventListener('DOMContentLoaded', function() {
             var notifId = this.getAttribute('data-notif-id');
             var href = this.getAttribute('href');
             
-            // If no redirect URL (href is "#"), prevent default navigation
             if (href === '#') {
                 e.preventDefault();
             }
             
-            // Mark as read via AJAX
             fetch("{% url 'dashboard:mark_notification_read' %}", {
                 method: "POST",
                 headers: {
@@ -205,12 +202,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // If href is not "#", let the link continue to its href
-            // If href is "#", do nothing (already prevented default)
         });
     });
 
-    // Prevent dropdown menu from closing when clicking inside (optional)
     document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
         dropdown.addEventListener('click', function(e) {
             e.stopPropagation();

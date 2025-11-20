@@ -14,31 +14,14 @@ class EmailAuthBackend:
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
-        
-# class PhoneAuthBackend:
-#     def authenticate(self, request, username=None, password=None):
-#         try:
-#             extended = ExtendedUser.objects.get(phone_number=username)
-#             user = extended.user
-#             if user.check_password(password):
-#                 return user
-#         except ExtendedUser.DoesNotExist:
-#             return None
-
-#     def get_user(self, user_id):
-#         try:
-#             return User.objects.get(pk=user_id)
-#         except User.DoesNotExist:
-#             return None
 
 class PhoneAuthBackend:
     def authenticate(self, request, username=None, password=None):
         try:
-            # Ensure username is a valid number before querying
             if not username.isdigit():
                 return None
             
-            extended = UserInformation.objects.filter(phone_number=username).first()  # Avoids multiple matches
+            extended = UserInformation.objects.filter(phone_number=username).first()  
             if extended:
                 user = extended.user
                 if user.check_password(password):

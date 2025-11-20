@@ -133,7 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
             value = '';
         }
         
-        // Remove the country code from value for formatting
         if (value.startsWith('63')) {
             value = value.substring(2);
         }
@@ -147,7 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (value.length <= 10) {
                 input.value = '+63 9' + value.substring(1, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
             } else {
-                // Limit to 10 digits after +63
                 value = value.substring(0, 10);
                 input.value = '+63 9' + value.substring(1, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
             }
@@ -173,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Apply phone formatting to all phone inputs
     const phoneInputs = document.querySelectorAll('.phone-input');
     phoneInputs.forEach(function(input) {
-        // Set initial value if empty
         if (!input.value || input.value === '' || !input.value.startsWith('+63')) {
             if (input.value && !input.value.startsWith('+63')) {
                 // Try to preserve existing number if it looks like a PH number
@@ -196,9 +193,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const cursorPosition = e.target.selectionStart;
             formatPhoneNumber(e.target);
             
-            // Prevent cursor from moving when typing
             if (cursorPosition <= 3) {
-                e.target.setSelectionRange(4, 4); // Position after +63
+                e.target.setSelectionRange(4, 4); 
             }
         });
         
@@ -221,7 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Name validation for character restrictions
     function validateNameInput(input) {
         const nameRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
         const value = input.value;
@@ -231,26 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]/g, '');
         }
     }
-
-    // Religion field validation (character restrictions + 50 character limit) - COMMENTED OUT
-    /*
-    function validateReligionInput(input) {
-        const religionRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]*$/;
-        let value = input.value;
-        
-        // Remove invalid characters
-        if (!religionRegex.test(value)) {
-            value = value.replace(/[^a-zA-ZÀ-ÿ\u0100-\u017F\u1E00-\u1EFF'\-\s\.]/g, '');
-        }
-        
-        // Limit to 50 characters
-        if (value.length > 50) {
-            value = value.substring(0, 50);
-        }
-        
-        input.value = value;
-    }
-    */
 
     // Address details validation (150 character limit)
     function validateAddressInput(input) {
@@ -271,17 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Apply religion validation - COMMENTED OUT (field hidden from UI)
-    /*
-    const religionField = document.getElementById('id_religion');
-    if (religionField) {
-        religionField.addEventListener('input', function(e) {
-            validateReligionInput(e.target);
-        });
-    }
-    */
-
-    // Apply address validation
     const addressField = document.getElementById('id_address_details');
     if (addressField) {
         addressField.addEventListener('input', function(e) {
@@ -289,14 +253,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Enhanced birthdate validation with age limits
     const birthdateInput = document.getElementById('id_birthdate');
     if (birthdateInput) {
         birthdateInput.addEventListener('input', function() {
             const value = this.value;
             if (value) {
                 const dateParts = value.split('-');
-                // Limit year to 4 digits
                 if (dateParts[0] && dateParts[0].length > 4) {
                     dateParts[0] = dateParts[0].substring(0, 4);
                     this.value = dateParts.join('-');
@@ -326,7 +288,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Form validation and confirmation
     const form = document.getElementById("account-edit-form");
     if (form) {
         form.addEventListener("submit", function (e) {

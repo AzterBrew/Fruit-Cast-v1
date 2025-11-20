@@ -98,14 +98,12 @@
 
     document.addEventListener('DOMContentLoaded', function() {
     
-    // Simple character limit validation for harvest fields
     function enforceCharacterLimit(input, maxLength) {
         if (input.value.length > maxLength) {
             input.value = input.value.substring(0, maxLength);
         }
     }
 
-    // Apply character limit to harvest fields
     const numericFields = ['id_min_expected_harvest', 'id_max_expected_harvest'];
     numericFields.forEach(function(fieldId) {
         const field = document.getElementById(fieldId);
@@ -116,7 +114,6 @@
         }
     });
 
-    // Min/Max expected harvest validation
     function validateMinMaxHarvest() {
         const minField = document.getElementById('id_min_expected_harvest');
         const maxField = document.getElementById('id_max_expected_harvest');
@@ -126,11 +123,9 @@
             const maxValue = parseFloat(maxField.value);
             
             if (minValue > maxValue) {
-                // Show error styling
                 minField.style.borderColor = '#dc3545';
                 maxField.style.borderColor = '#dc3545';
                 
-                // Show error message if it doesn't exist
                 let errorMsg = document.getElementById('min-max-error');
                 if (!errorMsg) {
                     errorMsg = document.createElement('div');
@@ -141,7 +136,6 @@
                 }
                 return false;
             } else {
-                // Remove error styling and message
                 minField.style.borderColor = '';
                 maxField.style.borderColor = '';
                 const errorMsg = document.getElementById('min-max-error');
@@ -154,7 +148,6 @@
         return true;
     }
 
-    // Apply min/max validation to harvest fields
     const minHarvestField = document.getElementById('id_min_expected_harvest');
     const maxHarvestField = document.getElementById('id_max_expected_harvest');
     
@@ -167,7 +160,6 @@
         maxHarvestField.addEventListener('input', validateMinMaxHarvest);
     }
 
-    // Character limit validation for remarks field (100 characters)
     function validateRemarksCharacterLimit(input) {
         const maxLength = 100;
         if (input.value.length > maxLength) {
@@ -175,7 +167,6 @@
         }
     }
 
-    // Apply character limit to remarks field
     const remarksField = document.getElementById('id_remarks');
     if (remarksField) {
         remarksField.addEventListener('input', function(e) {
@@ -192,7 +183,6 @@
             const tenYearsAgo = new Date();
             tenYearsAgo.setFullYear(today.getFullYear() - 10);
             
-            // Clear any previous custom validity
             plantDateInput.setCustomValidity('');
             
             if (selectedDate > today) {
@@ -229,7 +219,6 @@
     const form = document.getElementById("plant-record-form");
     if (form) {
         form.addEventListener("submit", function (e) {
-            // Validate min/max harvest amounts before submission
             if (!validateMinMaxHarvest()) {
                 alert('Minimum expected harvest cannot be greater than maximum expected harvest.');
                 e.preventDefault();
@@ -238,7 +227,6 @@
                 return false;
             }
             
-            // Validate plant date before submission
             if (!validatePlantDate()) {
                 e.preventDefault();
                 return false;
@@ -271,7 +259,6 @@
         commoditySelect.addEventListener('change', toggleCustomInput);
     }
 
-    // Location type dropdown logic
     const locationTypeRadios = document.getElementsByName('location_type');
     const farmLandSelect = document.getElementById('id_farm_land');
     const municipalitySelect = document.getElementById('id_manual_municipality');
@@ -337,7 +324,6 @@
         }
     }
     
-    // Initialize all fields to disabled state first
     if (farmLandSelect) {
         farmLandSelect.disabled = true;
         farmLandSelect.required = false;
@@ -351,7 +337,6 @@
         barangaySelect.required = false;
     }
     
-    // Then apply the correct state based on current selection
     toggleLocationFields();
     locationTypeRadios.forEach(radio => {
         radio.addEventListener('change', toggleLocationFields);
@@ -394,233 +379,3 @@
         });
     }
 });
-
-    {% comment %} INITIAL
-    // confirmation ng form
-    document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById("plant-record-form");
-    form.addEventListener("submit", function (e) {
-        const message = "Click 'OK' if all the input details are correct and accurate.\nPindutin ang 'OK' kung tama lahat ng detalye.";
-        if (!confirm(message)) {
-        e.preventDefault();
-        }
-    });
-    });
-
-    // commodity type dropdown
-    document.addEventListener('DOMContentLoaded', function() {
-        const commoditySelect = document.getElementById('id_commodity_id');
-        const customInput = document.getElementById('id_commodity_custom');
-
-        function toggleCustomInput() {
-            if (commoditySelect.value === "1") { // pk=1 for 'Not Listed'
-                customInput.disabled = false;
-                customInput.required = true;
-            } else {
-                customInput.disabled = true;
-                customInput.required = false;
-                customInput.value = '';
-            }
-        }
-
-        // Initial state
-        toggleCustomInput();
-
-        // Listen for changes
-        commoditySelect.addEventListener('change', toggleCustomInput);
-    });
-
-    //location type dropdown
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get references to the location type radios and dropdowns
-        const locationTypeRadios = document.getElementsByName('location_type');
-        const farmLandSelect = document.getElementById('id_farm_land');
-        const municipalitySelect = document.getElementById('id_manual_municipality');
-        const barangaySelect = document.getElementById('id_manual_barangay');
-
-        function toggleLocationFields() {
-            let selectedValue = '';
-            locationTypeRadios.forEach(radio => {
-                if (radio.checked) selectedValue = radio.value;
-            });
-
-            if (selectedValue === 'farm_land') {
-                farmLandSelect.disabled = false;
-                municipalitySelect.disabled = true;
-                barangaySelect.disabled = true;
-            } else if (selectedValue === 'manual') {
-                farmLandSelect.disabled = true;
-                municipalitySelect.disabled = false;
-                barangaySelect.disabled = true;
-                municipalitySelect.addEventListener('change', function () {
-                    const municipalityId = this.value;
-                    barangaySelect.innerHTML = '';
-                    barangaySelect.disabled = true;
-
-                    if (municipalityId) {
-                    fetch(`/get-barangays/${municipalityId}/`)
-                        .then(response => response.json())
-                        .then(data => {
-                        if (data.length > 0) {
-                            barangaySelect.disabled = false;
-                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-                            data.forEach(barangay => {
-                            const option = document.createElement('option');
-                            option.value = barangay.id;
-                            option.textContent = barangay.barangay;
-                            barangaySelect.appendChild(option);
-                            });
-                        }
-                        });
-                    } else {
-                        barangaySelect.innerHTML = '<option value="">No Barangays available</option>';
-                        barangaySelect.disabled = true;
-                    } else {
-                    barangaySelect.innerHTML = '<option value="">Select a municipality first</option>';
-                    }
-                });
-            } else {
-                // Default: enable all
-                farmLandSelect.disabled = true;
-                municipalitySelect.disabled = true;
-                barangaySelect.disabled = true;
-            }
-        }
-        
-
-        // Initial state
-        toggleLocationFields();
-
-        // Add event listeners to all location type radios
-        locationTypeRadios.forEach(radio => {
-            radio.addEventListener('change', toggleLocationFields);
-        });
-    });
-
-
-
-    // Initialize the map
-    var map = L.map('map').setView([14.678, 120.536], 10);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-
-    // Load GeoJSON (this is just a placeholder URL; change to your static path or Django endpoint)
-    {% comment %} FROM HERE
-    let selectedLayer = null;
-    var mapData = {{ map_data|safe }}; // Ensure this is passed correctly in the context
-
-    fetch("{% static 'geojson/Barangays.json' %}")
-    .then(response => response.json())
-    .then(geojsonData => {
-        const geojson = L.geoJSON(geojsonData, {
-            style: {
-                color: "#3388ff",
-                weight: 1,
-                fillOpacity: 0.3
-            },
-                onEachFeature: function (feature, layer) {
-                var barangayName = feature.properties.NAME_3;
-                var municipalityName = feature.properties.NAME_2;
-                var provinceName = feature.properties.PROVINCE;
-
-                // Find forecast data for the barangay
-                var forecastedData = mapData.find(item => 
-                    item.harvest_barangay === barangayName && item.harvest_municipality === municipalityName);
-
-                var forecastedAmount = forecastedData ? forecastedData.forecasted_amount : 0;
-
-                layer.bindPopup(
-                    `<b>${barangayName}</b><br>` +
-                    `Municipality: ${municipalityName}<br>` +
-                    `Province: ${provinceName}<br>` +
-                    `Forecasted Amount: ${forecastedAmount.toFixed(2)} kg`
-                );
-                TO HERE 
-    
-    let selectedLayer = null;
-
-    fetch("{% static 'geojson/Barangays.json' %}")
-    .then(response => response.json())
-    .then(geojsonData => {
-        const geojson = L.geoJSON(geojsonData, {
-            style: {
-                color: "#3388ff",
-                weight: 1,
-                fillOpacity: 0.3
-            },
-                onEachFeature: function (feature, layer) {
-                    layer.on('click', function () {
-                        if (selectedLayer) {
-                            geojson.resetStyle(selectedLayer);
-                        }
-
-                        selectedLayer = layer;
-
-                        layer.setStyle({ fillOpacity: 0.5, color: "#ff7800" });
-
-                        document.getElementById('plant_barangay').value = feature.properties.NAME_3;
-                        console.log(feature.properties.NAME_3)
-                    });
-
-                    /**layer.bindTooltip(barangayName, {
-                    
-                });**/
-
-                    layer.bindTooltip(feature.properties.NAME_3, { 
-                        sticky: true,
-                        //permanent: true,
-                        direction: "center",
-                        className: "barangay-label"
-                     }); // Optional: show name    
-            }
-        }).addTo(map);
-    })
-    .catch(error => {
-        console.error('Error loading GeoJSON:', error);
-    });
-
-    // Add markers from mapData
-
-    mapData.forEach(function(item) {
-        if (item.latitude && item.longitude) { // Only add markers if valid coordinates
-            var marker = L.marker([item.latitude, item.longitude]).addTo(map);
-            marker.bindPopup('<b>' + item.harvest_barangay + '</b><br>' + item.harvest_municipality + '<br>Forecasted Amount: ' + item.forecasted_amount.toFixed(2) + ' kg');
-        } else {
-            console.warn('Invalid coordinates for marker:', item);
-        }
-    }); 
-    {% endcomment %}
-</script>
-{% comment %} <script>
-    var map = L.map('map').setView([14.6781, 120.5395], 10); // center at Bataan
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    var marker;
-
-    map.on('click', function(e) {
-        var lat = e.latlng.lat;
-        var lng = e.latlng.lng;
-
-        if (marker) {
-            marker.setLatLng(e.latlng);
-        } else {
-            marker = L.marker(e.latlng).addTo(map);
-        }
-
-        // Update hidden fields
-        document.getElementById('latitude').value = lat;
-        document.getElementById('longitude').value = lng;
-    });
-    
-    
-</script> {% endcomment %}
-
-{% endblock content %}

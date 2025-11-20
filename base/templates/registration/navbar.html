@@ -35,12 +35,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Custom dropdown positioning for mobile
     document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
         toggle.addEventListener('shown.bs.dropdown', function() {
             var dropdown = this.nextElementSibling;
             if (dropdown && window.innerWidth <= 768) {
-                // Additional mobile-specific positioning if needed
                 dropdown.style.transform = 'none';
             }
         });

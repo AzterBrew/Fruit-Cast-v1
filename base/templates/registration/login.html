@@ -13,7 +13,6 @@
           <!-- Logo/Brand -->
           <div class="text-center mb-4">
             <div class="text-success mb-2">
-              {% comment %} <i class="bi bi-droplet" style="font-size: 3rem;"></i> {% endcomment %}
                 <img src="{% static 'images/logo/3.png' %}" alt="Fruit Cast Logo" style="max-height: 10rem;" class="me-2">
             </div>
             <h1 class="h2 text-success fw-bold mb-0">Fruit Cast</h1>
@@ -85,7 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.getElementById('togglePassword');
     const passwordIcon = document.getElementById('passwordIcon');
     
-    // Toggle password visibility
     togglePassword.addEventListener('click', function() {
         const type = passwordInput.type === 'password' ? 'text' : 'password';
         passwordInput.type = type;

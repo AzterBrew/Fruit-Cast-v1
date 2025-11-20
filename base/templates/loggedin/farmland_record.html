@@ -125,7 +125,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Form validation and confirmation
     const form = document.getElementById("farmland-record-form");
     if (form) {
         form.addEventListener("submit", function (e) {
@@ -152,7 +151,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const municipalitySelect = document.getElementById('id_municipality');
     const barangaySelect = document.getElementById('id_barangay');
 
-    // Store the initial selected barangay (for edit mode)
     let initialBarangay = barangaySelect ? barangaySelect.getAttribute('data-initial') || barangaySelect.value : null;
 
     function updateBarangayOptions(keepSelected = false) {
@@ -199,21 +197,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (municipalitySelect && barangaySelect) {
         municipalitySelect.addEventListener('change', function() {
-            // On change, don't keep the old selection
             updateBarangayOptions(false);
         });
         // On page load, keep the initial selection (for edit mode)
         updateBarangayOptions(true);
     }
 
-    // Simple character limit validation for estimated area field
     function enforceCharacterLimit(input, maxLength) {
         if (input.value.length > maxLength) {
             input.value = input.value.substring(0, maxLength);
         }
     }
 
-    // Apply character limit to estimated area field
     const estimatedAreaField = document.getElementById('id_estimated_area');
     if (estimatedAreaField) {
         estimatedAreaField.addEventListener('input', function(e) {

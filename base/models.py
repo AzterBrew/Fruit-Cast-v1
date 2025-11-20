@@ -5,15 +5,6 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from dashboard.models import * 
-# Create your models here.
-# class ExtendedUser(models.Model):
-#     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-#     created = models.DateTimeField(auto_now_add=True)
-#     phone_number = models.IntegerField(blank=True, null=True)  
-
-# superuser is 
-# email : emmsumbad
-# pass : moasumbad
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -58,7 +49,6 @@ class AuthUser(AbstractBaseUser):
     def has_module_perms(self, app_label):
         return self.is_superuser
     
-# I NEED TO REMIGRATE 
 class AccountType(models.Model):
     account_type_id = models.BigAutoField(primary_key=True)
     account_type = models.CharField(max_length=50)
@@ -67,13 +57,6 @@ class AccountType(models.Model):
 class AccountStatus(models.Model):
     acc_stat_id = models.BigAutoField(primary_key=True)
     acc_status = models.CharField(max_length=50)    
-    # this is actually the previous status BUT i made changes and its below this list
-    # "Active"
-    # "Inactive"
-    # "Pending"
-    # "Rejected"
-    # "Suspended"
-    # "Archived"
     # NEWNEWNEW which should be inclusive of recordtransaction status 
     # Verified 2 
     # Pending 3 
@@ -91,14 +74,14 @@ class MunicipalityName(models.Model):
     
 class BarangayName(models.Model):
     barangay_id = models.BigAutoField(primary_key=True)
-    barangay = models.CharField(max_length=100) #possible maging di relevant sa major capabs
+    barangay = models.CharField(max_length=100) 
     municipality_id = models.ForeignKey(MunicipalityName,on_delete=models.CASCADE)
     
     def __str__(self):
         return self.barangay
 
 class UserInformation(models.Model):
-    auth_user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)    #contains the email
+    auth_user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  
     userinfo_id = models.BigAutoField(primary_key=True)
     lastname = models.CharField(max_length=255)
     firstname = models.CharField(max_length=255)
@@ -106,7 +89,7 @@ class UserInformation(models.Model):
     nameextension = models.CharField(max_length=10, blank=True, default="")
     sex = models.CharField(max_length=50)
     contact_number = models.CharField(max_length=20)
-    user_email = models.EmailField(max_length=254) #tentative, di normalized ang table
+    user_email = models.EmailField(max_length=254)
     birthdate = models.DateField()
     emergency_contact_person = models.CharField(max_length=255)
     emergency_contact_number = models.CharField(max_length=20)
@@ -116,8 +99,7 @@ class UserInformation(models.Model):
     religion = models.CharField(max_length=255,blank=True, default="", null=True)
     civil_status = models.CharField(max_length=50)
     rsbsa_ref_number = models.CharField(max_length=22, unique=True, null=True, blank=True, verbose_name="RSBSA Reference Number")
-    hasfarmland = models.BooleanField(default=False) #default na false, will be setup in the acc setup
-    # wala pang IMC o In
+    hasfarmland = models.BooleanField(default=False)
 
 class AdminInformation(models.Model):
     admin_id = models.BigAutoField(primary_key=True)
@@ -134,7 +116,7 @@ class AdminInformation(models.Model):
 class AccountsInformation(models.Model):
     account_id = models.BigAutoField(primary_key=True)
     account_register_date = models.DateTimeField()
-    account_isverified = models.BooleanField(default=False) #default na false since di verified agad
+    account_isverified = models.BooleanField(default=False)
     account_verified_date = models.DateTimeField(null=True, blank=True)
     account_verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
     account_type_id = models.ForeignKey(AccountType, on_delete=models.CASCADE)
@@ -147,12 +129,6 @@ class UserLoginLog(models.Model):
     account_id = models.ForeignKey(AccountsInformation,  on_delete=models.CASCADE)
     login_date = models.DateTimeField(auto_now_add=True)
     
-# class AdminUserManagement(models.Model):
-#     log_id = models.BigAutoField(primary_key=True)
-#     admin_id = models.ForeignKey(AdminInformation, on_delete=models.CASCADE)
-#     action_timestamp = models.DateTimeField(auto_now_add=True)
-#     target_useracc = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
-#     action = models.CharField(max_length=255)
     
 class AdminUserManagement(models.Model):
     log_id = models.BigAutoField(primary_key=True)
@@ -160,7 +136,6 @@ class AdminUserManagement(models.Model):
     action_timestamp = models.DateTimeField(auto_now_add=True)
     action = models.CharField(max_length=255) # e.g., "Verified", "Rejected", "Archived"
 
-    # Generic Foreign Key fields
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     target_object = GenericForeignKey('content_type', 'object_id')
@@ -214,7 +189,6 @@ class CommodityType(models.Model):
     def __str__(self):
         return self.name    
 
-# sa admin panel, I should have checkboxes
 
 STATUS_CHOICES = [
     ('none', 'None'),
@@ -236,10 +210,8 @@ class RecordTransaction (models.Model):
     account_id = models.ForeignKey(AccountsInformation, on_delete=models.CASCADE)
     transaction_date = models.DateTimeField(default=timezone.now)
     date_verified = models.DateTimeField(null=True, blank=True)
-    # should be in the kwan sa recordlist template
     planting_failed = models.BooleanField(default=False)
     failure_reason = models.TextField(blank=True, null=True)
-    # location stuff choosing
     location_type = models.CharField(choices=LOCATION_TYPE_CHOICES, max_length=20, default='manual')
     farm_land = models.ForeignKey(FarmLand, null=True, blank=True, on_delete=models.SET_NULL)
     manual_municipality = models.ForeignKey(MunicipalityName, null=True, blank=True, on_delete=models.SET_NULL)
@@ -254,10 +226,6 @@ class RecordTransaction (models.Model):
             return f"{self.manual_municipality}"
         return "No location set"
     
-# tentative with these fields
-    # tr_verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
-
-
 class initPlantRecord(models.Model):
     plant_id = models.BigAutoField(primary_key=True)
     transaction = models.OneToOneField(RecordTransaction, on_delete=models.CASCADE)
@@ -286,11 +254,3 @@ class initHarvestRecord(models.Model):
     remarks = models.TextField(blank=True)
     verified_by = models.ForeignKey(AdminInformation, on_delete=models.CASCADE, null=True, blank=True)
     date_verified = models.DateTimeField(default=timezone.now, null=True, blank=True)
-
-
-
-# BTW CHange the account_register_date in the Accounts table as NULL
-
-
-
-

@@ -27,7 +27,6 @@ class Command(BaseCommand):
         self.stdout.write(f"Current time: {current_time}")
         self.stdout.write(f"Current day of month: {current_time.day}")
         
-        # Get test account
         if options['account_id']:
             try:
                 account = AccountsInformation.objects.get(account_id=options['account_id'])
@@ -35,7 +34,6 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f'Account with ID {options["account_id"]} not found'))
                 return
         else:
-            # Get first account with farmland
             account = AccountsInformation.objects.filter(
                 userinfo_id__farmland__isnull=False
             ).first()
@@ -45,7 +43,6 @@ class Command(BaseCommand):
         
         self.stdout.write(f"\nTesting with account: {account.userinfo_id.firstname} {account.userinfo_id.lastname} (ID: {account.account_id})")
         
-        # Show existing notifications if requested
         if options['show_existing']:
             existing_notifications = Notification.objects.filter(
                 account=account,
@@ -59,20 +56,17 @@ class Command(BaseCommand):
                     f"Read: {notif.is_read} | Message: {notif.message[:60]}..."
                 )
         
-        # Get farmlands and test scheduling
         farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
         
         self.stdout.write(f"\n=== FARMLANDS ({farmlands.count()}) ===")
         for farmland in farmlands:
             self.stdout.write(f"- {farmland.farmland_name} in {farmland.municipality.municipality}")
         
-        # Test residential municipality
         if account.userinfo_id.municipality_id:
             residential_municipality = account.userinfo_id.municipality_id
             self.stdout.write(f"\n=== TESTING RESIDENTIAL MUNICIPALITY ===")
             self.stdout.write(f"Municipality: {residential_municipality.municipality} (ID: {residential_municipality.municipality_id})")
             
-            # Count existing notifications for residential municipality
             existing_count = Notification.objects.filter(
                 account=account,
                 notification_type="fruit_recommendation",
@@ -84,7 +78,6 @@ class Command(BaseCommand):
             
             self.stdout.write(f"Existing residential notifications for this month: {existing_count}")
             
-            # Try to schedule residential notification
             success = schedule_monthly_fruit_recommendations(
                 account, 
                 residential_municipality.municipality_id, 
@@ -97,7 +90,6 @@ class Command(BaseCommand):
         for farmland in farmlands:
             self.stdout.write(f"\nTesting farmland: {farmland.farmland_name} in {farmland.municipality.municipality} (ID: {farmland.municipality_id})")
             
-            # Count existing notifications for this specific farmland
             existing_count = Notification.objects.filter(
                 account=account,
                 notification_type="fruit_recommendation",
@@ -109,7 +101,6 @@ class Command(BaseCommand):
             
             self.stdout.write(f"Existing notifications for this farmland this month: {existing_count}")
             
-            # Try to schedule for this specific farmland
             success = schedule_monthly_fruit_recommendations(
                 account, 
                 farmland.municipality_id, 
@@ -118,7 +109,6 @@ class Command(BaseCommand):
             )
             self.stdout.write(f"Farmland scheduling result: {'SUCCESS' if success else 'SKIPPED/FAILED'}")
         
-        # Show final notification count
         final_count = Notification.objects.filter(
             account=account,
             notification_type="fruit_recommendation"
@@ -127,7 +117,6 @@ class Command(BaseCommand):
         self.stdout.write(f"\n=== FINAL RESULTS ===")
         self.stdout.write(f"Total fruit recommendation notifications for this account: {final_count}")
         
-        # Show due notifications
         due_notifications = Notification.objects.filter(
             account=account,
             scheduled_for__lte=current_time,

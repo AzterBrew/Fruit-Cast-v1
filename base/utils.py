@@ -19,22 +19,6 @@ from django.core.files.storage import default_storage
 from io import BytesIO
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-# 2.5 = API KEY = AIzaSyDUXqs1PBI5BNsYwmwBBzd_4z5yoY2BVc4
-# curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
-#   -H 'Content-Type: application/json' \
-#   -H 'X-goog-api-key: AIzaSyDUXqs1PBI5BNsYwmwBBzd_4z5yoY2BVc4' \
-#   -X POST \
-#   -d '{
-#     "contents": [
-#       {
-#         "parts": [
-#           {
-#             "text": "Explain how AI works in a few words"
-#           }
-#         ]
-#       }
-#     ]
-#   }'
 
 def get_alternative_recommendations(selected_month=None, selected_year=None, selected_municipality_id=None):
     """
@@ -71,7 +55,6 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
         print("❌ No forecast batch found in database")
         return {'short_term': [], 'long_term': []}
 
-     # If no municipality is selected, default to the 'Overall' ID (14)
     if selected_municipality_id is None:
         selected_municipality_id = 14
 
@@ -121,7 +104,6 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
         db_forecast_horizon = 12
         
         if months_difference <= db_forecast_horizon and months_difference >= 0:
-            # Scenario A: Forecast is recent, get it from the database
             total_forecasted_kg = ForecastResult.objects.filter(
                 batch=latest_batch,
                 commodity=commodity,
@@ -134,7 +116,6 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
             print(f"🔍 {commodity.name}: DB forecast = {total_forecasted_kg} kg (threshold: {low_supply_threshold})")
             
         else:
-            # Scenario B: Forecast is too far in the future. Generate it on-demand.
             try:
                 # Load the appropriate Prophet model for the specific municipality
 
@@ -171,13 +152,12 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                 'years_to_mature': years_to_mature,
                 'predicted_month': calendar.month_name[predicted_month_num],
                 'predicted_year': predicted_year,
-                'forecasted_amount': total_forecasted_kg  # Add forecasted amount for sorting
+                'forecasted_amount': total_forecasted_kg 
             })
             print(f"✅ {commodity.name} added to low-supply list (forecast: {total_forecasted_kg} < threshold: {low_supply_threshold})")
 
     print(f"📊 Checked {commodities_checked} commodities, found {len(low_supply_commodities)} with low supply")
 
-    # If no low-supply commodities were found, return early
     if not low_supply_commodities:
         print("💭 No low-supply commodities found, returning empty recommendations")
         return {'short_term': [], 'long_term': []}
@@ -366,7 +346,7 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
                         'reason': rec_data.get('reason', 'Reason not provided.'),
                         'estimated_maturity': f"{commodity['years_to_mature']} years" if is_long_term else f"{int(commodity['years_to_mature'] * 12)} months",
                         'land_recommendations': rec_data.get('land_recommendations', {}),
-                        'forecasted_amount': commodity.get('forecasted_amount', 0),  # Include for sorting
+                        'forecasted_amount': commodity.get('forecasted_amount', 0), 
                         'predicted_month': commodity.get('predicted_month', 'Unknown'),
                         'predicted_year': commodity.get('predicted_year', 'Unknown')
                     }
@@ -391,58 +371,3 @@ def get_alternative_recommendations(selected_month=None, selected_year=None, sel
         import traceback
         print(f"📚 Full traceback: {traceback.format_exc()}")
         return {'short_term': [], 'long_term': []}
-
-
-
-
-# temporary simple code
-
-# def get_alternative_recommendations():
-#     """
-#     Generates a single, simplified fruit recommendation for a specific commodity
-#     to test API connectivity.
-#     """
-#     recommendations = {
-#         'short_term': [],
-#         'long_term': []
-#     }
-
-#     # Define a single, hardcoded commodity for testing purposes
-#     commodity_name = "Mango"
-#     predicted_month = 10 # October
-#     predicted_year = 2026
-
-#     # Construct the prompt for the Gemini API
-#     prompt = f"""
-#     You are an expert agricultural consultant in the Philippines.
-
-#     Based on a forecast, there is a low predicted supply for {commodity_name} in {calendar.month_name[predicted_month]} {predicted_year}. This suggests a good opportunity for farmers to meet future demand.
-
-#     Provide a concise recommendation for planting this fruit. For each of the following land types, provide a brief comment on its suitability and any tips.
-
-#     Land Types: Clay Soil, Sandy Loam, Loam Soil, Volcanic Soil, Peat Soil.
-
-#     Format your response as a JSON object with keys matching the land types and values containing the comments.
-#     """
-
-#     try:
-#         model = genai.GenerativeModel('gemini-1.5-flash')
-#         response = model.generate_content(prompt)
-
-#         # Clean and parse the JSON response
-#         raw_text = response.text.replace("```json", "").replace("```", "").strip()
-#         land_type_recommendations = json.loads(raw_text)
-
-#         # Append the simplified recommendation
-#         recommendations['long_term'].append({
-#             'commodity_name': commodity_name,
-#             'reason': f"Projected low supply in {calendar.month_name[predicted_month]} {predicted_year}.",
-#             'land_recommendations': land_type_recommendations
-#         })
-
-#     except Exception as e:
-#         # It's important to return an empty dict on error, not let it crash
-#         print(f"Error getting Gemini recommendation for {commodity_name}: {e}")
-#         return {'short_term': [], 'long_term': []}
-
-#     return recommendations

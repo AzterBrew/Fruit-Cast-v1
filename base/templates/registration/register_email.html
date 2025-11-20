@@ -139,7 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmPasswordIcon.className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
     });
     
-    // Password strength checker
     function checkPasswordStrength(password) {
         let strength = 0;
         let feedback = [];
@@ -198,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Event listeners
     passwordInput.addEventListener('input', function() {
         checkPasswordStrength(this.value);
         checkPasswordMatch();
@@ -232,7 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Disable button to prevent double submission
         const submitBtn = document.querySelector('button[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = true;

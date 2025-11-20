@@ -327,7 +327,7 @@ function confirmDelete(transactionId) {
         deleteBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Deleting...';
         deleteBtn.disabled = true;
         
-        // Make AJAX call to delete the transaction
+        // MDelete the transaction
         fetch(`/transaction/delete/${transactionId}/`, {
             method: 'POST',
             headers: {
@@ -344,19 +344,15 @@ function confirmDelete(transactionId) {
         })
         .then(data => {
             if (data.success) {
-                // Show success message below the cards
                 showDeleteMessage('success', data.message || 'Transaction successfully deleted and marked as removed.');
                 
-                // Hide the delete button since transaction is now deleted
                 deleteBtn.style.display = 'none';
                 
-                // Redirect after 3 seconds
                 setTimeout(() => {
                     window.location.href = "{% url 'base:transaction_history' %}";
                 }, 3000);
             } else {
                 showDeleteMessage('error', data.error || 'Failed to delete transaction');
-                // Reset button
                 deleteBtn.innerHTML = originalContent;
                 deleteBtn.disabled = false;
             }
@@ -364,7 +360,6 @@ function confirmDelete(transactionId) {
         .catch(error => {
             console.error('Error:', error);
             showDeleteMessage('error', 'An error occurred while deleting the transaction. Please try again.');
-            // Reset button
             deleteBtn.innerHTML = originalContent;
             deleteBtn.disabled = false;
         });
@@ -390,7 +385,6 @@ function showDeleteMessage(type, message) {
     `;
     messageArea.style.display = 'block';
     
-    // Scroll to the message
     messageArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 

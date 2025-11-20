@@ -16,11 +16,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         current_time = timezone.now()
          
-        # Find notifications that are scheduled for now or in the past and haven't been "delivered" yet
-        # We'll use the is_read field to track if a notification has been "delivered"
         due_notifications = Notification.objects.filter(
             scheduled_for__lte=current_time,
-            is_read=False,  # Using is_read=False to indicate "not yet delivered"
+            is_read=False,  
             notification_type="fruit_recommendation"
         )
         
@@ -36,8 +34,7 @@ class Command(BaseCommand):
         processed_count = 0
         for notification in due_notifications:
             try:
-                # Mark the notification as "delivered" by updating created_at to current time
-                # This makes it appear in the user's notification list
+
                 notification.created_at = current_time
                 notification.save()
                 
