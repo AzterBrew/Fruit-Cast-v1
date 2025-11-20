@@ -45,7 +45,7 @@ Fruit Cast | Farmer Profile & Transaction History
         <div class="card-body">
             <div class="row g-3">
                 {% if user_role_id == 2 %}
-                    <!-- Administrator - Full Information -->
+                    <!-- Administrator - Full info -->
                     <div class="col-md-6">
                         <h6 class="text-success mb-3">
                             <i class="bi bi-person me-2"></i>Basic Information
@@ -71,10 +71,6 @@ Fruit Cast | Farmer Profile & Transaction History
                                 <span class="fw-medium">Civil Status:</span>
                                 <span class="text-sm-end">{{ farmer_info.civil_status }}</span>
                             </li>
-                            {% comment %}<li class="list-group-item d-flex justify-content-between flex-column flex-sm-row">
-                                <span class="fw-medium">Religion:</span>
-                                <span class="text-sm-end">{{ farmer_info.religion }}</span>
-                            </li>{% endcomment %}
                         </ul>
                     </div>
                     <div class="col-md-6">
@@ -119,7 +115,7 @@ Fruit Cast | Farmer Profile & Transaction History
                         </ul>
                     </div>
                 {% elif user_role_id == 3 %}
-                    <!-- Agriculturist - Limited Information -->
+                    <!-- Agriculturist - Limited info -->
                     <div class="col-md-6">
                         <h6 class="text-success mb-3">
                             <i class="bi bi-person me-2"></i>Basic Information
@@ -145,10 +141,6 @@ Fruit Cast | Farmer Profile & Transaction History
                                 <span class="fw-medium">Civil Status:</span>
                                 <span>{{ farmer_info.civil_status }}</span>
                             </li>
-                            {% comment %}<li class="list-group-item d-flex justify-content-between">
-                                <span class="fw-medium">Religion:</span>
-                                <span>{{ farmer_info.religion }}</span>
-                            </li>{% endcomment %}
                         </ul>
                     </div>
                     <div class="col-md-6">
@@ -193,7 +185,7 @@ Fruit Cast | Farmer Profile & Transaction History
                         </ul>
                     </div>
                 {% elif user_role_id == 3 %}
-                    <!-- Agriculturist - Limited Information -->
+                    <!-- Agriculturist - Limited info -->
                     <div class="col-md-6">
                         <h6 class="text-success mb-3">
                             <i class="bi bi-person me-2"></i>Basic Information

@@ -321,7 +321,7 @@ def retrain_selective_models_task(commodity_municipality_pairs):
         with transaction.atomic():
             # Process each individual municipality and commodity combination
             for commodity in commodities:
-                for municipality in municipalities.exclude(pk=14):  # Skip Overall in this loop
+                for municipality in municipalities.exclude(pk=14):  # Skip Overall sa loop
                     # Check if this specific combination was in the original request
                     combination_requested = any(
                         pair['commodity_id'] == commodity.commodity_id and 

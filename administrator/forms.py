@@ -22,13 +22,13 @@ class AssignAdminAgriForm(forms.Form):
     account_type = forms.ChoiceField(label="Account Type *",choices=ACCOUNT_TYPE_CHOICES,widget=forms.Select(attrs={'class': 'form-select','required': 'required'}))
     municipality = forms.ModelChoiceField(
         label="Municipality",
-        queryset=MunicipalityName.objects.exclude(pk=14),  # Exclude 'Overall' municipality
+        queryset=MunicipalityName.objects.exclude(pk=14),
         required=False,
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'municipality-select'})
     )
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)  # Extract user from kwargs
+        user = kwargs.pop('user', None)  
         admin_info = kwargs.pop('admin_info', None)  # Extract admin info from kwargs
         super().__init__(*args, **kwargs)
         
@@ -104,7 +104,7 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)  # Extract user from kwargs
         super().__init__(*args, **kwargs)
-        # Exclude pk=1 (usually 'Not Listed' or similar) from commodity choices
+        # Exclude pk=1 (Not Listed) from commodity choices
         self.fields['commodity_id'].queryset = CommodityType.objects.exclude(pk=1)
         
         # Determine access level for municipality field
@@ -157,7 +157,6 @@ class VerifiedHarvestRecordForm(forms.ModelForm):
         """Custom clean method for municipality field"""
         municipality = self.cleaned_data.get('municipality')
         
-        # If municipality field was disabled and no data was submitted, use the instance value
         if not municipality and self.instance and self.instance.municipality:
             municipality = self.instance.municipality
             

@@ -79,7 +79,7 @@ Fruit Cast | Farmer Account Verification
                     <form method="post" action="">
                         {% csrf_token %}
 
-                        <!-- Responsive Table -->
+                        <!-- Table -->
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">
                                 <thead class="table-success">
@@ -95,9 +95,7 @@ Fruit Cast | Farmer Account Verification
                                         <th scope="col">Location</th>
                                         <th scope="col">Account Status</th>
                                         <th scope="col">Total Records</th>
-                                        {% comment %} {% if user_role_id == 2%} {% endcomment %}
                                         <th scope="col" class="text-center">View History</th>
-                                        {% comment %} {% endif %} {% endcomment %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -146,7 +144,6 @@ Fruit Cast | Farmer Account Verification
                                         <td class="text-center">
                                             <span class="badge bg-light text-dark">{{ account.record_count }}</span>
                                         </td>
-                                        {% comment %} {% if user_role_id == 2%} {% endcomment %}
                                         <td class="text-center">
                                             <a href="{% url 'administrator:farmer_transaction_history' account.account_id %}" 
                                                class="btn btn-outline-warning btn-sm" 
@@ -154,7 +151,6 @@ Fruit Cast | Farmer Account Verification
                                                 <i class="bi bi-clock-history"></i>
                                             </a>
                                         </td>
-                                        {% comment %} {% endif %} {% endcomment %}
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -391,7 +387,7 @@ Fruit Cast | Farmer Account Verification
             if (updateBtn) {
                 updateBtn.disabled = checkedBoxes.length === 0;
                 
-                // Update button text based on selection count
+                // Update text based on selection count
                 const count = checkedBoxes.length;
                 if (count === 0) {
                     updateBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Update Selected Accounts';
@@ -432,7 +428,6 @@ Fruit Cast | Farmer Account Verification
         }
         {% endif %}
 
-        // Initialize button state (only for administrators)
         {% if user_role_id == 2 %}
         updateButtonState();
         {% endif %}

@@ -89,13 +89,12 @@ def extract_commodity_municipality_pairs(selected_record_ids, record_type='harve
         for record in records:
             commodity_id = record.commodity_id.commodity_id
             
-            # Determine municipality (same logic as in verification)
             if record.transaction.farm_land:
                 municipality_id = record.transaction.farm_land.municipality.municipality_id
             elif record.transaction.manual_municipality:
                 municipality_id = record.transaction.manual_municipality.municipality_id
             else:
-                continue  # Skip if no municipality found
+                continue  
                 
             pair = {'commodity_id': commodity_id, 'municipality_id': municipality_id}
             if pair not in pairs:
@@ -109,13 +108,12 @@ def extract_commodity_municipality_pairs(selected_record_ids, record_type='harve
         for record in records:
             commodity_id = record.commodity_id.commodity_id
             
-            # Determine municipality (same logic as in verification)
             if record.transaction.farm_land:
                 municipality_id = record.transaction.farm_land.municipality.municipality_id
             elif record.transaction.manual_municipality:
                 municipality_id = record.transaction.manual_municipality.municipality_id
             else:
-                continue  # Skip if no municipality found
+                continue  
                 
             pair = {'commodity_id': commodity_id, 'municipality_id': municipality_id}
             if pair not in pairs:
@@ -196,7 +194,6 @@ def admin_dashboard(request):
         is_administrator = account_info.account_type_id.account_type.lower() == 'administrator'
         assigned_municipality = admin_info.municipality_incharge
         
-        # Base statistics that apply to all admin types
         if is_superuser or is_pk14:
             # Superuser/Administrator (pk=14) sees all data
             total_accounts = AccountsInformation.objects.filter(account_type_id=1).count()  # All farmers
@@ -213,7 +210,7 @@ def admin_dashboard(request):
             ).order_by('-account_register_date')[:5]
             municipalities_data = MunicipalityName.objects.exclude(pk=14).annotate(
                 farmer_count=Count('userinformation__accountsinformation', 
-                                 filter=Q(userinformation__accountsinformation__account_type_id=1))
+                filter=Q(userinformation__accountsinformation__account_type_id=1))
             )
         else:
             # Agriculturist sees only their municipality data
@@ -313,7 +310,6 @@ def update_account_status(request, account_id):
     if request.method == 'POST':
         account = get_object_or_404(AccountsInformation, pk=account_id)
         
-        # Try both possible field names from the form
         new_status_value = request.POST.get('new_status') or request.POST.get('status')
         
         if new_status_value is None:
@@ -324,7 +320,6 @@ def update_account_status(request, account_id):
             new_status_id = int(new_status_value)
             new_status = get_object_or_404(AccountStatus, pk=new_status_id)
             
-            # Store old status for logging
             old_status = account.acc_status_id.acc_status if account.acc_status_id else "None"
             
             account.acc_status_id = new_status
@@ -347,7 +342,7 @@ def update_account_status(request, account_id):
                     object_id=account.account_id
                 )
             except (UserInformation.DoesNotExist, AdminInformation.DoesNotExist):
-                pass  # Skip linking if not a recognized admin
+                pass  # Skip linking if di recognized n admin
 
             account.save()
             messages.success(request, f'Account status updated to {new_status.acc_status}.')
@@ -374,16 +369,15 @@ def verify_accounts(request):
     
     status_filter = request.GET.get('status')
     municipality_filter = request.GET.get('municipality')
-    sort_by = request.GET.get('sort', 'account_register_date')  # Default sort by date
-    order = request.GET.get('order', 'desc')  # Default to desc (most recent first)
+    sort_by = request.GET.get('sort', 'account_register_date') 
+    order = request.GET.get('order', 'desc') 
 
     accounts_query = AccountsInformation.objects.filter(account_type_id=1).select_related('userinfo_id', 'account_type_id', 'acc_status_id')
 
-    # Filter by agriculturist's assigned municipality if not superuser or administrator (pk=14)
     if not is_superuser:
         if is_pk14:
             # Administrator with pk=14: can see all farmer accounts
-            pass  # No additional filtering needed
+            pass
         else:
             # Administrator with municipality not pk=14: can only see farmers in their municipality
             accounts_query = accounts_query.filter(
@@ -400,7 +394,6 @@ def verify_accounts(request):
 
     accounts_query = accounts_query.annotate(record_count=Count('recordtransaction'))
 
-    # Determine sort field and order
     if sort_by == 'name':
         sort_field = 'userinfo_id__lastname'
     elif sort_by == 'date':
@@ -423,7 +416,6 @@ def verify_accounts(request):
         new_status_id = request.POST.get('new_status')
         admin_info = AdminInformation.objects.filter(userinfo_id=request.user.userinformation).first()
         if selected_ids and new_status_id and admin_info:
-            # Work with all_accounts queryset for batch operations, not just current page
             for acc in all_accounts.filter(pk__in=selected_ids):
                 acc.acc_status_id_id = new_status_id
                 acc.account_verified_by = admin_info
@@ -437,7 +429,6 @@ def verify_accounts(request):
     
     # Pass status choices for filter dropdown - filter municipalities if agriculturist
     status_choices = AccountStatus.objects.all()
-    # For bulk actions, limit to Verified (pk=2) and Suspended (pk=6) only
     bulk_action_status_choices = AccountStatus.objects.filter(pk__in=[2, 6])
     if is_superuser or is_pk14:
         municipalities = MunicipalityName.objects.exclude(pk=14)
@@ -445,7 +436,6 @@ def verify_accounts(request):
         municipalities = MunicipalityName.objects.filter(pk=municipality_assigned.pk)
     
     context = get_admin_context(request)
-    # Handle export requests
     export_type = request.GET.get('export')
     export_format = request.GET.get('format')
     
@@ -456,11 +446,11 @@ def verify_accounts(request):
             return export_accounts_summary_csv(all_accounts, 'farmer_accounts_summary', export_format, request)
 
     context.update({
-        'accounts': page_obj.object_list,  # Paginated accounts for display
+        'accounts': page_obj.object_list, 
         'page_obj': page_obj,
         'paginator': paginator,
         'status_choices': status_choices,
-        'bulk_action_status_choices': bulk_action_status_choices,  # Limited choices for bulk actions
+        'bulk_action_status_choices': bulk_action_status_choices, 
         'municipalities': municipalities,
         'current_status': status_filter,
         'current_municipality': municipality_filter,
@@ -473,21 +463,6 @@ def verify_accounts(request):
     })
 
     return render(request, 'admin_panel/verify_accounts.html', context)
-
-# @admin_or_agriculturist_required
-# def verify_account_action(request, account_id):
-#     if request.method == 'POST':
-#         account = get_object_or_404(AccountsInformation, pk=account_id)
-#         active_status = get_object_or_404(AccountStatus, pk=3)  # 3 = Pending
-#         admin_user = AdminInformation.objects.get(admin_user=request.user)  # Assuming this links to auth user
-
-#         account.acc_status_id = active_status
-#         account.account_verified_date = now()
-#         account.account_isverified = True
-#         account.account_verified_by = admin_user
-#         account.save()
-
-#         return redirect('verify_accounts')
 
 @admin_or_agriculturist_required
 def show_allaccounts(request):
@@ -502,7 +477,6 @@ def show_allaccounts(request):
     is_pk14 = municipality_assigned.pk == 14  # Overall in Bataan
     user_role_id = account_info.account_type_id.pk
     
-    # Restrict access to administrators only - agriculturists cannot access
     if user_role_id != 2:  # Only administrators (pk=2) can access
         if user_role_id == 3:  # Agriculturist trying to access
             return render(request, 'admin_panel/access_denied.html', {
@@ -514,14 +488,13 @@ def show_allaccounts(request):
             })
         
     status_filter = request.GET.get('status')
-    sort_by = request.GET.get('sort', 'account_register_date')  # Default sort by date
-    order = request.GET.get('order', 'asc')  # 'asc' or 'desc'
+    sort_by = request.GET.get('sort', 'account_register_date') 
+    order = request.GET.get('order', 'asc') 
 
     accounts_query = AccountsInformation.objects.select_related(
         'userinfo_id', 'account_type_id', 'acc_status_id'
     ).filter(account_type_id__account_type__in=["Administrator", "Agriculturist"])
 
-    # Apply privilege-based filtering for account visibility
     if not is_superuser:
         if is_pk14:
             # Administrator with pk=14: can see all agriculturists and all administrators
@@ -530,7 +503,6 @@ def show_allaccounts(request):
             )
         else:
             # Administrator with municipality not pk=14: restricted visibility
-            # Use AdminInformation to filter by municipality assignments
             admin_info_ids = AdminInformation.objects.values_list('userinfo_id', flat=True)
             
             # Filter accounts based on the municipality restrictions
@@ -560,7 +532,6 @@ def show_allaccounts(request):
     if municipality_filter:
         accounts_query = accounts_query.filter(userinfo_id__municipality_id__municipality=municipality_filter)
         
-    # Determine sort field and order
     if sort_by == 'name':
         sort_field = 'userinfo_id__lastname'
     elif sort_by == 'date':
@@ -574,7 +545,7 @@ def show_allaccounts(request):
     all_accounts = accounts_query.order_by(sort_field)
     
     # Pagination
-    paginator = Paginator(all_accounts, 10)  # Show 10 accounts per page
+    paginator = Paginator(all_accounts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -582,7 +553,6 @@ def show_allaccounts(request):
         selected_ids = [sid for sid in request.POST.getlist('selected_records') if sid]
         new_status_id = request.POST.get('new_status')
         if selected_ids and new_status_id and admin_info:
-            # Work with all_accounts queryset for batch operations, not just current page
             for acc in all_accounts.filter(pk__in=selected_ids):
                 acc.acc_status_id_id = new_status_id
                 acc.account_verified_by = admin_info
@@ -594,7 +564,6 @@ def show_allaccounts(request):
             messages.success(request, f"Updated {len(selected_ids)} account(s).")
             return redirect('administrator:show_allaccounts')
 
-    # Filter municipalities based on access level
     if is_superuser or is_pk14:
         municipalities = MunicipalityName.objects.all()
     else:
@@ -603,10 +572,8 @@ def show_allaccounts(request):
         )
 
     status_choices = AccountStatus.objects.all()
-    # For bulk actions, limit to Verified (pk=2) and Suspended (pk=6) only
     bulk_action_status_choices = AccountStatus.objects.filter(pk__in=[2, 6])
     
-    # Handle export requests
     export_type = request.GET.get('export')
     export_format = request.GET.get('format')
     
@@ -618,12 +585,12 @@ def show_allaccounts(request):
     
     context = get_admin_context(request)
     context.update({
-        'allAccounts': page_obj.object_list,  # Paginated accounts for display
+        'allAccounts': page_obj.object_list,
         'page_obj': page_obj,
         'paginator': paginator,
         'account_types': AccountType.objects.exclude(account_type='Farmer'),
         'status_choices': status_choices,
-        'bulk_action_status_choices': bulk_action_status_choices,  # Limited choices for bulk actions
+        'bulk_action_status_choices': bulk_action_status_choices, 
         'municipalities': municipalities,
         'current_municipality': municipality_filter,
         'current_status': status_filter,
@@ -668,7 +635,7 @@ def change_account_type(request, account_id):
     else:
         messages.warning(request, f"Only Agriculturist accounts can be updated. {account_holder_name} has account type: {old_account_type}")
 
-    return redirect('administrator:show_allaccounts')  # or wherever the list view lives
+    return redirect('administrator:show_allaccounts')
 
 @admin_or_agriculturist_required    
 def farmer_transaction_history(request, account_id):
@@ -687,19 +654,18 @@ def farmer_transaction_history(request, account_id):
         # Get the farmer's account information
         farmer_account = AccountsInformation.objects.get(
             pk=account_id, 
-            account_type_id=1  # Ensure it's a farmer account
+            account_type_id=1
         )
         
-        # Check if agriculturist has access to this farmer
         if not is_superuser and not is_pk14:
             # Check if this farmer falls under the agriculturist's assigned municipality
             farmer_accessible = AccountsInformation.objects.filter(
                 pk=account_id,
                 account_type_id=1
             ).filter(
-                Q(userinfo_id__municipality_id=municipality_assigned) |  # Farmer's municipality matches
-                Q(recordtransaction__farm_land__municipality=municipality_assigned) |  # Has farmland in municipality
-                Q(recordtransaction__manual_municipality=municipality_assigned)  # Has transactions in municipality
+                Q(userinfo_id__municipality_id=municipality_assigned) | 
+                Q(recordtransaction__farm_land__municipality=municipality_assigned) | 
+                Q(recordtransaction__manual_municipality=municipality_assigned)  
             ).distinct().exists()
             
             if not farmer_accessible:
@@ -714,24 +680,22 @@ def farmer_transaction_history(request, account_id):
         # Apply municipality filtering for agriculturists
         if not is_superuser and not is_pk14:
             transactions_query = transactions_query.filter(
-                Q(farm_land__municipality=municipality_assigned) |  # Farmland in assigned municipality
-                Q(manual_municipality=municipality_assigned)  # Manual location in assigned municipality
+                Q(farm_land__municipality=municipality_assigned) | 
+                Q(manual_municipality=municipality_assigned)  
             )
         
         transactions_queryset = transactions_query.order_by('-transaction_date')
         
         # Pagination for transactions
-        transactions_paginator = Paginator(transactions_queryset, 10)  # Show 10 transactions per page
+        transactions_paginator = Paginator(transactions_queryset, 10) 
         transactions_page_number = request.GET.get('trans_page')
         transactions_page_obj = transactions_paginator.get_page(transactions_page_number)
         transactions = transactions_page_obj
         
-        # Get farmer's farm lands
         farm_lands = FarmLand.objects.filter(
             userinfo_id=farmer_account.userinfo_id
         ).select_related('municipality', 'barangay')
         
-        # Filter farm lands for agriculturists
         if not is_superuser and not is_pk14:
             farm_lands = farm_lands.filter(municipality=municipality_assigned)
         
@@ -785,7 +749,6 @@ def farmer_transaction_detail(request, transaction_id):
             'manual_barangay'
         ).get(pk=transaction_id)
         
-        # Ensure the transaction belongs to a farmer account
         if transaction.account_id.account_type_id.pk != 1:
             messages.error(request, "Transaction not found or access denied.")
             return redirect('administrator:verify_accounts')
@@ -802,7 +765,6 @@ def farmer_transaction_detail(request, transaction_id):
                 messages.error(request, "You don't have access to view this transaction.")
                 return redirect('administrator:verify_accounts')
         
-        # Get plant record if exists
         plant_record = None
         try:
             plant_record = initPlantRecord.objects.select_related(
@@ -811,7 +773,6 @@ def farmer_transaction_detail(request, transaction_id):
         except initPlantRecord.DoesNotExist:
             pass
         
-        # Get harvest records if exist
         harvest_records = initHarvestRecord.objects.select_related(
             'commodity_id', 'unit', 'record_status'
         ).filter(transaction=transaction)
@@ -828,7 +789,6 @@ def farmer_transaction_detail(request, transaction_id):
             except:
                 pass
         
-        # Get login history with role-based access
         login_history = []
         login_history_paginator = None
         login_history_page_obj = None
@@ -841,8 +801,7 @@ def farmer_transaction_detail(request, transaction_id):
                     account_id=transaction.account_id
                 ).order_by('-login_date')
                 
-                # Pagination for login history
-                login_history_paginator = Paginator(login_history_queryset, 10)  # Show 10 logins per page
+                login_history_paginator = Paginator(login_history_queryset, 10) 
                 login_history_page_number = request.GET.get('login_page')
                 login_history_page_obj = login_history_paginator.get_page(login_history_page_number)
                 login_history = login_history_page_obj
@@ -898,15 +857,13 @@ def delete_transaction(request, transaction_id):
         current_account = AccountsInformation.objects.get(userinfo_id=userinfo)
         current_user_role = current_account.account_type_id.pk
         
-        # Only administrators (role 2) can delete transactions
+        # Only administrators (2) can delete transactions
         if current_user_role != 2:
             return JsonResponse({'success': False, 'error': 'Only administrators can delete transactions'})
         
-        # Get the transaction
         transaction_record = RecordTransaction.objects.get(pk=transaction_id)
         farmer_account_id = transaction_record.account_id.pk
         
-        # Delete the transaction (this will cascade to related records)
         with transaction.atomic():
             # Log the admin action
             AdminUserManagement.objects.create(
@@ -916,7 +873,7 @@ def delete_transaction(request, transaction_id):
                 object_id=transaction_id
             )
             
-            # Delete the transaction
+            # Delete transaction
             transaction_record.delete()
         
         return JsonResponse({
@@ -937,7 +894,6 @@ def flag_transaction(request, transaction_id):
     import json
     
     try:
-        # Parse request data
         data = json.loads(request.body)
         reason = data.get('reason', '').strip()
         
@@ -951,11 +907,10 @@ def flag_transaction(request, transaction_id):
         current_account = AccountsInformation.objects.get(userinfo_id=userinfo)
         current_user_role = current_account.account_type_id.pk
         
-        # Only administrators (role 2) can flag transactions
+        # Only administrators (2) can flag transactions
         if current_user_role != 2:
             return JsonResponse({'success': False, 'error': 'Only administrators can flag transactions'})
         
-        # Get the transaction
         transaction_obj = RecordTransaction.objects.get(pk=transaction_id)
         
         # Log the flagging action
@@ -965,10 +920,6 @@ def flag_transaction(request, transaction_id):
             content_type=ContentType.objects.get_for_model(RecordTransaction),
             object_id=transaction_id
         )
-        
-        # You could also add a flag field to the transaction model if needed
-        # For now, we'll just log the action
-        
         return JsonResponse({'success': True})
         
     except RecordTransaction.DoesNotExist:
@@ -1008,7 +959,6 @@ def assign_account(request):
             account_type = form.cleaned_data['account_type']
             municipality = form.cleaned_data.get('municipality')  # Required only for agriculturist
 
-            # Server-side validation based on access control rules
             validation_error = None
             
             if is_superuser:
@@ -1029,13 +979,11 @@ def assign_account(request):
             
             if validation_error:
                 form.add_error(None, validation_error)
-            # Check if email already exists
             elif AuthUser.objects.filter(email=email).exists():
                 form.add_error('email', 'Email already exists in the system.')
             else:
                 try:
                     with transaction.atomic():
-                        # Generate a strong password
                         generated_password = get_random_string(length=12)
 
                         # Create AuthUser
@@ -1049,19 +997,19 @@ def assign_account(request):
                             middlename=middle_name,
                             nameextension="",
                             sex=sex,
-                            contact_number="",  # placeholder, can be updated later
+                            contact_number="", 
                             user_email=email,
-                            birthdate="2000-01-01",  # placeholder, adjust based on form
+                            birthdate="2000-01-01",  
                             emergency_contact_person="",
                             emergency_contact_number="",
                             address_details="",
-                            barangay_id=BarangayName.objects.first(),  # or make user pick
+                            barangay_id=BarangayName.objects.first(), 
                             municipality_id=municipality,
                             religion="",
                             civil_status="",
                         )
 
-                        # Create AccountsInformation with Verified status instead of Pending
+                        # Create AccountsInformation with Verified status
                         acct_type = AccountType.objects.get(account_type=account_type)
                         acct_status = AccountStatus.objects.get(pk=2)  # pk=2 = Verified
                         account_info_new = AccountsInformation.objects.create(
@@ -1069,9 +1017,9 @@ def assign_account(request):
                             account_type_id=acct_type,
                             acc_status_id=acct_status,
                             account_register_date=timezone.now(),
-                            account_isverified=True,  # Set as verified
-                            account_verified_date=timezone.now(),  # Set verification date
-                            account_verified_by=admin_info  # Set verified by current admin
+                            account_isverified=True, 
+                            account_verified_date=timezone.now(),  
+                            account_verified_by=admin_info 
                         )
 
                         # Create AdminInformation (even for agriculturist)
@@ -1089,10 +1037,8 @@ def assign_account(request):
                             object_id=account_info_new.pk
                         )
 
-                        # Send HTML email with credentials
                         subject = "Your Fruit Cast Administrator Account Has Been Created"
                         
-                        # HTML message template similar to verification email
                         html_message = """
                         <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto;">
                             <div style="color: #416e3f; padding: 20px; text-align: center; border-radius: 6px;">
@@ -1172,15 +1118,14 @@ def assign_account(request):
                             municipality=municipality.municipality
                         )
                         
-                        # Use EmailMessage for HTML email
                         try:
                             email_msg = EmailMessage(
                                 subject=subject,
                                 body=html_message,
-                                from_email=settings.DEFAULT_FROM_EMAIL,  # Use settings instead of hardcoded email
+                                from_email=settings.DEFAULT_FROM_EMAIL,
                                 to=[email],
                             )
-                            email_msg.content_subtype = "html"  # Set the content type to HTML
+                            email_msg.content_subtype = "html" 
                             email_sent = email_msg.send()
                             
                         except Exception as e:
@@ -1309,7 +1254,7 @@ def admin_forecast(request):
         
         bucket_path = f"prophet_models/{model_filename}"
 
-        # Check if the model file exists in the Spaces bucket
+        # Check if the model file exists in the Spaces bucket in digiocean
         if not default_storage.exists(bucket_path):
             forecast_data = None
             print("No trained model found.")
@@ -1318,23 +1263,17 @@ def admin_forecast(request):
             with default_storage.open(bucket_path, 'rb') as f:
                 m = joblib.load(f)
             
-            # Define forecast period (e.g., 12 months into future)
             last_historical_date = df['ds'].max()
             backtest_start_date = last_historical_date - pd.offsets.MonthBegin(12) if len(df) > 12 else df['ds'].min()
             
-            # Define the end date for your forecast (e.g., 12 months into the future)
             future_end_date = last_historical_date + pd.offsets.MonthBegin(12)
 
-            # Create a 'future' DataFrame that includes the backtesting period
-            # and the future forecast period.
             future_months = pd.date_range(start=backtest_start_date, end=future_end_date, freq='MS')
             future = pd.DataFrame({'ds': future_months})
             forecast = m.predict(future)
             
-            # Create a comprehensive timeline that includes both historical and forecast periods
             all_dates = pd.date_range(start=df['ds'].min(), end=future_end_date, freq='MS')
             
-            # Create dictionaries for easy lookup
             hist_dict = dict(zip(df['ds'], df['y']))
             forecast_dict = dict(zip(forecast['ds'], forecast['yhat']))
             
@@ -1363,122 +1302,6 @@ def admin_forecast(request):
                 'combined': combined_list,
             }
     
-    
-    
-    # INITIAL WORKING FORECASTING
-
-    # Filter by commodity and municipality
-    # qs = VerifiedHarvestRecord.objects.filter(commodity_id=selected_commodity_id)
-    # if selected_municipality_id:
-    #     qs = qs.filter(municipality_id=selected_municipality_id)
-    # qs = qs.values('harvest_date', 'total_weight_kg')
-
-    # print("QS before if exists condition", qs)
-    # if qs.exists():
-    #     df = pd.DataFrame(list(qs))
-    #     df['harvest_date'] = pd.to_datetime(df['harvest_date'])
-    #     # Group by year and month, sum total_weight_kg
-    #     df['year'] = df['harvest_date'].dt.year
-    #     df['month'] = df['harvest_date'].dt.month
-    #     grouped = df.groupby(['year', 'month'], as_index=False)['total_weight_kg'].sum()
-    #     grouped['ds'] = pd.to_datetime(grouped['year'].astype(str) + '-' + grouped['month'].astype(str) + '-01')
-    #     prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
-    #     prophet_df = prophet_df.drop_duplicates(subset=['ds'])
-    #     prophet_df = prophet_df.dropna(subset=['ds', 'y'])
-    #     prophet_df = prophet_df.sort_values('ds')
-        
-    #     print("Grouped DataFrame before creating 'ds':", grouped)
-        
-    #     # prophet_df = grouped[['ds', 'total_weight_kg']].rename(columns={'total_weight_kg': 'y'})
-    #     # prophet_df = prophet_df[prophet_df['y'] > 0]
-    #     # prophet_df = prophet_df.drop_duplicates(subset=['ds'])
-        
-    #     if len(prophet_df) >= 2:
-    #         model = Prophet()
-    #         model.fit(prophet_df)
-            
-    #         future = model.make_future_dataframe(periods=12, freq='M')
-    #         forecast_df = model.predict(future)
-
-    #         # Apply seasonal boost to in-season months, removed boost since kwan naman
-    #         boost_factor = 1.0
-    #         forecast_df['month_num'] = forecast_df['ds'].dt.month
-    #         forecast_df['yhat_boosted'] = forecast_df.apply(
-    #             lambda row: row['yhat'] * boost_factor if row['month_num'] in in_season_months else row['yhat'],
-    #             axis=1
-    #         )
-    #         forecast_df['yhat_boosted'] = forecast_df['yhat_boosted'].clip(lower=0)
-
-    #         labels = forecast_df['ds'].dt.strftime('%B %Y').tolist()
-    #         month_numbers = forecast_df['ds'].dt.month.tolist()
-    #         years = forecast_df['ds'].dt.year.tolist()
-    #         values = forecast_df['yhat_boosted'].round().tolist()
-    #         combined_forecast = list(zip(labels, values, month_numbers, years))
-
-    #         forecast_data = {
-    #             'labels': labels,
-    #             'forecasted_count': values,
-    #             'combined': combined_forecast
-    #         }
-    #     else:
-    #         forecast_data = None
-            
-    # else:
-    #     forecast_data = None
-
-        # END OF WORKING FORECAST NA COMBINED SAVING NG HISTORICAL AT FORECAST 
-        
-        # QUERY FOR THE HISTORICAL DATA POINTS FROM THE DB
-        
-        # historical_qs = VerifiedHarvestRecord.objects.filter(
-        #     commodity_id=selected_commodity_id,
-        #     municipality_id=selected_municipality_id
-        # ).order_by('harvest_date')
-
-        # # Group by month/year
-        # historical_data = OrderedDict()
-        # for rec in historical_qs:
-        #     key = rec.harvest_date.strftime('%B %Y')
-        #     historical_data[key] = historical_data.get(key, 0) + float(rec.total_weight_kg)
-
-        # if historical_qs.exists():
-        #     df = pd.DataFrame([
-        #         {'ds': rec.harvest_date, 'y': float(rec.total_weight_kg)}
-        #         for rec in historical_qs
-        #     ])
-        #     model = Prophet()
-        #     model.fit(df)
-        #     future = model.make_future_dataframe(periods=12, freq='M')
-        #     forecast = model.predict(future)
-
-        #     # 3. Split Prophet output into historical and forecast
-        #     last_hist_date = df['ds'].max()
-        #     forecast['month_year'] = forecast['ds'].dt.strftime('%B %Y')
-        #     historical_pred = forecast[forecast['ds'] <= last_hist_date]
-        #     forecast_pred = forecast[forecast['ds'] > last_hist_date]
-
-        #     # 4. Prepare for Chart.js
-        #     all_labels = list(OrderedDict.fromkeys(
-        #         list(historical_data.keys()) +
-        #         list(forecast['month_year'])
-        #     ))
-        #     existing_values = [historical_data.get(label, None) for label in all_labels]
-        #     forecast_values = []
-        #     for label in all_labels:
-        #         row = forecast_pred[forecast_pred['month_year'] == label]
-        #         forecast_values.append(float(row['yhat'].values[0]) if not row.empty else None)
-
-        # # modify this pagka nasure ng nagana, add to existing context
-        # context = {
-        #     # ...other context...
-        #     'all_labels': all_labels,
-        #     'existing_values': existing_values,
-        #     'forecast_values': forecast_values,
-        #     # ...other context...
-        # }
-
-        
-        
         filter_month = request.GET.get('filter_month')
         filter_year = request.GET.get('filter_year')
         
@@ -1498,51 +1321,12 @@ def admin_forecast(request):
         forecast_value_for_selected_month = None
         if forecast_data and filter_month and filter_year:
             for label, value, month_number, year in forecast_data['combined']:
-                # label is like "July 2025"
                 month_name, year_str = label.split()
                 if int(filter_year) == int(year_str) and int(filter_month) == datetime.strptime(month_name, "%B").month:
                     forecast_value_for_selected_month = value
                     break
         # Prepare forecast summary per commodity for the selected month/year
-        
-        # --- 2D Mapping (unchanged, but you can filter map_data if you want) ---
-        # with open('static/geojson/BATAAN_MUNICIPALITY.geojson', 'r') as f:
-        #     geojson_data = json.load(f)
-
-        # prev_to_municipality = {}
-        # for rec in qs:
-        #     prev_id = rec['prev_record']
-        #     if prev_id:
-        #         try:
-        #             prev = initHarvestRecord.objects.get(pk=prev_id)
-        #             if prev.transaction and prev.transaction.location_type == 'farm_land' and prev.transaction.farm_land:
-        #                 municipality = prev.transaction.farm_land.municipality.municipality
-        #                 prev_to_municipality[prev_id] = municipality
-        #         except Exception:
-        #             continue
-
-        # df_full = pd.DataFrame.from_records(qs)
-        # df_full['municipality'] = df_full['prev_record'].map(prev_to_municipality)
-        # muni_group = df_full.groupby('municipality')['total_weight_kg'].sum().to_dict()
-
-        # for feature in geojson_data['features']:
-        #     properties = feature.get('properties', {})
-        #     municipality = properties.get('MUNICIPALI') or properties.get('NAME_2')
-        #     geom = shape(feature['geometry'])
-        #     centroid = geom.centroid
-        #     latitude = centroid.y
-        #     longitude = centroid.x
-        #     forecasted_amount = muni_group.get(municipality, 0)
-        #     map_data.append({
-        #         'latitude': latitude,
-        #         'longitude': longitude,
-        #         'barangay': None,
-        #         'municipality': municipality,
-        #         'province': properties.get('PROVINCE', None),
-        #         'forecasted_amount': float(forecasted_amount),
-        #         'forecast_value_for_selected_month': forecast_value_for_selected_month
-        #     })
-
+   
     context = get_admin_context(request)
     context.update({
         'forecast_data': forecast_data,
@@ -1558,7 +1342,6 @@ def admin_forecast(request):
         'filter_year': filter_year,
         'available_years': available_years,
         'months': months,
-        # 'forecast_summary': forecast_summary,
     })
     
     return render(request, 'admin_panel/admin_forecast.html', context)
@@ -1574,18 +1357,6 @@ def retrain_forecast_model(request):
         messages.success(request, "Forecast models are being retrained in the background!")
         return redirect('administrator:admin_forecast')
     return HttpResponseForbidden()
-
-
-@login_required
-@admin_or_agriculturist_required
-@csrf_protect
-def generate_all_forecasts(request):
-    if request.method == 'POST':
-        # This view is now redundant since the task combines both steps.
-        # You can remove this view and its corresponding URL.
-        messages.warning(request, "This function is now automated as part of the model retraining process.")
-        return redirect('administrator:admin_forecast')
-    return redirect('administrator:admin_forecast')
 
 
 @csrf_exempt
@@ -1715,7 +1486,7 @@ def forecast_csv(request, batch_id):
 @admin_or_agriculturist_required
 def admin_forecastviewall(request):
     batches = ForecastBatch.objects.select_related('generated_by__userinfo_id').order_by('-generated_at')
-    paginator = Paginator(batches, 10)  # Show 10 batches per page
+    paginator = Paginator(batches, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = get_admin_context(request)
@@ -1741,11 +1512,9 @@ def admin_commodity_list(request):
         if selected_commodities and bulk_action:
             try:
                 if bulk_action == 'delete':
-                    # Delete selected commodities
                     deleted_count = 0
                     for commodity_id in selected_commodities:
                         commodity = CommodityType.objects.get(pk=commodity_id)
-                        # Don't allow deletion of 'Not Listed' or if there are related records
                         if commodity.pk != 1:  # Don't delete 'Not Listed'
                             commodity.delete()
                             deleted_count += 1
@@ -1756,7 +1525,6 @@ def admin_commodity_list(request):
                         messages.warning(request, 'No commodities were deleted.')
                         
                 elif bulk_action == 'export':
-                    # Export selected commodities as CSV
                     response = HttpResponse(content_type='text/csv')
                     response['Content-Disposition'] = 'attachment; filename="selected_commodities.csv"'
                     
@@ -1797,13 +1565,13 @@ def admin_commodity_list(request):
             return export_commodity_summary_csv(commodities, 'commodity_summary', export_format, request)
     
     # Pagination
-    paginator = Paginator(commodities, 10)  # Show 10 commodities per page
+    paginator = Paginator(commodities, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     context = get_admin_context(request)
     context.update({
-        'commodities': page_obj.object_list,  # Pass the actual commodities for display
+        'commodities': page_obj.object_list, 
         'page_obj': page_obj,
         'paginator': page_obj.paginator,
         'is_paginated': paginator.num_pages > 1,
@@ -1822,11 +1590,10 @@ def admin_commodity_add_edit(request, pk=None):
         error_details = []
         update_confirmations = []
         
-        # Check if user confirmed updates
         confirmed_updates = request.POST.get('confirmed_updates', 'false').lower() == 'true'
         
         try:
-            # Validate file size (10MB max)
+            # Validate file size (10MB max only)
             if csv_file.size > 10 * 1024 * 1024:
                 messages.error(request, "File size exceeds 10MB limit. Please upload a smaller file.")
                 if pk:
@@ -1857,7 +1624,6 @@ def admin_commodity_add_edit(request, pk=None):
                 
             reader = csv.DictReader(io.StringIO(decoded_file))
             
-            # Validate CSV structure
             if not reader.fieldnames:
                 messages.error(request, "CSV file appears to be empty or has no headers. Please check your file format.")
                 if pk:
@@ -1869,7 +1635,6 @@ def admin_commodity_add_edit(request, pk=None):
                 context.update({'form': form, 'commodity': commodity})
                 return render(request, 'admin_panel/commodity_add.html', context)
             
-            # Check if required headers exist
             required_headers = ['name', 'average_weight_per_unit_kg', 'seasonal_months', 'years_to_mature', 'years_to_bearfruit']
             if not all(header in reader.fieldnames for header in required_headers):
                 missing_headers = [h for h in required_headers if h not in reader.fieldnames]
@@ -1901,7 +1666,7 @@ def admin_commodity_add_edit(request, pk=None):
                 
                 if existing_commodities:
                     messages.warning(request, f"The following {len(existing_commodities)} commodit{'ies' if len(existing_commodities) > 1 else 'y'} already exist and will be updated:")
-                    for existing in existing_commodities[:10]:  # Show first 10
+                    for existing in existing_commodities[:10]: 
                         messages.warning(request, existing)
                     if len(existing_commodities) > 10:
                         messages.warning(request, f"... and {len(existing_commodities) - 10} more commodities.")
@@ -1923,30 +1688,26 @@ def admin_commodity_add_edit(request, pk=None):
             
             # Process CSV rows
             row_count = 0
-            for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
+            for row_num, row in enumerate(reader, start=2):
                 try:
-                    # Clean up keys and values, removing empty keys
                     row = {k.strip(): v.strip() for k, v in row.items() if k and k.strip()}
                     
-                    # Skip completely empty rows
                     if not any(row.values()):
                         continue
                         
                     row_count += 1
                     
-                    # Validate required fields
                     if not row.get("name"):
                         error_details.append(f"Row {row_num}: Commodity name is required and cannot be empty")
                         error_count += 1
                         continue
                         
                     name = row["name"].strip()
-                    if len(name) > 100:  # Assuming max length constraint
+                    if len(name) > 100:  
                         error_details.append(f"Row {row_num}: Commodity name too long (max 100 characters)")
                         error_count += 1
                         continue
                     
-                    # Enhanced numeric field validation with comma handling
                     def clean_numeric_value(value, field_name):
                         if not value:
                             return None
@@ -1967,7 +1728,7 @@ def admin_commodity_add_edit(request, pk=None):
                         avg_weight = clean_numeric_value(row["average_weight_per_unit_kg"], "average weight")
                         if avg_weight is None or avg_weight <= 0:
                             raise ValueError("Average weight must be a positive number")
-                        if avg_weight > 1000:  # Reasonable upper limit
+                        if avg_weight > 1000: 
                             raise ValueError("Average weight seems too high (max 1000kg)")
                     except ValueError as e:
                         error_details.append(f"Row {row_num}: Invalid average weight - {str(e)}")
@@ -1984,7 +1745,7 @@ def admin_commodity_add_edit(request, pk=None):
                         years_to_mature = clean_numeric_value(row["years_to_mature"], "years to mature")
                         if years_to_mature is None or years_to_mature < 0:
                             raise ValueError("Years to mature must be a non-negative number")
-                        if years_to_mature > 50:  # Reasonable upper limit
+                        if years_to_mature > 50:
                             raise ValueError("Years to mature seems too high (max 50 years)")
                     except ValueError as e:
                         error_details.append(f"Row {row_num}: Invalid years to mature - {str(e)}")
@@ -2002,7 +1763,7 @@ def admin_commodity_add_edit(request, pk=None):
                                 years_to_bearfruit = 0
                             elif years_to_bearfruit < 0:
                                 raise ValueError("Years to bear fruit must be a non-negative number")
-                            elif years_to_bearfruit > 50:  # Reasonable upper limit
+                            elif years_to_bearfruit > 50:
                                 raise ValueError("Years to bear fruit seems too high (max 50 years)")
                     except ValueError as e:
                         error_details.append(f"Row {row_num}: Invalid years to bear fruit - {str(e)}")
@@ -2013,7 +1774,7 @@ def admin_commodity_add_edit(request, pk=None):
                     commodity, created = CommodityType.objects.get_or_create(
                         name__iexact=name,
                         defaults={
-                            "name": name,  # Use original case for new entries
+                            "name": name, 
                             "average_weight_per_unit_kg": avg_weight,
                             "years_to_mature": years_to_mature,
                             "years_to_bearfruit": years_to_bearfruit,
@@ -2048,7 +1809,6 @@ def admin_commodity_add_edit(request, pk=None):
                     else:
                         created_count += 1
                     
-                    # Handle seasonal months with enhanced validation
                     seasonal_months_str = row.get("seasonal_months", "").strip()
                     if seasonal_months_str:
                         # Split by semicolon and clean up
@@ -2081,7 +1841,6 @@ def admin_commodity_add_edit(request, pk=None):
                     error_count += 1
                     continue
             
-            # Check if CSV had any data rows
             if row_count == 0:
                 messages.warning(request, "CSV file contains no data rows. Please add commodity data to your CSV file.")
             else:
@@ -2092,14 +1851,14 @@ def admin_commodity_add_edit(request, pk=None):
                 if updated_count > 0:
                     messages.info(request, f"Successfully updated {updated_count} existing commodit{'ies' if updated_count > 1 else 'y'} from CSV upload.")
                     # Show detailed update information
-                    for update_info in update_confirmations[:5]:  # Show first 5 detailed updates
+                    for update_info in update_confirmations[:5]: 
                         messages.info(request, update_info)
                     if len(update_confirmations) > 5:
                         messages.info(request, f"... and {len(update_confirmations) - 5} more commodities updated.")
                 
                 if error_count > 0:
                     messages.error(request, f"Failed to process {error_count} row{'s' if error_count > 1 else ''} due to validation errors:")
-                    for error_detail in error_details[:10]:  # Show first 10 errors to avoid overwhelming UI
+                    for error_detail in error_details[:10]: 
                         messages.error(request, error_detail)
                     if len(error_details) > 10:
                         messages.error(request, f"... and {len(error_details) - 10} more errors. Please fix these issues and try again.")
@@ -2158,7 +1917,6 @@ def admin_verifyplantrec(request):
     is_superuser = user.is_superuser
     is_pk14 = municipality_assigned.pk == 14
 
-    # Filters
     filter_municipality = request.GET.get('municipality')
     filter_commodity = request.GET.get('commodity')
     filter_status = request.GET.get('status')
@@ -2180,7 +1938,6 @@ def admin_verifyplantrec(request):
             Q(transaction__manual_municipality=municipality_assigned)
         ).order_by('-plant_id')
 
-    # Apply filters
     if filter_municipality:
         records = records.filter(
             Q(transaction__farm_land__municipality__pk=filter_municipality) |
@@ -2199,7 +1956,7 @@ def admin_verifyplantrec(request):
         records = records.filter(record_status__pk=filter_status)
 
     # Pagination
-    paginator = Paginator(records, 10)  # Show 10 records per page
+    paginator = Paginator(records, 10)  
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -2209,10 +1966,8 @@ def admin_verifyplantrec(request):
         verified_status_pk = 2  # pk for "Verified"
         new_status = AccountStatus.objects.get(pk=new_status_pk)
         
-        # Extract commodity-municipality pairs for selective retraining
         commodity_municipality_pairs = extract_commodity_municipality_pairs(selected_ids, 'plant')
         
-        # Get all matching records (not just the current page) for batch operations
         all_records = records  # Use the already filtered queryset
         
         for rec in all_records.filter(pk__in=selected_ids):
@@ -2245,13 +2000,11 @@ def admin_verifyplantrec(request):
                         barangay = rec.transaction.manual_barangay
                     # Calculate average and estimated weight
                     est_weight = (rec.min_expected_harvest + rec.max_expected_harvest) / 2
-                    # est_weight = avg_units * float(rec.commodity_id.average_weight_per_unit_kg)
                     verified_plant_record = VerifiedPlantRecord.objects.create(
                         plant_date=rec.plant_date,
                         commodity_id=rec.commodity_id,
                         min_expected_harvest=rec.min_expected_harvest,
                         max_expected_harvest=rec.max_expected_harvest,
-                        # average_harvest_units=avg_units,
                         estimated_weight_kg=est_weight,
                         remarks=rec.remarks,
                         municipality=municipality,
@@ -2260,7 +2013,6 @@ def admin_verifyplantrec(request):
                         prev_record=rec,
                     )
                     
-                    # Log the creation of verified plant record
                     AdminUserManagement.objects.create(
                         admin_id=admin_info,
                         action=f"Created Verified Plant Record ID {verified_plant_record.id} from Plant Record ID {rec.plant_id}",
@@ -2283,7 +2035,6 @@ def admin_verifyplantrec(request):
                             object_id=verified_record_id
                         )
                         
-        # After processing all records, trigger selective retraining only once  
         if selected_ids and commodity_municipality_pairs:
             logger.info("Attempting to delay selective retraining Celery task for plant records...")
             logger.info(f"Retraining for pairs: {commodity_municipality_pairs}")
@@ -2320,9 +2071,8 @@ def admin_verifyplantrec(request):
             messages.error(request, "No records selected or status not chosen.")
 
     commodities = CommodityType.objects.exclude(pk=1).order_by('name')
-    status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
+    status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7]) 
 
-    # Handle export requests
     export_type = request.GET.get('export')
     export_format = request.GET.get('format')
     
@@ -2334,7 +2084,7 @@ def admin_verifyplantrec(request):
 
     context = get_admin_context(request)
     context.update({
-        'records': page_obj.object_list,  # Pass the actual records for display
+        'records': page_obj.object_list,
         'page_obj': page_obj,
         'paginator': page_obj.paginator,
         'municipalities': municipalities,
@@ -2359,7 +2109,6 @@ def admin_verifyharvestrec(request):
     is_superuser = user.is_superuser
     is_pk14 = admin_info.municipality_incharge.pk == 14
 
-    # Filters
     selected_municipality = request.GET.get('municipality')
     selected_commodity = request.GET.get('commodity')
     selected_status = request.GET.get('status')
@@ -2371,9 +2120,8 @@ def admin_verifyharvestrec(request):
         municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
 
     commodities = CommodityType.objects.exclude(pk=1).order_by('name')
-    status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  # Only verified, pending, rejected, and removed
+    status_choices = AccountStatus.objects.filter(acc_stat_id__in=[2, 3, 4, 7])  
 
-    # Query records with sorting by ID (most recent first) and pagination
     records = initHarvestRecord.objects.select_related(
         'unit', 'commodity_id', 'record_status', 'transaction', 
         'transaction__account_id__userinfo_id', 'verified_by__userinfo_id'
@@ -2394,15 +2142,13 @@ def admin_verifyharvestrec(request):
         records = records.filter(record_status__pk=selected_status)
 
     # Pagination
-    paginator = Paginator(records, 10)  # Show 10 records per page
+    paginator = Paginator(records, 10) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Add converted weight in kg for each record in the current page
     for record in page_obj:
         record.total_weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
 
-    # Batch update
     if request.method == 'POST':
         print(f"DEBUG: Starting batch update for harvest records")
         selected_ids = request.POST.getlist('selected_records')
@@ -2412,7 +2158,6 @@ def admin_verifyharvestrec(request):
         new_status = AccountStatus.objects.get(pk=new_status_pk)
         print(f"DEBUG: New status: {new_status.acc_status}")
         
-        # Get all matching records (not just the current page) for batch operations
         all_records = initHarvestRecord.objects.select_related(
             'unit', 'commodity_id', 'record_status', 'transaction', 
             'transaction__account_id__userinfo_id', 'verified_by__userinfo_id'
@@ -2432,14 +2177,12 @@ def admin_verifyharvestrec(request):
         if selected_status:
             all_records = all_records.filter(record_status__pk=selected_status)
         
-        # Extract commodity-municipality pairs for selective retraining
         commodity_municipality_pairs = extract_commodity_municipality_pairs(selected_ids, 'harvest')
         print(f"DEBUG: Extracted pairs: {commodity_municipality_pairs}")
         
         verified_records_created = 0
         
         for rec in all_records.filter(pk__in=selected_ids):
-            # Store old status for logging
             old_status = rec.record_status.acc_status if rec.record_status else "None"
             
             rec.record_status = new_status
@@ -2447,7 +2190,6 @@ def admin_verifyharvestrec(request):
                 rec.verified_by = admin_info
             rec.save()
             
-            # Create AdminUserManagement log entry for status change
             AdminUserManagement.objects.create(
                 admin_id=admin_info,
                 action=f"Harvest Record ID {rec.harvest_id} changed status from '{old_status}' to '{new_status.acc_status}'",
@@ -2455,7 +2197,6 @@ def admin_verifyharvestrec(request):
                 object_id=rec.harvest_id
             )
             
-            # Handle verified record creation and deletion based on status
             if new_status_pk == verified_status_pk and selected_ids:
                 # Only create VerifiedHarvestRecord if status is "Verified" and not already created
                 if not VerifiedHarvestRecord.objects.filter(prev_record=rec).exists():
@@ -2477,13 +2218,12 @@ def admin_verifyharvestrec(request):
                             remarks=rec.remarks,
                             municipality=municipality,
                             barangay=barangay,
-                            verified_by=admin_info,  # set this to the current admin
+                            verified_by=admin_info, 
                             prev_record=rec,
                         )
                         verified_records_created += 1
                         print(f"DEBUG: Created verified record {verified_records_created} for harvest ID {rec.harvest_id}")
                         
-                        # Log the creation of verified harvest record
                         AdminUserManagement.objects.create(
                             admin_id=admin_info,
                             action=f"Created Verified Harvest Record ID {verified_harvest_record.id} from Harvest Record ID {rec.harvest_id}",
@@ -2495,7 +2235,6 @@ def admin_verifyharvestrec(request):
                         logger.error(f"Error during verification: {e}")
                         messages.error(request, f"An error occurred during verification: {e}")
                         
-        # After processing all records, trigger selective retraining only once
         if selected_ids and commodity_municipality_pairs:
             print(f"DEBUG: Triggering selective retraining for {len(commodity_municipality_pairs)} pairs")
             print(f"DEBUG: Created {verified_records_created} verified records")
@@ -2509,7 +2248,6 @@ def admin_verifyharvestrec(request):
             else:
                 print("DEBUG: Retraining already triggered for this request, skipping")
             
-            # Create user-friendly message about affected areas
             affected_commodities = list(set([CommodityType.objects.get(commodity_id=pair['commodity_id']).name for pair in commodity_municipality_pairs]))
             # Exclude "Overall" (pk=14) from municipality list in the message
             affected_municipalities = list(set([
@@ -2539,14 +2277,12 @@ def admin_verifyharvestrec(request):
         # Handle rejected records
         rejected_records = all_records.filter(pk__in=selected_ids, record_status__pk=4)
         for rec in rejected_records:
-            # Delete any existing VerifiedHarvestRecord for this init record
             verified_records = VerifiedHarvestRecord.objects.filter(prev_record=rec)
             if verified_records.exists():
                 for verified_record in verified_records:
                     verified_record_id = verified_record.id
                     verified_record.delete()
                     
-                    # Log the deletion of verified harvest record
                     AdminUserManagement.objects.create(
                         admin_id=admin_info,
                         action=f"Deleted Verified Harvest Record ID {verified_record_id} due to Harvest Record ID {rec.harvest_id} being rejected",
@@ -2559,7 +2295,6 @@ def admin_verifyharvestrec(request):
         if request.method == 'POST':
             messages.error(request, "No records selected or status not chosen.")
 
-    # Handle export requests
     export_type = request.GET.get('export')
     export_format = request.GET.get('format')
     
@@ -2571,7 +2306,7 @@ def admin_verifyharvestrec(request):
     
     context = get_admin_context(request)
     context.update({
-        'records': page_obj.object_list,  # Pass the actual records for display
+        'records': page_obj.object_list,  
         'page_obj': page_obj,
         'paginator': page_obj.paginator,
         'municipalities': municipalities,
@@ -2605,7 +2340,7 @@ def admin_add_verifyharvestrec(request):
         error_count = 0
         error_details = []
         
-        # Check file size (limit to 50MB)
+        # Check file size (limit to 50MB only)
         max_file_size = 50 * 1024 * 1024  # 50MB
         if csv_file.size > max_file_size:
             messages.error(request, f"File size ({csv_file.size / (1024*1024):.1f}MB) exceeds the maximum allowed size of 50MB. Please split your CSV into smaller files.")
@@ -2619,7 +2354,6 @@ def admin_add_verifyharvestrec(request):
             return render(request, 'admin_panel/verifyharvest_add.html', context)
         
         try:
-            # Try multiple encodings to handle different file formats
             file_content = csv_file.read()
             decoded_file = None
             
@@ -2667,9 +2401,8 @@ def admin_add_verifyharvestrec(request):
                 missing_headers = [h for h in required_headers if h not in reader.fieldnames]
                 messages.error(request, f"CSV file is missing required headers: {', '.join(missing_headers)}. Please check the template format.")
             else:
-                # Count rows first to check for reasonable limits
                 row_count = sum(1 for _ in csv.DictReader(io.StringIO(decoded_file)))
-                max_rows = 10000  # Set reasonable limit
+                max_rows = 10000  
                 
                 if row_count > max_rows:
                     messages.error(request, f"CSV file contains {row_count:,} rows, which exceeds the maximum allowed limit of {max_rows:,} rows. Please split your file into smaller chunks and upload them separately.")
@@ -2684,7 +2417,6 @@ def admin_add_verifyharvestrec(request):
                 
                 print(f"Processing CSV with {row_count:,} rows...")
                 
-                # Pre-validate municipality restrictions for non-overall admins
                 if not is_overall_admin and has_municipality_column:
                     admin_municipality_name = admin_info.municipality_incharge.municipality
                     invalid_municipalities = []
@@ -2700,7 +2432,6 @@ def admin_add_verifyharvestrec(request):
                             if municipality_name.lower() == 'balanga':
                                 municipality_name = 'Balanga City'
                             
-                            # Check if municipality matches admin's assigned municipality
                             if municipality_name.lower() != admin_municipality_name.lower():
                                 invalid_municipalities.append(f"Row {row_num}: '{municipality_name}'")
                     
@@ -2720,26 +2451,21 @@ def admin_add_verifyharvestrec(request):
                         })
                         return render(request, 'admin_panel/verifyharvest_add.html', context)
                 
-                # Reset reader for actual processing
                 reader = csv.DictReader(io.StringIO(decoded_file))
                 
                 # Track commodity-municipality pairs for selective retraining
                 csv_commodity_municipality_pairs = []
                 
-                # Pre-cache all lookup data to avoid repeated database queries
                 print(f"Pre-caching lookup data for {sum(1 for _ in csv.DictReader(io.StringIO(decoded_file)))} rows...")
                 
-                # Cache commodities (case-insensitive lookup)
                 commodity_cache = {}
                 for commodity in CommodityType.objects.all():
                     commodity_cache[commodity.name.lower()] = commodity
                 
-                # Cache municipalities (case-insensitive lookup)
                 municipality_cache = {}
                 for municipality in MunicipalityName.objects.all():
                     municipality_cache[municipality.municipality.lower()] = municipality
                 
-                # Cache barangays by municipality (case-insensitive lookup)
                 barangay_cache = {}
                 for barangay in BarangayName.objects.select_related('municipality_id').all():
                     muni_key = barangay.municipality_id.municipality.lower()
@@ -2749,14 +2475,12 @@ def admin_add_verifyharvestrec(request):
                 
                 print("Lookup data cached. Processing CSV rows...")
                 
-                # Prepare batch data for bulk creation
                 records_to_create = []
                 admin_logs_to_create = []
                 
-                # Reset reader again for actual processing
                 reader = csv.DictReader(io.StringIO(decoded_file))
                 
-                for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is headers
+                for row_num, row in enumerate(reader, start=2):
                     try:
                         row = {k.strip(): v.strip() for k, v in row.items()}
                         
@@ -2779,7 +2503,7 @@ def admin_add_verifyharvestrec(request):
                                 continue
                         elif not is_overall_admin:
                             # For non-overall admins without municipality column, use their assigned municipality
-                            pass  # Will be handled later
+                            pass 
                         
                         if not row.get("total_weight_kg"):
                             error_details.append(f"Row {row_num}: Total weight is required")
@@ -2802,13 +2526,12 @@ def admin_add_verifyharvestrec(request):
                             error_count += 1
                             continue
                         
-                        # Validate harvest date is not in the future
+                        # Validate harvest date cant ve in the future
                         if harvest_date > date.today():
                             error_details.append(f"Row {row_num}: Harvest date ({harvest_date}) cannot be in the future")
                             error_count += 1
                             continue
                         
-                        # Validate total weight
                         try:
                             total_weight_kg = float(row["total_weight_kg"])
                             if total_weight_kg <= 0:
@@ -2818,7 +2541,6 @@ def admin_add_verifyharvestrec(request):
                             error_count += 1
                             continue
                         
-                        # Process commodity name using cache
                         commodity_name = row['commodity'].strip()
                         commodity_obj = commodity_cache.get(commodity_name.lower())
                         if not commodity_obj:
@@ -2826,7 +2548,6 @@ def admin_add_verifyharvestrec(request):
                             error_count += 1
                             continue
                         
-                        # Process municipality based on admin type and CSV structure
                         if has_municipality_column:
                             municipality_name = row['municipality'].strip()
                             
@@ -2840,10 +2561,8 @@ def admin_add_verifyharvestrec(request):
                                 error_count += 1
                                 continue
                         else:
-                            # Use admin's assigned municipality
                             municipality = admin_info.municipality_incharge
                         
-                        # Process barangay name using cache (optional)
                         barangay_name = row.get("barangay", "").strip()
                         barangay = None
                         if barangay_name:
@@ -2851,9 +2570,7 @@ def admin_add_verifyharvestrec(request):
                             barangay = muni_barangays.get(barangay_name.lower())
                             if not barangay:
                                 error_details.append(f"Row {row_num}: Barangay '{barangay_name}' not found in '{municipality.municipality}'. Record will be created without barangay")
-                                # Don't skip the row, just proceed without barangay
                         
-                        # Prepare record for bulk creation
                         verified_harvest_record = VerifiedHarvestRecord(
                             harvest_date=harvest_date,
                             commodity_id=commodity_obj,
@@ -2867,18 +2584,15 @@ def admin_add_verifyharvestrec(request):
                         )
                         records_to_create.append(verified_harvest_record)
                         
-                        # Track commodity-municipality pair for selective retraining
                         pair = {'commodity_id': commodity_obj.commodity_id, 'municipality_id': municipality.municipality_id}
                         if pair not in csv_commodity_municipality_pairs:
                             csv_commodity_municipality_pairs.append(pair)
                         
-                        # Process in batches to avoid memory issues
-                        if len(records_to_create) >= 500:  # Process in batches of 500
+                        if len(records_to_create) >= 500:  
                             with transaction.atomic():
                                 created_records = VerifiedHarvestRecord.objects.bulk_create(records_to_create)
                                 created_count += len(created_records)
                                 
-                                # Create admin logs for this batch
                                 for record in created_records:
                                     admin_logs_to_create.append(AdminUserManagement(
                                         admin_id=admin_info,
@@ -2887,7 +2601,6 @@ def admin_add_verifyharvestrec(request):
                                         object_id=record.id
                                     ))
                                 
-                                # Bulk create admin logs and clear buffers
                                 if admin_logs_to_create:
                                     AdminUserManagement.objects.bulk_create(admin_logs_to_create)
                                     admin_logs_to_create.clear()
@@ -2900,7 +2613,6 @@ def admin_add_verifyharvestrec(request):
                         error_count += 1
                         continue
                 
-                # Process remaining records in final batch
                 if records_to_create:
                     with transaction.atomic():
                         created_records = VerifiedHarvestRecord.objects.bulk_create(records_to_create)
@@ -2921,12 +2633,9 @@ def admin_add_verifyharvestrec(request):
                 
                 print(f"CSV processing completed: {created_count} records created, {error_count} errors")
                 
-                # Show appropriate messages
                 if created_count > 0:
                     messages.success(request, f'Successfully created {created_count} harvest record{"s" if created_count > 1 else ""} from CSV upload.')
                     
-                    # Extract commodity-municipality pairs from created records for selective retraining
-                    # This needs to be tracked during the CSV processing
                     if hasattr(locals(), 'csv_commodity_municipality_pairs') and csv_commodity_municipality_pairs:
                         try:
                             retrain_selective_models_task.delay(csv_commodity_municipality_pairs)
@@ -2944,7 +2653,6 @@ def admin_add_verifyharvestrec(request):
                             messages.warning(request, f'Records created successfully, but selective forecast regeneration failed: {str(e)}. Full retraining initiated.')
                             retrain_and_generate_forecasts_task.delay()
                     else:
-                        # Fallback to full retraining if we couldn't track pairs
                         try:
                             retrain_and_generate_forecasts_task.delay()
                             messages.info(request, 'Model retraining and forecast generation has been initiated in the background.')
@@ -2953,7 +2661,7 @@ def admin_add_verifyharvestrec(request):
                 
                 if error_count > 0:
                     messages.error(request, f"Failed to process {error_count} row{'s' if error_count > 1 else ''} due to errors:")
-                    for error_detail in error_details[:10]:  # Show first 10 errors to avoid overwhelming UI
+                    for error_detail in error_details[:10]: 
                         messages.error(request, error_detail)
                     if len(error_details) > 10:
                         messages.error(request, f"... and {len(error_details) - 10} more errors.")
@@ -2982,7 +2690,6 @@ def admin_add_verifyharvestrec(request):
         if form.is_valid():
             rec = form.save(commit=False)
             
-            # Validate harvest date is not in the future
             if rec.harvest_date > date.today():
                 messages.error(request, 'Harvest date cannot be in the future. Please select a valid date.')
                 context = get_admin_context(request)
@@ -2999,7 +2706,6 @@ def admin_add_verifyharvestrec(request):
             rec.prev_record = None
             rec.save()
             
-            # Log the creation from manual form
             AdminUserManagement.objects.create(
                 admin_id=admin_info,
                 action=f"Created Verified Harvest Record ID {rec.id} via manual form - {rec.commodity_id.name} ({rec.total_weight_kg}kg)",
@@ -3009,13 +2715,11 @@ def admin_add_verifyharvestrec(request):
             
             messages.success(request, f'Verified harvest record for {rec.commodity_id.name} has been successfully created.')
             
-            # Create commodity-municipality pair for selective retraining
             form_commodity_municipality_pairs = [{
                 'commodity_id': rec.commodity_id.commodity_id,
                 'municipality_id': rec.municipality.municipality_id
             }]
             
-            # Trigger selective model retraining and forecast generation
             try:
                 retrain_selective_models_task.delay(form_commodity_municipality_pairs)
                 messages.info(request, f'Forecast models for {rec.commodity_id.name} in {rec.municipality.municipality} and Overall are being updated in the background.')
@@ -3039,7 +2743,6 @@ def admin_add_verifyharvestrec(request):
             })
             return render(request, 'admin_panel/verifyharvest_add.html', context)
     
-    # GET request
     context = get_admin_context(request)
     context.update({
         'municipalities': municipalities, 
@@ -3059,16 +2762,14 @@ def admin_harvestverified(request):
     is_superuser = user.is_superuser
     is_pk14 = admin_info.municipality_incharge.pk == 14
     
-    # Define filter variables early to be used in POST handling
     municipality_filter = request.GET.get('municipality')
     barangay_filter = request.GET.get('barangay')
     commodity_filter = request.GET.get('commodity')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     
-    # Sorting parameters
-    sort_by = request.GET.get('sort', 'date_verified')  # Default sort by date verified
-    order = request.GET.get('order', 'desc')  # Default to desc (most recent first)
+    sort_by = request.GET.get('sort', 'date_verified')  
+    order = request.GET.get('order', 'desc')  
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -3076,10 +2777,8 @@ def admin_harvestverified(request):
         
         if action == 'delete' and selected_records:
             try:                
-                # Get all matching records for deletion (not just current page)
                 all_records = VerifiedHarvestRecord.objects.select_related('commodity_id', 'municipality', 'barangay', 'verified_by__userinfo_id')
                 
-                # Apply same filters as display logic
                 if municipality_filter:
                     all_records = all_records.filter(municipality_id=municipality_filter)
                 elif not (is_superuser or is_pk14):
@@ -3093,20 +2792,16 @@ def admin_harvestverified(request):
                 if date_to:
                     all_records = all_records.filter(harvest_date__lte=date_to)
                 
-                # Delete selected records
-                # Extract commodity-municipality pairs from records being deleted  
                 delete_commodity_municipality_pairs = []
                 deleted_count = 0
                 
                 for record_id in selected_records:
                     record = all_records.filter(pk=record_id).first()
                     if record:
-                        # Track the commodity-municipality pair for selective retraining
                         pair = {'commodity_id': record.commodity_id.commodity_id, 'municipality_id': record.municipality.municipality_id}
                         if pair not in delete_commodity_municipality_pairs:
                             delete_commodity_municipality_pairs.append(pair)
                         
-                        # Log the deletion before deleting the record
                         AdminUserManagement.objects.create(
                             admin_id=admin_info,
                             action=f"Deleted Verified Harvest Record ID {record.id} - {record.commodity_id.name} ({record.total_weight_kg}kg) from {record.harvest_date}",
@@ -3120,7 +2815,6 @@ def admin_harvestverified(request):
                 if deleted_count > 0:
                     messages.success(request, f'Successfully deleted {deleted_count} harvest record{"s" if deleted_count > 1 else ""}.')
                     
-                    # Trigger selective model retraining for affected commodity-municipality pairs
                     if delete_commodity_municipality_pairs:
                         try:
                             retrain_selective_models_task.delay(delete_commodity_municipality_pairs)
@@ -3153,7 +2847,6 @@ def admin_harvestverified(request):
     else:
         municipalities = MunicipalityName.objects.filter(pk=admin_info.municipality_incharge.pk)
     
-    # Filter barangays based on selected municipality if applicable
     if municipality_filter:
         barangays = BarangayName.objects.filter(municipality_id=municipality_filter)
     else:
@@ -3166,7 +2859,6 @@ def admin_harvestverified(request):
     if municipality_filter:
         records = records.filter(municipality_id=municipality_filter)
     elif not (is_superuser or is_pk14):
-        # If not superuser or pk14, filter by admin's municipality
         records = records.filter(municipality=admin_info.municipality_incharge)
     if barangay_filter:
         records = records.filter(barangay_id=barangay_filter)
@@ -3177,7 +2869,6 @@ def admin_harvestverified(request):
     if date_to:
         records = records.filter(harvest_date__lte=date_to)
     
-    # Apply sorting
     sort_fields = {
         'harvest_date': 'harvest_date',
         'date_verified': 'date_verified',
@@ -3187,10 +2878,10 @@ def admin_harvestverified(request):
         order_prefix = '-' if order == 'desc' else ''
         records = records.order_by(f"{order_prefix}{sort_fields[sort_by]}")
     else:
-        records = records.order_by('-date_verified')  # default sorting
+        records = records.order_by('-date_verified')  
     
     # Pagination
-    paginator = Paginator(records, 10)  # Show 10 records per page
+    paginator = Paginator(records, 10) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -3206,7 +2897,7 @@ def admin_harvestverified(request):
 
     context = get_admin_context(request)
     context.update({
-        'records': page_obj.object_list,  # Pass the actual records for display
+        'records': page_obj.object_list,
         'page_obj': page_obj,
         'paginator': page_obj.paginator,
         'municipalities': municipalities,
@@ -3235,7 +2926,6 @@ def admin_harvestverified_view(request, record_id):
     try:
         record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
         
-        # Get current user's admin info and municipality assignment
         try:
             current_user_info = request.user.userinformation
             current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
@@ -3247,7 +2937,6 @@ def admin_harvestverified_view(request, record_id):
                 'error_message': 'Access denied. Admin information not found.'
             })
         
-        # Check access permissions based on municipality assignment
         if not is_superuser and not is_pk14:
             # Non-superuser and non-pk14 admin: can only view records from their assigned municipality
             if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
@@ -3272,7 +2961,6 @@ def admin_harvestverified_edit(request, record_id):
     try:
         record = get_object_or_404(VerifiedHarvestRecord, pk=record_id)
         
-        # Get current user's admin info and municipality assignment
         try:
             current_user_info = request.user.userinformation
             current_admin_info = AdminInformation.objects.get(userinfo_id=current_user_info)
@@ -3284,7 +2972,6 @@ def admin_harvestverified_edit(request, record_id):
                 'error_message': 'Access denied. Admin information not found.'
             })
         
-        # Check access permissions based on municipality assignment
         if not is_superuser and not is_pk14:
             # Non-superuser and non-pk14 admin: can only edit records from their assigned municipality
             if record.municipality and record.municipality.pk != current_municipality_assigned.pk:
@@ -3300,7 +2987,6 @@ def admin_harvestverified_edit(request, record_id):
     if request.method == 'POST':
         form = VerifiedHarvestRecordForm(request.POST, instance=record, user=request.user)
         if form.is_valid():
-            # Validate harvest date is not in the future
             if form.cleaned_data['harvest_date'] > date.today():
                 messages.error(request, 'Harvest date cannot be in the future. Please select a valid date.')
                 context = get_admin_context(request)
@@ -3312,10 +2998,8 @@ def admin_harvestverified_edit(request, record_id):
                 })
                 return render(request, 'admin_panel/admin_harvestverified_edit.html', context)
             
-            # Get admin info for logging
             admin_info = AdminInformation.objects.get(userinfo_id=request.user.userinformation)
             
-            # Store original values for comparison
             original_data = {
                 'harvest_date': record.harvest_date,
                 'commodity': record.commodity_id.name,
@@ -3326,12 +3010,10 @@ def admin_harvestverified_edit(request, record_id):
             }
             
             updated_record = form.save(commit=False)
-            # Keep the original verification info
             updated_record.verified_by = record.verified_by
             updated_record.date_verified = record.date_verified
             updated_record.save()
             
-            # Log the edit with details of what changed
             changes = []
             if str(original_data['harvest_date']) != str(updated_record.harvest_date):
                 changes.append(f"harvest_date: {original_data['harvest_date']} → {updated_record.harvest_date}")
@@ -3363,19 +3045,16 @@ def admin_harvestverified_edit(request, record_id):
             
             messages.success(request, 'Harvest record updated successfully.')
             
-            # Add a success message with year info to help users navigate dashboard
             harvest_year = updated_record.harvest_date.year
             current_year = date.today().year
             if harvest_year != current_year:
                 messages.info(request, f'Note: This record is from {harvest_year}. To see changes in dashboard graphs, make sure to select year {harvest_year} in the dashboard filters.')
             
-            # Create commodity-municipality pair for selective retraining
             edit_commodity_municipality_pairs = [{
                 'commodity_id': updated_record.commodity_id.commodity_id,
                 'municipality_id': updated_record.municipality.municipality_id
             }]
             
-            # Trigger selective model retraining and forecast generation
             try:
                 retrain_selective_models_task.delay(edit_commodity_municipality_pairs)
                 messages.info(request, f'Forecast models for {updated_record.commodity_id.name} in {updated_record.municipality.municipality} and Overall are being updated in the background.')
@@ -3403,36 +3082,6 @@ def admin_harvestverified_edit(request, record_id):
     return render(request, 'admin_panel/admin_harvestverified_edit.html', context)
 
 
-# def accinfo(request):
-#     print("🔥 DEBUG: account view called!")  # This should print when you visit "/"
-#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-#     if request.user.is_authenticated: 
-#         account_id = request.session.get('account_id')
-#         userinfo_id = request.session.get('userinfo_id')
-        
-#         if userinfo_id and account_id:
-            
-#             account_id = request.session.get('account_id')
-#             userinfo_id = request.session.get('userinfo_id')
-#             if userinfo_id and account_id:
-#                 userinfo = UserInformation.objects.get(pk=userinfo_id)
-#                 account_info = AccountsInformation.objects.get(pk=account_id)
-#                 context = {
-#                     'user_firstname': userinfo.firstname,
-#                     # ...other fields...
-#                     'user_role_id': account_info.account_type_id.account_type_id,
-#                 }
-#                 return render(request, 'loggedin/account_info.html', context)
-#             else:
-#                 return redirect('administrator:dashboard')
-        
-#         else:
-#             print("⚠️ account_id missing in session!")
-#             return redirect('base:home') #dapat redirect si user sa guest home
-#     else :
-#         return render(request, 'home.html', {})   
-
-
 @admin_or_agriculturist_required
 def admin_account_detail(request, account_id):
     """
@@ -3443,7 +3092,6 @@ def admin_account_detail(request, account_id):
     - Agriculturist: Full access to their own account only, blocked from viewing others
     """
     try:
-        # Get current user info
         current_user_info = request.user.userinformation
         current_account = AccountsInformation.objects.get(userinfo_id=current_user_info)
         current_admin_info = AdminInformation.objects.filter(userinfo_id=current_user_info).first()
@@ -3451,7 +3099,6 @@ def admin_account_detail(request, account_id):
         is_superuser = request.user.is_superuser
         is_pk14 = current_municipality_assigned.pk == 14 if current_municipality_assigned else False
         
-        # Get the account to view
         target_account = get_object_or_404(AccountsInformation, pk=account_id)
         target_userinfo = target_account.userinfo_id
         target_admin_info = AdminInformation.objects.filter(userinfo_id=target_userinfo).first()
@@ -3473,13 +3120,11 @@ def admin_account_detail(request, account_id):
         
         # Access control for administrators
         if current_account.account_type_id.pk == 2 and not is_superuser:  # Administrator but not superuser
-            # Allow viewing own account regardless of municipality restrictions
             if not is_own_account:
                 target_municipality = target_admin_info.municipality_incharge if target_admin_info else None
                 target_account_type = target_account.account_type_id.account_type
                 
                 if not is_pk14:  # Administrator with assigned municipality not pk=14
-                    # Can't see agriculturists in different municipalities
                     if target_account_type == "Agriculturist":
                         if not target_municipality or target_municipality.pk != current_municipality_assigned.pk:
                             return render(request, 'admin_panel/access_denied.html', {
@@ -3491,11 +3136,9 @@ def admin_account_detail(request, account_id):
                             return render(request, 'admin_panel/access_denied.html', {
                                 'error_message': 'Unauthorized access. You can only view administrators in your municipality or assigned to Overall Bataan.'
                             })
-                else:  # Administrator with pk=14
-                    # Can view all accounts but pk=14 administrators have restricted access
+                else: 
                     pass
         
-        # Handle POST requests for editing account type and municipality
         if request.method == 'POST':
             action = request.POST.get('action')
             user_role_id = current_account.account_type_id.pk
@@ -3507,17 +3150,14 @@ def admin_account_detail(request, account_id):
                 messages.error(request, "You cannot edit your own account details.")
                 return redirect('administrator:admin_account_detail', account_id=account_id)
             
-            # Check permissions for editing based on complex rules
             can_edit_account_type = False
             can_edit_municipality = False
             
             if is_superuser:
-                # Superuser can edit everything
                 can_edit_account_type = True
                 can_edit_municipality = True
             elif user_role_id == 2:  # Administrator
                 if is_pk14:
-                    # Administrator with pk=14
                     if target_account_type_id == 3:  # Agriculturist
                         can_edit_municipality = True  # Can edit agriculturist municipality (excluding pk=14)
                     elif target_account_type_id == 2:  # Administrator
@@ -3525,7 +3165,6 @@ def admin_account_detail(request, account_id):
                         if target_municipality and target_municipality.pk != 14:  # Administrator not pk=14
                             can_edit_municipality = True  # Can edit administrator municipality (excluding pk=14)
                 else:
-                    # Administrator with municipality not pk=14
                     if target_account_type_id == 3:  # Agriculturist in same municipality
                         # Can see agriculturists but can't edit account type or municipality
                         pass
@@ -3544,10 +3183,8 @@ def admin_account_detail(request, account_id):
                         target_account.account_type_id = new_account_type
                         target_account.save()
                         
-                        # Get account holder's full name for logging
                         account_holder_name = f"{target_account.userinfo_id.firstname} {target_account.userinfo_id.lastname}"
                         
-                        # Log the action with detailed information
                         AdminUserManagement.objects.create(
                             admin_id=current_admin_info,
                             action=f"Changed {account_holder_name}'s account type from '{old_account_type}' to '{new_account_type.account_type}'",
@@ -3559,7 +3196,6 @@ def admin_account_detail(request, account_id):
                     except Exception as e:
                         messages.error(request, f"Error updating account type: {str(e)}")
             
-            # Handle municipality change
             elif action == 'change_municipality':
                 if not can_edit_municipality:
                     messages.error(request, "You don't have permission to edit municipality assignments.")
@@ -3567,7 +3203,6 @@ def admin_account_detail(request, account_id):
                     
                 new_municipality_id = request.POST.get('new_municipality')
                 if new_municipality_id:
-                    # Prevent assigning pk=14 if not superuser
                     if not is_superuser and int(new_municipality_id) == 14:
                         messages.error(request, "You cannot assign Overall Bataan (pk=14) municipality.")
                         return redirect('administrator:admin_account_detail', account_id=account_id)
@@ -3579,10 +3214,8 @@ def admin_account_detail(request, account_id):
                             target_admin_info.municipality_incharge = new_municipality
                             target_admin_info.save()
                         
-                        # Get account holder's full name for logging
                         account_holder_name = f"{target_account.userinfo_id.firstname} {target_account.userinfo_id.lastname}"
                         
-                        # Log the action with detailed information
                         AdminUserManagement.objects.create(
                             admin_id=current_admin_info,
                             action=f"Changed {account_holder_name}'s municipality assignment from '{old_municipality}' to '{new_municipality.municipality}'",
@@ -3596,11 +3229,9 @@ def admin_account_detail(request, account_id):
             
             return redirect('administrator:admin_account_detail', account_id=account_id)
         
-        # Determine access level based on hierarchical rules
         user_role_id = current_account.account_type_id.pk
         target_account_type_id = target_account.account_type_id.pk
         
-        # Complex access control based on the specified rules
         can_view_full_details = False
         can_view_histories = False
         can_edit_account_type = False
@@ -3620,46 +3251,37 @@ def admin_account_detail(request, account_id):
                 can_edit_account_type = False
                 can_edit_municipality = False
             elif is_pk14:
-                # Administrator with pk=14
-                if target_account_type_id == 3:  # Target is Agriculturist
+                if target_account_type_id == 3: 
                     can_view_full_details = True
                     can_view_histories = True
                     can_edit_municipality = True  # Can edit agriculturist municipality (excluding pk=14)
                 elif target_account_type_id == 2:  # Target is Administrator
                     target_municipality = target_admin_info.municipality_incharge if target_admin_info else None
                     if target_municipality and target_municipality.pk != 14:
-                        # Can see all information of administrators not assigned to pk=14
                         can_view_full_details = True
                         can_view_histories = True
-                        can_edit_municipality = True  # Can edit municipality (excluding pk=14)
+                        can_edit_municipality = True  
                     else:
-                        # Limited access for administrators assigned to pk=14
                         can_view_full_details = False
                         can_view_histories = False
             else:
-                # Administrator with municipality not pk=14
-                if target_account_type_id == 3:  # Target is Agriculturist in same municipality
+                if target_account_type_id == 3: 
                     can_view_full_details = True
                     can_view_histories = True
-                    # Can't edit account type and municipality for agriculturists
-                elif target_account_type_id == 2:  # Target is Administrator
-                    # Can see administrators with same municipality and pk=14 but restricted content
-                    can_view_full_details = False  # Can't see personal details, login history, actions
+                elif target_account_type_id == 2: 
+                    can_view_full_details = False  
                     can_view_histories = False
         elif user_role_id == 3:  # Agriculturist
             if is_own_account:
-                # Agriculturists can view their own account details but cannot edit
                 can_view_full_details = True
                 can_view_histories = True
                 can_edit_account_type = False
                 can_edit_municipality = False
         
-        # Calculate age
         today = date.today()
         birth_date = target_userinfo.birthdate
         age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
         
-        # Get admin action history (only if allowed to view histories)
         admin_actions = []
         admin_actions_paginator = None
         admin_actions_page_obj = None
@@ -3669,8 +3291,7 @@ def admin_account_detail(request, account_id):
                     admin_id=target_admin_info
                 ).order_by('-action_timestamp')
                 
-                # Pagination for admin actions
-                admin_actions_paginator = Paginator(admin_actions_queryset, 10)  # Show 10 actions per page
+                admin_actions_paginator = Paginator(admin_actions_queryset, 10) 
                 admin_actions_page_number = request.GET.get('admin_page')
                 admin_actions_page_obj = admin_actions_paginator.get_page(admin_actions_page_number)
                 admin_actions = admin_actions_page_obj
@@ -3688,8 +3309,7 @@ def admin_account_detail(request, account_id):
                     account_id=target_account
                 ).order_by('-login_date')
                 
-                # Pagination for login history
-                login_history_paginator = Paginator(login_history_queryset, 10)  # Show 10 logins per page
+                login_history_paginator = Paginator(login_history_queryset, 10)  
                 login_history_page_number = request.GET.get('login_page')
                 login_history_page_obj = login_history_paginator.get_page(login_history_page_number)
                 login_history = login_history_page_obj
@@ -3697,7 +3317,6 @@ def admin_account_detail(request, account_id):
                 print(f"Warning: Could not fetch login history: {e}")
                 login_history = []
         
-        # Get options for editing - filter municipalities to exclude pk=14 for non-superusers
         account_types = AccountType.objects.exclude(account_type='Farmer')
         if is_superuser:
             municipalities = MunicipalityName.objects.all()
@@ -3736,29 +3355,6 @@ def admin_account_detail(request, account_id):
         print("Error: Account not found in admin_account_detail")
         return redirect('administrator:show_allaccounts')
     
-
-# def editacc(request):
-#     print("🔥 DEBUG: editacc view called!")  # This should print when you visit "/"
-#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
-#     if request.user.is_authenticated: 
-#         userinfo_id = request.session.get('userinfo_id')
-#         userinfo = UserInformation.objects.get(pk=userinfo_id)
-        
-#         context = {
-#                 'user_firstname' : userinfo.firstname,
-#             } 
-        
-#         if request.method == "POST":
-#             form = EditUserInformation(request.POST,instance=userinfo)
-#             if form.is_valid():
-#                 updated_info = form.save(commit=False)
-#                 updated_info.auth_user = request.user
-#                 updated_info.save()
-                
-#                 request.user.email = updated_info.user_email
-#                 request.user.save()
-
-# Export functions for CSV and PDF generation
 def export_commodity_records_csv(commodities, filename, format_type='csv', request=None):
     """Export commodity records to CSV or PDF format"""
     if format_type == 'csv':
@@ -3790,12 +3386,10 @@ def export_commodity_summary_csv(commodities, filename, format_type='csv', reque
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         
-        # Summary data for commodities
         seasonal_summary = {}
         maturity_summary = {}
         
         for commodity in commodities:
-            # Group by seasonal months
             seasons = [month.name for month in commodity.seasonal_months.all()]
             season_key = ", ".join(seasons) if seasons else "No seasons specified"
             
@@ -3806,7 +3400,6 @@ def export_commodity_summary_csv(commodities, filename, format_type='csv', reque
             seasonal_summary[season_key]['avg_weight'] += float(commodity.average_weight_per_unit_kg)
             seasonal_summary[season_key]['commodities'].append(commodity.name)
             
-            # Group by maturity years
             maturity = commodity.years_to_mature or 0
             maturity_key = f"{maturity} years" if maturity > 0 else "Not specified"
             
@@ -3818,7 +3411,6 @@ def export_commodity_summary_csv(commodities, filename, format_type='csv', reque
         
         writer = csv.writer(response)
         
-        # Seasonal summary
         writer.writerow(['Seasonal Summary'])
         writer.writerow(['Seasonal Period', 'Number of Commodities', 'Average Weight (kg)', 'Commodities'])
         for season, data in seasonal_summary.items():
@@ -3828,13 +3420,12 @@ def export_commodity_summary_csv(commodities, filename, format_type='csv', reque
                 commodities_list += f" and {len(data['commodities']) - 5} more"
             writer.writerow([season, data['count'], f"{avg_weight:.2f}", commodities_list])
         
-        writer.writerow([])  # Empty row
+        writer.writerow([])  
         
-        # Maturity summary
         writer.writerow(['Maturity Summary'])
         writer.writerow(['Years to Mature', 'Number of Commodities', 'Commodities'])
         for maturity, data in maturity_summary.items():
-            commodities_list = ", ".join(data['commodities'][:5])  # Show first 5
+            commodities_list = ", ".join(data['commodities'][:5])
             if len(data['commodities']) > 5:
                 commodities_list += f" and {len(data['commodities']) - 5} more"
             writer.writerow([maturity, data['count'], commodities_list])
@@ -3856,12 +3447,10 @@ def export_harvest_records_csv(records, filename, format_type='csv', request=Non
         ])
         
         for record in records:
-            # Get estimated hectare
             estimated_hectare = 0
             if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
                 estimated_hectare = record.transaction.farm_land.estimated_area or 0
             
-            # Convert weight to kg
             weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
             
             writer.writerow([
@@ -3887,7 +3476,6 @@ def export_harvest_records_summary_csv(records, filename, format_type='csv', req
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         
-        # Group by commodity and municipality for summary
         summary_data = {}
         for record in records:
             commodity = record.commodity_id.name
@@ -3907,11 +3495,9 @@ def export_harvest_records_summary_csv(records, filename, format_type='csv', req
             
             summary_data[key]['total_records'] += 1
             
-            # Convert weight to kg and add estimated hectare
             weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
             summary_data[key]['total_weight'] += weight_kg
             
-            # Add estimated hectare
             if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
                 summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
             
@@ -3954,7 +3540,6 @@ def export_plant_records_csv(records, filename, format_type='csv', request=None)
         ])
         
         for record in records:
-            # Get estimated hectare
             estimated_hectare = 0
             if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
                 estimated_hectare = record.transaction.farm_land.estimated_area or 0
@@ -3983,7 +3568,6 @@ def export_plant_records_summary_csv(records, filename, format_type='csv', reque
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         
-        # Group by commodity and municipality for summary
         summary_data = {}
         for record in records:
             commodity = record.commodity_id.name
@@ -4006,7 +3590,6 @@ def export_plant_records_summary_csv(records, filename, format_type='csv', reque
             summary_data[key]['total_expected_min'] += float(record.min_expected_harvest)
             summary_data[key]['total_expected_max'] += float(record.max_expected_harvest)
             
-            # Add estimated hectare
             if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
                 summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
             
@@ -4043,7 +3626,6 @@ def export_accounts_csv(accounts, filename, format_type='csv', request=None):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         
-        # Get assigned municipality for record count filtering
         assigned_municipality = None
         if request and request.user.is_authenticated:
             try:
@@ -4073,12 +3655,10 @@ def export_accounts_csv(accounts, filename, format_type='csv', request=None):
             else:
                 contact_number_str = "Not provided"
             
-            # Calculate records in assigned municipality
             records_count = 0
             total_farmland_area = 0
             
             if assigned_municipality:
-                # Count records in assigned municipality
                 records_count = RecordTransaction.objects.filter(
                     account_id=account
                 ).filter(
@@ -4086,14 +3666,12 @@ def export_accounts_csv(accounts, filename, format_type='csv', request=None):
                     Q(manual_municipality=assigned_municipality)
                 ).count()
                 
-                # Calculate total farmland area in assigned municipality
                 farmlands = FarmLand.objects.filter(
                     userinfo_id=account.userinfo_id,
                     municipality=assigned_municipality
                 )
                 total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
             else:
-                # For superusers/administrators, show total records and farmlands
                 records_count = RecordTransaction.objects.filter(account_id=account).count()
                 farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
                 total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
@@ -4250,31 +3828,26 @@ def export_verified_harvest_records_summary_csv(records, filename, format_type='
     elif format_type == 'pdf':
         return generate_verified_harvest_records_summary_pdf(records, filename, request)
 
-# PDF Generation Functions
 def generate_harvest_records_pdf(records, filename, request=None):
     """Generate PDF for harvest records"""
     if not PDF_AVAILABLE:
-        # Fallback to CSV if ReportLab is not available
         return export_harvest_records_csv(records, filename + '_fallback', 'csv')
     
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
     
-    # Create PDF document
     doc = SimpleDocTemplate(response, pagesize=landscape(letter), 
-                          rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+            rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     
-    # Container for the 'Flowable' objects
     elements = []
     
-    # Define styles
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=16,
         spaceAfter=10,
-        alignment=1  # Center alignment
+        alignment=1  
     )
     
     subtitle_style = ParagraphStyle(
@@ -4286,11 +3859,9 @@ def generate_harvest_records_pdf(records, filename, request=None):
         textColor=colors.grey
     )
     
-    # Add title
     title = Paragraph("Harvest Records Report", title_style)
     elements.append(title)
     
-    # Add municipality information if available
     if request and request.user.is_authenticated:
         try:
             user_info = UserInformation.objects.get(auth_user=request.user)
@@ -4307,24 +3878,19 @@ def generate_harvest_records_pdf(records, filename, request=None):
     
     elements.append(Spacer(1, 12))
     
-    # Prepare data for table
     data = [['Date Created', 'Farmer Name', 'Commodity', 'Harvest Date', 
              'Total Weight (kg)', 'Est. Hectare', 'Location', 'Status']]
     
     for record in records:
-        # Get estimated hectare
         estimated_hectare = 0
         if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
             estimated_hectare = record.transaction.farm_land.estimated_area or 0
             
-        # Convert weight to kg
         weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
         
-        # Format farmer name and location with line breaks if too long
         farmer_name = f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"
         location = record.transaction.get_location_display()
         
-        # Use Paragraph for text wrapping in cells
         farmer_name_para = Paragraph(farmer_name, styles['Normal']) if len(farmer_name) > 20 else farmer_name
         location_para = Paragraph(location, styles['Normal']) if len(location) > 15 else location
         
@@ -4340,7 +3906,6 @@ def generate_harvest_records_pdf(records, filename, request=None):
         ]
         data.append(row)
     
-    # Create table with appropriate column widths
     col_widths = [80, 120, 80, 80, 80, 80, 120, 80]
     table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
@@ -4358,8 +3923,6 @@ def generate_harvest_records_pdf(records, filename, request=None):
     ]))
     
     elements.append(table)
-    
-    # Build PDF
     doc.build(elements)
     return response
 
@@ -4376,7 +3939,7 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=10, alignment=1)
+        fontSize=16, spaceAfter=10, alignment=1)
     
     subtitle_style = ParagraphStyle(
         'Subtitle',
@@ -4390,11 +3953,9 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
     title = Paragraph("Harvest Records Summary Report", title_style)
     elements.append(title)
     
-    # Add filter information if request is available
     if request:
         filter_info = []
         
-        # Municipality filter
         municipality_filter = request.GET.get('municipality')
         status_filter = request.GET.get('status')
         commodity_filter = request.GET.get('commodity')
@@ -4408,7 +3969,6 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
         else:
             filter_info.append("(Overall in Bataan - All Municipalities)")
         
-        # Status and Commodity filters
         if status_filter or commodity_filter:
             details = []
             if status_filter:
@@ -4427,13 +3987,11 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
             if details:
                 filter_info.append(f"({' - '.join(details)})")
         
-        # Add filter information to PDF
         for i, info in enumerate(filter_info):
             style = subtitle_style if i == 0 else subtitle_style
             subtitle = Paragraph(info, style)
             elements.append(subtitle)
     else:
-        # Add municipality information if available
         if request and request.user.is_authenticated:
             try:
                 user_info = UserInformation.objects.get(auth_user=request.user)
@@ -4450,7 +4008,6 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
     
     elements.append(Spacer(1, 12))
     
-    # Group by commodity and municipality for summary
     summary_data = {}
     for record in records:
         commodity = record.commodity_id.name
@@ -4465,11 +4022,9 @@ def generate_harvest_records_summary_pdf(records, filename, request=None):
         
         summary_data[key]['total_records'] += 1
         
-        # Convert weight to kg and add estimated hectare
         weight_kg = convert_to_kg(record.total_weight, record.unit.unit_abrv)
         summary_data[key]['total_weight'] += weight_kg
         
-        # Add estimated hectare
         if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
             summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
         
@@ -4512,23 +4067,21 @@ def generate_plant_records_pdf(records, filename, request=None):
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
     
     doc = SimpleDocTemplate(response, pagesize=landscape(letter), 
-                          rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+        rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     elements = []
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=20, alignment=1)
+        fontSize=16, spaceAfter=20, alignment=1)
     subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], 
-                                   fontSize=12, spaceAfter=12, alignment=1)
+        fontSize=12, spaceAfter=12, alignment=1)
     
     title = Paragraph("Plant Records Report", title_style)
     elements.append(title)
     
-    # Add filter information subheadings
     if request and hasattr(request, 'GET'):
         filter_info = []
         
-        # Municipality and Barangay filter info
         municipality = request.GET.get('municipality', '').strip()
         barangay = request.GET.get('barangay', '').strip()
         
@@ -4540,7 +4093,6 @@ def generate_plant_records_pdf(records, filename, request=None):
         else:
             filter_info.append("(Overall in Bataan - All Barangay)")
         
-        # Date range filter info
         start_date = request.GET.get('start_date', '').strip()
         end_date = request.GET.get('end_date', '').strip()
         
@@ -4554,21 +4106,17 @@ def generate_plant_records_pdf(records, filename, request=None):
             except ValueError:
                 pass
         
-        # Commodity filter info
         commodity = request.GET.get('commodity', '').strip()
         if commodity and commodity != 'All':
             filter_info.append(f"(Commodity: {commodity})")
         
-        # Status filter info
         status = request.GET.get('status', '').strip()
         if status and status != 'All':
             filter_info.append(f"(Status: {status})")
         
-        # Add filter information to PDF
         for info in filter_info:
             elements.append(Paragraph(info, subtitle_style))
     
-    # Add municipality information if available
     elif request and request.user.is_authenticated:
         try:
             user_info = UserInformation.objects.get(auth_user=request.user)
@@ -4589,16 +4137,13 @@ def generate_plant_records_pdf(records, filename, request=None):
              'Min Expected (kg)', 'Max Expected (kg)', 'Est. Hectare', 'Location']]
     
     for record in records:
-        # Get estimated hectare
         estimated_hectare = 0
         if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
             estimated_hectare = record.transaction.farm_land.estimated_area or 0
         
-        # Format farmer name and location with line breaks if too long
         farmer_name = f"{record.transaction.account_id.userinfo_id.lastname}, {record.transaction.account_id.userinfo_id.firstname}"
         location = record.transaction.get_location_display()
         
-        # Use Paragraph for text wrapping in cells
         farmer_name_para = Paragraph(farmer_name, styles['Normal']) if len(farmer_name) > 20 else farmer_name
         location_para = Paragraph(location, styles['Normal']) if len(location) > 15 else location
             
@@ -4614,7 +4159,6 @@ def generate_plant_records_pdf(records, filename, request=None):
         ]
         data.append(row)
     
-    # Create table with appropriate column widths
     col_widths = [80, 120, 80, 80, 80, 80, 80, 120]
     table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
@@ -4648,18 +4192,16 @@ def generate_plant_records_summary_pdf(records, filename, request=None):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=20, alignment=1)
+        fontSize=16, spaceAfter=20, alignment=1)
     subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], 
-                                   fontSize=12, spaceAfter=12, alignment=1)
+        fontSize=12, spaceAfter=12, alignment=1)
     
     title = Paragraph("Plant Records Summary Report", title_style)
     elements.append(title)
     
-    # Add filter information subheadings
     if request and hasattr(request, 'GET'):
         filter_info = []
         
-        # Municipality and Barangay filter info
         municipality = request.GET.get('municipality', '').strip()
         barangay = request.GET.get('barangay', '').strip()
         
@@ -4671,7 +4213,6 @@ def generate_plant_records_summary_pdf(records, filename, request=None):
         else:
             filter_info.append("(Overall in Bataan - All Barangay)")
         
-        # Date range filter info
         start_date = request.GET.get('start_date', '').strip()
         end_date = request.GET.get('end_date', '').strip()
         
@@ -4685,17 +4226,14 @@ def generate_plant_records_summary_pdf(records, filename, request=None):
             except ValueError:
                 pass
         
-        # Commodity filter info
         commodity = request.GET.get('commodity', '').strip()
         if commodity and commodity != 'All':
             filter_info.append(f"(Commodity: {commodity})")
         
-        # Status filter info
         status = request.GET.get('status', '').strip()
         if status and status != 'All':
             filter_info.append(f"(Status: {status})")
         
-        # Add filter information to PDF
         for info in filter_info:
             elements.append(Paragraph(info, subtitle_style))
     
@@ -4718,7 +4256,6 @@ def generate_plant_records_summary_pdf(records, filename, request=None):
         summary_data[key]['total_expected_min'] += float(record.min_expected_harvest)
         summary_data[key]['total_expected_max'] += float(record.max_expected_harvest)
         
-        # Add estimated hectare
         if record.transaction.location_type == 'farm_land' and record.transaction.farm_land:
             summary_data[key]['total_hectare'] += record.transaction.farm_land.estimated_area or 0
         
@@ -4760,12 +4297,12 @@ def generate_accounts_pdf(accounts, filename, request=None):
     response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
     
     doc = SimpleDocTemplate(response, pagesize=landscape(letter), 
-                          rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+        rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     elements = []
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=10, alignment=1)
+        fontSize=16, spaceAfter=10, alignment=1)
     
     subtitle_style = ParagraphStyle(
         'Subtitle',
@@ -4779,11 +4316,9 @@ def generate_accounts_pdf(accounts, filename, request=None):
     title = Paragraph("Accounts Report", title_style)
     elements.append(title)
     
-    # Add filter information if request is available
     if request:
         filter_info = []
         
-        # Municipality filter
         municipality_filter = request.GET.get('municipality')
         status_filter = request.GET.get('status')
         acctype_filter = request.GET.get('acctype')
@@ -4797,7 +4332,6 @@ def generate_accounts_pdf(accounts, filename, request=None):
         else:
             filter_info.append("(Overall in Bataan - All Municipalities)")
         
-        # Account type and status filters
         if acctype_filter or status_filter:
             details = []
             if status_filter:
@@ -4816,13 +4350,11 @@ def generate_accounts_pdf(accounts, filename, request=None):
             if details:
                 filter_info.append(f"({' '.join(details)} Accounts)")
         
-        # Add filter information to PDF
         for i, info in enumerate(filter_info):
             style = subtitle_style if i == 0 else subtitle_style
             subtitle = Paragraph(info, style)
             elements.append(subtitle)
     
-    # Get assigned municipality for record count filtering
     assigned_municipality = None
     if request and request.user.is_authenticated:
         try:
@@ -4844,19 +4376,16 @@ def generate_accounts_pdf(accounts, filename, request=None):
     data = [['ID', 'Full Name', 'Email', 'Contact', 'Municipality', 'Type', 'Status', 'Reg Date', 'Records', 'Farmland (ha)']]
     
     for account in accounts:
-        # Format contact number as string and handle empty values
         contact_number = account.userinfo_id.contact_number
         if contact_number:
             contact_number_str = str(contact_number)
         else:
             contact_number_str = "Not provided"
         
-        # Calculate records in assigned municipality
         records_count = 0
         total_farmland_area = 0
         
         if assigned_municipality:
-            # Count records in assigned municipality
             records_count = RecordTransaction.objects.filter(
                 account_id=account
             ).filter(
@@ -4864,19 +4393,16 @@ def generate_accounts_pdf(accounts, filename, request=None):
                 Q(manual_municipality=assigned_municipality)
             ).count()
             
-            # Calculate total farmland area in assigned municipality
             farmlands = FarmLand.objects.filter(
                 userinfo_id=account.userinfo_id,
                 municipality=assigned_municipality
             )
             total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
         else:
-            # For superusers/administrators, show total records and farmlands
             records_count = RecordTransaction.objects.filter(account_id=account).count()
             farmlands = FarmLand.objects.filter(userinfo_id=account.userinfo_id)
             total_farmland_area = sum(f.estimated_area or 0 for f in farmlands)
         
-        # Use Paragraph for text wrapping
         full_name = f"{account.userinfo_id.lastname}, {account.userinfo_id.firstname}"
         full_name_para = Paragraph(full_name, styles['Normal']) if len(full_name) > 20 else full_name
         email_para = Paragraph(account.userinfo_id.user_email, styles['Normal']) if len(account.userinfo_id.user_email) > 20 else account.userinfo_id.user_email
@@ -4895,7 +4421,6 @@ def generate_accounts_pdf(accounts, filename, request=None):
         ]
         data.append(row)
     
-    # Create table with appropriate column widths
     col_widths = [30, 100, 120, 80, 80, 60, 60, 70, 50, 60]
     table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
@@ -4929,7 +4454,7 @@ def generate_accounts_summary_pdf(accounts, filename, request=None):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=10, alignment=1)
+        fontSize=16, spaceAfter=10, alignment=1)
     
     subtitle_style = ParagraphStyle(
         'Subtitle',
@@ -4943,11 +4468,9 @@ def generate_accounts_summary_pdf(accounts, filename, request=None):
     title = Paragraph("Accounts Summary Report", title_style)
     elements.append(title)
     
-    # Add filter information if request is available
     if request:
         filter_info = []
         
-        # Municipality filter
         municipality_filter = request.GET.get('municipality')
         status_filter = request.GET.get('status')
         acctype_filter = request.GET.get('acctype')
@@ -4961,7 +4484,6 @@ def generate_accounts_summary_pdf(accounts, filename, request=None):
         else:
             filter_info.append("(Overall in Bataan - All Municipalities)")
         
-        # Account type and status filters
         if acctype_filter or status_filter:
             details = []
             if status_filter:
@@ -4980,7 +4502,6 @@ def generate_accounts_summary_pdf(accounts, filename, request=None):
             if details:
                 filter_info.append(f"({' '.join(details)} Accounts)")
         
-        # Add filter information to PDF
         for i, info in enumerate(filter_info):
             style = subtitle_style
             subtitle = Paragraph(info, style)
@@ -5073,11 +4594,9 @@ def generate_verified_harvest_records_pdf(records, filename, request=None):
     title = Paragraph("Verified Harvest Records Report", title_style)
     elements.append(title)
     
-    # Add filter information if request is available
     if request:
         filter_info = []
         
-        # Municipality and Barangay filter
         municipality_filter = request.GET.get('municipality')
         barangay_filter = request.GET.get('barangay')
         
@@ -5094,7 +4613,6 @@ def generate_verified_harvest_records_pdf(records, filename, request=None):
         else:
             filter_info.append("(Overall in Bataan - All Municipalities)")
         
-        # Date range filter
         date_from = request.GET.get('date_from')
         date_to = request.GET.get('date_to')
         
@@ -5113,7 +4631,6 @@ def generate_verified_harvest_records_pdf(records, filename, request=None):
             
             filter_info.append(date_info)
         
-        # Commodity filter
         commodity_filter = request.GET.get('commodity')
         if commodity_filter:
             try:
@@ -5123,7 +4640,6 @@ def generate_verified_harvest_records_pdf(records, filename, request=None):
             except CommodityType.DoesNotExist:
                 pass
         
-        # Add filter information to PDF
         for i, info in enumerate(filter_info):
             style = subtitle_style if i == 0 else date_style
             subtitle = Paragraph(info, style)
@@ -5199,11 +4715,9 @@ def generate_verified_harvest_records_summary_pdf(records, filename, request=Non
     title = Paragraph("Verified Harvest Records Summary Report", title_style)
     elements.append(title)
     
-    # Add filter information if request is available
     if request:
         filter_info = []
         
-        # Municipality and Barangay filter
         municipality_filter = request.GET.get('municipality')
         barangay_filter = request.GET.get('barangay')
         
@@ -5220,7 +4734,6 @@ def generate_verified_harvest_records_summary_pdf(records, filename, request=Non
         else:
             filter_info.append("(Overall in Bataan - All Municipalities)")
         
-        # Date range filter
         date_from = request.GET.get('date_from')
         date_to = request.GET.get('date_to')
         
@@ -5239,7 +4752,6 @@ def generate_verified_harvest_records_summary_pdf(records, filename, request=Non
             
             filter_info.append(date_info)
         
-        # Commodity filter
         commodity_filter = request.GET.get('commodity')
         if commodity_filter:
             try:
@@ -5249,7 +4761,6 @@ def generate_verified_harvest_records_summary_pdf(records, filename, request=Non
             except CommodityType.DoesNotExist:
                 pass
         
-        # Add filter information to PDF
         for i, info in enumerate(filter_info):
             style = subtitle_style if i == 0 else date_style
             subtitle = Paragraph(info, style)
@@ -5319,7 +4830,7 @@ def generate_commodity_records_pdf(commodities, filename, request=None):
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], 
-                                fontSize=16, spaceAfter=10, alignment=1)
+        fontSize=16, spaceAfter=10, alignment=1)
     
     subtitle_style = ParagraphStyle(
         'Subtitle',
@@ -5503,12 +5014,3 @@ def generate_commodity_summary_pdf(commodities, filename, request=None):
     elements.append(maturity_table)
     doc.build(elements)
     return response
-                
-#                 return redirect('administrator:accinfo')                
-        
-#         else:
-#             form = EditUserInformation(instance=userinfo)
-
-#         return render(request, 'loggedin/account_edit.html', {'form': form})
-#     else :
-#         return render(request, 'home.html', {})  

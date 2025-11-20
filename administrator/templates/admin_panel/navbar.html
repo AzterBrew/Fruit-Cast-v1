@@ -109,15 +109,9 @@
                         <i class="bi bi-plus-circle me-1"></i>Adminstrators
                     </a></li>
 
-                    {% comment %} <li><a class="dropdown-item" href="{% url 'administrator:show_allaccounts' %}">
-                        <i class="bi bi-plus-circle me-1"></i>Agriculturists TENTATIVE
-                    </a></li> {% endcomment %}
-                    
-                    {% comment %} {% if user.is_superuser and user_role_id == 2 %} {% endcomment %}
                       <li><a class="dropdown-item" href="{% url 'administrator:assign_account' %}">
                         <i class="bi bi-person-plus me-1"></i>Manage Privilege
                       </a></li>
-                    {% comment %} {% endif%} {% endcomment %}
                 </ul>
             </li>
           {% elif user_role_id == 3 %}
@@ -149,17 +143,7 @@
                     </a></li>
                 </ul>
             </li>
-            {% comment %} <li class="nav-item mx-md-1 dropdown">
-              <a class="dropdown-item" href="{% url 'administrator:admin_commodity_list' %}">
-                <i class="bi bi-calendar-month me-2"></i>Commodities
-              </a>
-            </li>
-            <li class="nav-item mx-md-1 dropdown">
-              <a class="dropdown-item" href="{% url 'administrator:verify_accounts' %}">
-                <i class="bi bi-calendar-month me-2"></i>Farmers
-              </a>
-            </li>
-               {% endcomment %}
+            
           {% endif %}
         </ul>
     </nav>
@@ -181,7 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
         toggle.addEventListener('shown.bs.dropdown', function() {
             var dropdown = this.nextElementSibling;
             if (dropdown && window.innerWidth <= 768) {
-                // Additional mobile-specific positioning if needed
                 dropdown.style.transform = 'none';
             }
         });

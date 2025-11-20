@@ -255,7 +255,7 @@ Fruit Cast | Add Verified Harvest Record
                         return;
                     }
                     
-                    // Check file size (10MB limit)
+                    // Check file size n 10MB limit only
                     const maxSize = 10 * 1024 * 1024; // 10MB in bytes
                     if (file.size > maxSize) {
                         alert('File size must be less than 10MB.');
@@ -274,7 +274,6 @@ Fruit Cast | Add Verified Harvest Record
                 const tenYearsAgo = new Date();
                 tenYearsAgo.setFullYear(today.getFullYear() - 10);
                 
-                // Clear any previous custom validity
                 harvestDateInput.setCustomValidity('');
                 
                 if (selectedDate > today) {
@@ -322,7 +321,7 @@ Fruit Cast | Add Verified Harvest Record
                     return false;
                 }
                 
-                // Show loading state
+                // loading state
                 uploadBtn.disabled = true;
                 uploadBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Uploading... <span class="spinner-border spinner-border-sm ms-2"></span>';
                 
@@ -394,7 +393,6 @@ Fruit Cast | Add Verified Harvest Record
     }
 
     function downloadTemplate() {
-        // Create a sample CSV content based on admin type
         {% if is_overall_admin %}
         const csvContent = "harvest_date,commodity,municipality,barangay,total_weight_kg,remarks\n" +
                           "2024-08-01,Mango,Balanga City,San Jose,100.00,Good harvest\n" +
