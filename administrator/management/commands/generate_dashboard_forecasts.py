@@ -8,6 +8,7 @@ from django.core.files.storage import default_storage
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from django.db import transaction
+from io import BytesIO
 
 class Command(BaseCommand):
     help = 'Generate forecasts using the same logic as dashboard real-time forecasting'
@@ -19,7 +20,6 @@ class Command(BaseCommand):
         commodities = CommodityType.objects.exclude(pk=1)
         months = Month.objects.all().order_by('number')
         
-        # Create a new batch
         batch = ForecastBatch.objects.create(
             notes="Generated using dashboard logic - no artificial data"
         )
@@ -33,7 +33,7 @@ class Command(BaseCommand):
                 for comm in commodities:
                     self.stdout.write(f"Processing {comm.name} - {muni.municipality}...")
                     
-                    # Get historical data (same as dashboard)
+                    # Historical data
                     qs = VerifiedHarvestRecord.objects.filter(
                         municipality=muni,
                         commodity_id=comm
@@ -43,7 +43,6 @@ class Command(BaseCommand):
                         self.stdout.write(f"  Skipping: insufficient data ({qs.count()} records)")
                         continue
                     
-                    # Prepare data exactly like dashboard
                     df = pd.DataFrame(list(qs))
                     df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                     df['ds'] = pd.to_datetime(df['ds'])
@@ -55,7 +54,7 @@ class Command(BaseCommand):
                         continue
                     
                     try:
-                        # Train model exactly like dashboard
+                        # Train model
                         m = Prophet(
                             yearly_seasonality=True,
                             changepoint_prior_scale=0.05,
@@ -70,17 +69,16 @@ class Command(BaseCommand):
                         model_filename = f"prophet_{comm.commodity_id}_{muni.municipality_id}.joblib"
                         bucket_path = f"prophet_models/{model_filename}"
                         
-                        from io import BytesIO
                         buffer = BytesIO()
                         joblib.dump(m, buffer)
                         buffer.seek(0)
                         default_storage.save(bucket_path, buffer)
                         
-                        # Generate forecasts exactly like dashboard
+                        # Generate forecasts
                         future = m.make_future_dataframe(periods=12, freq='MS')
                         forecast = m.predict(future)
                         
-                        # Get only future forecasts
+                        # only future forecasts
                         last_historical_date = df['ds'].max()
                         future_forecast = forecast[forecast['ds'] > last_historical_date]
                         
@@ -123,7 +121,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"  Skipping: insufficient overall data ({qs.count()} records)")
                     continue
                 
-                # Prepare data exactly like dashboard
+                # Prep data
                 df = pd.DataFrame(list(qs))
                 df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                 df['ds'] = pd.to_datetime(df['ds'])
@@ -160,7 +158,7 @@ class Command(BaseCommand):
                     future = m.make_future_dataframe(periods=12, freq='MS')
                     forecast = m.predict(future)
                     
-                    # Get only future forecasts
+                    # only future forecasts
                     last_historical_date = df['ds'].max()
                     future_forecast = forecast[forecast['ds'] > last_historical_date]
                     
@@ -208,5 +206,5 @@ class Command(BaseCommand):
                 f"{forecast.forecast_month.name} {forecast.forecast_year}: {forecast.forecasted_amount_kg:.2f} kg"
             )
             
-        self.stdout.write("\nDone! Your database now contains forecasts that match the dashboard real-time predictions.")
+        self.stdout.write("\ndatabase now contains forecasts that match the dashboard real-time predictions.")
                 # run: python manage.py generate_dashboard_forecasts

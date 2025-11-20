@@ -180,7 +180,7 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
                         return;
                     }
                     
-                    // Check file size (10MB max)
+                    // Check file size (10MB max lang)
                     const maxSize = 10 * 1024 * 1024; // 10MB
                     if (file.size > maxSize) {
                         alert('File size exceeds 10MB limit. Please upload a smaller file.');
@@ -223,7 +223,6 @@ Fruit Cast | {% if commodity %}Edit Commodity{% else %}Add New Commodity{% endif
             // Re-create file for confirmation form
             const csvForm = document.getElementById('confirmForm');
             csvForm.addEventListener('submit', function(e) {
-                // The file will be processed with confirmed_updates=true
             });
         }
         {% endif %}

@@ -8,7 +8,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Cleaning up artificial forecast data...")
         
-        # Count artificial forecasts (1.0 kg values)
+        # Count artificial forecasts (1.0 kg values) for clean up
         artificial_count = ForecastResult.objects.filter(
             Q(forecasted_amount_kg=1.0) | Q(notes__icontains="minimal forecast")
         ).count()

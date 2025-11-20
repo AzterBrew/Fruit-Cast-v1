@@ -33,13 +33,12 @@ class Command(BaseCommand):
                     self.stdout.write(f"No data for {muni} - {comm}")
                     continue
                     
-                # Use EXACT Dashboard approach - match forecast view logic
                 df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
                 df['ds'] = pd.to_datetime(df['ds'])
                 df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
                 df = df.groupby('ds', as_index=False)['y'].sum()
 
-                # NO FILTERING of historical data - use ALL available VerifiedHarvestRecord data for training
+                # checking  / debuggin
                 print(f"Using ALL historical data for training {muni} - {comm}: {len(df)} records")
 
                 if len(df) < 2:
@@ -56,27 +55,25 @@ class Command(BaseCommand):
                 )
                 m.fit(df[['ds', 'y']])
 
-                # Save model (optionally, could also save last cleaned df for debugging)
+                # Save model
                 model_filename = f"prophet_{comm.commodity_id}_{muni.municipality_id}.joblib"
                 
                 bucket_path = f"prophet_models/{model_filename}"
 
-                # Create an in-memory buffer to hold the model file
+                # in-memory bufferfor holding the model file
                 buffer = BytesIO()
                 joblib.dump(m, buffer)
 
                 # Rewind the buffer to the beginning before saving
                 buffer.seek(0)
-
-                # Save the model directly to DigitalOcean Spaces
+                #  directly saving to DigitalOcean Spaces
                 default_storage.save(bucket_path, buffer)
                 
                 self.stdout.write(f"Trained and saved model for {muni} - {comm}")
             
-            
         self.stdout.write("Training Overall models...")
         for comm in commodities:
-            # Get all harvest data for this commodity across ALL municipalities (excluding pk=14)
+            # Get all harvest data for this commodity across all municipalities in db (excluding pk=14)
             qs = VerifiedHarvestRecord.objects.filter(
                 commodity_id=comm
             ).exclude(municipality_id=14).values('harvest_date', 'total_weight_kg').order_by('harvest_date')
@@ -90,13 +87,12 @@ class Command(BaseCommand):
                 self.stdout.write(f"No overall data for {comm}")
                 continue
 
-            # Use EXACT Dashboard approach - match forecast view logic
             df = df.rename(columns={'harvest_date': 'ds', 'total_weight_kg': 'y'})
             df['ds'] = pd.to_datetime(df['ds'])
             df['ds'] = df['ds'].dt.to_period('M').dt.to_timestamp()
             df = df.groupby('ds', as_index=False)['y'].sum()
 
-            # NO FILTERING of historical data - use ALL available VerifiedHarvestRecord data for training
+            # checking  / debuggin
             print(f"Using ALL historical data for Overall {comm} training: {len(df)} records")
 
             if len(df) < 2:
@@ -118,14 +114,14 @@ class Command(BaseCommand):
             
             bucket_path = f"prophet_models/{model_filename}"
 
-            # Create an in-memory buffer to hold the model file
+            # in-memory bufferfor holding the model file
             buffer = BytesIO()
             joblib.dump(m, buffer)
 
             # Rewind the buffer to the beginning before saving
             buffer.seek(0)
 
-            # Save the model directly to DigitalOcean Spaces
+            #  directly saving to DigitalOcean Spaces
             default_storage.save(bucket_path, buffer)
             
             self.stdout.write(f"Trained and saved Overall model for {comm}")

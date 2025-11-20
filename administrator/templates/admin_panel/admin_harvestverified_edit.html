@@ -117,7 +117,7 @@ Fruit Cast | Edit Harvest Record
                     </div>
                 </div>
 
-                <!-- Verification Information (Read-only) -->
+                <!-- Verification Information (Read-only sha) -->
                 <div class="card border-0 shadow-sm mt-4">
                     <div class="card-header bg-light">
                         <h6 class="mb-0 text-muted">
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
-            // Validate harvest date is not in the future
+            // Validate harvest date, not in the future
             const selectedDate = new Date(harvestDate);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -263,14 +263,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (municipalitySelect && barangaySelect) {
-        // Only add change listener if municipality field is not disabled
+        // Only add change listener IF municipality field is not disabled
         if (!isMunicipalityDisabled) {
             municipalitySelect.addEventListener('change', function() {
                 updateBarangayOptions(false);
             });
         }
         
-        // On page load, keep the initial selection
         updateBarangayOptions(true);
         
         // If municipality is disabled, show a visual indicator

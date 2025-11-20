@@ -37,7 +37,7 @@ Fruit Cast | Commodity Management
                         <span class="badge bg-warning">{{ paginator.count }} commodit{{ paginator.count|pluralize:"y,ies" }}</span>
                     </div>
 
-                    <!-- Responsive Table -->
+                    <!-- Table -->
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-success">
@@ -366,7 +366,7 @@ Fruit Cast | Commodity Management
         updateButtonState();
     });
 
-    // Export functions
+    // Export funcs
     function exportRecords(format) {
         const currentParams = new URLSearchParams(window.location.search);
         currentParams.set('export', 'records');

@@ -222,7 +222,7 @@ Fruit Cast | Transaction Details
                                 </table>
                             </div>
                         {% else %}
-                            <!-- Single harvest record - use card layout -->
+                            <!-- Single harvest record -->
                             {% with harvest_record.0 as record %}
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -309,19 +309,6 @@ Fruit Cast | Transaction Details
                     </div>
                 </div>
             {% endif %}
-
-            <!-- Notification Section -->
-            {% comment %} {% if plant_notification %}
-                <div class="alert alert-warning border-0 mb-4">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-bell text-warning me-3 fs-4"></i>
-                        <div>
-                            <h6 class="mb-1 fw-semibold">Notification</h6>
-                            <p class="mb-0">{{ plant_notification.message }}</p>
-                        </div>
-                    </div>
-                </div>
-            {% endif %} {% endcomment %}
 
             <!-- Login History Section -->
             {% if login_history %}
@@ -486,22 +473,6 @@ Fruit Cast | Transaction Details
                             </a>
                         </div>
                         
-                        {% comment %} {% if user_role_id == 2 %}
-                        <div class="dropdown">
-                            <button class="btn btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots me-2"></i>More Actions
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item text-warning" href="#" onclick="flagTransaction()">
-                                    <i class="bi bi-flag me-2"></i>Flag Transaction
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete()">
-                                    <i class="bi bi-trash me-2"></i>Delete Transaction
-                                </a></li>
-                            </ul>
-                        </div>
-                        {% endif %} {% endcomment %}
                     </div>
                 </div>
             </div>
