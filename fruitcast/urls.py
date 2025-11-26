@@ -20,10 +20,8 @@ from . import views #importing from files, in this case, my views python file
 
 urlpatterns = [
     path('admin/', admin.site.urls), 
-    # path('', views.Homepage),
     path('about/',views.About),
     path('', include(('base.urls','base'), namespace='base')),  # Corrected
-    # path('login/', include('loginpage.urls'))
     path('dashboard/', include(('dashboard.urls', 'dashboard'), namespace='dashboard')),
     path('administrator/', include(('administrator.urls', 'dashboard'), namespace='administrator')),
 ]

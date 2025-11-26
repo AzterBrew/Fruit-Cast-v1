@@ -24,15 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-fq@x30e&eeop%xlqhi-^176c9=pum$vn!^k-*t5c*-wi1m^=-r'
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-# DEBUG = False
+# DEBUG = True
+DEBUG = False
 
-# ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['*']
 
 
@@ -85,26 +82,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'fruitcast.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'fruitcast_db',
-#         'USER': 'postgres',
-#         'PASSWORD': '1234',
-#         'HOST': 'localhost'
-#     }
-# }
-
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     db_info = urlparse(DATABASE_URL)
@@ -117,7 +94,7 @@ if DATABASE_URL:
             'HOST': db_info.hostname,
             'PORT': db_info.port,
             'OPTIONS': {'sslmode': 'require'},
-            'CONN_MAX_AGE': 0,  # <--- this is the key fix
+            'CONN_MAX_AGE': 0,  
         }
     }
 else:
@@ -142,7 +119,6 @@ else:
 # port = 25061
 
 AUTH_USER_MODEL = 'base.AuthUser'
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -226,7 +202,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'eloisamariemsumbad@gmail.com'
+EMAIL_HOST_USER = 'eloisamariemsumbad@gmail.com' #this is temporary email for testing
 EMAIL_HOST_PASSWORD = 'kzgz vyop djqc bpld'
 # EMAIL_HOST_USER = 'fruitcast.bataan@gmail.com'
 # EMAIL_HOST_PASSWORD = 'pjxr njjv veck thyz'
@@ -239,7 +215,6 @@ if DEBUG:
 
 
 # Celery Configuration
-# Get the URL from the environment variable
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
 
@@ -248,7 +223,6 @@ if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
-# Check if the URL is a secure rediss:// connection
 if CELERY_BROKER_URL.startswith('rediss://'):
     parsed_url = urlparse(CELERY_BROKER_URL)
     query_params = parse_qs(parsed_url.query)
