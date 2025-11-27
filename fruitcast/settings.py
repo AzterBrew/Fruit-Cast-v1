@@ -24,11 +24,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fq@x30e&eeop%xlqhi-^176c9=pum$vn!^k-*t5c*-wi1m^=-r')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-DEBUG = False
+# Set DEBUG based on environment variable, default to True for local development
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
@@ -154,22 +154,41 @@ USE_I18N = True
 # digital ocean spaces settings for storing prophet models
 
 # Use the new STORAGES setting for modern Django versions
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        "OPTIONS": {
-            "bucket_name": os.environ.get('AWS_STORAGE_BUCKET_NAME'),
-            "endpoint_url": os.environ.get('AWS_S3_ENDPOINT_URL'),
-            "access_key": os.environ.get('AWS_ACCESS_KEY_ID'),
-            "secret_key": os.environ.get('AWS_SECRET_ACCESS_KEY'),
-            "querystring_auth": False,
-            "file_overwrite": False,
+# Only use S3/DigitalOcean Spaces storage if all required credentials are provided
+if all([os.environ.get('AWS_STORAGE_BUCKET_NAME'), 
+        os.environ.get('AWS_S3_ENDPOINT_URL'),
+        os.environ.get('AWS_ACCESS_KEY_ID'),
+        os.environ.get('AWS_SECRET_ACCESS_KEY')]):
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "bucket_name": os.environ.get('AWS_STORAGE_BUCKET_NAME'),
+                "endpoint_url": os.environ.get('AWS_S3_ENDPOINT_URL'),
+                "access_key": os.environ.get('AWS_ACCESS_KEY_ID'),
+                "secret_key": os.environ.get('AWS_SECRET_ACCESS_KEY'),
+                "querystring_auth": False,
+                "file_overwrite": False,
+            }
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         }
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     }
-}
+else:
+    # Fallback to local file storage for development
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {
+                "location": BASE_DIR / "media",
+                "base_url": "/media/",
+            }
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        }
+    }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -181,6 +200,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

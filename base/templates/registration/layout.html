@@ -17,7 +17,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <script src="{% static 'js/chart.umd.js' %}"></script>
-    {% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> {% endcomment %}
     <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -33,15 +32,6 @@
     
 </head>
 <body>
-    {% comment %} <nav class="nav">
-        <div class="title">
-            <a href="/" >Fruit Cast</a>
-            <br>
-        </div>
-        <a class="nav" href="{% url 'base:home' %}">Home</a> |
-        <a class="nav" href="{% url 'base:about' %}">About Us</a> |        
-
-    </nav> {% endcomment %}
 
     {% include "registration/navbar.html" %}
 

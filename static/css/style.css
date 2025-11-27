@@ -353,7 +353,7 @@ div {
 
 main {
     flex-grow: 1;
-    display: grid;
+    /* display: grid; */
     place-content: center;
 }
 
@@ -606,10 +606,135 @@ a:hover {
 }
 
 .list-group-item-action.active {
-    --bs-list-group-active-bg: #b5e7ab !important;
-    --bs-list-group-action-active-color: #212529 !important;
-    --bs-list-group-active-border-color: #5fa850  !important;
-    --bs-list-group-active-color: #212529 !important;
+    --bs-list-group-active-bg: #abef9e !important;
+    --bs-list-group-active-border-color: #198754 !important;
+    --bs-list-group-active-color: #198754 !important;
+}
+
+/* Authentication Templates Improvements */
+.auth-container {
+    background: linear-gradient(135deg, rgba(247, 255, 242, 0.9) 0%, rgba(232, 245, 232, 0.9) 100%), 
+                url('../images/background.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+.auth-card {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    min-width: 300px;
+}
+
+.auth-card:hover {
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+.form-control-lg {
+    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control-lg:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Section dividers for registration form */
+.registration-section {
+    border-left: 4px solid #198754;
+    padding-left: 1rem;
+    margin-bottom: 2rem;
+}
+
+.registration-section h5 {
+    border-bottom: 2px solid rgba(25, 135, 84, 0.1);
+    padding-bottom: 0.5rem;
+}
+
+/* Enhanced button styles */
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #146c43;
+    transform: translateY(-1px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-outline-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive improvements for different screen sizes */
+@media (min-width: 1400px) {
+    .auth-container .col-xxl-3 {
+        max-width: 350px;
+    }
+    .auth-container .col-xxl-5 {
+        max-width: 600px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .auth-container .col-xl-4 {
+        max-width: 400px;
+    }
+    .auth-container .col-xl-6 {
+        max-width: 650px;
+    }
+}
+
+@media (min-width: 992px) {
+    .auth-container .col-lg-5 {
+        max-width: 450px;
+    }
+    .auth-container .col-lg-7 {
+        max-width: 700px;
+    }
+}
+
+/* Mobile specific improvements */
+@media (max-width: 576px) {
+    .auth-container .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .registration-section {
+        border-left: 2px solid #198754;
+        padding-left: 0.75rem;
+    }
+}
+
+/* Animation for form sections */
+.registration-section {
+    animation: fadeInUp 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+ 
+
+.registration-section:nth-child(1) { animation-delay: 0.1s; }
+.registration-section:nth-child(2) { animation-delay: 0.2s; }
+.registration-section:nth-child(3) { animation-delay: 0.3s; }
+.registration-section:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Footer Styles */
@@ -617,6 +742,16 @@ footer {
     margin-top: auto;
     background: linear-gradient(135deg, #416e3f 0%, #2d5a2b 100%);
     box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    overflow-x: hidden;
+}
+
+footer .container {
+    max-width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
 }
 
 footer h5, footer h6 {
@@ -629,11 +764,19 @@ footer h5::after, footer h6::after {
     content: '';
     position: absolute;
     bottom: 0;
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 30px;
     height: 2px;
     background: linear-gradient(90deg, #28a745, #20c997);
     border-radius: 1px;
+}
+
+@media (min-width: 992px) {
+    footer h5::after, footer h6::after {
+        left: 0;
+        transform: none;
+    }
 }
 
 footer a {
@@ -689,18 +832,52 @@ footer .border-top {
 }
 
 /* Responsive footer adjustments */
-@media (max-width: 768px) {
-    footer .col-md-6.text-md-end {
+@media (max-width: 991.98px) {
+    footer .text-lg-start {
         text-align: center !important;
-        margin-top: 1rem;
+    }
+    
+    footer .justify-content-lg-start {
+        justify-content: center !important;
     }
     
     footer .contact-info .d-flex {
         margin-bottom: 1rem;
+        justify-content: center;
     }
     
     footer .d-flex.gap-3 {
         justify-content: center;
         margin-top: 1rem;
+    }
+    
+    footer .col-lg-2 {
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    footer .container {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+    
+    footer .py-4.py-md-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    footer h5, footer h6 {
+        font-size: 1.1rem;
+    }
+    
+    footer p {
+        font-size: 0.9rem;
+    }
+    
+    footer .bi {
+        font-size: 1rem !important;
     }
 }
