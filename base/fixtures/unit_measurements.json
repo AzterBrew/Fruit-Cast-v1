@@ -1,0 +1,34 @@
+[
+  {
+    "model": "base.unitmeasurement",
+    "pk": 1,
+    "fields": {
+      "unit_abrv": "kg",
+      "unit_full": "kilogram"
+    }
+  },
+  {
+    "model": "base.unitmeasurement",
+    "pk": 2,
+    "fields": {
+      "unit_abrv": "g",
+      "unit_full": "gram"
+    }
+  },
+  {
+    "model": "base.unitmeasurement",
+    "pk": 3,
+    "fields": {
+      "unit_abrv": "t",
+      "unit_full": "tonne"
+    }
+  },
+  {
+    "model": "base.unitmeasurement",
+    "pk": 4,
+    "fields": {
+      "unit_abrv": "lb",
+      "unit_full": "pound"
+    }
+  }
+]

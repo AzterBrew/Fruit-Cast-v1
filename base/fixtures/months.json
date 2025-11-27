@@ -1,0 +1,98 @@
+[
+  {
+    "model": "base.month",
+    "pk": 1,
+    "fields": {
+      "name": "January",
+      "number": 1
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 2,
+    "fields": {
+      "name": "February",
+      "number": 2
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 3,
+    "fields": {
+      "name": "March",
+      "number": 3
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 4,
+    "fields": {
+      "name": "April",
+      "number": 4
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 5,
+    "fields": {
+      "name": "May",
+      "number": 5
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 6,
+    "fields": {
+      "name": "June",
+      "number": 6
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 7,
+    "fields": {
+      "name": "July",
+      "number": 7
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 8,
+    "fields": {
+      "name": "August",
+      "number": 8
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 9,
+    "fields": {
+      "name": "September",
+      "number": 9
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 10,
+    "fields": {
+      "name": "October",
+      "number": 10
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 11,
+    "fields": {
+      "name": "November",
+      "number": 11
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 12,
+    "fields": {
+      "name": "December",
+      "number": 12
+    }
+  }
+]

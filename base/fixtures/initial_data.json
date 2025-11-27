@@ -1,0 +1,193 @@
+[
+  {
+    "model": "base.accounttype",
+    "pk": 1,
+    "fields": {
+      "account_type": "Farmer"
+    }
+  },
+  {
+    "model": "base.accounttype",
+    "pk": 3,
+    "fields": {
+      "account_type": "Agriculturist"
+    }
+  },
+  {
+    "model": "base.accounttype",
+    "pk": 2,
+    "fields": {
+      "account_type": "Administrator"
+    }
+  },
+  {
+    "model": "base.accountstatus",
+    "pk": 1,
+    "fields": {
+      "acc_status": "Removed"
+    }
+  },
+  {
+    "model": "base.accountstatus",
+    "pk": 2,
+    "fields": {
+      "acc_status": "Verified"
+    }
+  },
+  {
+    "model": "base.accountstatus",
+    "pk": 3,
+    "fields": {
+      "acc_status": "Pending"
+    }
+  },
+  {
+    "model": "base.accountstatus",
+    "pk": 4,
+    "fields": {
+      "acc_status": "Rejected"
+    }
+  },
+  {
+    "model": "base.accountstatus",
+    "pk": 5,
+    "fields": {
+      "acc_status": "Archived"
+    }
+  },
+  {
+    "model": "base.accountstatus",
+    "pk": 6,
+    "fields": {
+      "acc_status": "Suspended"
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 1,
+    "fields": {
+      "name": "January",
+      "number": 1
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 2,
+    "fields": {
+      "name": "February",
+      "number": 2
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 3,
+    "fields": {
+      "name": "March",
+      "number": 3
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 4,
+    "fields": {
+      "name": "April",
+      "number": 4
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 5,
+    "fields": {
+      "name": "May",
+      "number": 5
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 6,
+    "fields": {
+      "name": "June",
+      "number": 6
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 7,
+    "fields": {
+      "name": "July",
+      "number": 7
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 8,
+    "fields": {
+      "name": "August",
+      "number": 8
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 9,
+    "fields": {
+      "name": "September",
+      "number": 9
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 10,
+    "fields": {
+      "name": "October",
+      "number": 10
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 11,
+    "fields": {
+      "name": "November",
+      "number": 11
+    }
+  },
+  {
+    "model": "base.month",
+    "pk": 12,
+    "fields": {
+      "name": "December",
+      "number": 12
+    }
+  },
+  {
+    "model": "base.unitmeasurement",
+    "pk": 1,
+    "fields": {
+      "unit_abrv": "kg",
+      "unit_full": "kilogram"
+    }
+  },
+  {
+    "model": "base.unitmeasurement",
+    "pk": 2,
+    "fields": {
+      "unit_abrv": "g",
+      "unit_full": "gram"
+    }
+  },
+  {
+    "model": "base.unitmeasurement",
+    "pk": 4,
+    "fields": {
+      "unit_abrv": "lb",
+      "unit_full": "pound"
+    }
+  },
+  {
+    "model": "base.unitmeasurement",
+    "pk": 3,
+    "fields": {
+      "unit_abrv": "t",
+      "unit_full": "tonne"
+    }
+  }
+]

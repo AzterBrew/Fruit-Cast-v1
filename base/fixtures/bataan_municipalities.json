@@ -1,0 +1,93 @@
+[
+  {
+    "model": "base.municipalityname",
+    "pk": 1,
+    "fields": {
+      "municipality": "Abucay"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 2,
+    "fields": {
+      "municipality": "Bagac"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 3,
+    "fields": {
+      "municipality": "Balanga"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 4,
+    "fields": {
+      "municipality": "Dinalupihan"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 5,
+    "fields": {
+      "municipality": "Hermosa"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 6,
+    "fields": {
+      "municipality": "Limay"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 7,
+    "fields": {
+      "municipality": "Mariveles"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 8,
+    "fields": {
+      "municipality": "Morong"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 9,
+    "fields": {
+      "municipality": "Orani"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 11,
+    "fields": {
+      "municipality": "Orion"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 12,
+    "fields": {
+      "municipality": "Pilar"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 13,
+    "fields": {
+      "municipality": "Samal"
+    }
+  },
+  {
+    "model": "base.municipalityname",
+    "pk": 14,
+    "fields": {
+      "municipality": "Overall in Bataan"
+    }
+  }
+]

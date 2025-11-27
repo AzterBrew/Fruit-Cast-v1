@@ -1,0 +1,1906 @@
+[
+  {
+    "model": "base.barangayname",
+    "pk": 1,
+    "fields": {
+      "barangay": "Bangkal",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 2,
+    "fields": {
+      "barangay": "Calaguiman",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 3,
+    "fields": {
+      "barangay": "Capitangan",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 4,
+    "fields": {
+      "barangay": "Gabon",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 5,
+    "fields": {
+      "barangay": "Laon",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 6,
+    "fields": {
+      "barangay": "Mabatang",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 7,
+    "fields": {
+      "barangay": "Omboy",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 8,
+    "fields": {
+      "barangay": "Salian",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 9,
+    "fields": {
+      "barangay": "Wawa",
+      "municipality_id": 1
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 10,
+    "fields": {
+      "barangay": "Bagumbayan",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 11,
+    "fields": {
+      "barangay": "Binuangan",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 12,
+    "fields": {
+      "barangay": "Dahican",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 13,
+    "fields": {
+      "barangay": "Ibaba",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 14,
+    "fields": {
+      "barangay": "Ibis",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 15,
+    "fields": {
+      "barangay": "Looc",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 16,
+    "fields": {
+      "barangay": "Pag-asa",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 17,
+    "fields": {
+      "barangay": "Parang",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 18,
+    "fields": {
+      "barangay": "Paysawan",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 19,
+    "fields": {
+      "barangay": "Saysain",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 20,
+    "fields": {
+      "barangay": "Tabing-dagat",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 21,
+    "fields": {
+      "barangay": "Tupul",
+      "municipality_id": 2
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 22,
+    "fields": {
+      "barangay": "Bagong Silang",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 23,
+    "fields": {
+      "barangay": "Bagumbayan",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 24,
+    "fields": {
+      "barangay": "Cabog-cabog",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 25,
+    "fields": {
+      "barangay": "Cataning",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 26,
+    "fields": {
+      "barangay": "Central",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 27,
+    "fields": {
+      "barangay": "Cupang North",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 28,
+    "fields": {
+      "barangay": "Cupang Proper",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 29,
+    "fields": {
+      "barangay": "Cupang West",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 30,
+    "fields": {
+      "barangay": "Dangcol",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 31,
+    "fields": {
+      "barangay": "Doña Francisca",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 32,
+    "fields": {
+      "barangay": "Ibayo",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 33,
+    "fields": {
+      "barangay": "Lote",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 34,
+    "fields": {
+      "barangay": "Malabia",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 35,
+    "fields": {
+      "barangay": "Munting Batangas",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 36,
+    "fields": {
+      "barangay": "Pampanga",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 37,
+    "fields": {
+      "barangay": "Peñaranda",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 38,
+    "fields": {
+      "barangay": "Poblacion",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 39,
+    "fields": {
+      "barangay": "Puerto Rivas Ibaba",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 40,
+    "fields": {
+      "barangay": "Puerto Rivas Itaas",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 41,
+    "fields": {
+      "barangay": "Puerto Rivas Lote",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 42,
+    "fields": {
+      "barangay": "San Jose",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 43,
+    "fields": {
+      "barangay": "Sibacan",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 44,
+    "fields": {
+      "barangay": "Talisay",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 45,
+    "fields": {
+      "barangay": "Tanato",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 46,
+    "fields": {
+      "barangay": "T.M. Kalaw",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 47,
+    "fields": {
+      "barangay": "Tortugas",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 48,
+    "fields": {
+      "barangay": "Tuyo",
+      "municipality_id": 3
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 49,
+    "fields": {
+      "barangay": "Aglao",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 50,
+    "fields": {
+      "barangay": "Almacen",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 51,
+    "fields": {
+      "barangay": "Bacao",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 52,
+    "fields": {
+      "barangay": "Bagong Daan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 53,
+    "fields": {
+      "barangay": "Bangal",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 54,
+    "fields": {
+      "barangay": "Bayan-bayanan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 55,
+    "fields": {
+      "barangay": "Benuan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 56,
+    "fields": {
+      "barangay": "Bonifacio (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 57,
+    "fields": {
+      "barangay": "Burgos (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 58,
+    "fields": {
+      "barangay": "Colo",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 59,
+    "fields": {
+      "barangay": "Dalao",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 60,
+    "fields": {
+      "barangay": "Del Pilar (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 61,
+    "fields": {
+      "barangay": "Gen. Luna (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 62,
+    "fields": {
+      "barangay": "Gomok",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 63,
+    "fields": {
+      "barangay": "Happy Valley",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 64,
+    "fields": {
+      "barangay": "Jacinto (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 65,
+    "fields": {
+      "barangay": "Jose C. Payumo, Jr.",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 66,
+    "fields": {
+      "barangay": "Kataasan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 67,
+    "fields": {
+      "barangay": "Layac",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 68,
+    "fields": {
+      "barangay": "Luacan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 69,
+    "fields": {
+      "barangay": "Mabini",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 70,
+    "fields": {
+      "barangay": "Maligaya (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 71,
+    "fields": {
+      "barangay": "Mambog",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 72,
+    "fields": {
+      "barangay": "Manggahan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 73,
+    "fields": {
+      "barangay": "Napco",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 74,
+    "fields": {
+      "barangay": "New San Jose",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 75,
+    "fields": {
+      "barangay": "New Sitio",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 76,
+    "fields": {
+      "barangay": "Old San Jose (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 77,
+    "fields": {
+      "barangay": "Pag-asa (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 78,
+    "fields": {
+      "barangay": "Padre Dandan (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 79,
+    "fields": {
+      "barangay": "Palanginan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 80,
+    "fields": {
+      "barangay": "Payangan",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 81,
+    "fields": {
+      "barangay": "Pinulot",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 82,
+    "fields": {
+      "barangay": "Pita",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 83,
+    "fields": {
+      "barangay": "Poblacion",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 84,
+    "fields": {
+      "barangay": "President Roxas (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 85,
+    "fields": {
+      "barangay": "Roosevelt",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 86,
+    "fields": {
+      "barangay": "San Benito",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 87,
+    "fields": {
+      "barangay": "San Pablo",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 88,
+    "fields": {
+      "barangay": "San Ramon",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 89,
+    "fields": {
+      "barangay": "San Simon",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 90,
+    "fields": {
+      "barangay": "Santa Isabel",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 91,
+    "fields": {
+      "barangay": "Santo Niño (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 92,
+    "fields": {
+      "barangay": "Sapa",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 93,
+    "fields": {
+      "barangay": "Sitio Maligaya",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 94,
+    "fields": {
+      "barangay": "Tubo-tubong",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 95,
+    "fields": {
+      "barangay": "Tukop",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 96,
+    "fields": {
+      "barangay": "Zamora (Poblacion)",
+      "municipality_id": 4
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 97,
+    "fields": {
+      "barangay": "A. Mabini",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 98,
+    "fields": {
+      "barangay": "Almacen",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 99,
+    "fields": {
+      "barangay": "Bacong",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 100,
+    "fields": {
+      "barangay": "Balsic",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 101,
+    "fields": {
+      "barangay": "Culis",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 102,
+    "fields": {
+      "barangay": "Daungan",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 103,
+    "fields": {
+      "barangay": "Hermosa",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 104,
+    "fields": {
+      "barangay": "Judge R.S. Roman",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 105,
+    "fields": {
+      "barangay": "Mabuco",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 106,
+    "fields": {
+      "barangay": "Maite",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 107,
+    "fields": {
+      "barangay": "Mambog",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 108,
+    "fields": {
+      "barangay": "Palihan",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 109,
+    "fields": {
+      "barangay": "Pantalan Lote",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 110,
+    "fields": {
+      "barangay": "Pulo",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 111,
+    "fields": {
+      "barangay": "Sacrifice Valley",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 112,
+    "fields": {
+      "barangay": "Saint Francis",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 113,
+    "fields": {
+      "barangay": "San Pedro",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 114,
+    "fields": {
+      "barangay": "San Vicente",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 115,
+    "fields": {
+      "barangay": "Santa Cruz",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 116,
+    "fields": {
+      "barangay": "Santo Cristo",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 117,
+    "fields": {
+      "barangay": "Sumalo",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 118,
+    "fields": {
+      "barangay": "Tapulao",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 119,
+    "fields": {
+      "barangay": "Tipo",
+      "municipality_id": 5
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 120,
+    "fields": {
+      "barangay": "Alangan",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 121,
+    "fields": {
+      "barangay": "Bote",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 122,
+    "fields": {
+      "barangay": "Duale",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 123,
+    "fields": {
+      "barangay": "Kitang I (Poblacion)",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 124,
+    "fields": {
+      "barangay": "Kitang II (Poblacion)",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 125,
+    "fields": {
+      "barangay": "Lamao",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 126,
+    "fields": {
+      "barangay": "Landing",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 127,
+    "fields": {
+      "barangay": "Luacan",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 128,
+    "fields": {
+      "barangay": "Luz",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 129,
+    "fields": {
+      "barangay": "Paking-Sapa",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 130,
+    "fields": {
+      "barangay": "Reformista",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 131,
+    "fields": {
+      "barangay": "San Roque",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 132,
+    "fields": {
+      "barangay": "Wawa",
+      "municipality_id": 6
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 133,
+    "fields": {
+      "barangay": "Alion",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 134,
+    "fields": {
+      "barangay": "Balon-Anito",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 135,
+    "fields": {
+      "barangay": "Baseco",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 136,
+    "fields": {
+      "barangay": "Batangas II",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 137,
+    "fields": {
+      "barangay": "Biaan",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 138,
+    "fields": {
+      "barangay": "Cabcaben",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 139,
+    "fields": {
+      "barangay": "Camaya",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 140,
+    "fields": {
+      "barangay": "Fabrica",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 141,
+    "fields": {
+      "barangay": "Ipag",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 142,
+    "fields": {
+      "barangay": "Lucanin",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 143,
+    "fields": {
+      "barangay": "Malaya",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 144,
+    "fields": {
+      "barangay": "Maligaya",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 145,
+    "fields": {
+      "barangay": "Mt. View",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 146,
+    "fields": {
+      "barangay": "Poblacion",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 147,
+    "fields": {
+      "barangay": "San Carlos",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 148,
+    "fields": {
+      "barangay": "San Isidro",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 149,
+    "fields": {
+      "barangay": "Sisiman",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 150,
+    "fields": {
+      "barangay": "Townsite",
+      "municipality_id": 7
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 151,
+    "fields": {
+      "barangay": "Anupat",
+      "municipality_id": 8
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 152,
+    "fields": {
+      "barangay": "Binaritan",
+      "municipality_id": 8
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 153,
+    "fields": {
+      "barangay": "Nagbalayong",
+      "municipality_id": 8
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 154,
+    "fields": {
+      "barangay": "Poblacion",
+      "municipality_id": 8
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 155,
+    "fields": {
+      "barangay": "Sabang",
+      "municipality_id": 8
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 156,
+    "fields": {
+      "barangay": "Bagong Daan",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 157,
+    "fields": {
+      "barangay": "Balut",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 158,
+    "fields": {
+      "barangay": "Bayan",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 159,
+    "fields": {
+      "barangay": "Calero",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 160,
+    "fields": {
+      "barangay": "Capitol",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 161,
+    "fields": {
+      "barangay": "Cataning",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 162,
+    "fields": {
+      "barangay": "Centro I",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 163,
+    "fields": {
+      "barangay": "Centro II",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 164,
+    "fields": {
+      "barangay": "Dalao",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 165,
+    "fields": {
+      "barangay": "Kaparangan",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 166,
+    "fields": {
+      "barangay": "Masantol",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 167,
+    "fields": {
+      "barangay": "Mulawin",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 168,
+    "fields": {
+      "barangay": "Pag-asa",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 169,
+    "fields": {
+      "barangay": "Palihan",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 170,
+    "fields": {
+      "barangay": "Pantalan Bago",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 171,
+    "fields": {
+      "barangay": "Pantalan Luma",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 172,
+    "fields": {
+      "barangay": "Parang Parang",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 173,
+    "fields": {
+      "barangay": "Puksuan",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 174,
+    "fields": {
+      "barangay": "Sibul",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 175,
+    "fields": {
+      "barangay": "Silahis",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 176,
+    "fields": {
+      "barangay": "Tala",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 177,
+    "fields": {
+      "barangay": "Talimundoc",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 178,
+    "fields": {
+      "barangay": "Tapulao",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 179,
+    "fields": {
+      "barangay": "Tenejero",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 180,
+    "fields": {
+      "barangay": "Tugatog",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 181,
+    "fields": {
+      "barangay": "Tuyo",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 182,
+    "fields": {
+      "barangay": "Wawa",
+      "municipality_id": 9
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 183,
+    "fields": {
+      "barangay": "Arellano (Poblacion)",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 184,
+    "fields": {
+      "barangay": "Bagumbayan (Poblacion)",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 185,
+    "fields": {
+      "barangay": "Balagtas",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 186,
+    "fields": {
+      "barangay": "Balut",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 187,
+    "fields": {
+      "barangay": "Bantan",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 188,
+    "fields": {
+      "barangay": "Calungusan",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 189,
+    "fields": {
+      "barangay": "Capunitan",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 190,
+    "fields": {
+      "barangay": "Daang Bago",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 191,
+    "fields": {
+      "barangay": "Daang Pare",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 192,
+    "fields": {
+      "barangay": "General Lim (Poblacion)",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 193,
+    "fields": {
+      "barangay": "Liyang",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 194,
+    "fields": {
+      "barangay": "Pantalan Bago",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 195,
+    "fields": {
+      "barangay": "Pantalan Luma",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 196,
+    "fields": {
+      "barangay": "Pilar",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 197,
+    "fields": {
+      "barangay": "Poblacion",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 198,
+    "fields": {
+      "barangay": "Puting Buhangin",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 199,
+    "fields": {
+      "barangay": "San Roque",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 200,
+    "fields": {
+      "barangay": "San Vicente",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 201,
+    "fields": {
+      "barangay": "Santa Elena",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 202,
+    "fields": {
+      "barangay": "Santo Domingo",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 203,
+    "fields": {
+      "barangay": "Talimundoc",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 204,
+    "fields": {
+      "barangay": "Villa Angeles",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 205,
+    "fields": {
+      "barangay": "Wawa",
+      "municipality_id": 11
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 206,
+    "fields": {
+      "barangay": "Ala-uli",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 207,
+    "fields": {
+      "barangay": "Balut",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 208,
+    "fields": {
+      "barangay": "Bantan",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 209,
+    "fields": {
+      "barangay": "Buas",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 210,
+    "fields": {
+      "barangay": "Del Rosario",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 211,
+    "fields": {
+      "barangay": "Diwa",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 212,
+    "fields": {
+      "barangay": "Landing",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 213,
+    "fields": {
+      "barangay": "Liyang",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 214,
+    "fields": {
+      "barangay": "Nagwaling",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 215,
+    "fields": {
+      "barangay": "Panilao",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 216,
+    "fields": {
+      "barangay": "Pantingan",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 217,
+    "fields": {
+      "barangay": "Poblacion",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 218,
+    "fields": {
+      "barangay": "San Antonio",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 219,
+    "fields": {
+      "barangay": "San Isidro",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 220,
+    "fields": {
+      "barangay": "San Rafael",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 221,
+    "fields": {
+      "barangay": "Santa Rosa",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 222,
+    "fields": {
+      "barangay": "Tanato",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 223,
+    "fields": {
+      "barangay": "Wakas North",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 224,
+    "fields": {
+      "barangay": "Wakas South",
+      "municipality_id": 12
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 225,
+    "fields": {
+      "barangay": "Gugo",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 226,
+    "fields": {
+      "barangay": "Imelda",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 227,
+    "fields": {
+      "barangay": "Lalawigan",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 228,
+    "fields": {
+      "barangay": "Palog",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 229,
+    "fields": {
+      "barangay": "Pamatawan",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 230,
+    "fields": {
+      "barangay": "San Juan",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 231,
+    "fields": {
+      "barangay": "Santa Lucia",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 232,
+    "fields": {
+      "barangay": "Sapa",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 233,
+    "fields": {
+      "barangay": "Tabing Ilog",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 234,
+    "fields": {
+      "barangay": "Tabing-dagat",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 235,
+    "fields": {
+      "barangay": "Ward I (Poblacion)",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 236,
+    "fields": {
+      "barangay": "Ward II (Poblacion)",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 237,
+    "fields": {
+      "barangay": "Ward III (Poblacion)",
+      "municipality_id": 13
+    }
+  },
+  {
+    "model": "base.barangayname",
+    "pk": 238,
+    "fields": {
+      "barangay": "Ward IV (Poblacion)",
+      "municipality_id": 13
+    }
+  }
+]
