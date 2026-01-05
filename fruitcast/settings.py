@@ -11,10 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 
-import os, ssl
-from urllib.parse import urlparse, parse_qs
+import os
+from urllib.parse import urlparse
 from pathlib import Path
-
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,12 +23,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fq@x30e&eeop%xlqhi-^176c9=pum$vn!^k-*t5c*-wi1m^=-r')
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Set DEBUG based on environment variable, default to True for local development
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = True
+# DEBUG = False
 
+# ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['*']
 
 
@@ -45,7 +46,6 @@ INSTALLED_APPS = [
     'base',
     'dashboard',
     'administrator',
-    'storages',
     ]
 
 MIDDLEWARE = [
@@ -72,7 +72,6 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'base.context_processors.user_role_id',  # Custom context processor pang user role ID
-                'base.context_processors.current_year',  # Current year for footer
                 'dashboard.context_processors.unread_notifications',
             ],
         },
@@ -81,6 +80,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'fruitcast.wsgi.application'
 
+
+# Database
+# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'fruitcast_db',
+#         'USER': 'postgres',
+#         'PASSWORD': '1234',
+#         'HOST': 'localhost'
+#     }
+# }
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
@@ -94,7 +113,7 @@ if DATABASE_URL:
             'HOST': db_info.hostname,
             'PORT': db_info.port,
             'OPTIONS': {'sslmode': 'require'},
-            'CONN_MAX_AGE': 0,  
+            'CONN_MAX_AGE': 0,  # <--- this is the key fix
         }
     }
 else:
@@ -113,12 +132,10 @@ else:
 #digitalocean
 
 # redis-broker db for async operation for training models 
-# username = default
-# password : AVNS_da_lrGLHGi0GOTJrpdv
-# host = redis-broker-do-user-24835869-0.e.db.ondigitalocean.com
-# port = 25061
+# data is in messenger sent to myself
 
 AUTH_USER_MODEL = 'base.AuthUser'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -146,49 +163,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Manila'
-USE_TZ = True
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-# digital ocean spaces settings for storing prophet models
+USE_TZ = True
 
-# Use the new STORAGES setting for modern Django versions
-# Only use S3/DigitalOcean Spaces storage if all required credentials are provided
-if all([os.environ.get('AWS_STORAGE_BUCKET_NAME'), 
-        os.environ.get('AWS_S3_ENDPOINT_URL'),
-        os.environ.get('AWS_ACCESS_KEY_ID'),
-        os.environ.get('AWS_SECRET_ACCESS_KEY')]):
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-            "OPTIONS": {
-                "bucket_name": os.environ.get('AWS_STORAGE_BUCKET_NAME'),
-                "endpoint_url": os.environ.get('AWS_S3_ENDPOINT_URL'),
-                "access_key": os.environ.get('AWS_ACCESS_KEY_ID'),
-                "secret_key": os.environ.get('AWS_SECRET_ACCESS_KEY'),
-                "querystring_auth": False,
-                "file_overwrite": False,
-            }
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        }
-    }
-else:
-    # Fallback to local file storage for development
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-            "OPTIONS": {
-                "location": BASE_DIR / "media",
-                "base_url": "/media/",
-            }
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        }
-    }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -200,10 +180,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
-
-# Media files configuration
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -225,62 +201,16 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'eloisamariemsumbad@gmail.com' #this is temporary email for testing
+EMAIL_HOST_USER = 'eloisamariemsumbad@gmail.com'
 EMAIL_HOST_PASSWORD = 'kzgz vyop djqc bpld'
-# EMAIL_HOST_USER = 'fruitcast.bataan@gmail.com'
-# EMAIL_HOST_PASSWORD = 'pjxr njjv veck thyz'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
-# Console backend for development/testing when SMTP fails
-if DEBUG:
-    # Fallback to console backend if SMTP fails
-    EMAIL_BACKEND_FALLBACK = 'django.core.mail.backends.console.EmailBackend'
 
 
 # Celery Configuration
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
-
-# Default to a local Redis for development if environment variables are not set
-if not CELERY_BROKER_URL:
-    CELERY_BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-
-if CELERY_BROKER_URL.startswith('rediss://'):
-    parsed_url = urlparse(CELERY_BROKER_URL)
-    query_params = parse_qs(parsed_url.query)
-
-    # If the URL already has the parameter, use it
-    if 'ssl_cert_reqs' in query_params:
-        cert_reqs = query_params['ssl_cert_reqs'][0]
-        if cert_reqs == 'CERT_NONE':
-            CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
-        elif cert_reqs == 'CERT_OPTIONAL':
-            CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_OPTIONAL}
-        elif cert_reqs == 'CERT_REQUIRED':
-            CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_REQUIRED}
-    else:
-        # If not, add the parameter using the recommended method
-        CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
-
-if CELERY_RESULT_BACKEND.startswith('rediss://'):
-    parsed_url = urlparse(CELERY_RESULT_BACKEND)
-    query_params = parse_qs(parsed_url.query)
-    
-    if 'ssl_cert_reqs' in query_params:
-        cert_reqs = query_params['ssl_cert_reqs'][0]
-        if cert_reqs == 'CERT_NONE':
-            CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
-        elif cert_reqs == 'CERT_OPTIONAL':
-            CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_OPTIONAL}
-        elif cert_reqs == 'CERT_REQUIRED':
-            CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_REQUIRED}
-    else:
-        CELERY_RESULT_BACKEND_USE_SSL = {'ssl_cert_reqs': ssl.CERT_NONE}
-
+# The broker URL for Celery to connect to Redis.
+CELERY_BROKER_URL = 'redis://localhost:6379/0' # Use 'redis://127.0.0.1:6379/0' for local setups.
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0' # Backend to store task results.
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Asia/Manila'
-
-# redis-broker string : rediss://default:AVNS_da_lrGLHGi0GOTJrpdv@redis-broker-do-user-24835869-0.e.db.ondigitalocean.com:25061
+CELERY_TIMEZONE = 'Asia/Manila' # Set to your timezone
